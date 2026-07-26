@@ -8,14 +8,14 @@ export default async function VideosPage() {
   const videos = await getPublishedMediaPosts(24);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-slate-50 text-black">
       <PublicHeader />
 
       <section className="mx-auto max-w-7xl px-4 pt-20 pb-12 sm:px-6 sm:pt-24">
         <div className="mb-8 border-b border-slate-200 pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm font-semibold text-slate-500">
-              <Link href="/#videos" className="transition hover:text-sky-700">
+              <Link href="/#videos" className="transition hover:text-yellow-700">
                 Landing page
               </Link>
               <span className="px-2 text-slate-400">/</span>
@@ -23,7 +23,7 @@ export default async function VideosPage() {
             </div>
             <Link
               href="/#videos"
-              className="inline-flex items-center gap-2 self-start rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
             >
               Back to vlogs
               <FaArrowRight />
@@ -32,7 +32,7 @@ export default async function VideosPage() {
         </div>
 
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-sky-700">Video / Vlog Page</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-yellow-700">Video / Vlog Page</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Doctor content, public videos, and live replays</h1>
           <p className="mt-4 leading-8 text-slate-600">
             This page pulls from the content creator platform so Doctor Kulot can manage YouTube, TikTok, Facebook,

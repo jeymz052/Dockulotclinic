@@ -172,23 +172,23 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
     label: "QR Ph (GCash, Maya, Banks)",
     detail: "Scan the QR with GCash, Maya, or any InstaPay/Pesonet-enabled wallet or bank app.",
     accent: {
-      tileBg: "bg-linear-to-br from-sky-500 to-blue-600",
-      ring: "ring-sky-300",
-      selectedBorder: "border-sky-500",
-      selectedBg: "bg-sky-50/60",
+      tileBg: "bg-linear-to-br from-yellow-300 to-yellow-400",
+      ring: "ring-yellow-300",
+      selectedBorder: "border-yellow-300",
+      selectedBg: "bg-yellow-50/60",
     },
     logo: <GCashLogo />,
     brands: [
       {
         key: "qrph",
         node: (
-          <BrandChip className="bg-blue-100 text-blue-800">
+          <BrandChip className="bg-yellow-100 text-yellow-700">
             <FaQrcode className="h-3 w-3" /> QR Ph
           </BrandChip>
         ),
       },
-      { key: "gcash", node: <BrandChip className="bg-sky-100 text-sky-800">GCash</BrandChip> },
-      { key: "maya", node: <BrandChip className="bg-sky-100 text-sky-800">Maya</BrandChip> },
+      { key: "gcash", node: <BrandChip className="bg-yellow-100 text-yellow-700">GCash</BrandChip> },
+      { key: "maya", node: <BrandChip className="bg-yellow-100 text-yellow-700">Maya</BrandChip> },
       { key: "banks", node: <BrandChip className="bg-slate-100 text-slate-700">+ Banks</BrandChip> },
     ],
     available: true,
@@ -209,7 +209,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "visa",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcVisa className="h-5 w-auto text-[#1A1F71]" />
+            <FaCcVisa className="h-5 w-auto text-[#451a03]" />
           </span>
         ),
       },
@@ -217,7 +217,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "mc",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcMastercard className="h-5 w-auto text-[#EB001B]" />
+            <FaCcMastercard className="h-5 w-auto text-[#fbbf24]" />
           </span>
         ),
       },
@@ -225,7 +225,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "jcb",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcJcb className="h-5 w-auto text-[#0E4C96]" />
+            <FaCcJcb className="h-5 w-auto text-[#78350f]" />
           </span>
         ),
       },
@@ -238,19 +238,19 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
     label: "Online Bank Transfer",
     detail: "Pay directly from your online banking — BPI, UnionBank, RCBC, Chinabank and more.",
     accent: {
-      tileBg: "bg-linear-to-br from-sky-500 to-blue-600",
-      ring: "ring-sky-300",
-      selectedBorder: "border-sky-500",
-      selectedBg: "bg-sky-50/60",
+      tileBg: "bg-linear-to-br from-yellow-300 to-yellow-400",
+      ring: "ring-yellow-300",
+      selectedBorder: "border-yellow-300",
+      selectedBg: "bg-yellow-50/60",
     },
     logo: <BankLogo />,
     brands: [
-      { key: "bpi", node: <BrandChip className="bg-rose-100 text-rose-800">BPI</BrandChip> },
-      { key: "ubp", node: <BrandChip className="bg-amber-100 text-amber-800">UnionBank</BrandChip> },
-      { key: "rcbc", node: <BrandChip className="bg-blue-100 text-blue-800">RCBC</BrandChip> },
+      { key: "bpi", node: <BrandChip className="bg-yellow-100 text-yellow-800">BPI</BrandChip> },
+      { key: "ubp", node: <BrandChip className="bg-yellow-100 text-yellow-700">UnionBank</BrandChip> },
+      { key: "rcbc", node: <BrandChip className="bg-yellow-100 text-yellow-700">RCBC</BrandChip> },
       {
         key: "chinabank",
-        node: <BrandChip className="bg-red-100 text-red-800">Chinabank</BrandChip>,
+        node: <BrandChip className="bg-yellow-100 text-yellow-800">Chinabank</BrandChip>,
       },
       { key: "more", node: <BrandChip className="bg-slate-100 text-slate-700">+ more</BrandChip> },
     ],
@@ -278,10 +278,10 @@ function BrandChip({
 function GCashLogo() {
   // Stylised GCash brand mark — blue gradient tile with a stylised "G".
   return (
-    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-sky-500 to-blue-600 shadow-md">
+    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-300 to-yellow-400 shadow-md">
       <span className="text-lg font-black tracking-tight text-white">G</span>
-      <span className="absolute -bottom-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-md bg-white shadow-sm ring-1 ring-sky-200">
-        <FaQrcode className="h-3 w-3 text-sky-600" />
+      <span className="absolute -bottom-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-md bg-white shadow-sm ring-1 ring-yellow-200">
+        <FaQrcode className="h-3 w-3 text-yellow-600" />
       </span>
     </span>
   );
@@ -309,7 +309,7 @@ function CardLogo() {
 function BankLogo() {
   // Bank columns icon on blue gradient.
   return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-sky-500 to-blue-600 shadow-md">
+    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-300 to-yellow-400 shadow-md">
       <FaBuildingColumns className="h-6 w-6 text-white" />
     </span>
   );
@@ -321,14 +321,14 @@ function VisitTypeValue({ type }: { type: AppointmentType }) {
   if (type === "Clinic") {
     return (
       <>
-        <FaHospital className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+        <FaHospital className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
         Clinic Visit
       </>
     );
   }
   return (
     <>
-      <FaVideo className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+      <FaVideo className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
       Online Consultation
     </>
   );
@@ -787,10 +787,10 @@ export default function BookAppointmentPage() {
         see marketing chips instead (stats wouldn't apply pre-signup, and
         showing zeros makes the page look broken).
       */}
-      <div className="rounded-3xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-5 shadow-[0_18px_45px_rgba(14,165,233,0.08)] sm:p-6">
+      <div className="rounded-3xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-5 shadow-[0_18px_45px_rgba(133,77,14,0.08)] sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">Book Appointment</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-yellow-700">Book Appointment</p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">
               Schedule a visit with {selectedDoctor?.name?.replace(/^Dra\.\s*/, "Dra. ") ?? "your doctor"}
             </h1>
@@ -820,40 +820,40 @@ export default function BookAppointmentPage() {
       {feedback ? (
         <div className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
           feedback.type === "success"
-            ? "border border-sky-200 bg-sky-50 text-sky-800"
-            : "border border-red-200 bg-red-50 text-red-800"
+            ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
+            : "border border-yellow-200 bg-yellow-50 text-yellow-800"
         }`}>
           {feedback.type === "success"
-            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
-            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />}
+            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />
+            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />}
           <span>{feedback.message}</span>
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{error}</div>
       ) : null}
       {availabilityError ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{availabilityError}</div>
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{availabilityError}</div>
       ) : null}
 
       <form onSubmit={handleSubmit}>
-        <div className="rounded-4xl border border-sky-100 bg-white/95 p-4 shadow-[0_18px_45px_rgba(14,165,233,0.06)] backdrop-blur sm:p-5">
+        <div className="rounded-4xl border border-yellow-100 bg-white/95 p-4 shadow-[0_18px_45px_rgba(133,77,14,0.06)] backdrop-blur sm:p-5">
           <HorizontalBookingStepper
             labels={BOOKING_STEP_LABELS}
             activeStep={activeStep}
             onStepClick={goToStep}
           >
-            <>
-              <FaHospital className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
-              Clinic Visit
-            </>
+              <>
+                <FaHospital className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
+                Clinic Visit
+              </>
           </HorizontalBookingStepper>
           {activeStep === 1 ? (
             <>
-              <section className="rounded-4xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-4 shadow-[0_20px_45px_rgba(14,165,233,0.08)] sm:p-6">
+              <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-4 shadow-[0_20px_45px_rgba(133,77,14,0.08)] sm:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-600">Step 1 of 4</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 1 of 4</p>
                     <h2 className="mt-2 text-2xl font-bold text-slate-900">Are you an existing patient?</h2>
                     <p className="mt-2 text-sm text-slate-600">
                       To request a virtual or face-to-face appointment, please choose how the clinic should handle your booking.
@@ -872,14 +872,14 @@ export default function BookAppointmentPage() {
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
-                            ? "border-sky-500 bg-sky-50 shadow-[0_12px_28px_rgba(14,165,233,0.16)] ring-2 ring-sky-200 ring-offset-1"
-                            : "border-sky-100 bg-white hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-[0_12px_24px_rgba(14,165,233,0.10)]"
+                            ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_28px_rgba(133,77,14,0.16)] ring-2 ring-yellow-200 ring-offset-1"
+                            : "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-[0_12px_24px_rgba(133,77,14,0.10)]"
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-sky-700 shadow-sm" : "bg-sky-50 text-sky-600 group-hover:bg-sky-100"
+                              selected ? "bg-white text-yellow-700 shadow-sm" : "bg-yellow-50 text-yellow-700 group-hover:bg-yellow-100"
                             }`}
                             aria-hidden="true"
                           >
@@ -891,11 +891,11 @@ export default function BookAppointmentPage() {
                                 {status === "Existing" ? "I'm an Existing Patient" : "I'm a New Patient"}
                               </p>
                               {selected ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-yellow-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
                               ) : (
-                                <span className="inline-flex shrink-0 rounded-full border border-sky-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                                <span className="inline-flex shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
                                   Choose
                                 </span>
                               )}
@@ -920,19 +920,19 @@ export default function BookAppointmentPage() {
 
           {activeStep === 2 ? (
             <>
-              <section className="rounded-4xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fbff_100%)] p-4 shadow-[0_20px_45px_rgba(14,165,233,0.08)] sm:p-6">
+              <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-4 shadow-[0_20px_45px_rgba(133,77,14,0.08)] sm:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-600">Step 2 of 4</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 2 of 4</p>
                     <h2 className="mt-2 text-xl font-bold text-slate-900">Visit Selection and Patient Information</h2>
                     <p className="mt-1 text-sm text-slate-600">Choose the appointment type first, then confirm your contact details.</p>
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700">
-                      <span className="h-2 w-2 rounded-full bg-sky-500" />
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700">
+                      <span className="h-2 w-2 rounded-full bg-yellow-300" />
                       All fields required
                     </div>
-                    <div className="inline-flex w-fit rounded-full border border-sky-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
+                    <div className="inline-flex w-fit rounded-full border border-yellow-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-yellow-700 shadow-sm">
                       Fee: {selectedVisitFeeLabel}
                     </div>
                   </div>
@@ -949,14 +949,14 @@ export default function BookAppointmentPage() {
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
-                            ? "border-sky-500 bg-sky-50 shadow-[0_12px_28px_rgba(14,165,233,0.16)] ring-2 ring-sky-200 ring-offset-1"
-                            : "border-sky-100 bg-white hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-[0_12px_24px_rgba(14,165,233,0.10)]"
+                            ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_28px_rgba(133,77,14,0.16)] ring-2 ring-yellow-200 ring-offset-1"
+                            : "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-[0_12px_24px_rgba(133,77,14,0.10)]"
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-sky-700 shadow-sm" : "bg-sky-50 text-sky-600 group-hover:bg-sky-100"
+                              selected ? "bg-white text-yellow-700 shadow-sm" : "bg-yellow-50 text-yellow-700 group-hover:bg-yellow-100"
                             }`}
                             aria-hidden="true"
                           >
@@ -966,11 +966,11 @@ export default function BookAppointmentPage() {
                             <div className="flex items-start justify-between gap-3">
                               <p className={`text-lg font-bold ${selected ? "text-slate-900" : "text-slate-800"}`}>{option.label}</p>
                               {selected ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-yellow-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
                               ) : (
-                                <span className="inline-flex shrink-0 rounded-full border border-sky-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                                <span className="inline-flex shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
                                   Choose
                                 </span>
                               )}
@@ -983,13 +983,13 @@ export default function BookAppointmentPage() {
                   })}
                 </div>
                 {formData.type === "Clinic" ? (
-                  <div className="mt-8 rounded-2xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-sm">
+                  <div className="mt-8 rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-700">Which clinic and schedule is most convenient for you?</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700">Which clinic and schedule is most convenient for you?</p>
                         <p className="mt-1 text-sm text-slate-600">Select the clinic location that matches your visit.</p>
                       </div>
-                      <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                      <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
                         Required
                       </span>
                     </div>
@@ -1002,7 +1002,7 @@ export default function BookAppointmentPage() {
                         id="clinicId"
                         value={formData.clinicId}
                         onChange={(event) => updateForm("clinicId", event.target.value)}
-                        className="w-full cursor-pointer rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200"
+                        className="w-full cursor-pointer rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200"
                       >
                         {BOOKING_CLINICS.map((clinic) => (
                           <option key={clinic.value} value={clinic.value}>
@@ -1012,21 +1012,21 @@ export default function BookAppointmentPage() {
                       </select>
                     </div>
 
-                    <div className="mt-4 rounded-[1.25rem] border border-sky-100 bg-sky-50/60 px-4 py-3 text-sm text-slate-600">
+                    <div className="mt-4 rounded-[1.25rem] border border-yellow-100 bg-yellow-50/60 px-4 py-3 text-sm text-slate-600">
                       <p className="font-semibold text-slate-700">{selectedClinic.label}</p>
                       <p className="mt-2 text-slate-500">{selectedClinic.note}</p>
                     </div>
                   </div>
                 ) : null}
-                <div className="mt-8 rounded-2xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-sm">
+                <div className="mt-8 rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-700">Type of Service</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700">Type of Service</p>
                       <p className="mt-1 text-sm text-slate-600">
                         Choose the main service for this {formData.type === "Online" ? "online consultation" : "clinic visit"}.
                       </p>
                     </div>
-                    <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                    <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
                       Required
                     </span>
                   </div>
@@ -1042,8 +1042,8 @@ export default function BookAppointmentPage() {
                           aria-pressed={selected}
                           className={`rounded-2xl border px-4 py-3 text-left transition ${
                             selected
-                              ? "border-sky-500 bg-sky-50 shadow-[0_12px_24px_rgba(14,165,233,0.12)] ring-2 ring-sky-100"
-                              : "border-sky-100 bg-white hover:border-sky-300 hover:bg-sky-50/70"
+                              ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_24px_rgba(133,77,14,0.12)] ring-2 ring-yellow-100"
+                              : "border-yellow-100 bg-white hover:border-yellow-300 hover:bg-yellow-50/70"
                           }`}
                         >
                           <p className="text-sm font-bold text-slate-900">{service}</p>
@@ -1060,7 +1060,7 @@ export default function BookAppointmentPage() {
                       type="text" 
                       value={effectivePatientName} 
                       onChange={(e) => updateForm("patientName", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200" 
+                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
                       placeholder="e.g., Juan Dela Cruz" 
                       autoComplete="name" 
                     />
@@ -1072,7 +1072,7 @@ export default function BookAppointmentPage() {
                       type="email" 
                       value={effectivePatientEmail} 
                       onChange={(e) => updateForm("email", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200" 
+                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
                       placeholder="juan@email.com" 
                       autoComplete="email" 
                     />
@@ -1084,7 +1084,7 @@ export default function BookAppointmentPage() {
                       type="tel" 
                       value={effectivePatientPhone} 
                       onChange={(e) => updateForm("phone", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200" 
+                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
                       placeholder="+63 912 345 6789" 
                       autoComplete="tel" 
                     />
@@ -1098,7 +1098,7 @@ export default function BookAppointmentPage() {
                       type="text" 
                       value={formData.reason} 
                       onChange={(e) => updateForm("reason", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200" 
+                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
                       placeholder={formData.type === "Online" ? "e.g., headache, cough, medication concern" : "e.g., Follow-up checkup, Dental cleaning, Consultation"} 
                     />
                   </div>
@@ -1110,7 +1110,7 @@ export default function BookAppointmentPage() {
                           id="symptoms"
                           value={formData.symptoms}
                           onChange={(e) => updateForm("symptoms", e.target.value)}
-                          className="min-h-28 w-full rounded-[1.2rem] border border-sky-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-400 focus:bg-sky-50/30 focus:ring-4 focus:ring-sky-200"
+                          className="min-h-28 w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200"
                           placeholder="Share symptoms, duration, medications taken, temperature, blood pressure, or anything the doctor should review before the session."
                         />
                       </div>
@@ -1124,7 +1124,7 @@ export default function BookAppointmentPage() {
                           accept="image/*,.pdf,.doc,.docx"
                           multiple
                           onChange={handleConcernFilesSelected}
-                          className="w-full rounded-[1.2rem] border border-dashed border-sky-200 bg-sky-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-200"
+                          className="w-full rounded-[1.2rem] border border-dashed border-yellow-200 bg-yellow-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-4 focus:ring-yellow-200"
                         />
                         {uploadedConcernFiles.some((file) => isPreviewableImage(file)) ? (
                           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1132,9 +1132,9 @@ export default function BookAppointmentPage() {
                               isPreviewableImage(file) ? (
                                 <div
                                   key={`${file.file_name}-preview-${index}`}
-                                  className="overflow-hidden rounded-[1.1rem] border border-sky-200 bg-white shadow-sm"
+                                  className="overflow-hidden rounded-[1.1rem] border border-yellow-200 bg-white shadow-sm"
                                 >
-                                  <div className="aspect-[4/3] bg-sky-50">
+                                  <div className="aspect-[4/3] bg-yellow-50">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                       src={file.file_url}
@@ -1149,7 +1149,7 @@ export default function BookAppointmentPage() {
                                     <button
                                       type="button"
                                       onClick={() => removeConcernFile(index)}
-                                      className="shrink-0 rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                                      className="shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
                                     >
                                       Remove
                                     </button>
@@ -1166,7 +1166,7 @@ export default function BookAppointmentPage() {
                                 key={`${file.file_name}-${index}`}
                                 type="button"
                                 onClick={() => removeConcernFile(index)}
-                                className="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                                className="rounded-full border border-yellow-200 bg-white px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
                               >
                                 {file.file_name} ×
                               </button>
@@ -1187,10 +1187,10 @@ export default function BookAppointmentPage() {
             <>
               <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_24rem]">
                 <div className="space-y-5">
-                  <div className="rounded-4xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fef9_100%)] p-4 shadow-[0_20px_45px_rgba(14,165,233,0.08)] sm:p-6">
+                  <div className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] p-4 shadow-[0_20px_45px_rgba(133,77,14,0.08)] sm:p-6">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-600">Step 3 of 4</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 3 of 4</p>
                         <h2 className="mt-2 text-xl font-bold text-slate-900">Select Date & Time</h2>
                         <p className="mt-1 text-sm text-slate-600">Choose your preferred appointment date and time slot</p>
                       </div>
@@ -1201,17 +1201,17 @@ export default function BookAppointmentPage() {
                             updateForm("date", nextAvailableSlot.date);
                             updateForm("start", nextAvailableSlot.slot.start);
                           }}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100"
                         >
-                          <FaBolt className="h-3 w-3 text-amber-500" aria-hidden="true" />
+                          <FaBolt className="h-3 w-3 text-yellow-400" aria-hidden="true" />
                           Next: {formatDisplayDate(nextAvailableSlot.date)} {formatRange(nextAvailableSlot.slot.start, nextAvailableSlot.slot.end)}
                         </button>
                       ) : null}
                     </div>
 
-                    <div className="mt-6 rounded-[1.75rem] border border-sky-100 bg-[linear-gradient(180deg,#f8fbff_0%,#eaf5ff_100%)] p-5">
+                    <div className="mt-6 rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#fffbeb_0%,#fef3c7_100%)] p-5">
                       <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Calendar Selection</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Calendar Selection</p>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -1220,14 +1220,14 @@ export default function BookAppointmentPage() {
                               return candidate < today ? today : candidate;
                             })}
                             disabled={calendarWeekStart <= today}
-                            className="rounded-full border border-sky-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
+                            className="rounded-full border border-yellow-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
                           >
                             ← Previous
                           </button>
                           <button
                             type="button"
                             onClick={() => setVisibleWeekStart(addDays(calendarWeekStart, 7))}
-                            className="rounded-full border border-sky-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
+                            className="rounded-full border border-yellow-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50"
                           >
                             Next →
                           </button>
@@ -1252,14 +1252,14 @@ export default function BookAppointmentPage() {
                               aria-pressed={isSelected}
                               className={`relative rounded-xl border px-2.5 py-2.5 text-center transition ${
                                   isSelected
-                                    ? "border-sky-500 bg-sky-600 text-white shadow-[0_10px_22px_rgba(14,165,233,0.22)]"
+                                    ? "border-yellow-300 bg-yellow-400 text-white shadow-[0_10px_22px_rgba(133,77,14,0.22)]"
                                     : isPast
                                     ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400"
-                                    : "border-sky-100 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/70"
+                                    : "border-yellow-100 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50/70"
                                 }`}
                             >
                                 {isToday && !isSelected ? (
-                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-sky-500" aria-hidden="true" />
+                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-yellow-300" aria-hidden="true" />
                                 ) : null}
                               <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-white/90" : "text-slate-500"}`}>
                                 {dayLabel}
@@ -1275,7 +1275,7 @@ export default function BookAppointmentPage() {
                         })}
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-sky-100">
+                      <div className="mt-4 pt-4 border-t border-yellow-100">
                         <label htmlFor="datepicker" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Or pick a specific date</label>
                         <input 
                           id="datepicker"
@@ -1283,13 +1283,13 @@ export default function BookAppointmentPage() {
                           value={formData.date}
                           min={today}
                           onChange={(e) => updateForm("date", e.target.value)}
-                          className="w-full cursor-pointer rounded-[1.1rem] border border-sky-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-200 sm:w-auto"
+                          className="w-full cursor-pointer rounded-[1.1rem] border border-yellow-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-4 focus:ring-yellow-200 sm:w-auto"
                         />
                       </div>
                     </div>
 
                     {blockedReason ? (
-                      <div className="mt-5 rounded-[1.4rem] border border-sky-200 bg-sky-50 px-4 py-3.5 text-sm text-sky-700 shadow-sm font-medium">
+                      <div className="mt-5 rounded-[1.4rem] border border-yellow-200 bg-yellow-50 px-4 py-3.5 text-sm text-yellow-700 shadow-sm font-medium">
                         {blockedReason}
                       </div>
                     ) : null}
@@ -1304,39 +1304,39 @@ export default function BookAppointmentPage() {
                   />
                 </div>
 
-                <div className="rounded-4xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fef9_100%)] p-4 shadow-[0_20px_45px_rgba(14,165,233,0.08)] h-fit sm:p-5 lg:sticky lg:top-24">
-                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+                <div className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] p-4 shadow-[0_20px_45px_rgba(133,77,14,0.08)] h-fit sm:p-5 lg:sticky lg:top-24">
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-yellow-700">
                     <FaClipboardList className="h-3 w-3" aria-hidden="true" />
                     Booking Summary
                   </p>
                   
-                  <div className="mt-4 rounded-3xl border border-sky-200 bg-[linear-gradient(180deg,#f8fbff_0%,#eaf5ff_100%)] p-4.5 shadow-sm">
+                  <div className="mt-4 rounded-3xl border border-yellow-200 bg-[linear-gradient(180deg,#fffbeb_0%,#fef3c7_100%)] p-4.5 shadow-sm">
                     <div className="space-y-3">
                       <SummaryRow label="Visit Type" value={<VisitTypeValue type={formData.type} />} done />
                       <SummaryRow label="Doctor" value={selectedDoctor?.name ?? "-"} done />
-                      <div className="h-px bg-linear-to-r from-sky-200 to-transparent my-2" />
+                      <div className="h-px bg-linear-to-r from-yellow-200 to-transparent my-2" />
                       <SummaryRow label="Date" value={formatDisplayDate(formData.date)} done={!!formData.date} />
                       <SummaryRow label="Time" value={selectedSlot ? formatRange(selectedSlot.start, selectedSlot.end) : "Choose a slot"} done={!!selectedSlot} />
                       <SummaryRow label="Duration" value={selectedSlot ? selectedSlotDuration : "-"} done={!!selectedSlot} />
-                      <div className="h-px bg-linear-to-r from-sky-200 to-transparent my-2" />
+                      <div className="h-px bg-linear-to-r from-yellow-200 to-transparent my-2" />
                       <SummaryRow label="Queue #" value={selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "—"} done={!!selectedSlot} />
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-3xl border-2 border-sky-500 bg-[linear-gradient(180deg,#f8fbff_0%,#eaf5ff_100%)] px-4 py-4 shadow-md">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-700">Fee</p>
-                    <p className="mt-2.5 text-3xl font-black text-sky-900">
+                  <div className="mt-4 rounded-3xl border-2 border-yellow-300 bg-[linear-gradient(180deg,#fffbeb_0%,#fef3c7_100%)] px-4 py-4 shadow-md">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-yellow-700">Fee</p>
+                    <p className="mt-2.5 text-3xl font-black text-yellow-800">
                       {selectedVisitFeeLabel}
                     </p>
                   </div>
 
                   {formData.type === "Online" ? (
-                    <div className="mt-4 rounded-[1.4rem] border border-sky-200 bg-sky-50 px-3.5 py-3.5 text-xs">
-                      <p className="inline-flex items-center gap-1.5 font-semibold text-sky-900">
+                    <div className="mt-4 rounded-[1.4rem] border border-yellow-200 bg-yellow-50 px-3.5 py-3.5 text-xs">
+                      <p className="inline-flex items-center gap-1.5 font-semibold text-yellow-800">
                         <FaCreditCard className="h-3 w-3" aria-hidden="true" />
                         Payment Info
                       </p>
-                      <p className="mt-1.5 text-sky-800">Online consultations require payment first. You&apos;ll choose QR, card, or bank transfer on the review step.</p>
+                      <p className="mt-1.5 text-yellow-700">Online consultations require payment first. You&apos;ll choose QR, card, or bank transfer on the review step.</p>
                     </div>
                   ) : null}
 
@@ -1348,29 +1348,29 @@ export default function BookAppointmentPage() {
           ) : null}
 
           {activeStep === 4 ? (
-            <section className="rounded-4xl border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fef9_100%)] p-4 shadow-[0_22px_48px_rgba(14,165,233,0.08)] sm:p-6">
+            <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] p-4 shadow-[0_22px_48px_rgba(133,77,14,0.08)] sm:p-6">
               {requiresAuthForReview ? (
-                <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-sky-300 bg-[linear-gradient(180deg,#f0f9ff_0%,#e0f2fe_100%)] p-6 shadow-sm sm:p-8">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">Step 4 of 4</p>
+                <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-yellow-300 bg-[linear-gradient(180deg,#fffbeb_0%,#fde68a_100%)] p-6 shadow-sm sm:p-8">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 4 of 4</p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">Please sign in to continue</h2>
                   <p className="mt-2 text-sm text-slate-600">
                     Sign in or create an account to review and complete your appointment booking.
                   </p>
 
-                  <div className="mt-6 rounded-[1.4rem] border border-sky-200 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
+                  <div className="mt-6 rounded-[1.4rem] border border-yellow-200 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
                     You can keep your selected service, date, and time. You only need to sign in or sign up before the final confirmation.
                   </div>
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <Link
                       href={`/login?next=${encodeURIComponent(`${pathname}#booking`)}`}
-                      className="flex-1 rounded-full bg-sky-600 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-sky-700"
+                      className="flex-1 rounded-full bg-yellow-400 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-yellow-400"
                     >
                       Sign In
                     </Link>
                     <Link
                       href={`/register?next=${encodeURIComponent(`${pathname}#booking`)}`}
-                      className="flex-1 rounded-full border border-sky-300 bg-white px-5 py-3 text-center text-sm font-semibold text-sky-700 transition hover:bg-sky-50"
+                      className="flex-1 rounded-full border border-yellow-300 bg-white px-5 py-3 text-center text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50"
                     >
                       Sign Up
                     </Link>
@@ -1378,16 +1378,16 @@ export default function BookAppointmentPage() {
                 </div>
               ) : (
                 <>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-600">Step 4 of 4</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 4 of 4</p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">
                     {formData.type === "Online" ? "Review & Proceed to Payment" : "Review & Confirm"}
                   </h2>
                   <p className="mt-2 text-sm text-slate-600">Please review your appointment details before confirming</p>
 
                   <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-                    <div className="space-y-4 rounded-[1.75rem] border border-sky-100 bg-[linear-gradient(180deg,#f0f9ff_0%,#e0f2fe_100%)] p-5 shadow-sm sm:p-6">
+                    <div className="space-y-4 rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#fffbeb_0%,#fde68a_100%)] p-5 shadow-sm sm:p-6">
                       <div>
-                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 mb-3">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">
                           <FaClipboardList className="h-3 w-3" aria-hidden="true" />
                           Appointment Details
                         </p>
@@ -1397,7 +1397,7 @@ export default function BookAppointmentPage() {
                           {formData.type === "Clinic" ? <SummaryRow label="Clinic" value={selectedClinic.label} done={!!formData.clinicId} /> : null}
                           <SummaryRow label="Service" value={formData.service} done={!!formData.service} />
                           <SummaryRow label="Doctor" value={selectedDoctor?.name ?? "-"} done />
-                          <div className="h-px bg-linear-to-r from-sky-200 to-transparent" />
+                          <div className="h-px bg-linear-to-r from-yellow-200 to-transparent" />
                           <SummaryRow label="Date" value={formatDisplayDate(formData.date)} done={datePicked} />
                           <SummaryRow label="Time" value={selectedSlot ? formatRange(selectedSlot.start, selectedSlot.end) : "-"} done={step3Valid} />
                           <SummaryRow label="Duration" value={selectedSlot ? selectedSlotDuration : "-"} done={step3Valid} />
@@ -1405,8 +1405,8 @@ export default function BookAppointmentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-sky-200">
-                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 mb-3">
+                      <div className="pt-2 border-t border-yellow-200">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">
                           <FaUser className="h-3 w-3" aria-hidden="true" />
                           Patient Information
                         </p>
@@ -1424,8 +1424,8 @@ export default function BookAppointmentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-sky-200">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700 mb-3">Payment Info</p>
+                      <div className="pt-2 border-t border-yellow-200">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">Payment Info</p>
                         <SummaryRow
                           label="Fee"
                           value={selectedVisitFeeLabel}
@@ -1448,8 +1448,8 @@ export default function BookAppointmentPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-[1.75rem] border-2 border-sky-500 bg-[linear-gradient(180deg,#ffffff_0%,#f7fef9_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
-                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                    <div className="rounded-[1.75rem] border-2 border-yellow-300 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
+                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">
                         {formData.type === "Online" ? (
                           <>
                             <FaCreditCard className="h-3 w-3" aria-hidden="true" />
@@ -1462,7 +1462,7 @@ export default function BookAppointmentPage() {
                           </>
                         )}
                       </p>
-                      <p className="mt-4 text-3xl font-black text-sky-900">
+                      <p className="mt-4 text-3xl font-black text-yellow-800">
                         {formData.type === "Online"
                           ? "Pay Now"
                           : `Queue ${selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"}`}
@@ -1475,18 +1475,18 @@ export default function BookAppointmentPage() {
                             : "Select a time slot first"}
                       </p>
 
-                      <div className="mt-5 rounded-[1.4rem] border-2 border-sky-300 bg-sky-50 px-4 py-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">Fee</p>
-                        <p className="mt-2.5 text-3xl font-black text-sky-900">
+                      <div className="mt-5 rounded-[1.4rem] border-2 border-yellow-300 bg-yellow-50 px-4 py-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-yellow-700">Fee</p>
+                        <p className="mt-2.5 text-3xl font-black text-yellow-800">
                           {selectedVisitFeeLabel}
                         </p>
                       </div>
 
                       {formData.type === "Online" ? (
-                        <div className="mt-4 space-y-3 rounded-[1.4rem] border border-sky-200 bg-linear-to-b from-sky-50 to-white px-4 py-4">
+                        <div className="mt-4 space-y-3 rounded-[1.4rem] border border-yellow-200 bg-linear-to-b from-yellow-50 to-white px-4 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm">
-                            <span className="font-semibold text-sky-900">Choose Payment Method</span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-700 shadow-sm border border-sky-200">
+                            <span className="font-semibold text-yellow-800">Choose Payment Method</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-yellow-700 shadow-sm border border-yellow-200">
                               <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
                               Secure · PayMongo
                             </span>
@@ -1525,11 +1525,11 @@ export default function BookAppointmentPage() {
                                       <div className="flex flex-wrap items-center gap-2">
                                         <p className="text-sm font-bold text-slate-900">{option.label}</p>
                                         {!isAvailable ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 border border-amber-200">
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-yellow-700 border border-yellow-200">
                                             Not yet available
                                           </span>
                                           ) : isSelected ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                                             <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
                                             Selected
                                           </span>
@@ -1588,17 +1588,17 @@ export default function BookAppointmentPage() {
                   </div>
 
                   {!requiresAuthForReview && !accessToken && (
-                    <div className="rounded-[1.4rem] border border-sky-300 bg-sky-50 px-4 py-4">
-                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 mb-3">
+                    <div className="rounded-[1.4rem] border border-yellow-300 bg-yellow-50 px-4 py-4">
+                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-yellow-700 mb-3">
                         <FaLock className="h-3.5 w-3.5" aria-hidden="true" />
                         Sign In Required
                       </p>
-                      <p className="text-sm text-sky-700 mb-4">You must sign in or create an account to complete your booking.</p>
+                      <p className="text-sm text-yellow-700 mb-4">You must sign in or create an account to complete your booking.</p>
                       <div className="flex gap-3 flex-col sm:flex-row">
-                        <Link href={`/login?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full bg-sky-600 text-white px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-sky-700">
+                        <Link href={`/login?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full bg-yellow-400 text-white px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-yellow-400">
                           Sign In
                         </Link>
-                        <Link href={`/register?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full border border-sky-300 bg-white text-sky-700 px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-sky-50">
+                        <Link href={`/register?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full border border-yellow-300 bg-white text-yellow-700 px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-yellow-50">
                           Create Account
                         </Link>
                       </div>
@@ -1607,17 +1607,17 @@ export default function BookAppointmentPage() {
                 </>
               )}
 
-              <div className="mt-6 flex flex-col gap-3 border-t border-sky-100 pt-5 sm:flex-row sm:items-center">
-                <button type="button" onClick={goBack} className="order-2 inline-flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 sm:order-1">
+              <div className="mt-6 flex flex-col gap-3 border-t border-yellow-100 pt-5 sm:flex-row sm:items-center">
+                <button type="button" onClick={goBack} className="order-2 inline-flex items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 sm:order-1">
                   <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
                   Back
                 </button>
                 <div className="order-1 flex flex-1 flex-col gap-3 sm:order-2 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => { setFormData({ ...INITIAL_FORM, doctorId: formData.doctorId, type: formData.type }); setFeedback(null); setActiveStep(1); setVisibleWeekStart(today); }} className="inline-flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50">
+                  <button type="button" onClick={() => { setFormData({ ...INITIAL_FORM, doctorId: formData.doctorId, type: formData.type }); setFeedback(null); setActiveStep(1); setVisibleWeekStart(today); }} className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50">
                     <FaArrowRotateLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     Start Over
                   </button>
-                  <button type="submit" disabled={isLoading || isSubmitting || !step4Done || !accessToken} className="rounded-full bg-[linear-gradient(135deg,#0ea5e9,#38bdf8)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(14,165,233,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(14,165,233,0.28)] disabled:cursor-not-allowed disabled:opacity-60">
+                  <button type="submit" disabled={isLoading || isSubmitting || !step4Done || !accessToken} className="rounded-full bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(133,77,14,0.28)] disabled:cursor-not-allowed disabled:opacity-60">
                     {isSubmitting ? "Processing..." : formData.type === "Online" ? "Proceed to Payment" : "Confirm Appointment"}
                   </button>
                 </div>
@@ -1659,7 +1659,7 @@ function HorizontalBookingStepper({
               <Fragment key={label}>
                 {i > 0 ? (
                   <div
-                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? "bg-sky-400" : "bg-sky-100"} sm:block`}
+                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? "bg-yellow-400" : "bg-yellow-100"} sm:block`}
                     aria-hidden
                   />
                 ) : null}
@@ -1668,12 +1668,12 @@ function HorizontalBookingStepper({
                     type="button"
                     onClick={() => onStepClick(step)}
                     title={`Step ${step}: ${label}`}
-                    className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 ${
+                    className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 ${
                       isCurrent
-                        ? "bg-[linear-gradient(135deg,#0ea5e9,#38bdf8)] text-white shadow-[0_12px_24px_rgba(14,165,233,0.24)]"
+                        ? "bg-[linear-gradient(135deg,#854D0E,#A16207)] text-white shadow-[0_12px_24px_rgba(133,77,14,0.24)]"
                         : isComplete
-                        ? "bg-sky-500 text-white shadow-sm"
-                        : "bg-sky-50 text-sky-600"
+                        ? "bg-yellow-300 text-white shadow-sm"
+                        : "bg-yellow-50 text-yellow-700 ring-2 ring-yellow-200"
                     }`}
                   >
                     {isComplete ? (
@@ -1713,12 +1713,12 @@ function WizardNav({
   return (
     <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${showBack ? "sm:justify-between" : "sm:justify-end"}`}>
       {showBack ? (
-        <button type="button" onClick={onBack} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 sm:w-auto">
+        <button type="button" onClick={onBack} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 sm:w-auto">
           <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
           Back
         </button>
       ) : null}
-      <button type="button" onClick={onNext} disabled={nextDisabled} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#0ea5e9,#38bdf8)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(14,165,233,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(14,165,233,0.28)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+      <button type="button" onClick={onNext} disabled={nextDisabled} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(133,77,14,0.28)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
         {nextLabel}
         <FaArrowRight className="h-3 w-3" aria-hidden="true" />
       </button>
@@ -1758,11 +1758,11 @@ function HeaderStat({ label, value, highlight }: { label: string; value: number;
     <div
       className={`min-w-0 rounded-xl border px-3.5 py-2.5 transition ${
         highlight
-          ? "border-sky-300 bg-sky-50"
-          : "border-sky-100 bg-white"
+          ? "border-yellow-300 bg-yellow-50"
+          : "border-yellow-100 bg-white"
       }`}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-black leading-none ${highlight ? "text-sky-700" : "text-slate-900"}`}>{value}</p>
+      <p className={`mt-1 text-2xl font-black leading-none ${highlight ? "text-yellow-700" : "text-slate-900"}`}>{value}</p>
     </div>
   );
 }
@@ -1772,7 +1772,7 @@ function HeaderStat({ label, value, highlight }: { label: string; value: number;
 // sign up. The actual booking still gates payment behind sign-in (Step 4).
 function MarketingChip({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-sky-100 bg-white px-3.5 py-2 text-center">
+    <div className="rounded-xl border border-yellow-100 bg-white px-3.5 py-2 text-center">
       <p className="text-[11px] font-semibold text-slate-700">{label}</p>
     </div>
   );

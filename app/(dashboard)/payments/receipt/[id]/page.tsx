@@ -212,11 +212,11 @@ export default function ReceiptPage() {
   }
 
   if (loading) {
-    return <div className="rounded-2xl border border-sky-100 bg-white p-6 text-sm text-slate-500">Loading receipt...</div>;
+    return <div className="rounded-2xl border border-yellow-100 bg-white p-6 text-sm text-slate-500">Loading receipt...</div>;
   }
 
   if (error || !billing) {
-    return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error ?? "Receipt not found."}</div>;
+    return <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6 text-sm text-yellow-700">{error ?? "Receipt not found."}</div>;
   }
 
   const paidPayment = billing.payments.find((payment) => payment.status === "Paid") ?? null;
@@ -280,7 +280,7 @@ export default function ReceiptPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/payments/history"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50"
           >
             Back to History
           </Link>
@@ -288,7 +288,7 @@ export default function ReceiptPage() {
             <button
               type="button"
               onClick={beginEditClinic}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
             >
               <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
               Edit Clinic Header
@@ -297,7 +297,7 @@ export default function ReceiptPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700"
+            className="rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400"
           >
             Print Receipt
           </button>
@@ -309,13 +309,13 @@ export default function ReceiptPage() {
           <button
             type="button"
             aria-label="Close clinic header editor"
-            className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={closeEditClinic}
           />
-          <div className="relative z-10 w-full max-w-lg rounded-3xl border border-sky-200 bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
+          <div className="relative z-10 w-full max-w-lg rounded-3xl border border-yellow-200 bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-sky-700">Edit Clinic Header</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-yellow-700">Edit Clinic Header</p>
                 <h2 className="mt-1 text-lg font-bold text-slate-900">Popup editor for the receipt header</h2>
                 <p className="mt-1 text-sm text-slate-500">Update the name, phone, email, and address shown on every receipt.</p>
               </div>
@@ -335,7 +335,7 @@ export default function ReceiptPage() {
                   value={clinicDraft.name}
                   onChange={(e) => setClinicDraft((c) => ({ ...c, name: e.target.value }))}
                   placeholder="Doc Kulot Clinic"
-                  className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                  className="rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -344,7 +344,7 @@ export default function ReceiptPage() {
                   value={clinicDraft.phone}
                   onChange={(e) => setClinicDraft((c) => ({ ...c, phone: e.target.value }))}
                   placeholder="+1 (555) 123-4567"
-                  className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                  className="rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -354,7 +354,7 @@ export default function ReceiptPage() {
                   onChange={(e) => setClinicDraft((c) => ({ ...c, email: e.target.value }))}
                   placeholder="admin@dockulot.clinic"
                   type="email"
-                  className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                  className="rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -364,7 +364,7 @@ export default function ReceiptPage() {
                   onChange={(e) => setClinicDraft((c) => ({ ...c, address: e.target.value }))}
                   placeholder="123 Medical Avenue, Quezon City"
                   rows={2}
-                  className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
+                  className="rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 />
               </label>
             </div>
@@ -383,7 +383,7 @@ export default function ReceiptPage() {
                 type="button"
                 onClick={saveClinic}
                 disabled={isSavingClinic}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                 {isSavingClinic ? "Saving…" : "Save"}
@@ -397,7 +397,7 @@ export default function ReceiptPage() {
       ) : null}
 
       {clinicFeedback ? (
-        <div className="mx-auto max-w-md rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-center text-xs font-semibold text-sky-800 print:hidden">
+        <div className="mx-auto max-w-md rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-center text-xs font-semibold text-yellow-700 print:hidden">
           {clinicFeedback}
         </div>
       ) : null}
@@ -520,13 +520,13 @@ export default function ReceiptPage() {
 
         {/* VOIDED stamp — overlays for voided bills. */}
         {billing.status === "Void" ? (
-          <div className="mt-3 border-2 border-dashed border-red-400 bg-red-50/60 px-3 py-2 text-center">
-            <p className="text-lg font-black uppercase tracking-[0.32em] text-red-700">VOIDED</p>
+          <div className="mt-3 border-2 border-dashed border-yellow-400 bg-yellow-50/60 px-3 py-2 text-center">
+            <p className="text-lg font-black uppercase tracking-[0.32em] text-yellow-700">VOIDED</p>
             {billing.void_reason ? (
-              <p className="mt-1 text-[10px] uppercase text-red-700">Reason: {billing.void_reason}</p>
+              <p className="mt-1 text-[10px] uppercase text-yellow-700">Reason: {billing.void_reason}</p>
             ) : null}
             {billing.voided_at ? (
-              <p className="mt-0.5 text-[10px] text-red-600">{formatThermalDate(billing.voided_at)}</p>
+              <p className="mt-0.5 text-[10px] text-yellow-600">{formatThermalDate(billing.voided_at)}</p>
             ) : null}
           </div>
         ) : null}

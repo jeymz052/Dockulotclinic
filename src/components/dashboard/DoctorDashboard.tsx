@@ -93,22 +93,22 @@ export default function DoctorDashboard() {
       </div>
 
       {nextInQueue ? (
-        <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-sky-200 bg-linear-to-br from-sky-50/80 via-sky-50/40 to-sky-50/20 p-8 shadow-[0_28px_54px_rgba(14,165,233,0.18)] animate-pop-in transition hover:-translate-y-1">
-          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-sky-300/25 to-sky-200/15 blur-3xl" />
-          <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-sky-200/20 to-sky-100/10 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-yellow-200 bg-linear-to-br from-amber-50/80 via-amber-50/40 to-amber-50/20 p-8 shadow-[0_28px_54px_rgba(133,77,14,0.18)] animate-pop-in transition hover:-translate-y-1">
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-yellow-300/25 to-amber-200/15 blur-3xl" />
+          <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-amber-200/20 to-amber-100/10 blur-3xl" />
           <div className="relative">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-4 py-2 mb-4">
-                  <span className="h-3 w-3 rounded-full bg-red-600 animate-pulse" />
-                  <span className="text-xs font-bold text-sky-700">NEXT IN QUEUE</span>
+                <div className="inline-flex items-center gap-2 rounded-full bg-yellow-100 px-4 py-2 mb-4">
+                  <span className="h-3 w-3 rounded-full bg-yellow-600 animate-pulse" />
+                  <span className="text-xs font-bold text-yellow-700">NEXT IN QUEUE</span>
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-slate-900 mt-3">
                   {nextInQueue.patientName}
                 </h2>
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 font-bold text-yellow-700">
                       #{nextInQueue.queueNumber}
                     </div>
                     <div>
@@ -117,8 +117,8 @@ export default function DoctorDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-lg">
-                      {nextInQueue.type === "Online" ? <FaVideo className="text-sm text-sky-700" /> : <FaHospital className="text-sm text-sky-700" />}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 text-lg">
+                      {nextInQueue.type === "Online" ? <FaVideo className="text-sm text-yellow-700" /> : <FaHospital className="text-sm text-yellow-700" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{nextInQueue.start} · {nextInQueue.type}</p>
@@ -141,7 +141,7 @@ export default function DoctorDashboard() {
                     href={nextInQueue.meetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-600 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(14,165,233,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(14,165,233,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-yellow-400 to-yellow-400 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(133,77,14,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(133,77,14,0.4)]"
                   >
                     <FaVideo />
                     Join meeting
@@ -149,7 +149,7 @@ export default function DoctorDashboard() {
                 ) : null}
                 <Link
                   href="/consultations"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-sky-300 bg-white px-6 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50 hover:shadow-[0_8px_16px_rgba(14,165,233,0.1)]"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-yellow-300 bg-white px-6 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50 hover:shadow-[0_8px_16px_rgba(133,77,14,0.1)]"
                 >
                   <FaClipboardList />
                   Open Notes
@@ -173,9 +173,9 @@ export default function DoctorDashboard() {
             ))}
           </div>
         ) : todayQueue.length === 0 ? (
-          <div className="rounded-[1.75rem] border-2 border-dashed border-sky-200 px-8 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-              <FaCalendarDays className="text-2xl text-sky-700" />
+          <div className="rounded-[1.75rem] border-2 border-dashed border-yellow-200 px-8 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
+              <FaCalendarDays className="text-2xl text-yellow-700" />
             </div>
             <p className="text-base font-semibold text-slate-900">No appointments today</p>
             <p className="mt-2 text-sm text-slate-500">The schedule is clear. Enjoy your break or catch up on notes.</p>
@@ -186,13 +186,13 @@ export default function DoctorDashboard() {
               <Link
                 key={appt.id}
                 href={`/consultations`}
-                className={`group relative overflow-hidden flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-sky-200 hover:bg-sky-50/60 hover:shadow-[0_12px_28px_rgba(14,165,233,0.12)] animate-slide-in-left stagger-${Math.min(i + 1, 8)}`}
+                className={`group relative overflow-hidden flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/60 hover:shadow-[0_12px_28px_rgba(133,77,14,0.12)] animate-slide-in-left stagger-${Math.min(i + 1, 8)}`}
               >
-                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-linear-to-br from-sky-300/10 to-sky-200/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-linear-to-br from-yellow-300/10 to-amber-200/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex min-w-0 items-center gap-4">
                   <div
                     className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold text-white ${
-                      appt.status === "Completed" ? "bg-linear-to-br from-sky-500 to-sky-600" : "bg-linear-to-br from-sky-500 to-sky-600"
+                      appt.status === "Completed" ? "bg-linear-to-br from-yellow-300 to-yellow-400" : "bg-linear-to-br from-yellow-300 to-yellow-400"
                     }`}
                   >
                     {appt.queueNumber}
@@ -233,10 +233,10 @@ export default function DoctorDashboard() {
               <Link
                 key={appt.id}
                 href={`/appointments`}
-                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-sky-200 hover:bg-sky-50/60 hover:shadow-[0_8px_20px_rgba(14,165,233,0.08)] animate-slide-in-left stagger-${Math.min(i + 1, 6)}`}
+                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/60 hover:shadow-[0_8px_20px_rgba(133,77,14,0.08)] animate-slide-in-left stagger-${Math.min(i + 1, 6)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-sky-500 to-blue-600 text-white font-bold">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-yellow-300 to-yellow-400 text-white font-bold">
                     {appt.queueNumber}
                   </div>
                   <div className="min-w-0">

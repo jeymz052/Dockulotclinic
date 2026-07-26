@@ -16,7 +16,7 @@ export default function AppointmentsMyRoute() {
   const { role, isLoading } = useRole();
 
   if (isLoading) {
-    return <div className="h-40 rounded-4xl border border-sky-100 bg-white animate-pulse shadow-sm" />;
+    return <div className="h-40 rounded-4xl border border-yellow-100 bg-white animate-pulse shadow-sm" />;
   }
 
   if (role === "PATIENT") {

@@ -217,12 +217,12 @@ export default function PatientPortalPage() {
   }
 
   if (authLoading || appointmentsLoading || notesLoading || isLoading) {
-    return <div className="h-72 animate-pulse rounded-[2rem] border border-sky-100 bg-white shadow-sm" />;
+    return <div className="h-72 animate-pulse rounded-[2rem] border border-yellow-100 bg-white shadow-sm" />;
   }
 
   if (role !== "PATIENT") {
     return (
-      <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-6 text-sm font-semibold text-amber-800">
+      <div className="rounded-[2rem] border border-yellow-200 bg-yellow-50 p-6 text-sm font-semibold text-yellow-700">
         Patient Portal is only available for patient accounts.
       </div>
     );
@@ -230,20 +230,20 @@ export default function PatientPortalPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_34%),linear-gradient(135deg,#f5fbff_0%,#ffffff_58%,#ecfeff_100%)] p-6 shadow-[0_24px_60px_rgba(14,165,233,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(133,77,14,0.16),transparent_34%),linear-gradient(135deg,#f5fbff_0%,#ffffff_58%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.12)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Patient Portal</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-yellow-700">Patient Portal</p>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl">
               Your secure clinic account
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
               Hi {name}. Access appointments, released medical notes, prescriptions, billing, files, and follow-up messages from one place.
             </p>
           </div>
-          <div className="rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-sm">
-            <p className="inline-flex items-center gap-2 text-sm font-bold text-slate-950">
-              <FaShieldHalved className="text-sky-600" />
+          <div className="rounded-2xl border border-yellow-100 bg-white/80 p-4 shadow-sm">
+            <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
+              <FaShieldHalved className="text-amber-400" />
               Secure login active
             </p>
             <p className="mt-1 text-xs text-slate-500">{profile?.email ?? user?.email}</p>
@@ -251,7 +251,7 @@ export default function PatientPortalPage() {
         </div>
       </section>
 
-      {feedback ? <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{feedback}</div> : null}
+      {feedback ? <div className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</div> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric href="/appointments/my" icon={<FaCalendarCheck />} label="Appointments" value={appointments.length} helper={`${upcoming.length} upcoming`} />
@@ -271,7 +271,7 @@ export default function PatientPortalPage() {
             {[...upcoming, ...history].slice(0, 4).map((appointment) => (
               <Row key={appointment.id} href={`/appointments/my?appointment=${appointment.id}`}>
                 <div>
-                  <p className="font-bold text-slate-950">{formatDisplayDate(appointment.date)} - {formatRange(appointment.start, appointment.end)}</p>
+                  <p className="font-bold text-black">{formatDisplayDate(appointment.date)} - {formatRange(appointment.start, appointment.end)}</p>
                   <p className="mt-1 text-sm text-slate-500">{getDoctorById(appointment.doctorId)?.name ?? "Assigned doctor"} - {appointment.status}</p>
                 </div>
               </Row>
@@ -289,7 +289,7 @@ export default function PatientPortalPage() {
           <p className="text-sm leading-6 text-slate-600">
             Schedule a clinic visit or online consultation from your portal account.
           </p>
-          <Link className="mt-4 inline-flex rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white" href="/appointments">
+          <Link className="mt-4 inline-flex rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white" href="/appointments">
             Book appointment
           </Link>
         </PortalSection>
@@ -299,9 +299,9 @@ export default function PatientPortalPage() {
         <PortalSection title="Diagnosis & Allowed Notes" actionHref="/consultations/history" actionLabel="Open history" icon={<FaFileLines />}>
           {latestNote ? (
             <div className="space-y-3 text-sm text-slate-700">
-              <p><span className="font-semibold text-slate-950">Diagnosis:</span> {latestNote.diagnosis || "No diagnosis recorded."}</p>
-              <p><span className="font-semibold text-slate-950">Doctor note:</span> {latestNote.note || "No note released."}</p>
-              <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700">
+              <p><span className="font-semibold text-black">Diagnosis:</span> {latestNote.diagnosis || "No diagnosis recorded."}</p>
+              <p><span className="font-semibold text-black">Doctor note:</span> {latestNote.note || "No note released."}</p>
+              <p className="rounded-xl bg-yellow-50 px-3 py-2 text-xs font-semibold text-yellow-700">
                 Only notes marked visible by your doctor are shown here.
               </p>
             </div>
@@ -312,32 +312,32 @@ export default function PatientPortalPage() {
           {latestPrescription ? (
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-bold text-slate-950">{latestPrescription.prescription_no}</p>
+                <p className="text-sm font-bold text-black">{latestPrescription.prescription_no}</p>
                 <p className="mt-1 text-sm text-slate-500">{latestPrescription.diagnoses?.diagnosis_text ?? "Released prescription"}</p>
               </div>
               {latestPrescription.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl bg-sky-50 px-3 py-2 text-sm text-slate-700">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Treatment plan</p>
+                <div className="rounded-xl bg-yellow-50 px-3 py-2 text-sm text-slate-700">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Treatment plan</p>
                   <p className="mt-1">{latestPrescription.diagnoses.treatment_plan}</p>
                 </div>
               ) : null}
               {latestPrescription.follow_up_date ? (
                 <p className="text-sm text-slate-600">
-                  <span className="font-semibold text-slate-950">Follow-up date:</span>{" "}
+                  <span className="font-semibold text-black">Follow-up date:</span>{" "}
                   {dateTime(latestPrescription.follow_up_date)}
                 </p>
               ) : null}
               {latestPrescription.general_instructions ? (
                 <p className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-600">
-                  <span className="font-semibold text-slate-950">Instructions:</span>{" "}
+                  <span className="font-semibold text-black">Instructions:</span>{" "}
                   {latestPrescription.general_instructions}
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-sky-200 px-4 py-2 text-xs font-bold text-sky-700">
+                <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-yellow-200 px-4 py-2 text-xs font-bold text-yellow-700">
                   <FaDownload /> Download PDF
                 </button>
-                <button onClick={() => printPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white">
+                <button onClick={() => printPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-white">
                   <FaPrint /> Print
                 </button>
               </div>
@@ -350,7 +350,7 @@ export default function PatientPortalPage() {
         <PortalSection title="Billing History" actionHref="/payments/history" actionLabel="View bills" icon={<FaCreditCard />}>
           {latestBilling ? (
             <div>
-              <p className="text-sm font-bold text-slate-950">{money(Number(latestBilling.total))}</p>
+              <p className="text-sm font-bold text-black">{money(Number(latestBilling.total))}</p>
               <p className="mt-1 text-sm text-slate-500">{latestBilling.status} - {dateTime(latestBilling.issued_at ?? latestBilling.created_at)}</p>
             </div>
           ) : <Empty text="No billing records yet." />}
@@ -358,8 +358,8 @@ export default function PatientPortalPage() {
 
         <PortalSection title="Medical Files" actionHref="/profile/files" actionLabel="Open files" icon={<FaFileMedical />}>
           {latestFile ? (
-            <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-slate-200 p-4 transition hover:bg-sky-50">
-              <p className="text-sm font-bold text-slate-950">{latestFile.file_name}</p>
+            <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-slate-200 p-4 transition hover:bg-yellow-50">
+              <p className="text-sm font-bold text-black">{latestFile.file_name}</p>
               <p className="mt-1 text-sm text-slate-500">{latestFile.file_type || "Medical document"} - {dateTime(latestFile.created_at)}</p>
             </a>
           ) : <Empty text="No released medical files yet." />}
@@ -368,13 +368,13 @@ export default function PatientPortalPage() {
         <PortalSection title="Follow-up Inquiry" actionHref="/profile/inquiries" actionLabel="Send message" icon={<FaRegMessage />}>
           {portalData.inquiries[0] ? (
             <div>
-              <p className="text-sm font-bold text-slate-950">{portalData.inquiries[0].status}</p>
+              <p className="text-sm font-bold text-black">{portalData.inquiries[0].status}</p>
               <p className="mt-1 line-clamp-2 text-sm text-slate-500">{portalData.inquiries[0].message}</p>
             </div>
           ) : (
             <div>
               <Empty text="No follow-up inquiries yet." />
-              <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-sky-200 px-4 py-2 text-xs font-bold text-sky-700">
+              <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-yellow-200 px-4 py-2 text-xs font-bold text-yellow-700">
                 <FaPaperPlane /> Ask a question
               </Link>
             </div>
@@ -383,8 +383,8 @@ export default function PatientPortalPage() {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="inline-flex items-center gap-2 text-sm font-bold text-slate-950">
-          <FaLock className="text-sky-600" />
+        <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
+          <FaLock className="text-amber-400" />
           Medical-note privacy
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -397,12 +397,12 @@ export default function PatientPortalPage() {
 
 function Metric({ href, icon, label, value, helper }: { href: string; icon: ReactNode; label: string; value: number; helper: string }) {
   return (
-    <Link href={href} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-sky-200 hover:bg-sky-50">
+    <Link href={href} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-yellow-200 hover:bg-yellow-50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-        <span className="text-xl text-sky-600">{icon}</span>
+        <span className="text-xl text-amber-400">{icon}</span>
       </div>
-      <p className="mt-3 text-3xl font-black text-slate-950">{value}</p>
+      <p className="mt-3 text-3xl font-black text-black">{value}</p>
       <p className="mt-1 text-sm text-slate-500">{helper}</p>
     </Link>
   );
@@ -412,11 +412,11 @@ function PortalSection({ title, icon, actionHref, actionLabel, children }: { tit
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="inline-flex items-center gap-2 text-base font-bold text-slate-950">
-          <span className="text-sky-600">{icon}</span>
+        <h2 className="inline-flex items-center gap-2 text-base font-bold text-black">
+          <span className="text-amber-400">{icon}</span>
           {title}
         </h2>
-        <Link href={actionHref} className="rounded-full border border-sky-200 px-3 py-1.5 text-xs font-bold text-sky-700">
+        <Link href={actionHref} className="rounded-full border border-yellow-200 px-3 py-1.5 text-xs font-bold text-yellow-700">
           {actionLabel}
         </Link>
       </div>
@@ -427,7 +427,7 @@ function PortalSection({ title, icon, actionHref, actionLabel, children }: { tit
 
 function Row({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="block rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:bg-sky-50">
+    <Link href={href} className="block rounded-2xl border border-slate-200 p-4 transition hover:border-yellow-200 hover:bg-yellow-50">
       {children}
     </Link>
   );

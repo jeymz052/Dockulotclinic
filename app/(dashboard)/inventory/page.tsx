@@ -369,11 +369,11 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-sky-200/80 bg-white shadow-[0_24px_70px_rgba(14,116,144,0.10)]">
+      <section className="overflow-hidden rounded-[2rem] border border-yellow-200/80 bg-white shadow-[0_24px_70px_rgba(14,116,144,0.10)]">
         <div className="grid gap-0 xl:grid-cols-[1.25fr_0.75fr]">
-          <div className="bg-[linear-gradient(135deg,#eff8ff_0%,#dff4ff_48%,#f8fbff_100%)] px-6 py-6 sm:px-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-700">Inventory System</p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Inventory Management</h1>
+          <div className="bg-[linear-gradient(135deg,#eff8ff_0%,#dff4ff_48%,#fffbeb_100%)] px-6 py-6 sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-yellow-700">Inventory System</p>
+            <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-black sm:text-4xl">Inventory Management</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
               Manage medicines, stock movements, expiry monitoring, supplier records, and inventory reports from one calm, organized workspace.
             </p>
@@ -384,7 +384,7 @@ export default function InventoryPage() {
               <HeroPill tone="rose" label={`${expiringCount} expiring soon`} />
             </div>
           </div>
-          <div className="grid gap-3 bg-sky-50/70 p-5 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="grid gap-3 bg-yellow-50/70 p-5 sm:grid-cols-2 xl:grid-cols-1">
             <HeroStat label="Inventory Value" value={formatMoney(totalInventoryValue)} />
             <HeroStat label="Active Suppliers" value={String(activeSuppliers)} />
             <HeroStat label="Recent Movements" value={String(recentMovementCount)} />
@@ -399,7 +399,7 @@ export default function InventoryPage() {
         <StatCard title="Recent Transactions" value={recentMovementCount} icon={<FaBoxesStacked />} tone="cyan" subtitle="Latest movement entries" />
       </div>
 
-      <section className="rounded-[1.75rem] border border-sky-200/70 bg-white p-3 shadow-[0_16px_45px_rgba(15,23,42,0.06)]">
+      <section className="rounded-[1.75rem] border border-yellow-200/70 bg-white p-3 shadow-[0_16px_45px_rgba(15,23,42,0.06)]">
         <div className="grid gap-2 sm:grid-cols-3">
           <SectionTab
             active={activeTab === "inventory"}
@@ -425,22 +425,22 @@ export default function InventoryPage() {
       <section className={activeTab === "inventory" ? "rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.06)]" : "hidden"}>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-950">Inventory Management</h2>
+            <h2 className="text-2xl font-black tracking-tight text-black">Inventory Management</h2>
             <p className="mt-1 text-sm text-slate-600">Search medicines, filter by category, and manage products with compact icon actions.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => openMovementModal()} className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100">
+            <button type="button" onClick={() => openMovementModal()} className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2.5 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100">
               <FaBoxesStacked className="h-3.5 w-3.5" />
               Stock Movement
             </button>
-            <button type="button" onClick={openAddModal} className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
+            <button type="button" onClick={openAddModal} className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(120,53,15,0.22)] transition hover:bg-yellow-400">
               <FaPlus className="h-3.5 w-3.5" />
               Add New Drug
             </button>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
           <div className="grid gap-3 lg:grid-cols-[1fr_180px]">
             <label className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-500">
               <span className="h-4 w-4 rounded-full border border-slate-300" />
@@ -454,7 +454,7 @@ export default function InventoryPage() {
             <select
               value={categoryFilter}
               onChange={(event) => setCategoryFilter(event.target.value)}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
             >
               {categories.map((category) => (
                 <option key={category}>{category}</option>
@@ -464,18 +464,18 @@ export default function InventoryPage() {
         </div>
       </section>
 
-      {feedback ? <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{feedback}</p> : null}
+      {feedback ? <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</p> : null}
 
       <section className={activeTab === "inventory" ? "overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_16px_45px_rgba(15,23,42,0.06)]" : "hidden"}>
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-slate-950">Products</h2>
+            <h2 className="text-xl font-black tracking-tight text-black">Products</h2>
             <p className="mt-1 text-sm text-slate-500">Showing {filteredProducts.length} of {products.length} results</p>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1200px] text-left">
-            <thead className="border-b border-slate-200 bg-gradient-to-r from-sky-50 to-white text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+            <thead className="border-b border-slate-200 bg-gradient-to-r from-amber-50 to-white text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
               <tr>
                 <th className="px-5 py-3">Brand Name</th>
                 <th className="px-5 py-3">Generic Name</th>
@@ -492,13 +492,13 @@ export default function InventoryPage() {
               {filteredProducts.map((product) => {
                 const stockLabel = `${Number(product.stock_qty).toLocaleString()} ${product.unit}`;
                 return (
-                    <tr key={product.id} className="border-b border-slate-100 text-sm text-slate-700 transition hover:bg-sky-50/60">
-                    <td className="px-5 py-3 font-semibold text-slate-950">{product.brand_name ?? product.name ?? product.sku}</td>
+                    <tr key={product.id} className="border-b border-slate-100 text-sm text-slate-700 transition hover:bg-yellow-50/60">
+                    <td className="px-5 py-3 font-semibold text-black">{product.brand_name ?? product.name ?? product.sku}</td>
                     <td className="px-5 py-3 text-slate-600">{product.generic_name ?? "-"}</td>
                     <td className="px-5 py-3 text-slate-600">{product.dosage ?? "-"}</td>
                     <td className="px-5 py-3 text-slate-600">{product.category}</td>
                     <td className="px-5 py-3 text-slate-600">{product.suppliers?.name ?? "-"}</td>
-                    <td className="px-5 py-3 font-medium text-slate-950">{stockLabel}</td>
+                    <td className="px-5 py-3 font-medium text-black">{stockLabel}</td>
                     <td className="px-5 py-3 text-slate-600">{Number(product.reorder_level).toLocaleString()}</td>
                     <td className="px-5 py-3 text-slate-600">PHP {Number(product.selling_price).toFixed(2)}</td>
                     <td className="px-5 py-3">
@@ -535,7 +535,7 @@ export default function InventoryPage() {
       {activeTab === "inventory" ? (
       <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_16px_45px_rgba(15,23,42,0.06)]">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-xl font-black tracking-tight text-slate-950">Alerts &amp; Suggestions</h2>
+          <h2 className="text-xl font-black tracking-tight text-black">Alerts &amp; Suggestions</h2>
           <p className="mt-1 text-sm text-slate-500">{alertRows.length} items in the active view</p>
           <div className="mt-4 inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
             <TabButton active={alertsTab === "expiring"} onClick={() => setAlertsTab("expiring")}>Expiring Items</TabButton>
@@ -559,14 +559,14 @@ export default function InventoryPage() {
                 {expiring.map((product) => {
                   const daysRemaining = product.expiry_date ? Math.ceil((new Date(product.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
                   return (
-                    <tr key={product.id} className="border-b border-slate-100 text-sm transition hover:bg-amber-50/40">
-                      <td className={`px-5 py-3 font-semibold ${daysRemaining != null && daysRemaining < 0 ? "text-rose-600" : "text-slate-950"}`}>{product.brand_name ?? product.name ?? product.sku}</td>
-                      <td className={`px-5 py-3 font-mono text-sm ${daysRemaining != null && daysRemaining < 0 ? "text-rose-600" : "text-slate-600"}`}>{product.sku}</td>
-                      <td className={`px-5 py-3 ${daysRemaining != null && daysRemaining < 0 ? "text-rose-600" : "text-slate-600"}`}>{Number(product.stock_qty).toLocaleString()} {product.unit}</td>
-                      <td className={`px-5 py-3 font-medium ${daysRemaining != null && daysRemaining < 0 ? "text-rose-600" : "text-amber-600"}`}>{product.expiry_date ?? "-"}</td>
-                      <td className={`px-5 py-3 font-semibold ${daysRemaining != null && daysRemaining < 0 ? "text-rose-600" : "text-amber-600"}`}>{daysRemaining != null ? (daysRemaining < 0 ? "Expired!" : daysRemaining) : "-"}</td>
+                    <tr key={product.id} className="border-b border-slate-100 text-sm transition hover:bg-yellow-50/40">
+                      <td className={`px-5 py-3 font-semibold ${daysRemaining != null && daysRemaining < 0 ? "text-yellow-600" : "text-black"}`}>{product.brand_name ?? product.name ?? product.sku}</td>
+                      <td className={`px-5 py-3 font-mono text-sm ${daysRemaining != null && daysRemaining < 0 ? "text-yellow-600" : "text-slate-600"}`}>{product.sku}</td>
+                      <td className={`px-5 py-3 ${daysRemaining != null && daysRemaining < 0 ? "text-yellow-600" : "text-slate-600"}`}>{Number(product.stock_qty).toLocaleString()} {product.unit}</td>
+                      <td className={`px-5 py-3 font-medium ${daysRemaining != null && daysRemaining < 0 ? "text-yellow-600" : "text-amber-400"}`}>{product.expiry_date ?? "-"}</td>
+                      <td className={`px-5 py-3 font-semibold ${daysRemaining != null && daysRemaining < 0 ? "text-yellow-600" : "text-amber-400"}`}>{daysRemaining != null ? (daysRemaining < 0 ? "Expired!" : daysRemaining) : "-"}</td>
                       <td className="px-5 py-3 text-right">
-                        <button type="button" onClick={() => openEditModal(product)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-sky-700 hover:bg-sky-50">
+                        <button type="button" onClick={() => openEditModal(product)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-yellow-700 hover:bg-yellow-50">
                           Review
                         </button>
                       </td>
@@ -598,14 +598,14 @@ export default function InventoryPage() {
                 {lowStock.map((product) => {
                   const suggestedQuantity = Math.max(Number(product.reorder_level) - Number(product.stock_qty), Number(product.reorder_level) || 0);
                   return (
-                    <tr key={product.id} className="border-b border-slate-100 text-sm transition hover:bg-sky-50/40">
-                      <td className="px-5 py-3 font-semibold text-slate-950">{product.brand_name ?? product.name ?? product.sku}</td>
+                    <tr key={product.id} className="border-b border-slate-100 text-sm transition hover:bg-yellow-50/40">
+                      <td className="px-5 py-3 font-semibold text-black">{product.brand_name ?? product.name ?? product.sku}</td>
                       <td className="px-5 py-3 text-slate-600">{product.generic_name ?? "-"}</td>
-                      <td className="px-5 py-3 font-medium text-slate-950">{suggestedQuantity.toLocaleString()} units</td>
+                      <td className="px-5 py-3 font-medium text-black">{suggestedQuantity.toLocaleString()} units</td>
                       <td className="px-5 py-3 text-slate-600">Predicted demand based on stock threshold</td>
-                      <td className="px-5 py-3 text-amber-600">Pending</td>
+                      <td className="px-5 py-3 text-amber-400">Pending</td>
                       <td className="px-5 py-3 text-right">
-                        <button type="button" onClick={() => openMovementModal(product.id)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-sky-700 hover:bg-sky-50">
+                        <button type="button" onClick={() => openMovementModal(product.id)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-yellow-700 hover:bg-yellow-50">
                           Refill
                         </button>
                       </td>
@@ -627,7 +627,7 @@ export default function InventoryPage() {
       ) : null}
 
       <section className={activeTab === "reports" ? "rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-[0_16px_45px_rgba(15,23,42,0.06)]" : "hidden"}>
-        <h2 className="text-xl font-black tracking-tight text-slate-950">Inventory Reports</h2>
+        <h2 className="text-xl font-black tracking-tight text-black">Inventory Reports</h2>
         <p className="mt-1 text-sm text-slate-500">Product valuation, movement summary, and export-ready inventory reports.</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <ReportMetric title="Inventory Cost" value={formatMoney(totalInventoryCost)} subtitle="Estimated based on current cost price" />
@@ -693,14 +693,14 @@ export default function InventoryPage() {
       <section className={activeTab === "suppliers" ? "overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_16px_45px_rgba(15,23,42,0.06)]" : "hidden"}>
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-slate-950">Suppliers</h2>
+            <h2 className="text-xl font-black tracking-tight text-black">Suppliers</h2>
             <p className="mt-1 text-sm text-slate-500">Store supplier information for medicines and other inventory items.</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
               {suppliers.length} supplier{suppliers.length === 1 ? "" : "s"}
             </span>
-            <button type="button" onClick={() => openSupplierModal()} className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
+            <button type="button" onClick={() => openSupplierModal()} className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2.5 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100">
               <FaPlus className="h-3.5 w-3.5" />
               Add Supplier
             </button>
@@ -708,7 +708,7 @@ export default function InventoryPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-left">
-            <thead className="border-b border-slate-200 bg-gradient-to-r from-sky-50 to-white text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+            <thead className="border-b border-slate-200 bg-gradient-to-r from-amber-50 to-white text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
               <tr>
                 <th className="px-5 py-3">Name</th>
                 <th className="px-5 py-3">Contact Person</th>
@@ -720,8 +720,8 @@ export default function InventoryPage() {
             </thead>
             <tbody>
               {suppliers.map((supplier) => (
-                <tr key={supplier.id} className="border-b border-slate-100 text-sm text-slate-700 transition hover:bg-sky-50/50">
-                  <td className="px-5 py-3 font-semibold text-slate-950">{supplier.name}</td>
+                <tr key={supplier.id} className="border-b border-slate-100 text-sm text-slate-700 transition hover:bg-yellow-50/50">
+                  <td className="px-5 py-3 font-semibold text-black">{supplier.name}</td>
                   <td className="px-5 py-3 text-slate-600">{supplier.contact_person ?? "-"}</td>
                   <td className="px-5 py-3 text-slate-600">{supplier.phone ?? "-"}</td>
                   <td className="px-5 py-3 text-slate-600">{supplier.email ?? "-"}</td>
@@ -766,7 +766,7 @@ export default function InventoryPage() {
             <label className="grid gap-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 sm:col-span-2 xl:col-span-3">
               Supplier
               <select
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                 value={form.supplier_id}
                 onChange={(event) => setForm((state) => ({ ...state, supplier_id: event.target.value }))}
               >
@@ -786,7 +786,7 @@ export default function InventoryPage() {
             <label className="grid gap-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 sm:col-span-2 xl:col-span-3">
               Notes
               <textarea
-                className="min-h-20 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                className="min-h-20 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                 value={form.description}
                 onChange={(event) => setForm((state) => ({ ...state, description: event.target.value }))}
               />
@@ -805,7 +805,7 @@ export default function InventoryPage() {
           <label className="grid gap-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
             Product
             <select
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
               value={movement.product_id}
               onChange={(e) => setMovement((s) => ({ ...s, product_id: e.target.value }))}
               required
@@ -817,7 +817,7 @@ export default function InventoryPage() {
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <label className="grid gap-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
               Movement Type
-              <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100" value={movement.movement_type} onChange={(e) => setMovement((s) => ({ ...s, movement_type: e.target.value }))}>
+              <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100" value={movement.movement_type} onChange={(e) => setMovement((s) => ({ ...s, movement_type: e.target.value }))}>
                 {["StockIn", "StockOut", "Sale", "Return", "Adjustment", "Expired"].map((type) => <option key={type}>{type}</option>)}
               </select>
             </label>
@@ -825,7 +825,7 @@ export default function InventoryPage() {
           </div>
           <label className="mt-3 grid gap-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
             Notes
-            <textarea className="min-h-16 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Notes" value={movement.notes} onChange={(e) => setMovement((s) => ({ ...s, notes: e.target.value }))} />
+            <textarea className="min-h-16 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Notes" value={movement.notes} onChange={(e) => setMovement((s) => ({ ...s, notes: e.target.value }))} />
           </label>
         </ProductModal>
       ) : null}
@@ -848,7 +848,7 @@ export default function InventoryPage() {
             <label className="grid gap-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 sm:col-span-2">
               Address
               <textarea
-                className="min-h-16 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                className="min-h-16 rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                 value={supplierForm.address}
                 onChange={(event) => setSupplierForm((state) => ({ ...state, address: event.target.value }))}
               />
@@ -884,17 +884,17 @@ export default function InventoryPage() {
 
 function StatCard({ title, value, icon, tone, subtitle }: { title: string; value: string | number; icon: ReactNode; tone: "sky" | "rose" | "amber" | "cyan"; subtitle?: string }) {
   const tones = {
-    sky: "border-sky-100 bg-sky-50 text-sky-600",
-    rose: "border-rose-100 bg-rose-50 text-rose-600",
-    amber: "border-amber-100 bg-amber-50 text-amber-600",
-    cyan: "border-cyan-100 bg-cyan-50 text-cyan-600",
+    sky: "border-yellow-100 bg-yellow-50 text-amber-400",
+    rose: "border-yellow-100 bg-yellow-50 text-yellow-600",
+    amber: "border-yellow-100 bg-yellow-50 text-amber-400",
+    cyan: "border-yellow-100 bg-yellow-50 text-amber-400",
   };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,0.08)]">
       <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border ${tones[tone]}`}>{icon}</div>
       <p className="mt-3 text-sm font-semibold text-slate-500">{title}</p>
-      <p className="mt-1 text-3xl font-black text-slate-950">{value}</p>
+      <p className="mt-1 text-3xl font-black text-black">{value}</p>
       {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
     </div>
   );
@@ -904,7 +904,7 @@ function ReportMetric({ title, value, subtitle }: { title: string; value: string
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+      <p className="mt-2 text-2xl font-black text-black">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
     </div>
   );
@@ -912,7 +912,7 @@ function ReportMetric({ title, value, subtitle }: { title: string; value: string
 
 function TabButton({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${active ? "bg-white text-sky-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+    <button type="button" onClick={onClick} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${active ? "bg-white text-yellow-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
       {children}
     </button>
   );
@@ -925,11 +925,11 @@ function SectionTab({ active, label, icon, onClick }: { active: boolean; label: 
       onClick={onClick}
       className={`flex items-center justify-center gap-3 rounded-[1.1rem] px-4 py-3 text-sm font-semibold transition ${
         active
-          ? "bg-linear-to-r from-sky-600 to-blue-600 text-white shadow-[0_12px_28px_rgba(2,132,199,0.25)]"
-          : "bg-slate-50 text-slate-700 hover:bg-sky-50"
+          ? "bg-linear-to-r from-yellow-400 to-yellow-400 text-white shadow-[0_12px_28px_rgba(120,53,15,0.25)]"
+          : "bg-slate-50 text-slate-700 hover:bg-yellow-50"
       }`}
     >
-      <span className={`rounded-full p-2 ${active ? "bg-white/15" : "bg-sky-100 text-sky-700"}`}>{icon}</span>
+      <span className={`rounded-full p-2 ${active ? "bg-white/15" : "bg-yellow-100 text-yellow-700"}`}>{icon}</span>
       {label}
     </button>
   );
@@ -937,8 +937,8 @@ function SectionTab({ active, label, icon, onClick }: { active: boolean; label: 
 
 function IconButton({ label, tone, icon, onClick }: { label: string; tone: "sky" | "rose"; icon: ReactNode; onClick: () => void }) {
   const tones = {
-    sky: "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700",
-    rose: "border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700",
+    sky: "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700",
+    rose: "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700",
   };
 
   return (
@@ -950,21 +950,21 @@ function IconButton({ label, tone, icon, onClick }: { label: string; tone: "sky"
 
 function ProductModal({ title, submitLabel, onClose, onSubmit, children }: { title: string; submitLabel: string; onClose: () => void; onSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-4 backdrop-blur-md">
       <div className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
-        <div className="h-1.5 bg-linear-to-r from-sky-500 via-cyan-400 to-blue-500" />
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] px-5 py-4">
+        <div className="h-1.5 bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-300" />
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] px-5 py-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700 shadow-sm">
               <FaBoxesStacked className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-sky-700">Inventory</p>
-              <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-950">{title}</h3>
+              <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-yellow-700">Inventory</p>
+              <h3 className="mt-1 text-lg font-bold tracking-tight text-black">{title}</h3>
               <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Keep the form compact and clean so you can add inventory quickly without extra scrolling.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
+          <button type="button" onClick={onClose} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-yellow-200 hover:bg-yellow-50 hover:text-yellow-700">
             Close
           </button>
         </div>
@@ -974,7 +974,7 @@ function ProductModal({ title, submitLabel, onClose, onSubmit, children }: { tit
           }}
           className="max-h-[calc(100vh-5rem)] overflow-y-auto px-5 py-4"
         >
-          <div className="mb-3 rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-2.5 text-xs leading-5 text-slate-600">
+          <div className="mb-3 rounded-2xl border border-yellow-100 bg-yellow-50/70 px-4 py-2.5 text-xs leading-5 text-slate-600">
             Keep SKU, brand, and supplier consistent for cleaner records.
           </div>
           {children}
@@ -982,7 +982,7 @@ function ProductModal({ title, submitLabel, onClose, onSubmit, children }: { tit
             <button type="button" onClick={onClose} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
               Cancel
             </button>
-            <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white shadow-[0_12px_24px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
+            <button type="submit" className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white shadow-[0_12px_24px_rgba(120,53,15,0.22)] transition hover:bg-yellow-400">
               {submitLabel}
             </button>
           </div>
@@ -993,19 +993,19 @@ function ProductModal({ title, submitLabel, onClose, onSubmit, children }: { tit
 }
 
 function ConfirmationModal({ title, description, confirmLabel, tone, onCancel, onConfirm }: { title: string; description: string; confirmLabel: string; tone: "rose" | "sky"; onCancel: () => void; onConfirm: () => void }) {
-  const confirmTone = tone === "rose" ? "bg-rose-600 hover:bg-rose-700" : "bg-sky-600 hover:bg-sky-700";
+  const confirmTone = tone === "rose" ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-400 hover:bg-yellow-400";
 
   return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-md">
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.28)]">
-        <div className={`h-1.5 ${tone === "rose" ? "bg-linear-to-r from-rose-500 to-pink-500" : "bg-linear-to-r from-sky-500 to-cyan-400"}`} />
+        <div className={`h-1.5 ${tone === "rose" ? "bg-linear-to-r from-yellow-500 to-yellow-300" : "bg-linear-to-r from-yellow-300 to-yellow-400"}`} />
         <div className="p-5">
           <div className="flex items-start gap-3">
-            <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone === "rose" ? "bg-rose-100 text-rose-700" : "bg-sky-100 text-sky-700"}`}>
+            <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tone === "rose" ? "bg-yellow-100 text-yellow-700" : "bg-yellow-100 text-yellow-700"}`}>
               <FaTriangleExclamation className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-xl font-black tracking-tight text-slate-950">{title}</h3>
+              <h3 className="text-xl font-black tracking-tight text-black">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
             </div>
           </div>
@@ -1050,17 +1050,17 @@ function Input({ label, value, onChange, type = "text", required = true, compact
   return (
     <label className={`grid ${compact ? "gap-0.5" : "gap-1"} text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500`}>
       {label}
-      <input required={required} className={`rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-sky-400 focus:ring-4 focus:ring-sky-100 ${compact ? "py-2" : "py-2.5"}`} type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input required={required} className={`rounded-xl border border-slate-200 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 ${compact ? "py-2" : "py-2.5"}`} type={type} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   );
 }
 
 function HeroPill({ label, tone }: { label: string; tone: "sky" | "cyan" | "amber" | "rose" }) {
   const tones = {
-    sky: "border-sky-200 bg-sky-50 text-sky-700",
-    cyan: "border-cyan-200 bg-cyan-50 text-cyan-700",
-    amber: "border-amber-200 bg-amber-50 text-amber-700",
-    rose: "border-rose-200 bg-rose-50 text-rose-700",
+    sky: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    cyan: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    amber: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    rose: "border-yellow-200 bg-yellow-50 text-yellow-700",
   };
 
   return (
@@ -1072,9 +1072,9 @@ function HeroPill({ label, tone }: { label: string; tone: "sky" | "cyan" | "ambe
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-sky-100 bg-white/80 px-4 py-4 shadow-[0_10px_24px_rgba(14,116,144,0.08)] backdrop-blur-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-sky-600">{label}</p>
-      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
+    <div className="rounded-[1.25rem] border border-yellow-100 bg-white/80 px-4 py-4 shadow-[0_10px_24px_rgba(14,116,144,0.08)] backdrop-blur-sm">
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-amber-400">{label}</p>
+      <p className="mt-2 text-2xl font-black tracking-tight text-black">{value}</p>
     </div>
   );
 }

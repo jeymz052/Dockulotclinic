@@ -85,21 +85,21 @@ export default function PatientFollowUpInquiriesPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Patient Portal</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Follow-up Inquiries</h1>
+      <section className="rounded-[2rem] border border-yellow-100 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Patient Portal</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Follow-up Inquiries</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Send questions after your visit and keep track of clinic replies in one place.
         </p>
       </section>
 
       <form onSubmit={submitInquiry} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-950">Send a follow-up message</h2>
+        <h2 className="text-lg font-bold text-black">Send a follow-up message</h2>
         <div className="mt-4 grid gap-3">
           <select
             value={appointmentId}
             onChange={(event) => setAppointmentId(event.target.value)}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
           >
             <option value="">Select a completed appointment (optional)</option>
             {completedAppointments.map((appointment) => (
@@ -112,26 +112,26 @@ export default function PatientFollowUpInquiriesPage() {
             required
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            className="min-h-32 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+            className="min-h-32 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
             placeholder="Ask about your recovery, prescription, next steps, or any follow-up concern."
           />
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white disabled:bg-slate-400"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white disabled:bg-slate-400"
             >
               <FaPaperPlane className="h-3.5 w-3.5" />
               {isSubmitting ? "Sending..." : "Send inquiry"}
             </button>
-            <Link href="/appointments/my" className="rounded-full border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
+            <Link href="/appointments/my" className="rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50">
               My Appointments
             </Link>
           </div>
         </div>
       </form>
 
-      {feedback ? <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{feedback}</div> : null}
+      {feedback ? <div className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</div> : null}
 
       <section className="grid gap-4">
         {inquiries.length ? (
@@ -139,13 +139,13 @@ export default function PatientFollowUpInquiriesPage() {
             <article key={inquiry.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-slate-950">
-                    <FaRegMessage className="text-sky-600" />
+                  <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
+                    <FaRegMessage className="text-amber-400" />
                     {inquiry.status}
                   </p>
                   <p className="mt-2 text-sm text-slate-500">Sent {new Date(inquiry.created_at).toLocaleString("en-US")}</p>
                 </div>
-                <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">{inquiry.status}</span>
+                <span className="rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">{inquiry.status}</span>
               </div>
               <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">{inquiry.message}</div>
               <div className="mt-4 rounded-2xl border border-slate-200 p-4 text-sm text-slate-700">

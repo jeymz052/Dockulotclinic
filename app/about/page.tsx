@@ -15,14 +15,14 @@ const EDUCATION_ITEMS = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-sky-50 px-4 py-12 text-slate-950 sm:px-6">
+    <main className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-amber-50 px-4 py-12 text-black sm:px-6">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
           <div className="grid gap-0 lg:grid-cols-[320px_1fr]">
-            <div className="flex items-start justify-center bg-[linear-gradient(180deg,#f8fbff_0%,#eef7ff_100%)] px-8 py-10 lg:px-10 lg:py-12">
+            <div className="flex items-start justify-center bg-[linear-gradient(180deg,#fffbeb_0%,#fef3c7_100%)] px-8 py-10 lg:px-10 lg:py-12">
               <div className="overflow-hidden rounded-full border border-white bg-white shadow-lg">
                 <Image
-                  src="/images/dockulots-removebg-preview.png"
+                  src="/images/dockulotslogonobg.png"
                   alt="Dr. Fatimah Al-Zahra Ditti"
                   width={280}
                   height={280}
@@ -33,8 +33,8 @@ export default function AboutPage() {
             </div>
 
             <div className="px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
-              <p className="text-sm font-bold uppercase tracking-[0.38em] text-sky-700">About the Doctor</p>
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+              <p className="text-sm font-bold uppercase tracking-[0.38em] text-yellow-700">About the Doctor</p>
+              <h1 className="mt-4 text-4xl font-black tracking-tight text-black sm:text-5xl">
                 Dr. Fatimah Al-Zahra Ditti
               </h1>
               <p className="mt-3 text-lg font-semibold text-slate-700">Medical Doctor</p>
@@ -46,8 +46,8 @@ export default function AboutPage() {
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {ABOUT_ITEMS.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-sky-100 bg-sky-50/60 p-5">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">{item.label}</p>
+                  <div key={item.label} className="rounded-2xl border border-yellow-100 bg-yellow-50/60 p-5">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">{item.label}</p>
                     <p className="mt-2 text-sm font-semibold leading-6 text-slate-800">{item.value}</p>
                   </div>
                 ))}
@@ -56,13 +56,13 @@ export default function AboutPage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/#booking"
-                  className="inline-flex rounded-full bg-sky-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-sky-700"
+                  className="inline-flex rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-400"
                 >
                   Book an appointment
                 </Link>
                 <Link
                   href="/#videos"
-                  className="inline-flex rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+                  className="inline-flex rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
                 >
                   View videos and updates
                 </Link>
@@ -72,7 +72,7 @@ export default function AboutPage() {
         </section>
 
         <section className="rounded-[2.5rem] border border-slate-100 bg-white px-6 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.06)] sm:px-8 lg:px-10">
-          <p className="text-sm font-bold uppercase tracking-[0.38em] text-sky-700">Education</p>
+          <p className="text-sm font-bold uppercase tracking-[0.38em] text-yellow-700">Education</p>
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {EDUCATION_ITEMS.map((item) => (
               <div key={item.label} className="rounded-2xl border border-slate-100 bg-slate-50 px-5 py-5">

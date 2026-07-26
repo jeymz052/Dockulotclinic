@@ -75,8 +75,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(2,132,199,0.06),transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f1faff_36%,#f8fafc_100%)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-sky-100/70 to-transparent" />
+    <div className="relative min-h-[100svh] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(120,53,15,0.06),transparent_28%),linear-gradient(180deg,#fffbeb_0%,#f1faff_36%,#f8fafc_100%)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-amber-100/70 to-transparent" />
       <Sidebar role={role} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="min-w-0 lg:pl-56">

@@ -14,7 +14,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "h2") {
           return (
-            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-sky-900 sm:text-3xl">
+            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-yellow-800 sm:text-3xl">
               {block.text}
             </h2>
           );
@@ -32,7 +32,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
           return (
             <blockquote
               key={`${block.type}-${index}`}
-              className="rounded-[1.5rem] border-l-4 border-sky-600 bg-sky-50 px-6 py-5 text-lg italic leading-8 text-slate-700"
+              className="rounded-[1.5rem] border-l-4 border-amber-400 bg-yellow-50 px-6 py-5 text-lg italic leading-8 text-slate-700"
             >
               {block.text}
             </blockquote>
@@ -80,11 +80,11 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "cta") {
           return (
-            <div key={`${block.type}-${index}`} className="rounded-[1.75rem] bg-sky-800 px-6 py-8 text-center text-white">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sky-100">Take the next step</p>
+            <div key={`${block.type}-${index}`} className="rounded-[1.75rem] bg-amber-700 px-6 py-8 text-center text-white">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-100">Take the next step</p>
               <a
                 href={block.buttonLink}
-                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
               >
                 {block.buttonText}
               </a>

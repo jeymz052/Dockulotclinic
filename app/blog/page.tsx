@@ -7,7 +7,7 @@ export default async function BlogPage() {
   const posts = await getPublishedContentPosts(24);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-slate-50 text-black">
       <PublicHeader />
 
       <section className="mx-auto max-w-7xl px-4 pt-20 pb-10 sm:px-6 sm:pt-24 sm:pb-14">

@@ -98,7 +98,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                 <p className="text-sm leading-7 text-slate-600">
                   {post.excerpt || "This creator video or announcement will show more detail once the content team adds a summary."}
                 </p>
-                <div className="rounded-[1.35rem] border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm text-slate-600">
+                <div className="rounded-[1.35rem] border border-yellow-100 bg-yellow-50/70 px-4 py-3 text-sm text-slate-600">
                   {post.content_type === "LiveReplay"
                     ? "Missed the live session? Open the replay, then check the live schedule for the next health talk."
                     : post.content_type === "Announcement"
@@ -110,7 +110,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                     <button
                       type="button"
                       onClick={() => setActivePostId(post.id)}
-                      className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500"
+                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-300"
                     >
                       Watch here
                       <FaArrowRight />
@@ -118,7 +118,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                   ) : null}
                   <Link
                     href="/#booking"
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-5 py-2.5 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-5 py-2.5 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
                   >
                     <FaCalendarCheck />
                     Book appointment
@@ -145,19 +145,19 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
 
       {activePost && playbackUrl ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={activePost.title}
           onClick={() => setActivePostId(null)}
         >
           <div
-            className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 shadow-[0_40px_120px_-50px_rgba(0,0,0,0.8)]"
+            className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-[0_40px_120px_-50px_rgba(0,0,0,0.8)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4 text-white">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-200">Now playing</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">Now playing</p>
                 <h2 className="mt-1 text-lg font-black tracking-tight sm:text-xl">{activePost.title}</h2>
               </div>
               <button

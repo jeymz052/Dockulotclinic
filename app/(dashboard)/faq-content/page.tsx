@@ -70,45 +70,45 @@ export default function FaqContentPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-700">FAQ Management</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Public FAQ content</h1>
+      <section className="rounded-[2rem] border border-yellow-100 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-yellow-700">FAQ Management</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Public FAQ content</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Add and publish FAQs for appointments, clinic services, online consultation, payments, prescriptions, patient portal help, vlog/content, and contact inquiries.
         </p>
-        <Link href="/faq" className="mt-5 inline-flex rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white">
+        <Link href="/faq" className="mt-5 inline-flex rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white">
           View public FAQ
         </Link>
       </section>
 
       <form onSubmit={addFaq} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-950">Add FAQ</h2>
+        <h2 className="text-lg font-bold text-black">Add FAQ</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <select className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))} required>
+          <select className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))} required>
             {faqCategories.map((category) => (
               <option key={category} value={category}>
                 {category}
               </option>
             ))}
           </select>
-          <input className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Question" value={form.question} onChange={(e) => setForm((s) => ({ ...s, question: e.target.value }))} required />
+          <input className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Question" value={form.question} onChange={(e) => setForm((s) => ({ ...s, question: e.target.value }))} required />
         </div>
-        <textarea className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Answer" value={form.answer} onChange={(e) => setForm((s) => ({ ...s, answer: e.target.value }))} required />
-        <button className="mt-4 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white">Save FAQ</button>
+        <textarea className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Answer" value={form.answer} onChange={(e) => setForm((s) => ({ ...s, answer: e.target.value }))} required />
+        <button className="mt-4 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white">Save FAQ</button>
       </form>
 
-      {feedback ? <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{feedback}</p> : null}
+      {feedback ? <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</p> : null}
 
       <div className="grid gap-4">
         {faqs.map((faq) => (
           <article key={faq.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">{faq.category}</span>
-                <h2 className="mt-2 text-base font-bold text-slate-950">{faq.question}</h2>
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">{faq.category}</span>
+                <h2 className="mt-2 text-base font-bold text-black">{faq.question}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{faq.answer}</p>
               </div>
-              <button onClick={() => toggle(faq)} className="rounded-full border border-sky-200 px-4 py-2 text-xs font-bold text-sky-700">
+              <button onClick={() => toggle(faq)} className="rounded-full border border-yellow-200 px-4 py-2 text-xs font-bold text-yellow-700">
                 {faq.is_published ? "Published" : "Hidden"}
               </button>
             </div>

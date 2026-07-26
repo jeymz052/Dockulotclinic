@@ -72,9 +72,9 @@ export default function SecretaryDashboard() {
         actionHref="/appointments"
       >
         {todayAppointments.length === 0 ? (
-          <div className="rounded-[1.75rem] border-2 border-dashed border-sky-200 px-8 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-              <FaCalendarDays className="text-2xl text-sky-700" />
+          <div className="rounded-[1.75rem] border-2 border-dashed border-yellow-200 px-8 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
+              <FaCalendarDays className="text-2xl text-yellow-700" />
             </div>
             <p className="text-base font-semibold text-slate-900">No appointments booked</p>
             <p className="mt-2 text-sm text-slate-500">The schedule is clear for today.</p>
@@ -85,10 +85,10 @@ export default function SecretaryDashboard() {
               <Link
                 key={appt.id}
                 href={`/appointments`}
-                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-sky-200 hover:bg-sky-50/60 hover:shadow-[0_12px_28px_rgba(14,165,233,0.12)] animate-slide-in-left stagger-${Math.min(i + 1, 8)}`}
+                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/60 hover:shadow-[0_12px_28px_rgba(133,77,14,0.12)] animate-slide-in-left stagger-${Math.min(i + 1, 8)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold ${appt.type === "Online" ? "bg-sky-100 text-sky-700" : "bg-sky-100 text-sky-700"}`}>
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-bold ${appt.type === "Online" ? "bg-yellow-100 text-yellow-700" : "bg-yellow-100 text-yellow-700"}`}>
                       {appt.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                   </div>
                   <div className="min-w-0">
@@ -125,12 +125,12 @@ export default function SecretaryDashboard() {
       <SectionCard title="Front Desk Priorities" description="The most important tasks for today. Focus on these to keep the clinic running smoothly.">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/appointments/my" className="group">
-            <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-linear-to-br from-sky-50 to-sky-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(14,165,233,0.15)]">
-              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-sky-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative overflow-hidden rounded-3xl border-2 border-yellow-200 bg-linear-to-br from-amber-50 to-amber-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(133,77,14,0.15)]">
+              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-yellow-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <FaCalendarDays className="text-2xl text-sky-700" />
-                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Arrivals</span>
+                  <FaCalendarDays className="text-2xl text-yellow-700" />
+                  <span className="text-xs font-bold text-yellow-700 uppercase tracking-wider">Arrivals</span>
                 </div>
                 <p className="text-3xl font-black tracking-tight text-slate-900">{readyToConfirm}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-600">Confirmed patients to check in on arrival.</p>
@@ -138,12 +138,12 @@ export default function SecretaryDashboard() {
             </div>
           </Link>
           <Link href="/appointments/my" className="group">
-            <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-linear-to-br from-sky-50 to-sky-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(14,165,233,0.15)]">
-              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-sky-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative overflow-hidden rounded-3xl border-2 border-yellow-200 bg-linear-to-br from-amber-50 to-amber-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(133,77,14,0.15)]">
+              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-yellow-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <FaUserCheck className="text-2xl text-sky-700" />
-                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Waiting Room</span>
+                  <FaUserCheck className="text-2xl text-yellow-700" />
+                  <span className="text-xs font-bold text-yellow-700 uppercase tracking-wider">Waiting Room</span>
                 </div>
                 <p className="text-3xl font-black tracking-tight text-slate-900">{waitingForDoctor}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-600">Checked in, waiting for the doctor.</p>
@@ -151,12 +151,12 @@ export default function SecretaryDashboard() {
             </div>
           </Link>
           <Link href="/appointments?filter=online" className="group">
-            <div className="relative overflow-hidden rounded-3xl border-2 border-sky-200 bg-linear-to-br from-sky-50 to-sky-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(14,165,233,0.15)]">
-              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-sky-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative overflow-hidden rounded-3xl border-2 border-yellow-200 bg-linear-to-br from-amber-50 to-amber-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(133,77,14,0.15)]">
+              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-yellow-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <FaVideo className="text-2xl text-sky-700" />
-                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Online Links</span>
+                  <FaVideo className="text-2xl text-yellow-700" />
+                  <span className="text-xs font-bold text-yellow-700 uppercase tracking-wider">Online Links</span>
                 </div>
                 <p className="text-3xl font-black tracking-tight text-slate-900">{onlineToday}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-600">Meeting links & reminders needed.</p>
@@ -164,12 +164,12 @@ export default function SecretaryDashboard() {
             </div>
           </Link>
           <Link href="/payments/pos" className="group">
-            <div className="relative overflow-hidden rounded-3xl border-2 border-amber-200 bg-linear-to-br from-amber-50 to-amber-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(245,158,11,0.15)]">
-              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-amber-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative overflow-hidden rounded-3xl border-2 border-yellow-200 bg-linear-to-br from-amber-50 to-amber-50/50 px-6 py-6 transition-all hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(251,191,36,0.15)]">
+              <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-yellow-300/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <FaCreditCard className="text-2xl text-amber-700" />
-                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Billing Queue</span>
+                  <FaCreditCard className="text-2xl text-yellow-700" />
+                  <span className="text-xs font-bold text-yellow-700 uppercase tracking-wider">Billing Queue</span>
                 </div>
                 <p className="text-3xl font-black tracking-tight text-slate-900">{waitingClinicBilling}</p>
                 <p className="mt-2 text-xs leading-5 text-slate-600">Clinic visits awaiting POS.</p>

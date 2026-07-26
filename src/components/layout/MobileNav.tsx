@@ -41,14 +41,14 @@ export default function MobileNav() {
           <ul className="space-y-2">
             <li>
               <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-slate-800 hover:bg-slate-50">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaHome /></span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaHome /></span>
                 Home
               </Link>
             </li>
             <li>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-2">
                 <div className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-slate-900">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaStethoscope /></span>
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaStethoscope /></span>
                   Services
                 </div>
                 <div className="ml-12 mt-1 space-y-1 pb-1">
@@ -63,20 +63,20 @@ export default function MobileNav() {
             </li>
             <li>
               <Link href="/#about" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-slate-800 hover:bg-slate-50">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaInfoCircle /></span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaInfoCircle /></span>
                 About
               </Link>
             </li>
             <li>
               <Link href="/#blog" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-slate-800 hover:bg-slate-50">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaQuoteRight /></span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaQuoteRight /></span>
                 Blogs
               </Link>
             </li>
             <li>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-2">
                 <div className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-slate-900">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaVideo /></span>
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaVideo /></span>
                   Videos
                 </div>
                 <div className="ml-12 mt-1 space-y-1 pb-1">
@@ -91,7 +91,7 @@ export default function MobileNav() {
             </li>
             <li>
               <Link href="/#faq" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-slate-800 hover:bg-slate-50">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-sky-50 text-sky-600"><FaQuestionCircle /></span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-yellow-50 text-amber-400"><FaQuestionCircle /></span>
                 FAQ
               </Link>
             </li>
@@ -101,12 +101,12 @@ export default function MobileNav() {
             <Link
               href="/#booking"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-sky-600 px-3 py-2.5 text-center text-sm font-bold leading-none text-white hover:bg-sky-500"
+              className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-yellow-400 px-3 py-2.5 text-center text-sm font-bold leading-none text-white hover:bg-yellow-300"
             >
               <FaCalendarAlt />
               Book appointment
             </Link>
-            <Link href="/#contact" onClick={() => setOpen(false)} className="block w-full rounded-xl border border-sky-200 px-4 py-3 text-center font-semibold text-sky-800 hover:bg-sky-50">
+            <Link href="/#contact" onClick={() => setOpen(false)} className="block w-full rounded-xl border border-yellow-200 px-4 py-3 text-center font-semibold text-yellow-700 hover:bg-yellow-50">
               Contact
             </Link>
 
@@ -114,7 +114,7 @@ export default function MobileNav() {
               Sign In
             </Link>
 
-            <Link href="/register" onClick={() => setOpen(false)} className="block w-full rounded-xl bg-sky-600 px-4 py-3 text-center font-bold text-white hover:bg-sky-500">
+            <Link href="/register" onClick={() => setOpen(false)} className="block w-full rounded-xl bg-yellow-400 px-4 py-3 text-center font-bold text-white hover:bg-yellow-300">
               Sign Up
             </Link>
           </div>

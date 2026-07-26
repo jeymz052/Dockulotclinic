@@ -76,22 +76,22 @@ export default function PatientDashboard() {
       </div>
 
       {next ? (
-          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-sky-200 bg-linear-to-br from-sky-50/80 via-sky-50/40 to-sky-50/20 p-8 shadow-[0_28px_54px_rgba(14,165,233,0.16)] animate-pop-in transition hover:-translate-y-1">
-            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-sky-300/20 to-sky-200/10 blur-3xl" />
-            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-sky-200/20 to-sky-100/10 blur-3xl" />
+          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-yellow-200 bg-linear-to-br from-amber-50/80 via-amber-50/40 to-amber-50/20 p-8 shadow-[0_28px_54px_rgba(133,77,14,0.16)] animate-pop-in transition hover:-translate-y-1">
+            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-yellow-300/20 to-amber-200/10 blur-3xl" />
+            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-amber-200/20 to-amber-100/10 blur-3xl" />
           <div className="relative">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-4 py-2 mb-4">
-                  <span className="h-2 w-2 rounded-full bg-sky-600 animate-pulse" />
-                  <span className="text-xs font-bold text-sky-700">YOUR NEXT APPOINTMENT</span>
+                <div className="inline-flex items-center gap-2 rounded-full bg-yellow-100 px-4 py-2 mb-4">
+                  <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+                  <span className="text-xs font-bold text-yellow-700">YOUR NEXT APPOINTMENT</span>
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-slate-900 mt-3">
-                  {formatDate(next.date)} <span className="text-sky-600">·</span> {next.start}
+                  {formatDate(next.date)} <span className="text-amber-400">·</span> {next.start}
                 </h2>
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
                       <span className="text-lg">#{next.queueNumber}</span>
                     </div>
                     <div>
@@ -100,8 +100,8 @@ export default function PatientDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100">
-                      {next.type === "Online" ? <FaVideo className="text-sm text-sky-700" /> : <FaHospital className="text-sm text-sky-700" />}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
+                      {next.type === "Online" ? <FaVideo className="text-sm text-yellow-700" /> : <FaHospital className="text-sm text-yellow-700" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{getAppointmentPrimaryLabel(next.reason, next.type)}</p>
@@ -119,7 +119,7 @@ export default function PatientDashboard() {
                     href={next.meetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-600 to-sky-500 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(14,165,233,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(14,165,233,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-yellow-400 to-yellow-300 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(133,77,14,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(133,77,14,0.4)]"
                   >
                     <FaVideo />
                     Join consultation
@@ -144,15 +144,15 @@ export default function PatientDashboard() {
             ))}
           </div>
         ) : upcoming.length === 0 ? (
-          <div className="rounded-[1.75rem] border-2 border-dashed border-sky-200 px-8 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-              <FaCalendarDays className="text-2xl text-sky-700" />
+          <div className="rounded-[1.75rem] border-2 border-dashed border-yellow-200 px-8 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
+              <FaCalendarDays className="text-2xl text-yellow-700" />
             </div>
             <p className="text-base font-semibold text-slate-900">No upcoming appointments</p>
             <p className="mt-2 text-sm text-slate-500">You&apos;re all caught up! Book your next appointment when you need one.</p>
             <Link
               href="/appointments"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-600 to-sky-500 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(14,165,233,0.25)] transition hover:-translate-y-1"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-yellow-400 to-yellow-300 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(133,77,14,0.25)] transition hover:-translate-y-1"
             >
               <FaCalendarDays />
               Book appointment
@@ -164,10 +164,10 @@ export default function PatientDashboard() {
               <Link
                 key={appt.id}
                 href={`/appointments/my`}
-                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-sky-200 hover:bg-sky-50/60 hover:shadow-[0_8px_20px_rgba(14,165,233,0.10)] animate-slide-in-left stagger-${Math.min(i + 1, 5)}`}
+                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/60 hover:shadow-[0_8px_20px_rgba(133,77,14,0.10)] animate-slide-in-left stagger-${Math.min(i + 1, 5)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-sky-500 to-sky-600" : "bg-linear-to-br from-sky-500 to-sky-600"}`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-yellow-300 to-yellow-400" : "bg-linear-to-br from-yellow-300 to-yellow-400"}`}>
                     {appt.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                   </div>
                   <div className="min-w-0">

@@ -169,10 +169,10 @@ export default function CalendarViewPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.22),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_52%,_#e0f6ff)] p-6 shadow-[0_28px_70px_rgba(14,165,233,0.12)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(133,77,14,0.22),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_52%,_#e0f6ff)] p-6 shadow-[0_28px_70px_rgba(133,77,14,0.12)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Calendar</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Calendar</p>
             <h1 className="mt-3 text-3xl font-black text-slate-900">Shared weekly availability at a glance</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Clinic visits open Friday to Sunday from 9:00 AM to 3:00 PM. Virtual consults run
@@ -188,29 +188,29 @@ export default function CalendarViewPage() {
       </section>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {error}
         </div>
       ) : null}
 
-      <div className="rounded-4xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in">
+      <div className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-900">{selectedDoctor?.name ?? "Doctor schedule"}</h2>
             <p className="text-sm text-slate-500">{selectedDoctor?.specialty ?? "Live availability"}</p>
           </div>
-          <p className="rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 whitespace-nowrap">
+          <p className="rounded-full border border-yellow-100 bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-700 whitespace-nowrap">
             Week of {formatDisplayDate(weekStart)}
           </p>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-3 border-t border-sky-100 pt-4">
+        <div className="mb-6 flex flex-wrap items-center gap-3 border-t border-yellow-100 pt-4">
           <span className="text-sm font-semibold text-slate-600">Filter by:</span>
           <select
             value={doctorId}
             onChange={(event) => setDoctorId(event.target.value)}
             disabled={!doctors.length}
-            className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100 hover:border-sky-300"
+            className="rounded-lg border border-yellow-100 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-amber-100 hover:border-yellow-300"
           >
             {doctors.map((doctor) => (
               <option key={doctor.id} value={doctor.id}>
@@ -223,7 +223,7 @@ export default function CalendarViewPage() {
             <button
               type="button"
               onClick={() => setWeekStart(shiftDate(weekStart, -7))}
-              className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 active:bg-sky-100"
+              className="rounded-lg border border-yellow-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 active:bg-yellow-100"
               title="Show previous week"
             >
               ← Previous
@@ -231,7 +231,7 @@ export default function CalendarViewPage() {
             <button
               type="button"
               onClick={() => setWeekStart(getCurrentWeekStart())}
-                className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                className="rounded-lg border border-yellow-100 bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100"
               title="Return to current week"
             >
               Today
@@ -239,7 +239,7 @@ export default function CalendarViewPage() {
             <button
               type="button"
               onClick={() => setWeekStart(shiftDate(weekStart, 7))}
-                className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 active:bg-sky-100"
+                className="rounded-lg border border-yellow-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 active:bg-yellow-100"
               title="Show next week"
             >
               Next →
@@ -248,17 +248,17 @@ export default function CalendarViewPage() {
         </div>
 
         {tableSlots.length ? (
-          <div className="overflow-x-auto rounded-3xl border border-sky-100">
+          <div className="overflow-x-auto rounded-3xl border border-yellow-100">
             <table className="min-w-[900px] w-full text-sm">
               <thead>
                 <tr>
-                  <th className="border border-sky-100 bg-sky-50/60 px-4 py-3 text-left font-semibold text-slate-700">
+                  <th className="border border-yellow-100 bg-yellow-50/60 px-4 py-3 text-left font-semibold text-slate-700">
                     Time
                   </th>
                   {weekDates.map((date) => (
                     <th
                       key={date}
-                      className="border border-sky-100 bg-sky-50/60 px-4 py-3 text-left font-semibold text-slate-700"
+                      className="border border-yellow-100 bg-yellow-50/60 px-4 py-3 text-left font-semibold text-slate-700"
                     >
                       {formatDisplayDate(date)}
                     </th>
@@ -268,7 +268,7 @@ export default function CalendarViewPage() {
               <tbody>
                 {tableSlots.map((slotTemplate) => (
                   <tr key={`${slotTemplate.start}-${slotTemplate.end}`}>
-                    <td className="border border-sky-100 bg-sky-50/40 px-4 py-3 font-medium text-slate-700">
+                    <td className="border border-yellow-100 bg-yellow-50/40 px-4 py-3 font-medium text-slate-700">
                       {formatRange(slotTemplate.start, slotTemplate.end)}
                     </td>
                     {weekDates.map((date) => {
@@ -280,7 +280,7 @@ export default function CalendarViewPage() {
                       return (
                         <td
                           key={`${date}-${slotTemplate.start}`}
-                          className="border border-sky-100 px-3 py-3"
+                          className="border border-yellow-100 px-3 py-3"
                         >
                           <CalendarCell slot={slot} />
                         </td>
@@ -298,10 +298,10 @@ export default function CalendarViewPage() {
         )}
 
         <div className="mt-6 flex flex-wrap gap-4 text-sm text-slate-600">
-          <Legend color="bg-sky-500" label="Clinic slot in use" />
-          <Legend color="bg-cyan-500" label="Online slot in use" />
-          <Legend color="bg-emerald-500" label="Open shared slot" />
-          <Legend color="bg-red-500" label="Unavailable or blocked" />
+          <Legend color="bg-yellow-300" label="Clinic slot in use" />
+          <Legend color="bg-yellow-300" label="Online slot in use" />
+          <Legend color="bg-yellow-300" label="Open shared slot" />
+          <Legend color="bg-yellow-500" label="Unavailable or blocked" />
         </div>
 
         {doctorsLoading || isLoading ? <p className="mt-4 text-sm text-slate-500">Loading live calendar...</p> : null}
@@ -317,27 +317,27 @@ function CalendarCell({
 }) {
   if (!slot) {
     return (
-      <div className="rounded-[1.25rem] bg-red-50 px-3 py-3 text-red-800 shadow-sm ring-1 ring-inset ring-red-200">
+      <div className="rounded-[1.25rem] bg-yellow-50 px-3 py-3 text-yellow-800 shadow-sm ring-1 ring-inset ring-yellow-200">
         <p className="text-xs font-semibold uppercase tracking-[0.16em]">Closed</p>
         <p className="mt-2 text-xs">No saved schedule for this day.</p>
       </div>
     );
   }
 
-  let classes = "bg-emerald-100 text-emerald-800";
+  let classes = "bg-yellow-100 text-yellow-700";
   let summary = "Open";
   let detail = slot.mode === "Both" ? "Available for clinic or online" : `${slot.mode} schedule`;
 
   if (slot.activeType === "Clinic") {
-    classes = "bg-sky-100 text-sky-800";
+    classes = "bg-yellow-100 text-yellow-700";
     summary = `Clinic ${slot.bookedCount}/5`;
     detail = `Queue ${slot.queueNumbers.join(", ")}`;
   } else if (slot.activeType === "Online") {
-    classes = "bg-cyan-100 text-cyan-800";
+    classes = "bg-yellow-100 text-yellow-700";
     summary = `Online ${slot.bookedCount}/5`;
     detail = `Queue ${slot.queueNumbers.join(", ")}`;
   } else if (!slot.available) {
-    classes = "bg-red-100 text-red-800";
+    classes = "bg-yellow-100 text-yellow-800";
     summary = slot.reason;
     detail = slot.mode === "Both" ? "No booking allowed for this slot" : `${slot.mode} schedule`;
   }
@@ -369,7 +369,7 @@ function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-sky-100 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
+      className="rounded-full border border-yellow-100 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50"
     >
       {label}
     </Link>

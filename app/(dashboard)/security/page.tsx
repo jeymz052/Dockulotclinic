@@ -123,10 +123,10 @@ export default function SecurityPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-3xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="rounded-3xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Security</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Security</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Access control and audit center</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Monitor protected activity, export operational backups, and review the controls used for patient data privacy.
@@ -136,7 +136,7 @@ export default function SecurityPage() {
             type="button"
             onClick={downloadBackup}
             disabled={!canExportBackups || isDownloading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
             <FaCloudArrowDown className="h-4 w-4" aria-hidden="true" />
             {isDownloading ? "Preparing..." : "Export Backup"}
@@ -148,8 +148,8 @@ export default function SecurityPage() {
         <div
           className={`rounded-xl px-4 py-3 text-sm font-medium ${
             feedback.type === "success"
-              ? "border border-sky-200 bg-sky-50 text-sky-800"
-              : "border border-red-200 bg-red-50 text-red-800"
+              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
+              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
           }`}
         >
           {feedback.message}
@@ -166,7 +166,7 @@ export default function SecurityPage() {
       <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 text-yellow-700">
               <FaShieldHalved className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
@@ -253,12 +253,12 @@ function ControlCard({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-yellow-700">
           {icon}
         </span>
       </div>
       <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+      <p className="mt-2 text-2xl font-black text-black">{value}</p>
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
     </div>
   );

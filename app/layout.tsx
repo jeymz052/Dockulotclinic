@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: "Doc Kulot Clinic",
   description: "Clinic, patient portal, online consultation, POS, inventory, and doctor creator platform",
   icons: {
-    icon: "/images/svg-removebg-preview.png?v=3",
-    apple: "/images/svg-removebg-preview.png?v=3",
+    icon: "/images/favicondockulot.png",
+    apple: "/images/favicondockulot.png",
   },
 };
 
@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <RoleProvider>{children}</RoleProvider>
       </body>
     </html>

@@ -73,10 +73,10 @@ export default function ConsultationHistoryPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_42%),radial-gradient(circle_at_70%_10%,rgba(56,189,248,0.12),transparent_35%),linear-gradient(135deg,#f5fbff_0%,#ffffff_58%,#eef7ff_100%)] p-6 shadow-[0_20px_60px_rgba(14,165,233,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_42%),radial-gradient(circle_at_70%_10%,rgba(56,189,248,0.12),transparent_35%),linear-gradient(135deg,#f5fbff_0%,#ffffff_58%,#fef3c7_100%)] p-6 shadow-[0_20px_60px_rgba(133,77,14,0.12)]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
               {isPatient ? "My Medical Record" : "Clinical Archive"}
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -103,8 +103,8 @@ export default function ConsultationHistoryPage() {
 
       <section className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <label className="group flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition focus-within:border-sky-300 focus-within:bg-white lg:max-w-lg">
-            <FaMagnifyingGlass className="text-slate-400 group-focus-within:text-sky-600" />
+            <label className="group flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition focus-within:border-yellow-300 focus-within:bg-white lg:max-w-lg">
+            <FaMagnifyingGlass className="text-slate-400 group-focus-within:text-amber-400" />
             <input
               type="search"
               value={query}
@@ -125,8 +125,8 @@ export default function ConsultationHistoryPage() {
                 onClick={() => setStatusFilter(option)}
                 className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                   statusFilter === option
-                    ? "bg-sky-600 text-white shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                    ? "bg-yellow-400 text-white shadow-sm"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:text-yellow-700"
                 }`}
               >
                 {option}
@@ -137,7 +137,7 @@ export default function ConsultationHistoryPage() {
       </section>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {error}
         </div>
       ) : null}
@@ -148,10 +148,10 @@ export default function ConsultationHistoryPage() {
             const doctor = getDoctorById(note.doctorId);
             const statusTone =
               note.status === "Completed"
-                ? "bg-sky-100 text-sky-700"
+                ? "bg-yellow-100 text-yellow-700"
                 : note.status === "In Progress"
-                  ? "bg-sky-100 text-sky-700"
-                  : "bg-amber-100 text-amber-700";
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-yellow-100 text-yellow-700";
 
             return (
               <article
@@ -246,9 +246,9 @@ function SummaryChip({
 }) {
   const toneClass =
     tone === "emerald"
-      ? "border-sky-200 bg-sky-50 text-sky-700"
+      ? "border-yellow-200 bg-yellow-50 text-yellow-700"
       : tone === "sky"
-        ? "border-sky-200 bg-sky-50 text-sky-700"
+        ? "border-yellow-200 bg-yellow-50 text-yellow-700"
         : "border-slate-200 bg-white text-slate-700";
 
   return (

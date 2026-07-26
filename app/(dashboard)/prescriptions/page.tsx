@@ -263,9 +263,9 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-sky-100 bg-linear-to-br from-sky-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-700">Prescription & Diagnosis</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">Prescription records</h1>
+      <section className="rounded-[2rem] border border-yellow-100 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-yellow-700">Prescription & Diagnosis</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Prescription records</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Create prescriptions, release them to patients, and print/download portal-ready records.
         </p>
@@ -281,7 +281,7 @@ export default function PrescriptionsPage() {
         <form onSubmit={submitPrescription} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-slate-950">{editingId ? "Edit prescription" : "Create prescription"}</h2>
+              <h2 className="text-lg font-bold text-black">{editingId ? "Edit prescription" : "Create prescription"}</h2>
               <p className="mt-1 text-xs text-slate-500">Saved records remain available in prescription history.</p>
             </div>
             {editingId ? (
@@ -292,17 +292,17 @@ export default function PrescriptionsPage() {
             ) : null}
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-100" value={form.patient_id} onChange={(e) => setForm((s) => ({ ...s, patient_id: e.target.value }))}>
+            <select required disabled={Boolean(editingId)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-100" value={form.patient_id} onChange={(e) => setForm((s) => ({ ...s, patient_id: e.target.value }))}>
               <option value="">Select patient</option>
               {patients.map((p) => <option key={p.id} value={p.id}>{p.profiles?.full_name ?? p.id}</option>)}
             </select>
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-100" value={form.doctor_id} onChange={(e) => setForm((s) => ({ ...s, doctor_id: e.target.value }))}>
+            <select required disabled={Boolean(editingId)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-100" value={form.doctor_id} onChange={(e) => setForm((s) => ({ ...s, doctor_id: e.target.value }))}>
               <option value="">Select doctor</option>
               {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <input required className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Diagnosis" value={form.diagnosis_text} onChange={(e) => setForm((s) => ({ ...s, diagnosis_text: e.target.value }))} />
-            <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="Treatment plan" value={form.treatment_plan} onChange={(e) => setForm((s) => ({ ...s, treatment_plan: e.target.value }))} />
-            <input type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" value={form.follow_up_date} onChange={(e) => setForm((s) => ({ ...s, follow_up_date: e.target.value }))} />
+            <input required className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Diagnosis" value={form.diagnosis_text} onChange={(e) => setForm((s) => ({ ...s, diagnosis_text: e.target.value }))} />
+            <input className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Treatment plan" value={form.treatment_plan} onChange={(e) => setForm((s) => ({ ...s, treatment_plan: e.target.value }))} />
+            <input type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100" value={form.follow_up_date} onChange={(e) => setForm((s) => ({ ...s, follow_up_date: e.target.value }))} />
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold">
               <input type="checkbox" checked={form.released_to_patient} onChange={(e) => setForm((s) => ({ ...s, released_to_patient: e.target.checked }))} />
               Send to patient portal
@@ -312,13 +312,13 @@ export default function PrescriptionsPage() {
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-slate-950">Medicine Items</p>
+                <p className="text-sm font-bold text-black">Medicine Items</p>
                 <p className="text-xs text-slate-500">Add one or more medicines with dosage and usage instructions.</p>
               </div>
               <button
                 type="button"
                 onClick={addItemRow}
-                className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-xs font-bold text-sky-700 transition hover:bg-sky-50"
+                className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2 text-xs font-bold text-yellow-700 transition hover:bg-yellow-50"
               >
                 <FaPlus className="h-3 w-3" />
                 Add medicine
@@ -336,7 +336,7 @@ export default function PrescriptionsPage() {
                       type="button"
                       onClick={() => removeItemRow(index)}
                       disabled={items.length === 1}
-                      className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-full border border-yellow-200 px-3 py-1.5 text-[11px] font-bold text-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FaTrash className="h-3 w-3" />
                       Remove
@@ -346,32 +346,32 @@ export default function PrescriptionsPage() {
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <input
                       required={index === 0}
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                       placeholder="Medicine name"
                       value={item.medicine_name}
                       onChange={(e) => updateItem(index, "medicine_name", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                       placeholder="Dosage"
                       value={item.dosage}
                       onChange={(e) => updateItem(index, "dosage", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                       placeholder="Frequency"
                       value={item.frequency}
                       onChange={(e) => updateItem(index, "frequency", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                       placeholder="Duration"
                       value={item.duration}
                       onChange={(e) => updateItem(index, "duration", e.target.value)}
                     />
                   </div>
                   <textarea
-                    className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     placeholder="Dosage instructions, reminders, or pharmacy notes"
                     value={item.instructions}
                     onChange={(e) => updateItem(index, "instructions", e.target.value)}
@@ -381,32 +381,32 @@ export default function PrescriptionsPage() {
             </div>
           </div>
 
-          <textarea className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100" placeholder="General instructions" value={form.general_instructions} onChange={(e) => setForm((s) => ({ ...s, general_instructions: e.target.value }))} />
-          <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white">
+          <textarea className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="General instructions" value={form.general_instructions} onChange={(e) => setForm((s) => ({ ...s, general_instructions: e.target.value }))} />
+          <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white">
             {editingId ? <FaFloppyDisk /> : <FaPlus />}
             {editingId ? "Save changes" : "Create prescription"}
           </button>
         </form>
       ) : null}
 
-      {feedback ? <p className="rounded-xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">{feedback}</p> : null}
+      {feedback ? <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</p> : null}
 
       <div className="grid gap-4">
         {prescriptions.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-sky-500" />
-            <h2 className="mt-3 text-lg font-bold text-slate-950">No prescription history yet</h2>
+            <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-amber-300" />
+            <h2 className="mt-3 text-lg font-bold text-black">No prescription history yet</h2>
             <p className="mt-2 text-sm text-slate-500">
               {canManage ? "Create a prescription above to save it here." : "Released prescriptions from your doctor will appear here."}
             </p>
           </div>
         ) : null}
         {prescriptions.map((item) => (
-          <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:border-0 print:shadow-none hover:bg-sky-50 transition">
+          <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:border-0 print:shadow-none hover:bg-yellow-50 transition">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">{item.prescription_no}</span>
-                <h2 className="mt-2 text-lg font-bold text-slate-950">{item.patients?.profiles?.full_name ?? "Patient"}</h2>
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">{item.prescription_no}</span>
+                <h2 className="mt-2 text-lg font-bold text-black">{item.patients?.profiles?.full_name ?? "Patient"}</h2>
                 <p className="text-sm text-slate-500">
                   Created {new Date(item.created_at).toLocaleDateString()}
                   {item.doctors?.profiles?.full_name ? ` • ${item.doctors.profiles.full_name}` : ""}
@@ -414,34 +414,34 @@ export default function PrescriptionsPage() {
               </div>
               <div className="flex gap-2 print:hidden">
                 {canManage ? <button onClick={() => editPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700"><FaPenToSquare /> Edit</button> : null}
-                {canManage ? <button onClick={() => toggleRelease(item)} className="inline-flex items-center gap-2 rounded-full border border-sky-200 px-4 py-2 text-xs font-bold text-sky-700">{item.released_to_patient ? <FaEye /> : <FaPaperPlane />}{item.released_to_patient ? "Released" : "Send to portal"}</button> : null}
-                <button onClick={() => downloadPdf(item)} className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-xs font-bold text-sky-700"><FaDownload /> Download PDF</button>
-                <button onClick={() => printPrescription(item)} className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white"><FaPrint /> Print</button>
+                {canManage ? <button onClick={() => toggleRelease(item)} className="inline-flex items-center gap-2 rounded-full border border-yellow-200 px-4 py-2 text-xs font-bold text-yellow-700">{item.released_to_patient ? <FaEye /> : <FaPaperPlane />}{item.released_to_patient ? "Released" : "Send to portal"}</button> : null}
+                <button onClick={() => downloadPdf(item)} className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2 text-xs font-bold text-yellow-700"><FaDownload /> Download PDF</button>
+                <button onClick={() => printPrescription(item)} className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-white"><FaPrint /> Print</button>
               </div>
             </div>
             <div className="mt-4 grid gap-3">
               {item.diagnoses?.diagnosis_text ? (
-                <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Diagnosis</p>
+                <div className="rounded-xl border border-yellow-100 bg-yellow-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Diagnosis</p>
                   <p className="mt-2 text-sm text-slate-700">{item.diagnoses.diagnosis_text}</p>
                 </div>
               ) : null}
               {item.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Treatment Plan</p>
+                <div className="rounded-xl border border-yellow-100 bg-yellow-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Treatment Plan</p>
                   <p className="mt-2 text-sm text-slate-700">{item.diagnoses.treatment_plan}</p>
                 </div>
               ) : null}
               {(item.prescription_items ?? []).map((rx, index) => (
                 <div key={`${item.id}-${index}`} className="rounded-xl border border-slate-200 p-4">
-                  <p className="font-bold text-slate-950">{rx.medicine_name}</p>
+                  <p className="font-bold text-black">{rx.medicine_name}</p>
                   <p className="mt-1 text-sm text-slate-600">{[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(" - ")}</p>
                   {rx.instructions ? <p className="mt-2 text-sm text-slate-600">{rx.instructions}</p> : null}
                 </div>
               ))}
             </div>
             {item.general_instructions ? <p className="mt-4 text-sm leading-6 text-slate-700">{item.general_instructions}</p> : null}
-            {item.follow_up_date ? <p className="mt-3 text-sm font-semibold text-sky-700">Follow-up: {item.follow_up_date}</p> : null}
+            {item.follow_up_date ? <p className="mt-3 text-sm font-semibold text-yellow-700">Follow-up: {item.follow_up_date}</p> : null}
           </article>
         ))}
       </div>
@@ -452,8 +452,8 @@ export default function PrescriptionsPage() {
 function CapabilityCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <div className="text-2xl text-sky-600">{icon}</div>
-      <h2 className="mt-4 text-base font-bold text-slate-950">{title}</h2>
+      <div className="text-2xl text-amber-400">{icon}</div>
+      <h2 className="mt-4 text-base font-bold text-black">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
     </article>
   );

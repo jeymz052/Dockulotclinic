@@ -164,9 +164,9 @@ function mergeLiveScheduleParts(datePart: string, timePart: string) {
 }
 
 function statusTone(status: string) {
-  if (status === "Published" || status === "Live") return "border-sky-200 bg-sky-50 text-sky-700";
+  if (status === "Published" || status === "Live") return "border-yellow-200 bg-yellow-50 text-yellow-700";
   if (status === "Archived" || status === "Cancelled") return "border-slate-200 bg-slate-100 text-slate-700";
-  if (status === "Completed") return "border-sky-100 bg-sky-50 text-sky-700";
+  if (status === "Completed") return "border-yellow-100 bg-yellow-50 text-yellow-700";
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
@@ -185,7 +185,7 @@ function Surface({
     <section className="rounded-[2rem] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">{title}</h2>
+          <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">{description}</p>
         </div>
         {action}
@@ -273,7 +273,7 @@ function MediaImageUploader({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="rounded-full bg-sky-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Uploading..." : currentUrl ? "Replace image" : "Upload image"}
           </button>
@@ -332,13 +332,13 @@ function TabButton({
       onClick={onClick}
       className={`inline-flex min-h-[3.75rem] min-w-[200px] flex-1 items-center justify-center gap-3 rounded-[1.2rem] border px-5 py-4 text-center transition ${
         active
-          ? "border-sky-300 bg-[linear-gradient(135deg,#1f7cc6_0%,#0e5fa3_100%)] text-white shadow-[0_18px_35px_-22px_rgba(14,95,163,0.75)]"
-          : "border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f3f8ff_100%)] text-slate-700 shadow-[0_14px_30px_-24px_rgba(14,116,194,0.22)] hover:border-sky-200 hover:bg-[linear-gradient(180deg,#ffffff_0%,#eef6ff_100%)] hover:text-sky-900"
+          ? "border-yellow-300 bg-[linear-gradient(135deg,#1f7cc6_0%,#0e5fa3_100%)] text-white shadow-[0_18px_35px_-22px_rgba(14,95,163,0.75)]"
+          : "border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f3f8ff_100%)] text-slate-700 shadow-[0_14px_30px_-24px_rgba(14,116,194,0.22)] hover:border-yellow-200 hover:bg-[linear-gradient(180deg,#ffffff_0%,#eef6ff_100%)] hover:text-yellow-800"
       }`}
     >
       <span
         className={`rounded-full p-2 ${
-          active ? "bg-white/15 text-white" : "bg-sky-50 text-sky-700"
+          active ? "bg-white/15 text-white" : "bg-yellow-50 text-yellow-700"
         }`}
       >
         <Icon />
@@ -574,21 +574,21 @@ export default function ContentCreatorStudio() {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_38%,#f3f8ff_100%)] px-4 pb-10 pt-2 sm:px-6">
-      <section className="relative overflow-hidden rounded-[2.75rem] border border-sky-100 bg-[radial-gradient(circle_at_0%_0%,rgba(125,211,252,0.42),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(191,219,254,0.28),transparent_22%),linear-gradient(135deg,#1d5f97_0%,#123d69_34%,#0b2345_68%,#081429_100%)] px-6 py-8 text-white shadow-[0_40px_90px_-48px_rgba(8,20,41,0.58)] sm:px-8 sm:py-9">
+    <div className="min-h-screen space-y-6 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_38%,#f3f8ff_100%)] px-4 pb-10 pt-2 sm:px-6">
+      <section className="relative overflow-hidden rounded-[2.75rem] border border-yellow-100 bg-[radial-gradient(circle_at_0%_0%,rgba(125,211,252,0.42),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(191,219,254,0.28),transparent_22%),linear-gradient(135deg,#1d5f97_0%,#123d69_34%,#0b2345_68%,#081429_100%)] px-6 py-8 text-white shadow-[0_40px_90px_-48px_rgba(8,20,41,0.58)] sm:px-8 sm:py-9">
         <div className="pointer-events-none absolute inset-0 opacity-60">
           <div className="absolute -left-16 top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute right-10 top-6 h-28 w-28 rounded-full bg-sky-300/20 blur-2xl" />
-          <div className="absolute bottom-0 left-1/3 h-24 w-56 rounded-full bg-sky-200/10 blur-2xl" />
+          <div className="absolute right-10 top-6 h-28 w-28 rounded-full bg-yellow-300/20 blur-2xl" />
+          <div className="absolute bottom-0 left-1/3 h-24 w-56 rounded-full bg-yellow-200/10 blur-2xl" />
         </div>
 
         <div className="relative flex flex-wrap items-start justify-between gap-6">
           <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-sky-100/95">Creator workspace</p>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-100/95">Creator workspace</p>
             <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight sm:text-5xl xl:text-[4.25rem]">
               Content Creator Platform
             </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-8 text-sky-50/90 sm:text-lg">
+            <p className="mt-5 max-w-2xl text-sm leading-8 text-amber-50/90 sm:text-lg">
               Build blog articles, doctor-vlogger video posts, and live health-talk schedules in one place. Everything
               published here is meant to surface on the public website and landing-page sections.
             </p>
@@ -596,8 +596,8 @@ export default function ContentCreatorStudio() {
 
           <div className="w-full max-w-[430px] rounded-[2rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] p-5 shadow-[0_22px_48px_-30px_rgba(8,20,41,0.75)] backdrop-blur-xl">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-100">Publishing snapshot</p>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-100">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-100">Publishing snapshot</p>
+              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100">
                 Live sync
               </span>
             </div>
@@ -605,22 +605,22 @@ export default function ContentCreatorStudio() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4">
                 <p className="text-3xl font-black text-white">{contentPosts.length}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-sky-100/80">Total content posts</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-amber-100/80">Total content posts</p>
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4">
                 <p className="text-3xl font-black text-white">{liveEvents.length}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-sky-100/80">Live schedule entries</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-amber-100/80">Live schedule entries</p>
               </div>
             </div>
 
-            <p className="mt-4 text-sm leading-7 text-sky-50/80">
+            <p className="mt-4 text-sm leading-7 text-amber-50/80">
               Keep blogs, vlogs, and live sessions aligned so public visitors always see the latest creator activity.
             </p>
           </div>
         </div>
       </section>
 
-      <div className="rounded-[2rem] border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f4f9ff_100%)] p-2.5 shadow-[0_24px_50px_-34px_rgba(14,116,194,0.25)] backdrop-blur">
+      <div className="rounded-[2rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f4f9ff_100%)] p-2.5 shadow-[0_24px_50px_-34px_rgba(14,116,194,0.25)] backdrop-blur">
         <div className="grid gap-2 md:grid-cols-3">
           <TabButton
             active={activeTab === "blog"}
@@ -644,7 +644,7 @@ export default function ContentCreatorStudio() {
       </div>
 
       {feedback ? (
-        <div className="rounded-[1.5rem] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
+        <div className="rounded-[1.5rem] border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">
           {feedback}
         </div>
       ) : null}
@@ -669,7 +669,7 @@ export default function ContentCreatorStudio() {
                   type="button"
                   onClick={() => startTransition(() => void saveVideoDraft())}
                   disabled={isPending || !videoDraft.title.trim()}
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex items-center gap-2 rounded-full bg-amber-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   <FaFloppyDisk />
                   {videoDraft.id ? "Update content" : "Save content"}
@@ -683,7 +683,7 @@ export default function ContentCreatorStudio() {
                   <select
                     value={videoDraft.content_type}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, content_type: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   >
                     {videoTypes.map((type) => (
                       <option key={type} value={type}>
@@ -697,7 +697,7 @@ export default function ContentCreatorStudio() {
                   <select
                     value={videoDraft.category}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, category: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   >
                     {contentCategories.map((category) => (
                       <option key={category} value={category}>
@@ -711,7 +711,7 @@ export default function ContentCreatorStudio() {
                   <input
                     value={videoDraft.title}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, title: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   />
                 </Field>
 
@@ -720,7 +720,7 @@ export default function ContentCreatorStudio() {
                     value={videoDraft.slug}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, slug: event.target.value }))}
                     placeholder="doctor-health-tip-video"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   />
                 </Field>
 
@@ -730,7 +730,7 @@ export default function ContentCreatorStudio() {
                       rows={4}
                       value={videoDraft.excerpt}
                       onChange={(event) => setVideoDraft((current) => ({ ...current, excerpt: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                   </Field>
                 </div>
@@ -741,7 +741,7 @@ export default function ContentCreatorStudio() {
                       value={videoDraft.embed_url}
                       onChange={(event) => setVideoDraft((current) => ({ ...current, embed_url: event.target.value }))}
                       placeholder="https://www.youtube.com/embed/..."
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                   </Field>
                 </div>
@@ -752,7 +752,7 @@ export default function ContentCreatorStudio() {
                       rows={5}
                       value={videoDraft.body}
                       onChange={(event) => setVideoDraft((current) => ({ ...current, body: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                   </Field>
                 </div>
@@ -772,7 +772,7 @@ export default function ContentCreatorStudio() {
                   <select
                     value={videoDraft.status}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, status: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   >
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
@@ -785,16 +785,16 @@ export default function ContentCreatorStudio() {
                     type="checkbox"
                     checked={videoDraft.is_featured}
                     onChange={(event) => setVideoDraft((current) => ({ ...current, is_featured: event.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                    className="h-4 w-4 rounded border-slate-300 text-yellow-700 focus:ring-amber-300"
                   />
                   Feature this item on public surfaces
                 </label>
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_60%,#f3f8ff_100%)] p-4 shadow-sm">
+                <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_60%,#f3f8ff_100%)] p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Landing-page media preview</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">Landing-page media preview</p>
                     <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${statusTone(videoDraft.status)}`}>
                       {videoDraft.status}
                     </span>
@@ -822,14 +822,14 @@ export default function ContentCreatorStudio() {
                         <span>{videoDraft.content_type}</span>
                         <span>{videoDraft.category}</span>
                       </div>
-                      <h3 className="text-2xl font-black tracking-tight text-slate-950">
+                      <h3 className="text-2xl font-black tracking-tight text-black">
                         {videoDraft.title.trim() || "Video headline preview"}
                       </h3>
                       <p className="text-sm leading-7 text-slate-600">
                         {videoDraft.excerpt.trim() || "A short preview about this video, replay, or clinic announcement will appear here."}
                       </p>
                       <div className="flex flex-wrap gap-3">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-800">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-yellow-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-700">
                           Watch / View
                           <FaArrowRight />
                         </span>
@@ -856,7 +856,7 @@ export default function ContentCreatorStudio() {
                       type="button"
                       onClick={() => startTransition(() => void saveVideoDraft("Published"))}
                       disabled={isPending || !videoDraft.title.trim()}
-                      className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-700 transition hover:bg-sky-100 disabled:opacity-60"
+                      className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-60"
                     >
                       Publish
                     </button>
@@ -910,7 +910,7 @@ export default function ContentCreatorStudio() {
                     </div>
 
                     <div>
-                      <p className="line-clamp-2 text-xl font-black tracking-tight text-slate-950">{post.title}</p>
+                      <p className="line-clamp-2 text-xl font-black tracking-tight text-black">{post.title}</p>
                       <p className="mt-2 text-sm font-medium text-slate-500">{post.category}</p>
                     </div>
 
@@ -932,7 +932,7 @@ export default function ContentCreatorStudio() {
                             body: post.body ?? "",
                           })
                         }
-                        className="rounded-full border border-sky-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-800 transition hover:bg-sky-50"
+                        className="rounded-full border border-yellow-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-50"
                       >
                         Edit
                       </button>
@@ -941,7 +941,7 @@ export default function ContentCreatorStudio() {
                           href={post.embed_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-800 transition hover:bg-sky-50"
+                          className="rounded-full border border-yellow-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-50"
                         >
                           Open source
                         </a>
@@ -949,7 +949,7 @@ export default function ContentCreatorStudio() {
                       <button
                         type="button"
                         onClick={() => startTransition(() => void updateStoredPostStatus(post, "Published"))}
-                        className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700 transition hover:bg-sky-100"
+                        className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100"
                       >
                         Make public
                       </button>
@@ -970,7 +970,7 @@ export default function ContentCreatorStudio() {
                       <button
                         type="button"
                         onClick={() => startTransition(() => void deletePost(post.id))}
-                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-rose-700 transition hover:bg-rose-50"
+                        className="rounded-full border border-yellow-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-50"
                       >
                         Delete
                       </button>
@@ -1007,7 +1007,7 @@ export default function ContentCreatorStudio() {
                   type="button"
                   onClick={() => startTransition(() => void saveLiveDraft())}
                   disabled={isPending}
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex items-center gap-2 rounded-full bg-amber-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   <FaFloppyDisk />
                   {liveDraft.id ? "Update event" : "Save event"}
@@ -1021,7 +1021,7 @@ export default function ContentCreatorStudio() {
                   <input
                     value={liveDraft.title}
                     onChange={(event) => setLiveDraft((current) => ({ ...current, title: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   />
                 </Field>
 
@@ -1029,7 +1029,7 @@ export default function ContentCreatorStudio() {
                   <select
                     value={liveDraft.platform}
                     onChange={(event) => setLiveDraft((current) => ({ ...current, platform: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   >
                     {livePlatforms.map((platform) => (
                       <option key={platform} value={platform}>
@@ -1050,7 +1050,7 @@ export default function ContentCreatorStudio() {
                           starts_at: mergeLiveScheduleParts(event.target.value, getLiveTimePart(current.starts_at)),
                         }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                     <select
                       value={getLiveTimePart(liveDraft.starts_at) || "09:00"}
@@ -1060,7 +1060,7 @@ export default function ContentCreatorStudio() {
                           starts_at: mergeLiveScheduleParts(getLiveDatePart(current.starts_at), event.target.value),
                         }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     >
                       {liveTimeOptions.map((time) => (
                         <option key={time} value={time}>
@@ -1073,7 +1073,7 @@ export default function ContentCreatorStudio() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <p className={`text-xs font-medium ${liveDraft.starts_at ? "text-slate-400" : "text-sky-700"}`}>
+                    <p className={`text-xs font-medium ${liveDraft.starts_at ? "text-slate-400" : "text-yellow-700"}`}>
                       {liveDraft.starts_at
                         ? "This event will publish using your selected local date and selected time slot."
                         : "Required. Choose the event date and time before saving."}
@@ -1085,7 +1085,7 @@ export default function ContentCreatorStudio() {
                   <select
                     value={liveDraft.status}
                     onChange={(event) => setLiveDraft((current) => ({ ...current, status: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                   >
                     {liveStatuses.map((status) => (
                       <option key={status} value={status}>
@@ -1101,7 +1101,7 @@ export default function ContentCreatorStudio() {
                       value={liveDraft.live_url}
                       onChange={(event) => setLiveDraft((current) => ({ ...current, live_url: event.target.value }))}
                       placeholder="https://facebook.com/... or registration link"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                   </Field>
                 </div>
@@ -1112,7 +1112,7 @@ export default function ContentCreatorStudio() {
                       rows={5}
                       value={liveDraft.description}
                       onChange={(event) => setLiveDraft((current) => ({ ...current, description: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     />
                   </Field>
                 </div>
@@ -1122,7 +1122,7 @@ export default function ContentCreatorStudio() {
                     <select
                       value={liveDraft.replay_post_id}
                       onChange={(event) => setLiveDraft((current) => ({ ...current, replay_post_id: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                     >
                       <option value="">No replay linked yet</option>
                       {replayCandidates.map((post) => (
@@ -1139,36 +1139,36 @@ export default function ContentCreatorStudio() {
                     type="checkbox"
                     checked={liveDraft.registration_enabled}
                     onChange={(event) => setLiveDraft((current) => ({ ...current, registration_enabled: event.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-300 text-sky-700 focus:ring-sky-500"
+                    className="h-4 w-4 rounded border-slate-300 text-yellow-700 focus:ring-amber-300"
                   />
                   Allow visitors to register interest or join from the public page
                 </label>
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_40%,#f3f8ff_100%)] p-4 shadow-sm">
+                <div className="rounded-[1.75rem] border border-slate-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_40%,#f3f8ff_100%)] p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700">Landing-page live preview</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">Landing-page live preview</p>
                     <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${statusTone(liveDraft.status)}`}>
                       {liveDraft.status}
                     </span>
                   </div>
 
                   <div className="mt-4 rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">
+                    <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">
                       <FaCalendarDays />
                       {liveDraft.starts_at ? formatDateTime(new Date(liveDraft.starts_at).toISOString()) : "Choose a schedule"}
                     </div>
-                    <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                    <h3 className="mt-4 text-2xl font-black tracking-tight text-black">
                       {liveDraft.title.trim() || "Upcoming live health talk"}
                     </h3>
                     <p className="mt-3 text-sm leading-7 text-slate-600">
                       {liveDraft.description.trim() || "A public summary of the live topic, who it is for, and why followers should join will appear here."}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.14em]">
-                      <span className="rounded-full bg-sky-50 px-3 py-1.5 text-sky-800">{liveDraft.platform || "Platform"}</span>
+                      <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-yellow-700">{liveDraft.platform || "Platform"}</span>
                       {liveDraft.registration_enabled ? (
-                        <span className="rounded-full bg-sky-50 px-3 py-1.5 text-sky-700">Registration enabled</span>
+                        <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-yellow-700">Registration enabled</span>
                       ) : null}
                     </div>
                     <div className="mt-5 flex flex-wrap gap-2">
@@ -1176,7 +1176,7 @@ export default function ContentCreatorStudio() {
                         type="button"
                         onClick={() => startTransition(() => void saveLiveDraft("Upcoming"))}
                         disabled={isPending}
-                        className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-800 transition hover:bg-sky-100 disabled:opacity-60"
+                        className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-60"
                       >
                         Schedule
                       </button>
@@ -1184,7 +1184,7 @@ export default function ContentCreatorStudio() {
                         type="button"
                         onClick={() => startTransition(() => void saveLiveDraft("Live"))}
                         disabled={isPending}
-                        className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-sky-700 transition hover:bg-sky-100 disabled:opacity-60"
+                        className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-60"
                       >
                         Mark live
                       </button>
@@ -1220,7 +1220,7 @@ export default function ContentCreatorStudio() {
                           {event.platform || "Platform TBA"}
                         </span>
                       </div>
-                      <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">{event.title}</h3>
+                      <h3 className="mt-3 text-xl font-black tracking-tight text-black">{event.title}</h3>
                       <p className="mt-2 text-sm font-medium text-slate-500">{formatDateTime(event.starts_at)}</p>
                     </div>
 
@@ -1239,7 +1239,7 @@ export default function ContentCreatorStudio() {
                           status: event.status,
                         })
                       }
-                      className="rounded-full border border-sky-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-800 transition hover:bg-sky-50"
+                      className="rounded-full border border-yellow-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-50"
                     >
                       Edit
                     </button>
@@ -1250,7 +1250,7 @@ export default function ContentCreatorStudio() {
                   </p>
 
                   {event.content_posts?.title ? (
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-yellow-700">
                       Replay linked: {event.content_posts.title}
                     </p>
                   ) : null}
@@ -1259,14 +1259,14 @@ export default function ContentCreatorStudio() {
                     <button
                       type="button"
                       onClick={() => startTransition(() => void updateLiveEventStatus(event, "Live"))}
-                      className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-700 transition hover:bg-sky-100"
+                      className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100"
                     >
                       Go live
                     </button>
                     <button
                       type="button"
                       onClick={() => startTransition(() => void updateLiveEventStatus(event, "Completed"))}
-                      className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-sky-800 transition hover:bg-sky-100"
+                      className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-100"
                     >
                       Complete
                     </button>
@@ -1280,7 +1280,7 @@ export default function ContentCreatorStudio() {
                     <button
                       type="button"
                       onClick={() => startTransition(() => void deleteLiveEvent(event.id))}
-                      className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-rose-700 transition hover:bg-rose-50"
+                      className="rounded-full border border-yellow-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-yellow-700 transition hover:bg-yellow-50"
                     >
                       <FaTrash />
                     </button>

@@ -195,10 +195,10 @@ function getNotificationTone(item: NotificationItem) {
     return {
       card:
         "border-transparent bg-transparent hover:bg-slate-50",
-      label: "text-rose-700",
-      iconWrap: "border-rose-200 bg-rose-50 text-rose-600",
-      action: "text-rose-700 hover:text-rose-800",
-      status: "text-rose-700",
+      label: "text-yellow-700",
+      iconWrap: "border-yellow-200 bg-yellow-50 text-yellow-600",
+      action: "text-yellow-700 hover:text-yellow-800",
+      status: "text-yellow-700",
     };
   }
 
@@ -206,10 +206,10 @@ function getNotificationTone(item: NotificationItem) {
     return {
       card:
         "border-transparent bg-transparent hover:bg-slate-50",
-      label: "text-sky-800",
-      iconWrap: "border-sky-200 bg-sky-50 text-sky-700",
-      action: "text-sky-700 hover:text-sky-800",
-      status: "text-sky-700",
+      label: "text-amber-700",
+      iconWrap: "border-amber-200 bg-amber-50 text-amber-700",
+      action: "text-amber-700 hover:text-amber-700",
+      status: "text-amber-700",
     };
   }
 
@@ -418,7 +418,7 @@ export function DashboardHeader({
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-[linear-gradient(180deg,#f6f7ef_0%,#ffffff_72%)] backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_72%)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
@@ -440,8 +440,8 @@ export function DashboardHeader({
           <div className="relative" ref={notifMenuRef}>
             <button
               type="button"
-              className={`relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-600 bg-white text-sky-600 shadow-sm transition hover:border-sky-500 hover:text-sky-700 sm:h-12 sm:w-12 ${
-                notifPulse ? "ring-4 ring-rose-200 ring-offset-2 ring-offset-white animate-pulse" : ""
+              className={`relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-400 bg-white text-amber-400 shadow-sm transition hover:border-amber-300 hover:text-amber-700 sm:h-12 sm:w-12 ${
+                notifPulse ? "ring-4 ring-yellow-200 ring-offset-2 ring-offset-white animate-pulse" : ""
               }`}
               aria-label="Notifications"
               onClick={() => {
@@ -452,7 +452,7 @@ export function DashboardHeader({
             >
               <FaBell className="h-4 w-4" />
               {notifCount > 0 ? (
-                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
+                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-yellow-500 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
                   {notifCount > 99 ? "99+" : notifCount}
                 </span>
               ) : null}
@@ -495,7 +495,7 @@ export function DashboardHeader({
                         </button>
                         <button
                           type="button"
-                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-yellow-600 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50"
                           onClick={async () => {
                             if (!accessToken) return;
                             try {
@@ -603,7 +603,7 @@ export function DashboardHeader({
                                       {item.href ? (
                                         <button
                                           type="button"
-                                          className="text-slate-900 transition hover:text-sky-700"
+                                          className="text-slate-900 transition hover:text-amber-700"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             void openNotification(item);
@@ -636,14 +636,14 @@ export function DashboardHeader({
           <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
-              className="flex min-w-0 max-w-48 items-center gap-2 rounded-[1.4rem] border-2 border-sky-600 bg-white px-2.5 py-1.5 text-left shadow-sm transition hover:border-sky-500 hover:shadow-md sm:max-w-none sm:gap-3 sm:rounded-[1.75rem] sm:px-3 sm:py-2 sm:pr-4"
+              className="flex min-w-0 max-w-48 items-center gap-2 rounded-[1.4rem] border-2 border-amber-400 bg-white px-2.5 py-1.5 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md sm:max-w-none sm:gap-3 sm:rounded-[1.75rem] sm:px-3 sm:py-2 sm:pr-4"
               onClick={() => {
                 setIsMenuOpen((current) => !current);
                 setIsNotifOpen(false);
               }}
               aria-label="Open account menu"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] border-sky-600 bg-[radial-gradient(circle_at_top,#163b7a_0%,#0f2147_80%)] text-xs font-bold text-white sm:h-11 sm:w-11 sm:border-4 sm:text-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] border-amber-400 bg-[radial-gradient(circle_at_top,#163b7a_0%,#0f2147_80%)] text-xs font-bold text-white sm:h-11 sm:w-11 sm:border-4 sm:text-sm">
                 {initials}
               </div>
 
@@ -674,7 +674,7 @@ export function DashboardHeader({
                 <div className="p-2">
                   <Link
                     href="/profile"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-amber-700"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <FaRegUser className="h-4 w-4" />
@@ -683,7 +683,7 @@ export function DashboardHeader({
 
                   <Link
                     href={settingsHref}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-sky-700"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-amber-700"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <FaGear className="h-4 w-4" />
@@ -694,7 +694,7 @@ export function DashboardHeader({
                 <div className="border-t border-slate-100 p-2">
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-rose-50 hover:text-rose-700"
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-yellow-50 hover:text-yellow-700"
                     onClick={handleLogoutClick}
                   >
                     <FaArrowRightFromBracket className="h-4 w-4" />

@@ -205,10 +205,10 @@ export default function TimeSlotsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-sky-200 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_30%),linear-gradient(135deg,#f5fbff_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(14,165,233,0.10)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_30%),linear-gradient(135deg,#f5fbff_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)]">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Blocked Dates</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Blocked Dates</p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Manage leave and blocked dates</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Use this page to block one-off leave days or unavailable dates for the selected
@@ -225,35 +225,35 @@ export default function TimeSlotsPage() {
       </section>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="rounded-3xl border border-sky-100 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+        <div className="rounded-3xl border border-yellow-100 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
           Live schedule preview: <span className="font-semibold text-slate-900">{doctor.name}</span> on{" "}
           <span className="font-semibold text-slate-900">{formatDisplayDate(form.date)}</span>
         </div>
         <Link
           href="/schedules"
-          className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-100"
+          className="inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-5 py-3 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-100"
         >
           Back to Schedule Management
         </Link>
       </div>
 
       {feedback ? (
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {feedback}
         </div>
       ) : null}
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {error}
         </div>
       ) : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <div className="rounded-4xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <div className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Editor</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Editor</p>
               <h2 className="mt-2 text-xl font-bold text-slate-900">Set doctor leave or blocked dates</h2>
               <p className="mt-2 text-sm text-slate-600">
                 These entries block bookings at both the interface and server layer.
@@ -266,7 +266,7 @@ export default function TimeSlotsPage() {
 
           <form className="mt-5 space-y-4" onSubmit={saveBlockedDay}>
             <Field label="Doctor">
-              <div className="mt-2 rounded-[1.15rem] border border-sky-100 bg-sky-50 px-4 py-3 font-semibold text-sky-900">
+              <div className="mt-2 rounded-[1.15rem] border border-yellow-100 bg-yellow-50 px-4 py-3 font-semibold text-yellow-800">
                 {doctor.name}
               </div>
             </Field>
@@ -278,7 +278,7 @@ export default function TimeSlotsPage() {
                   value={form.date}
                   onChange={(event) => updateField("date", event.target.value)}
                   disabled={!canManage || isSaving}
-                  className="mt-2 w-full rounded-[1.15rem] border border-sky-100 px-4 py-3 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-50"
+                  className="mt-2 w-full rounded-[1.15rem] border border-yellow-100 px-4 py-3 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-50"
                 />
               </Field>
               <Field label="Reason">
@@ -286,7 +286,7 @@ export default function TimeSlotsPage() {
                   value={form.reason}
                   onChange={(event) => updateField("reason", event.target.value as AvailabilityReason)}
                   disabled={!canManage || isSaving}
-                  className="mt-2 w-full rounded-[1.15rem] border border-sky-100 bg-white px-4 py-3 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-50"
+                  className="mt-2 w-full rounded-[1.15rem] border border-yellow-100 bg-white px-4 py-3 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-50"
                 >
                   <option value="Not Available">Not Available</option>
                   <option value="Leave">Leave</option>
@@ -299,12 +299,12 @@ export default function TimeSlotsPage() {
                 value={form.note}
                 onChange={(event) => updateField("note", event.target.value)}
                 disabled={!canManage || isSaving}
-                className="mt-2 min-h-28 w-full rounded-[1.15rem] border border-sky-100 px-4 py-3 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-50"
+                className="mt-2 min-h-28 w-full rounded-[1.15rem] border border-yellow-100 px-4 py-3 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100 disabled:bg-slate-50"
                 placeholder="Optional note for the team"
               />
             </Field>
 
-            <div className="rounded-[1.4rem] border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm text-sky-900">
+            <div className="rounded-[1.4rem] border border-yellow-100 bg-yellow-50/70 px-4 py-3 text-sm text-yellow-800">
               Tip: use <span className="font-semibold">Leave</span> for approved time off and{" "}
               <span className="font-semibold">Not Available</span> for holidays, closures, or ad hoc blocks.
             </div>
@@ -313,7 +313,7 @@ export default function TimeSlotsPage() {
               <button
                 type="submit"
                 disabled={!canManage || isSaving}
-                className="rounded-full bg-[linear-gradient(135deg,#0284c7,#0ea5e9)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving
                   ? "Saving..."
@@ -334,10 +334,10 @@ export default function TimeSlotsPage() {
           </form>
         </div>
 
-        <div className="rounded-4xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <div className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Operational Preview</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Operational Preview</p>
               <h2 className="mt-2 text-xl font-bold text-slate-900">Live slot status</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Shared-slot conflict control still applies on available days.
@@ -351,8 +351,8 @@ export default function TimeSlotsPage() {
                   onClick={() => setViewType(type)}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     viewType === type
-                      ? "border-sky-700 bg-sky-700 text-white"
-                      : "border-sky-100 bg-white text-slate-700 hover:bg-sky-50"
+                      ? "border-amber-400 bg-yellow-400 text-white"
+                      : "border-yellow-100 bg-white text-slate-700 hover:bg-yellow-50"
                   }`}
                 >
                   {type}
@@ -374,7 +374,7 @@ export default function TimeSlotsPage() {
                     key={slot.start}
                     className={`rounded-[1.4rem] border px-4 py-4 ${
                       available
-                        ? "border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fef9_100%)]"
+                        ? "border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)]"
                         : "border-slate-200 bg-slate-50"
                     }`}
                   >
@@ -382,7 +382,7 @@ export default function TimeSlotsPage() {
                       <p className="font-semibold text-slate-900">{formatRange(slot.start, slot.end)}</p>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          available ? "bg-sky-100 text-sky-700" : "bg-slate-200 text-slate-700"
+                          available ? "bg-yellow-100 text-yellow-700" : "bg-slate-200 text-slate-700"
                         }`}
                       >
                         {slot.bookedCount}/5 booked
@@ -405,10 +405,10 @@ export default function TimeSlotsPage() {
         </div>
       </div>
 
-      <div className="rounded-4xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <div className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Saved Entries</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Saved Entries</p>
             <h2 className="mt-2 text-xl font-bold text-slate-900">Blocked dates for {doctor.name}</h2>
           </div>
           {isLoading ? <p className="text-sm text-slate-500">Loading doctor availability...</p> : null}
@@ -419,7 +419,7 @@ export default function TimeSlotsPage() {
             doctorBlocks.map((record) => (
               <div
                 key={record.id}
-                className="flex flex-col gap-3 rounded-[1.4rem] border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fef9_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 rounded-[1.4rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -427,8 +427,8 @@ export default function TimeSlotsPage() {
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         record.reason === "Leave"
-                          ? "bg-lime-100 text-lime-700"
-                          : "bg-sky-100 text-sky-700"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
                       {record.reason}
@@ -448,7 +448,7 @@ export default function TimeSlotsPage() {
                     <button
                       type="button"
                       onClick={() => removeBlockedDay(record.id)}
-                      className="rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                      className="rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50"
                     >
                       Delete
                     </button>
@@ -457,7 +457,7 @@ export default function TimeSlotsPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-[1.4rem] border border-dashed border-sky-200 bg-sky-50/60 px-4 py-6 text-sm text-sky-800">
+            <div className="rounded-[1.4rem] border border-dashed border-yellow-200 bg-yellow-50/60 px-4 py-6 text-sm text-yellow-700">
               No blocked dates saved for this doctor yet.
             </div>
           )}
@@ -484,7 +484,7 @@ function Field({
 
 function HeroMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.4rem] border border-sky-200 bg-white px-4 py-3 shadow-sm">
+    <div className="rounded-[1.4rem] border border-yellow-200 bg-white px-4 py-3 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
       <p className="mt-2 text-base font-bold text-slate-900">{value}</p>
     </div>

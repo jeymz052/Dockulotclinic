@@ -260,10 +260,10 @@ export default function OnlineConsultationPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#eef7ff_100%)] p-6 shadow-[0_24px_60px_rgba(14,165,233,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(133,77,14,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
               Consultations
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -311,7 +311,7 @@ export default function OnlineConsultationPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-[2rem] border border-sky-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex h-full flex-col overflow-hidden xl:h-[38rem]">
+        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex h-full flex-col overflow-hidden xl:h-[38rem]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -340,8 +340,8 @@ export default function OnlineConsultationPage() {
                     key={appointment.id}
                     className={`rounded-xl border p-3 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
                       isActive
-                        ? "border-sky-400 bg-sky-50/70 ring-2 ring-sky-200"
-                        : "border-slate-200 hover:border-sky-200 hover:bg-sky-50/40"
+                        ? "border-amber-400 bg-yellow-50/70 ring-2 ring-yellow-200"
+                        : "border-slate-200 hover:border-yellow-200 hover:bg-yellow-50/40"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -381,7 +381,7 @@ export default function OnlineConsultationPage() {
                       <button
                         type="button"
                         onClick={() => openConsultation(appointment)}
-                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#0284c7,#0ea5e9)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(14,165,233,0.20)] transition hover:-translate-y-0.5"
+                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.20)] transition hover:-translate-y-0.5"
                       >
                         <FaNotesMedical className="h-3.5 w-3.5" aria-hidden="true" />
                         {appointment.meetingLink ? "Open Workspace" : "Write Notes"}
@@ -393,7 +393,7 @@ export default function OnlineConsultationPage() {
                           rel="noreferrer"
                           className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                             isOnlineReady
-                              ? "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300"
+                              ? "border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300"
                               : "border-slate-200 bg-white text-slate-600"
                           }`}
                         >
@@ -410,10 +410,10 @@ export default function OnlineConsultationPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-sky-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
+        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-sky-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={activeAppointment.type === "Online" ? "sky" : "emerald"}>
@@ -440,7 +440,7 @@ export default function OnlineConsultationPage() {
                       href={activeAppointment.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700"
+                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400"
                     >
                       <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
                       Launch Meeting
@@ -478,36 +478,36 @@ export default function OnlineConsultationPage() {
               </div>
 
               {activeAppointment.type === "Online" ? (
-                <div className="rounded-[1.5rem] border border-sky-100 bg-sky-50/50 p-4">
+                <div className="rounded-[1.5rem] border border-yellow-100 bg-yellow-50/50 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaFileWaveform className="h-4 w-4 text-sky-600" aria-hidden="true" />
+                      <FaFileWaveform className="h-4 w-4 text-amber-400" aria-hidden="true" />
                       Online consultation intake
                     </p>
                     {activeOnlineConsultation?.platform ? (
-                      <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-700">
+                      <span className="rounded-full border border-yellow-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-700">
                         {activeOnlineConsultation.platform}
                       </span>
                     ) : null}
                   </div>
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-sky-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Concern</p>
+                    <div className="rounded-2xl border border-yellow-100 bg-white px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Concern</p>
                       <p className="mt-2 text-sm text-slate-700">
                         {activeOnlineConsultation?.concern || activeAppointment.reason || "No concern submitted."}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-sky-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Symptoms</p>
+                    <div className="rounded-2xl border border-yellow-100 bg-white px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Symptoms</p>
                       <p className="mt-2 text-sm text-slate-700">
                         {activeOnlineConsultation?.symptoms || "No additional symptoms submitted."}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 rounded-2xl border border-sky-100 bg-white px-4 py-3">
+                  <div className="mt-4 rounded-2xl border border-yellow-100 bg-white px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Attached files / photos</p>
-                      <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Attached files / photos</p>
+                      <span className="rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-semibold text-yellow-700">
                         {activeOnlineConsultation?.file_urls?.length ?? 0} file{(activeOnlineConsultation?.file_urls?.length ?? 0) === 1 ? "" : "s"}
                       </span>
                     </div>
@@ -523,7 +523,7 @@ export default function OnlineConsultationPage() {
                               href={normalized.file_url ?? "#"}
                               target="_blank"
                               rel="noreferrer"
-                              className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
+                              className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100"
                             >
                               {normalized.file_name ?? `Attachment ${index + 1}`}
                             </a>
@@ -539,9 +539,9 @@ export default function OnlineConsultationPage() {
 
               {canManage ? (
                 <div className="grid gap-5">
-                  <div className="rounded-[1.5rem] border border-sky-100 bg-slate-50/70 p-4">
+                  <div className="rounded-[1.5rem] border border-yellow-100 bg-slate-50/70 p-4">
                     <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaHeartPulse className="h-4 w-4 text-sky-600" aria-hidden="true" />
+                      <FaHeartPulse className="h-4 w-4 text-amber-400" aria-hidden="true" />
                       Vitals and visit context
                     </p>
                     <div className="mt-4">
@@ -550,13 +550,13 @@ export default function OnlineConsultationPage() {
                   </div>
 
                   <div className="grid gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-                    <div className="rounded-[1.5rem] border border-sky-100 bg-white p-4">
+                    <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
                       <label className="block text-sm font-medium text-slate-700">
                         Family History
                         <textarea
                           value={familyHistoryDraft}
                           onChange={(event) => setFamilyHistoryDraft(event.target.value)}
-                          className="mt-2 min-h-32 w-full rounded-2xl border border-sky-100 px-3 py-2.5 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                          className="mt-2 min-h-32 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                           placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
                         />
                         <span className="mt-2 block text-xs leading-5 text-slate-500">
@@ -574,7 +574,7 @@ export default function OnlineConsultationPage() {
                               status: event.target.value as ConsultationProgress,
                             }))
                           }
-                          className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-3 py-2.5 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                          className="mt-2 w-full rounded-2xl border border-yellow-100 bg-white px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                         >
                           <option value="Ready">Ready</option>
                           <option value="In Progress">In Progress</option>
@@ -587,14 +587,14 @@ export default function OnlineConsultationPage() {
                           type="button"
                           onClick={() => saveFamilyHistory(activeAppointment)}
                           disabled={isSaving || !activePatientRecord || !familyHistoryDirty}
-                          className="rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-semibold text-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {isSaving ? "Saving..." : "Save Family History"}
                         </button>
                       </div>
                     </div>
 
-                    <div className="rounded-[1.5rem] border border-sky-100 bg-white p-4">
+                    <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
                       <label className="block text-sm font-medium text-slate-700">
                         Diagnosis
                         <textarea
@@ -602,7 +602,7 @@ export default function OnlineConsultationPage() {
                           onChange={(event) =>
                             setDraft((current) => ({ ...current, diagnosis: event.target.value }))
                           }
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-sky-100 px-3 py-2.5 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                           placeholder="Clinical diagnosis, impression, or assessment"
                         />
                       </label>
@@ -614,7 +614,7 @@ export default function OnlineConsultationPage() {
                           onChange={(event) =>
                             setDraft((current) => ({ ...current, note: event.target.value }))
                           }
-                          className="mt-2 min-h-40 w-full rounded-2xl border border-sky-100 px-3 py-2.5 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                          className="mt-2 min-h-40 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                           placeholder="Assessment, progress, symptoms, and recommendations"
                         />
                       </label>
@@ -629,12 +629,12 @@ export default function OnlineConsultationPage() {
                               prescription: event.target.value,
                             }))
                           }
-                          className="mt-2 min-h-28 w-full rounded-2xl border border-sky-100 px-3 py-2.5 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                          className="mt-2 min-h-28 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                           placeholder="Medication, tests, referrals, or follow-up plan"
                         />
                       </label>
 
-                      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/50 px-4 py-3 text-sm font-medium text-slate-700">
+                      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-yellow-100 bg-yellow-50/50 px-4 py-3 text-sm font-medium text-slate-700">
                         <input
                           type="checkbox"
                           checked={draft.visibleToPatient}
@@ -644,7 +644,7 @@ export default function OnlineConsultationPage() {
                               visibleToPatient: event.target.checked,
                             }))
                           }
-                          className="h-4 w-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500"
+                          className="h-4 w-4 rounded border-yellow-300 text-amber-400 focus:ring-amber-300"
                         />
                         Visible in patient portal
                       </label>
@@ -670,8 +670,8 @@ export default function OnlineConsultationPage() {
               ) : null}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-sky-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sky-50 text-sky-600">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>
               <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
@@ -731,10 +731,10 @@ function PatientConsultationLobby({
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#eef7ff_100%)] p-6 shadow-[0_24px_60px_rgba(14,165,233,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(133,77,14,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
               Consultations
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -754,7 +754,7 @@ function PatientConsultationLobby({
       {error ? <Banner tone="error">{error}</Banner> : null}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:h-[calc(100vh-24rem)]">
-        <section className="rounded-[2rem] border border-sky-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex flex-col overflow-hidden">
+        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex flex-col overflow-hidden">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -782,8 +782,8 @@ function PatientConsultationLobby({
                       key={appointment.id}
                       className={`rounded-[1.5rem] border p-4 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
                         isActive
-                          ? "border-sky-400 bg-sky-50/70 ring-2 ring-sky-200"
-                          : "border-slate-200 hover:border-sky-200 hover:bg-sky-50/40"
+                          ? "border-amber-400 bg-yellow-50/70 ring-2 ring-yellow-200"
+                          : "border-slate-200 hover:border-yellow-200 hover:bg-yellow-50/40"
                       }`}
                     >
                     <div className="flex items-start justify-between gap-3">
@@ -822,7 +822,7 @@ function PatientConsultationLobby({
                           href={appointment.meetingLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#0284c7,#0ea5e9)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(14,165,233,0.22)] transition hover:-translate-y-0.5"
+                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5"
                         >
                           <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
                           Join Consultation
@@ -831,7 +831,7 @@ function PatientConsultationLobby({
                       <button
                         type="button"
                         onClick={() => setActiveAppointmentId(isActive ? null : appointment.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
                       >
                         Details
                       </button>
@@ -844,10 +844,10 @@ function PatientConsultationLobby({
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-sky-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
+        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-sky-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="sky">Online</Badge>
@@ -872,7 +872,7 @@ function PatientConsultationLobby({
                       href={activeAppointment.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700"
+                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400"
                     >
                       <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
                       Open Meeting
@@ -889,7 +889,7 @@ function PatientConsultationLobby({
               </div>
 
               {activeNote ? (
-                <div className="rounded-[1.5rem] border border-sky-100 bg-white p-4">
+                <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-900">Diagnosis</p>
                   <p className="mt-2 text-sm text-slate-600">{activeNote.diagnosis || "No diagnosis recorded."}</p>
                   <p className="text-sm font-semibold text-slate-900">Consultation Notes</p>
@@ -910,8 +910,8 @@ function PatientConsultationLobby({
               )}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-sky-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sky-50 text-sky-600">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>
               <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
@@ -959,9 +959,9 @@ function Metric({
   icon: ReactNode;
 }) {
   const styles = {
-    sky: "bg-sky-50 text-sky-700 border-sky-100",
-    emerald: "bg-sky-50 text-sky-700 border-sky-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    sky: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    emerald: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    amber: "bg-yellow-50 text-yellow-700 border-yellow-100",
   } as const;
 
   return (
@@ -983,9 +983,9 @@ function Badge({
   tone: "sky" | "emerald" | "amber";
 }) {
   const styles = {
-    sky: "bg-sky-100 text-sky-700",
-    emerald: "bg-sky-100 text-sky-700",
-    amber: "bg-amber-100 text-amber-700",
+    sky: "bg-yellow-100 text-yellow-700",
+    emerald: "bg-yellow-100 text-yellow-700",
+    amber: "bg-yellow-100 text-yellow-700",
   } as const;
 
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles[tone]}`}>{children}</span>;
@@ -999,9 +999,9 @@ function QueueFlag({
   tone: "sky" | "emerald" | "amber";
 }) {
   const styles = {
-    sky: "bg-sky-100 text-sky-700",
-    emerald: "bg-sky-100 text-sky-700",
-    amber: "bg-amber-100 text-amber-700",
+    sky: "bg-yellow-100 text-yellow-700",
+    emerald: "bg-yellow-100 text-yellow-700",
+    amber: "bg-yellow-100 text-yellow-700",
   } as const;
 
   return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${styles[tone]}`}>{label}</span>;
@@ -1020,7 +1020,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sky-700 shadow-sm">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-yellow-700 shadow-sm">
         {icon}
       </span>
       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
@@ -1039,7 +1039,7 @@ function Banner({
 }) {
   const styles = {
     info: "border-slate-200 bg-slate-50 text-slate-700",
-    error: "border-red-200 bg-red-50 text-red-700",
+    error: "border-yellow-200 bg-yellow-50 text-yellow-700",
   } as const;
   return <div className={`rounded-2xl border px-4 py-3 text-sm ${styles[tone]}`}>{children}</div>;
 }
@@ -1048,7 +1048,7 @@ function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-sky-100 bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
+      className="rounded-full border border-yellow-100 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50"
     >
       {label}
     </Link>

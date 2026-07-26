@@ -30,8 +30,8 @@ type Faq = {
   is_published: boolean;
 };
 
-const DEFAULT_HERO = "/images/chiarabg.png";
-const DEFAULT_DOCTOR = "/images/doctora.png";
+const DEFAULT_HERO = "/images/dockulotbgs.png";
+const DEFAULT_DOCTOR = "/images/dockulotslogonobg.png";
 const DEFAULT_ABOUT_HIGHLIGHTS: LandingHighlight[] = [
   { title: "Specialty", body: "Family Medicine" },
   { title: "Experience", body: "8 Years of clinical practice" },
@@ -320,12 +320,12 @@ export default function ContentsManagerPage() {
   }
 
   if (isLoading || loading) {
-    return <div className="h-40 animate-pulse rounded-3xl border border-sky-100 bg-white shadow-sm" />;
+    return <div className="h-40 animate-pulse rounded-3xl border border-yellow-100 bg-white shadow-sm" />;
   }
 
   if (!canEdit) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+      <div className="rounded-3xl border border-yellow-200 bg-yellow-50 p-6 text-sm text-yellow-800">
         You don&apos;t have permission to manage website content.
       </div>
     );
@@ -333,7 +333,7 @@ export default function ContentsManagerPage() {
 
   if (!content) {
     return (
-      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+      <div className="rounded-3xl border border-yellow-200 bg-yellow-50 p-6 text-sm text-yellow-700">
         Website content wasn&apos;t found. Run the latest migration and reload.
       </div>
     );
@@ -344,10 +344,10 @@ export default function ContentsManagerPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="overflow-hidden rounded-[2rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.32),_transparent_36%),linear-gradient(135deg,#ffffff_0%,#f4faff_52%,#eaf5ff_100%)] p-6 shadow-[0_28px_70px_-48px_rgba(14,116,194,0.45)]">
+      <div className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.32),_transparent_36%),linear-gradient(135deg,#ffffff_0%,#f4faff_52%,#fef3c7_100%)] p-6 shadow-[0_28px_70px_-48px_rgba(14,116,194,0.45)]">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-sky-700">Website Content</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-yellow-700">Website Content</p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-5xl">
             Edit only the landing-page sections
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
@@ -358,7 +358,7 @@ export default function ContentsManagerPage() {
             <Link
               href="/"
               target="_blank"
-              className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-400"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
             >
               Preview landing page
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -371,20 +371,20 @@ export default function ContentsManagerPage() {
         <div
           className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
             feedback.kind === "ok"
-              ? "border border-sky-200 bg-sky-50 text-sky-800"
-              : "border border-red-200 bg-red-50 text-red-800"
+              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
+              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
           }`}
         >
           {feedback.kind === "ok" ? (
-            <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" aria-hidden="true" />
+            <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
           ) : (
-            <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+            <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />
           )}
           <span>{feedback.msg}</span>
         </div>
       ) : null}
 
-      <div className="rounded-[1.75rem] border border-sky-100 bg-white p-2 shadow-sm">
+      <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-2 shadow-sm">
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -395,12 +395,12 @@ export default function ContentsManagerPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`rounded-[1.35rem] px-4 py-4 text-left transition ${
                   active
-                    ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_100%)] text-white shadow-[0_16px_35px_-20px_rgba(2,132,199,0.7)]"
-                    : "bg-slate-50 text-slate-800 hover:bg-sky-50"
+                    ? "bg-[linear-gradient(135deg,#A16207_0%,#854D0E_100%)] text-white shadow-[0_16px_35px_-20px_rgba(120,53,15,0.7)]"
+                    : "bg-slate-50 text-slate-800 hover:bg-yellow-50"
                 }`}
               >
                 <p className="text-sm font-black tracking-tight">{tab.label}</p>
-                <p className={`mt-1 text-xs leading-5 ${active ? "text-sky-50" : "text-slate-500"}`}>{tab.detail}</p>
+                <p className={`mt-1 text-xs leading-5 ${active ? "text-amber-50" : "text-slate-500"}`}>{tab.detail}</p>
               </button>
             );
           })}
@@ -434,12 +434,12 @@ export default function ContentsManagerPage() {
             </div>
 
             <PreviewCard title="Home Preview">
-              <div className="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-950">
+              <div className="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-black">
                 <div className="relative min-h-[320px]">
                   <Image src={content.hero_background_url || DEFAULT_HERO} alt="Hero preview" fill unoptimized className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-slate-950/35 to-sky-900/20" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-slate-950/35 to-amber-800/20" />
                   <div className="relative flex min-h-[320px] flex-col justify-end px-5 py-6 text-white">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-200">{content.hero_eyebrow}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-200">{content.hero_eyebrow}</p>
                     <h3 className="mt-3 text-3xl font-black leading-tight">
                       {content.hero_title_line1}
                       <br />
@@ -447,7 +447,7 @@ export default function ContentsManagerPage() {
                     </h3>
                     <p className="mt-3 text-sm leading-6 text-slate-200">{content.hero_subtitle}</p>
                     <div className="mt-5 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-sky-500 px-4 py-2 text-xs font-bold text-white">{content.hero_cta_primary}</span>
+                      <span className="rounded-full bg-yellow-300 px-4 py-2 text-xs font-bold text-white">{content.hero_cta_primary}</span>
                       <span className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-bold text-white">{content.hero_cta_secondary}</span>
                     </div>
                   </div>
@@ -482,10 +482,10 @@ export default function ContentsManagerPage() {
                   aspect="portrait"
                 />
               </div>
-              <div className="rounded-[1.5rem] border border-sky-100 bg-sky-50/60 p-4">
+              <div className="rounded-[1.5rem] border border-yellow-100 bg-yellow-50/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">About highlights</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">About highlights</p>
                     <p className="mt-1 text-sm text-slate-600">
                       These cards show on the landing-page About section and now mirror the updated profile details.
                     </p>
@@ -493,7 +493,7 @@ export default function ContentsManagerPage() {
                   <button
                     type="button"
                     onClick={addAboutHighlight}
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
                   >
                     <FaPlus className="h-3 w-3" aria-hidden="true" />
                     Add card
@@ -501,9 +501,9 @@ export default function ContentsManagerPage() {
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {ensureAboutHighlights(content.about_highlights).map((item, index) => (
-                    <div key={`${item.title}-${index}`} className="rounded-[1.4rem] border border-sky-100 bg-white p-4 shadow-sm">
+                    <div key={`${item.title}-${index}`} className="rounded-[1.4rem] border border-yellow-100 bg-white p-4 shadow-sm">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">Card {index + 1}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">Card {index + 1}</p>
                         <RemoveButton onClick={() => removeAboutHighlight(index)} title="Remove about card" compact />
                       </div>
                       <div className="mt-3 space-y-3">
@@ -517,25 +517,25 @@ export default function ContentsManagerPage() {
             </div>
 
             <PreviewCard title="About Preview">
-              <div className="rounded-[1.6rem] border border-sky-100 bg-white p-4 shadow-sm">
+              <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-4 shadow-sm">
                 <div className="grid gap-4">
-                  <div className="overflow-hidden rounded-[1.3rem] border border-sky-100 bg-sky-50 p-3">
+                  <div className="overflow-hidden rounded-[1.3rem] border border-yellow-100 bg-yellow-50 p-3">
                     <div className="relative aspect-[4/5] overflow-hidden rounded-[1rem] bg-white">
                       <Image src={content.doctor_photo_url || DEFAULT_DOCTOR} alt="Doctor preview" fill unoptimized className="object-contain" />
                     </div>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700">{content.about_eyebrow}</p>
-                    <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{content.about_title}</h3>
-                    <p className="mt-2 text-sm font-semibold text-sky-800">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.about_eyebrow}</p>
+                    <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.about_title}</h3>
+                    <p className="mt-2 text-sm font-semibold text-yellow-700">
                       {content.doctor_name}
                       {content.doctor_title ? `, ${content.doctor_title}` : ""}
                     </p>
                     <p className="mt-3 text-sm leading-6 text-slate-600">{content.about_subtitle}</p>
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
                       {ensureAboutHighlights(content.about_highlights).map((item, index) => (
-                        <div key={`${item.title}-${index}`} className="rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
-                          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">{item.title}</p>
+                        <div key={`${item.title}-${index}`} className="rounded-2xl border border-yellow-100 bg-yellow-50/50 p-4">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">{item.title}</p>
                           <p className="mt-2 text-sm leading-6 text-slate-700">{item.body}</p>
                         </div>
                       ))}
@@ -556,7 +556,7 @@ export default function ContentsManagerPage() {
             <button
               type="button"
               onClick={addService}
-              className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-bold text-sky-800 transition hover:bg-sky-100"
+              className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-100"
             >
               <FaPlus className="h-3 w-3" aria-hidden="true" />
               Add service card
@@ -572,7 +572,7 @@ export default function ContentsManagerPage() {
               </div>
 
               {content.services.map((service, index) => (
-                <div key={`${service.title}-${index}`} className="rounded-[1.2rem] border border-sky-100 bg-slate-50/70 p-2.5">
+                <div key={`${service.title}-${index}`} className="rounded-[1.2rem] border border-yellow-100 bg-slate-50/70 p-2.5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="grid flex-1 gap-2.5 md:grid-cols-[118px_minmax(0,1fr)]">
                       <KindSelect value={service.kind} onChange={(value) => updateService(index, { kind: value })} />
@@ -588,17 +588,17 @@ export default function ContentsManagerPage() {
             </div>
 
             <PreviewCard title="Services Preview">
-              <div className="rounded-[1.7rem] border border-sky-100 bg-sky-50/40 p-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-sky-700">{content.services_eyebrow || "Services"}</p>
-                <h3 className="mt-3 text-3xl font-black tracking-tight text-slate-950">{content.services_title || "Clinic and online services"}</h3>
+              <div className="rounded-[1.7rem] border border-yellow-100 bg-yellow-50/40 p-5">
+                <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-700">{content.services_eyebrow || "Services"}</p>
+                <h3 className="mt-3 text-3xl font-black tracking-tight text-black">{content.services_title || "Clinic and online services"}</h3>
                 <p className="mt-4 text-sm leading-7 text-slate-600">{content.services_subtitle || "Review available services before booking."}</p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   {content.services.map((service, index) => (
-                    <div key={`${service.title}-${index}`} className="rounded-[1.5rem] border border-sky-100 bg-white p-5 shadow-sm">
-                      <div className="inline-flex rounded-full bg-sky-100 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
+                    <div key={`${service.title}-${index}`} className="rounded-[1.5rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                      <div className="inline-flex rounded-full bg-yellow-100 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">
                         {service.kind || "Service"}
                       </div>
-                      <h4 className="mt-4 text-xl font-black tracking-tight text-slate-950">{service.title || "Service title"}</h4>
+                      <h4 className="mt-4 text-xl font-black tracking-tight text-black">{service.title || "Service title"}</h4>
                       <p className="mt-3 text-sm leading-7 text-slate-600">{service.description || "Service description appears here."}</p>
                     </div>
                   ))}
@@ -616,7 +616,7 @@ export default function ContentsManagerPage() {
           action={
             <Link
               href="/creator-content"
-              className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-700"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
             >
               Open Blog Builder
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -642,33 +642,33 @@ export default function ContentsManagerPage() {
             </div>
 
             <PreviewCard title="Blog Preview">
-              <div className="rounded-[1.6rem] border border-sky-100 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700">{content.blog_eyebrow ?? "Blogs"}</p>
-                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{content.blog_title ?? "Fresh health tips from the clinic"}</h3>
+              <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.blog_eyebrow ?? "Blogs"}</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.blog_title ?? "Fresh health tips from the clinic"}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{content.blog_subtitle}</p>
                 <div className="mt-5 grid gap-4">
                   <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                     <div className="grid gap-4 lg:grid-cols-[140px_minmax(0,1fr)] lg:items-center">
-                      <div className="h-24 rounded-[1rem] bg-sky-100" />
+                      <div className="h-24 rounded-[1rem] bg-yellow-100" />
                       <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">Health Tips</p>
-                        <h4 className="mt-2 text-xl font-black tracking-tight text-slate-950">Preview blog title from Content Creator</h4>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">Health Tips</p>
+                        <h4 className="mt-2 text-xl font-black tracking-tight text-black">Preview blog title from Content Creator</h4>
                       </div>
                     </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[1.3rem] border border-sky-100 bg-sky-50 p-4">
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">{content.blog_categories_title ?? "Categories"}</p>
+                    <div className="rounded-[1.3rem] border border-yellow-100 bg-yellow-50 p-4">
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-yellow-700">{content.blog_categories_title ?? "Categories"}</p>
                       <ul className="mt-4 space-y-2">
                         {blogCategories.map((category) => (
-                          <li key={category} className="border-b border-sky-100 pb-2 text-sm font-semibold text-slate-700 last:border-b-0 last:pb-0">
+                          <li key={category} className="border-b border-yellow-100 pb-2 text-sm font-semibold text-slate-700 last:border-b-0 last:pb-0">
                             {category}
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div className="rounded-[1.3rem] border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">{content.blog_recent_posts_title ?? "Recent Posts"}</p>
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-yellow-700">{content.blog_recent_posts_title ?? "Recent Posts"}</p>
                       <div className="mt-4 space-y-3">
                         {[1, 2].map((item) => (
                           <div key={item} className="flex items-center gap-3">
@@ -696,7 +696,7 @@ export default function ContentsManagerPage() {
           action={
             <Link
               href="/creator-content"
-              className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-sky-700"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
             >
               Open Content Creator
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -708,11 +708,11 @@ export default function ContentsManagerPage() {
               <Field label="Videos eyebrow" value={content.videos_eyebrow ?? "Videos"} onChange={(value) => update("videos_eyebrow", value)} />
               <Field label="Videos title" value={content.videos_title ?? ""} onChange={(value) => update("videos_title", value)} />
               <Textarea label="Videos subtitle" rows={4} value={content.videos_subtitle ?? ""} onChange={(value) => update("videos_subtitle", value)} />
-              <div className="rounded-[1.35rem] border border-sky-100 bg-sky-50/60 p-4">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+              <div className="rounded-[1.35rem] border border-yellow-100 bg-yellow-50/60 p-4">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-100 text-yellow-700">
                   <FaCalendarDays className="h-4 w-4" aria-hidden="true" />
                 </div>
-                <p className="mt-4 text-sm font-black tracking-tight text-slate-950">Live schedule copy</p>
+                <p className="mt-4 text-sm font-black tracking-tight text-black">Live schedule copy</p>
                 <div className="mt-4 space-y-4">
                   <Field label="Live eyebrow" value={content.live_eyebrow ?? "Live Schedule"} onChange={(value) => update("live_eyebrow", value)} />
                   <Field label="Live title" value={content.live_title ?? ""} onChange={(value) => update("live_title", value)} />
@@ -724,27 +724,27 @@ export default function ContentsManagerPage() {
 
             <PreviewCard title="Videos Preview">
               <div className="space-y-4">
-                <div className="rounded-[1.6rem] border border-sky-100 bg-white p-5 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700">{content.videos_eyebrow ?? "Videos"}</p>
-                  <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{content.videos_title}</h3>
+                <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.videos_eyebrow ?? "Videos"}</p>
+                  <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.videos_title}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{content.videos_subtitle}</p>
                   <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                    <div className="h-32 rounded-t-[1.5rem] bg-sky-100" />
+                    <div className="h-32 rounded-t-[1.5rem] bg-yellow-100" />
                     <div className="p-4">
                       <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                         <span>Video</span>
                         <span>Health Tips</span>
                       </div>
-                      <h4 className="mt-3 text-xl font-black tracking-tight text-slate-950">Preview vlog title from Content Creator</h4>
+                      <h4 className="mt-3 text-xl font-black tracking-tight text-black">Preview vlog title from Content Creator</h4>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-[1.6rem] border border-sky-100 bg-white p-5 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700">{content.live_eyebrow ?? "Live Schedule"}</p>
-                  <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{content.live_title}</h3>
+                <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.live_eyebrow ?? "Live Schedule"}</p>
+                  <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.live_title}</h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{content.live_subtitle}</p>
-                  <div className="mt-5 inline-flex rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-800">
+                  <div className="mt-5 inline-flex rounded-full border border-yellow-200 px-4 py-2 text-sm font-bold text-yellow-700">
                     {content.live_cta_label ?? "Open live schedule page"}
                   </div>
                 </div>
@@ -757,15 +757,15 @@ export default function ContentsManagerPage() {
       {activeTab === "faq" ? (
         <EditorSection title="FAQ" note="These FAQs appear on the landing page and the public FAQ page.">
           <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-            <div className="rounded-[1.6rem] border border-sky-100 bg-sky-50/60 p-5">
-              <p className="text-sm font-black tracking-tight text-slate-950">Add a new FAQ</p>
+            <div className="rounded-[1.6rem] border border-yellow-100 bg-yellow-50/60 p-5">
+              <p className="text-sm font-black tracking-tight text-black">Add a new FAQ</p>
               <div className="mt-4 space-y-4">
                 <label className="block">
                   <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">Category</span>
                   <select
                     value={faqForm.category}
                     onChange={(event) => setFaqForm((current) => ({ ...current, category: event.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-sky-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                    className="mt-1.5 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                   >
                     {faqCategories.map((category) => (
                       <option key={category} value={category}>{category}</option>
@@ -781,7 +781,7 @@ export default function ContentsManagerPage() {
                     <select
                       value={faqForm.is_published ? "published" : "hidden"}
                       onChange={(event) => setFaqForm((current) => ({ ...current, is_published: event.target.value === "published" }))}
-                      className="mt-1.5 w-full rounded-xl border border-sky-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      className="mt-1.5 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     >
                       <option value="published">Published</option>
                       <option value="hidden">Hidden</option>
@@ -791,7 +791,7 @@ export default function ContentsManagerPage() {
                 <button
                   type="button"
                   onClick={() => void handleAddFaq()}
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-700"
+                  className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400"
                 >
                   <FaPlus className="h-3 w-3" aria-hidden="true" />
                   Save FAQ
@@ -799,21 +799,21 @@ export default function ContentsManagerPage() {
               </div>
             </div>
 
-            <div className="rounded-[1.6rem] border border-sky-100 bg-white p-5 shadow-sm">
+            <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap gap-2">
                 {faqGroups.map((group) => (
-                  <span key={group.category} className="rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-sky-800">
+                  <span key={group.category} className="rounded-full border border-yellow-100 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-yellow-700">
                     {group.category}
                   </span>
                 ))}
               </div>
               <div className="mt-5 grid gap-4 xl:grid-cols-2">
                 {faqGroups.map((group) => (
-                  <div key={group.category} className="rounded-[1.4rem] border border-sky-100 bg-slate-50/70 p-4">
+                  <div key={group.category} className="rounded-[1.4rem] border border-yellow-100 bg-slate-50/70 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700">FAQ Category</p>
-                        <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">{group.category}</h3>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">FAQ Category</p>
+                        <h3 className="mt-2 text-xl font-black tracking-tight text-black">{group.category}</h3>
                       </div>
                       <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-slate-600">
                         {group.items.length}
@@ -825,7 +825,7 @@ export default function ContentsManagerPage() {
                           <summary className="cursor-pointer list-none">
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <p className="text-sm font-bold text-slate-950">{faq.question}</p>
+                                <p className="text-sm font-bold text-black">{faq.question}</p>
                                 <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                                   {faq.is_published ? "Published" : "Hidden"}
                                 </p>
@@ -852,7 +852,7 @@ export default function ContentsManagerPage() {
                                   if (!currentFaq) return;
                                   void handleUpdateFaq(faq.id, { question: currentFaq.question, answer: currentFaq.answer }, "FAQ updated.");
                                 }}
-                                className="rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100"
+                                className="rounded-full border border-yellow-200 bg-yellow-50 px-3.5 py-1.5 text-xs font-bold text-yellow-700 transition hover:bg-yellow-100"
                               >
                                 Save changes
                               </button>
@@ -870,7 +870,7 @@ export default function ContentsManagerPage() {
                                 onClick={() => {
                                   void handleDeleteFaq(faq.id);
                                 }}
-                                className="rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50"
+                                className="rounded-full border border-yellow-200 bg-white px-3.5 py-1.5 text-xs font-bold text-yellow-700 transition hover:bg-yellow-50"
                               >
                                 Delete
                               </button>
@@ -887,8 +887,8 @@ export default function ContentsManagerPage() {
         </EditorSection>
       ) : null}
 
-      <div className="sticky bottom-4 z-30 mt-2 flex flex-col items-stretch gap-3 rounded-2xl border border-sky-100 bg-white/95 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-        <p className={`text-xs font-semibold ${dirty ? "text-amber-700" : "text-slate-500"}`}>
+      <div className="sticky bottom-4 z-30 mt-2 flex flex-col items-stretch gap-3 rounded-2xl border border-yellow-100 bg-white/95 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <p className={`text-xs font-semibold ${dirty ? "text-yellow-700" : "text-slate-500"}`}>
           {dirty ? "Unsaved landing-page changes" : "Landing-page content is up to date"}
         </p>
         <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -904,7 +904,7 @@ export default function ContentsManagerPage() {
             type="button"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded-full bg-sky-600 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-yellow-400 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save website content"}
           </button>
@@ -981,10 +981,10 @@ function EditorSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[2rem] border border-sky-100 bg-white p-5 shadow-[0_16px_45px_-38px_rgba(15,23,42,0.35)] sm:p-6">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-sky-100 pb-4">
+    <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_45px_-38px_rgba(15,23,42,0.35)] sm:p-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-yellow-100 pb-4">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-slate-950">{title}</h2>
+          <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{note}</p>
         </div>
         {action}
@@ -996,8 +996,8 @@ function EditorSection({
 
 function PreviewCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <aside className="rounded-[1.7rem] border border-sky-100 bg-[linear-gradient(180deg,#f8fcff_0%,#edf7ff_100%)] p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-sky-700">{title}</p>
+    <aside className="rounded-[1.7rem] border border-yellow-100 bg-[linear-gradient(180deg,#f8fcff_0%,#edf7ff_100%)] p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-yellow-700">{title}</p>
       <div className="mt-3">{children}</div>
     </aside>
   );
@@ -1022,7 +1022,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+        className="mt-1 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
       />
     </label>
   );
@@ -1046,7 +1046,7 @@ function Textarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={rows}
-        className="mt-1 w-full rounded-xl border border-sky-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+        className="mt-1 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
       />
     </label>
   );
@@ -1103,13 +1103,13 @@ function ImageUploader({
   }
 
   return (
-    <div className="rounded-[1.4rem] border border-sky-100 bg-sky-50/60 p-4">
+    <div className="rounded-[1.4rem] border border-yellow-100 bg-yellow-50/60 p-4">
       <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
         {kind === "doctor-photo" ? <FaUserDoctor className="h-3 w-3" aria-hidden="true" /> : <FaNewspaper className="h-3 w-3" aria-hidden="true" />}
         {label}
       </p>
       <p className="mt-1 text-xs leading-5 text-slate-600">{hint}</p>
-      <div className={`relative mt-4 overflow-hidden rounded-[1.25rem] border border-sky-100 bg-white ${aspect === "portrait" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
+      <div className={`relative mt-4 overflow-hidden rounded-[1.25rem] border border-yellow-100 bg-white ${aspect === "portrait" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
         <Image src={currentUrl || defaultUrl} alt={label} fill unoptimized className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -1117,7 +1117,7 @@ function ImageUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 rounded-full bg-sky-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FaCloudArrowUp className="h-3 w-3" aria-hidden="true" />
           {uploading ? "Uploading..." : currentUrl ? "Replace image" : "Upload image"}
@@ -1153,7 +1153,7 @@ function KindSelect({ value, onChange }: { value: string; onChange: (value: stri
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-xl border border-sky-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+        className="mt-1.5 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
       >
         <option value="clinic">Clinic</option>
         <option value="online">Online</option>
@@ -1179,16 +1179,16 @@ function StringListEditor({
   onChange: (index: number, value: string) => void;
 }) {
   return (
-    <div className="rounded-[1.35rem] border border-sky-100 bg-sky-50/60 p-4">
+    <div className="rounded-[1.35rem] border border-yellow-100 bg-yellow-50/60 p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-          <FaFolderOpen className="h-3 w-3 text-sky-700" aria-hidden="true" />
+          <FaFolderOpen className="h-3 w-3 text-yellow-700" aria-hidden="true" />
           {label}
         </p>
         <button
           type="button"
           onClick={onAdd}
-          className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-50"
+          className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-white px-3 py-1.5 text-xs font-bold text-yellow-700 transition hover:bg-yellow-50"
         >
           <FaPlus className="h-2.5 w-2.5" aria-hidden="true" />
           Add
@@ -1201,7 +1201,7 @@ function StringListEditor({
               type="text"
               value={value}
               onChange={(event) => onChange(index, event.target.value)}
-              className="flex-1 rounded-xl border border-sky-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              className="flex-1 rounded-xl border border-yellow-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
             />
             <RemoveButton onClick={() => onRemove(index)} title="Remove category" />
           </div>
@@ -1224,7 +1224,7 @@ function RemoveButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border border-red-200 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-50 ${
+      className={`rounded-full border border-yellow-200 bg-white text-yellow-600 transition hover:border-yellow-300 hover:bg-yellow-50 ${
         compact ? "p-1.5" : "p-2"
       }`}
       title={title}

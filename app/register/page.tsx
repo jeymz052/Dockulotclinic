@@ -256,7 +256,7 @@ export default function RegisterPage() {
   const maxBirthDate = new Date().toISOString().slice(0, 10);
 
   return (
-    <main className="relative min-h-screen flex items-center justify-end bg-slate-950 overflow-hidden px-4 md:px-10 lg:px-20">
+    <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
       <Image
         src="/images/dockulotbgs.png"
         alt="Clinic consultation background"
@@ -267,24 +267,11 @@ export default function RegisterPage() {
         className="object-cover object-left md:object-center"
         sizes="100vw"
       />
-      <div className="absolute inset-0 bg-black/15" />
-      <style jsx global>{`
-        .policy-scroll {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
+      <div className="absolute inset-0 bg-black/60" />
 
-        .policy-scroll::-webkit-scrollbar {
-          width: 0;
-          height: 0;
-          display: none;
-          background: transparent;
-        }
-      `}</style>
-
-      <section className="relative z-10 w-full max-w-[400px] rounded-2xl border border-sky-300/60 bg-sky-950/20 p-3 backdrop-blur-[2px] shadow-xl overflow-hidden">
+      <section className="relative z-10 w-full max-w-[400px] rounded-2xl border border-yellow-200 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
         <div className="relative z-10">
-          <div className="flex justify-center overflow-hidden">
+          <div className="flex justify-center mb-2">
             <Image
               src="/images/dockulotslogonobg.png"
               alt="Doctora Kulot Clinic Logo"
@@ -292,13 +279,13 @@ export default function RegisterPage() {
               height={373}
               priority
               quality={100}
-              style={{ width: "200px", height: "auto" }}
-              className="object-contain drop-shadow-lg -mt-4 -mb-4"
+              style={{ width: "220px", height: "auto" }}
+              className="object-contain drop-shadow-md"
             />
           </div>
 
           <div className="mb-1 text-center" style={{ fontFamily: "Inter, Segoe UI, Arial, sans-serif" }}>
-            <p className="text-lg font-extrabold text-white drop-shadow">Create Account</p>
+            <p className="text-lg font-extrabold text-slate-900">Create Account</p>
           </div>
 
           <form className="space-y-1.5" onSubmit={handleSubmit}>
@@ -307,7 +294,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.fullName}
                 onChange={(event) => updateField("fullName", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 text-sm text-white placeholder:text-white/65 outline-none transition focus:ring-2 focus:ring-sky-300/90 focus:border-sky-300"
+                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 placeholder="Juan Dela Cruz"
                 minLength={2}
                 maxLength={80}
@@ -320,8 +307,8 @@ export default function RegisterPage() {
 
             <Field label="Phone">
               <div className="relative mt-0.5">
-                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-white/65">
-                  <div className="flex h-5 w-7 items-center justify-center overflow-hidden rounded-[3px] border border-white/30 shadow-sm">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-slate-500">
+                  <div className="flex h-5 w-7 items-center justify-center overflow-hidden rounded-[3px] border border-slate-300 shadow-sm">
                     <PhilippineFlagIcon />
                   </div>
                   <span className="text-sm font-medium">+63</span>
@@ -330,7 +317,7 @@ export default function RegisterPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={(event) => updateField("phone", event.target.value)}
-                  className="w-full rounded-lg border border-sky-300/65 bg-white/10 py-1.5 pl-24 pr-3 text-sm text-white placeholder:text-white/65 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-300/90"
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-24 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                   placeholder="912 345 6789"
                   inputMode="tel"
                   title="Use PH format (+639XXXXXXXXX or 09XXXXXXXXX) or international +countrycode."
@@ -345,7 +332,7 @@ export default function RegisterPage() {
                 type="email"
                 value={formData.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 text-sm text-white placeholder:text-white/65 outline-none transition focus:ring-2 focus:ring-sky-300/90 focus:border-sky-300"
+                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 placeholder="name@clinicmail.com"
                 autoComplete="email"
                 required
@@ -359,7 +346,7 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(event) => updateField("password", event.target.value)}
-                  className="w-full rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 pr-11 text-sm text-white placeholder:text-white/65 outline-none transition focus:ring-2 focus:ring-sky-300/90 focus:border-sky-300"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                   placeholder="••••••••"
                   minLength={8}
                   title="Use at least 8 characters with uppercase, lowercase, number, and special character."
@@ -368,7 +355,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-white/80 hover:text-white"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-yellow-600"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -392,7 +379,7 @@ export default function RegisterPage() {
                   value={formData.dateOfBirth}
                   onChange={(event) => updateField("dateOfBirth", event.target.value)}
                   max={maxBirthDate}
-                  className="mt-0.5 w-full rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 text-sm text-white outline-none transition focus:ring-2 focus:ring-sky-300/90 focus:border-sky-300"
+                  className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                   required
                 />
                 {fieldErrors.dateOfBirth ? <FieldError message={fieldErrors.dateOfBirth} /> : null}
@@ -403,16 +390,16 @@ export default function RegisterPage() {
                   <select
                     value={formData.gender}
                     onChange={(event) => updateField("gender", event.target.value)}
-                    className={`w-full appearance-none rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 pr-8 text-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-300/90 ${
-                      formData.gender ? "text-white" : "text-white/65"
-                    }`}
+                     className={`w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200 ${
+                       formData.gender ? "text-slate-900" : "text-slate-400"
+                     }`}
                     required
                   >
-                    <option value="" className="bg-slate-900 text-white">
+                    <option value="" className="bg-white text-slate-900">
                       Select Gender
                     </option>
                     {GENDER_OPTIONS.map((option) => (
-                      <option key={option} value={option} className="bg-slate-900 text-white">
+                      <option key={option} value={option} className="bg-white text-slate-900">
                         {option}
                       </option>
                     ))}
@@ -421,7 +408,7 @@ export default function RegisterPage() {
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
                     fill="none"
-                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/90"
+                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
                     aria-hidden="true"
                   >
                     <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -436,7 +423,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.address}
                 onChange={(event) => updateField("address", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-sky-300/65 bg-white/10 px-3 py-1.5 text-sm text-white placeholder:text-white/65 outline-none transition focus:ring-2 focus:ring-sky-300/90 focus:border-sky-300"
+                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 placeholder="123 Main Street, City"
                 required
               />
@@ -444,12 +431,12 @@ export default function RegisterPage() {
             </Field>
 
             <div className="space-y-1.5 pt-0.5">
-              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-white/90">
+              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-slate-600">
                 <input
                   type="checkbox"
                   checked={consents.termsAccepted}
                   onChange={(event) => updateConsent("termsAccepted", event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border border-sky-300/65 bg-white/10 text-sky-300 accent-sky-500"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 bg-white accent-amber-500"
                   required
                 />
                 <span>
@@ -457,7 +444,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setActiveModal("terms")}
-                    className="font-semibold text-sky-300 underline underline-offset-2 hover:text-sky-200"
+                    className="font-semibold text-yellow-600 underline underline-offset-2 hover:text-yellow-700"
                   >
                     terms and conditions
                   </button>
@@ -465,12 +452,12 @@ export default function RegisterPage() {
               </label>
               {fieldErrors.termsAccepted ? <FieldError message={fieldErrors.termsAccepted} /> : null}
 
-              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-white/90">
+              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-slate-600">
                 <input
                   type="checkbox"
                   checked={consents.cancellationAccepted}
                   onChange={(event) => updateConsent("cancellationAccepted", event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border border-sky-300/65 bg-white/10 text-sky-300 accent-sky-500"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 bg-white accent-amber-500"
                   required
                 />
                 <span>
@@ -478,7 +465,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setActiveModal("cancellation")}
-                    className="font-semibold text-sky-300 underline underline-offset-2 hover:text-sky-200"
+                    className="font-semibold text-yellow-600 underline underline-offset-2 hover:text-yellow-700"
                   >
                     cancellation policy
                   </button>
@@ -491,8 +478,8 @@ export default function RegisterPage() {
               <div
                 className={`rounded-xl px-4 py-3 text-sm ${
                   isSuccessFeedback(feedback)
-                    ? "border border-sky-300/60 bg-sky-500/20 text-sky-100"
-                    : "border border-amber-300/60 bg-amber-500/20 text-amber-100"
+                    ? "border border-yellow-300 bg-yellow-50 text-yellow-800"
+                    : "border border-yellow-300 bg-yellow-50 text-yellow-800"
                 }`}
               >
                 {feedback}
@@ -502,7 +489,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-sky-700 via-sky-600 to-sky-500 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-sky-900/40 transition hover:from-sky-600 hover:via-sky-500 hover:to-sky-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:from-sky-900 disabled:to-sky-700 disabled:text-sky-200"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-amber-500 to-yellow-400 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-yellow-500/20 transition hover:from-amber-600 hover:to-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:from-amber-700 disabled:to-amber-500 disabled:text-amber-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -514,9 +501,9 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-1.5 text-center">
-            <p className="text-xs text-white/95">
+            <p className="text-xs text-slate-600">
               Already have an account?{" "}
-              <Link href="/login" className="text-sky-300 font-semibold hover:text-sky-200 hover:underline">
+              <Link href="/login" className="text-yellow-600 font-semibold hover:text-yellow-700 hover:underline">
                 Sign In
               </Link>
             </p>
@@ -537,7 +524,7 @@ export default function RegisterPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] font-semibold text-white/95 mb-0.5 tracking-wide">
+    <label className="block text-[11px] font-semibold text-slate-700 mb-0.5 tracking-wide">
       {label}
       {children}
     </label>
@@ -559,7 +546,7 @@ function PhilippineFlagIcon() {
 }
 
 function FieldError({ message }: { message: string }) {
-  return <p className="mt-1 text-[10px] text-rose-300">{message}</p>;
+  return <p className="mt-1 text-[10px] text-yellow-300">{message}</p>;
 }
 
 function PolicyModalCard({
@@ -572,24 +559,24 @@ function PolicyModalCard({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-[28px] border border-sky-300/55 bg-white p-5 shadow-2xl shadow-slate-950/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-[28px] border border-yellow-300/55 bg-white p-5 shadow-2xl shadow-black/30">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-600/85">Policy Details</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-400/85">Policy Details</p>
             <h2 className="mt-1 text-lg font-bold text-slate-900">{title}</h2>
             <p className="mt-1 text-xs leading-5 text-slate-600">Please review this policy before continuing with registration.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-slate-900"
+            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-slate-900"
           >
             Close
           </button>
         </div>
 
-        <div className="mt-4 h-px w-full bg-linear-to-r from-sky-300/0 via-sky-300/45 to-sky-300/0" />
+        <div className="mt-4 h-px w-full bg-linear-to-r from-yellow-300/0 via-amber-300/45 to-yellow-300/0" />
 
         <div className="policy-scroll mt-4 max-h-[65vh] space-y-3 overflow-y-auto pr-1">
           {sections.map((section) => (
@@ -597,7 +584,7 @@ function PolicyModalCard({
               key={section.heading}
               className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"
             >
-              <h3 className="text-sm font-semibold text-sky-700">{section.heading}</h3>
+              <h3 className="text-sm font-semibold text-yellow-700">{section.heading}</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-700">{section.body}</p>
             </div>
           ))}

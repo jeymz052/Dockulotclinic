@@ -128,8 +128,8 @@ export default function PatientRecordsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.24),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(14,165,233,0.14)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Patient Records</p>
+      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(133,77,14,0.24),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(133,77,14,0.14)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Patient Records</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Medical history, vitals, and family history in one view</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Use this screen to review a patient&apos;s visit timeline, see recorded vital signs per appointment, and keep the shared family history up to date.
@@ -137,12 +137,12 @@ export default function PatientRecordsPage() {
       </section>
 
       {feedback ? (
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {feedback}
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           {error}
         </div>
       ) : null}
@@ -156,7 +156,7 @@ export default function PatientRecordsPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Name, email, or phone"
-                className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
             />
           </label>
 
@@ -168,8 +168,8 @@ export default function PatientRecordsPage() {
                 onClick={() => setSelectedId(patient.id)}
                 className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                   selectedPatient?.id === patient.id
-                    ? "border-sky-300 bg-sky-50"
-                    : "border-slate-200 bg-white hover:border-sky-200 hover:bg-sky-50/40"
+                    ? "border-yellow-300 bg-yellow-50"
+                    : "border-slate-200 bg-white hover:border-yellow-200 hover:bg-yellow-50/40"
                 }`}
               >
                 <p className="font-semibold text-slate-900">{patient.fullName}</p>
@@ -221,7 +221,7 @@ export default function PatientRecordsPage() {
                     type="button"
                     onClick={saveFamilyHistory}
                     disabled={isSaving || !pendingFamilyHistorySave}
-                    className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-full bg-yellow-400 px-5 py-2 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSaving ? "Saving..." : "Save Family History"}
                   </button>
@@ -234,7 +234,7 @@ export default function PatientRecordsPage() {
                   }}
                   rows={5}
                   placeholder="Document illnesses or conditions seen in the family, for example hypertension, diabetes, stroke, asthma, or cancer."
-                  className="mt-4 w-full rounded-3xl border border-sky-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  className="mt-4 w-full rounded-3xl border border-yellow-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                 />
               </div>
 
@@ -271,8 +271,8 @@ export default function PatientRecordsPage() {
                           </div>
 
                           <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                            <section className="rounded-2xl border border-sky-100 bg-white p-4">
-                              <div className="flex items-center gap-2 text-sky-700">
+                            <section className="rounded-2xl border border-yellow-100 bg-white p-4">
+                              <div className="flex items-center gap-2 text-yellow-700">
                                 <FaHeartPulse className="h-4 w-4" />
                                 <p className="text-xs font-semibold uppercase tracking-[0.16em]">Vitals</p>
                               </div>
@@ -289,7 +289,7 @@ export default function PatientRecordsPage() {
                                     Updated {new Date(visit.vitals.updatedAt).toLocaleString("en-US")}
                                   </p>
                                   {visit.vitals.notes ? (
-                                    <p className="rounded-2xl bg-sky-50 px-3 py-2 text-sm text-slate-700">
+                                    <p className="rounded-2xl bg-yellow-50 px-3 py-2 text-sm text-slate-700">
                                       {visit.vitals.notes}
                                     </p>
                                   ) : null}
@@ -299,8 +299,8 @@ export default function PatientRecordsPage() {
                               )}
                             </section>
 
-                            <section className="rounded-2xl border border-sky-100 bg-white p-4">
-                              <div className="flex items-center gap-2 text-sky-700">
+                            <section className="rounded-2xl border border-yellow-100 bg-white p-4">
+                              <div className="flex items-center gap-2 text-yellow-700">
                                 <FaWeightScale className="h-4 w-4" />
                                 <p className="text-xs font-semibold uppercase tracking-[0.16em]">Consultation</p>
                               </div>
@@ -347,8 +347,8 @@ export default function PatientRecordsPage() {
 
 function InfoCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-[1.75rem] border border-sky-100 bg-white p-5 shadow-[0_16px_34px_rgba(14,165,233,0.08)]">
-      <div className="flex items-center gap-2 text-sky-700">
+    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(133,77,14,0.08)]">
+      <div className="flex items-center gap-2 text-yellow-700">
         {icon}
         <p className="text-xs font-semibold uppercase tracking-[0.18em]">{title}</p>
       </div>

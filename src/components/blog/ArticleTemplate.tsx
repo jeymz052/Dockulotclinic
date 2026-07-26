@@ -27,7 +27,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
         <div className="mb-8 border-b border-slate-200 pb-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm font-semibold text-slate-500">
-              <Link href="/blog" className="transition hover:text-sky-700">
+              <Link href="/blog" className="transition hover:text-yellow-700">
                 Blog
               </Link>
               <span className="px-2 text-slate-400">/</span>
@@ -36,7 +36,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
 
             <Link
               href="/#blog"
-              className="inline-flex items-center gap-2 self-start rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-bold text-sky-800 transition hover:bg-sky-50"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
             >
               <FaArrowLeft />
               Back to blog preview
@@ -54,17 +54,17 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
 
             <div className="flex gap-8">
               <div className="hidden shrink-0 lg:block">
-                <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-sky-700 px-3 py-4 text-white shadow-lg shadow-sky-900/15">
+                <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-yellow-400 px-3 py-4 text-white shadow-lg shadow-yellow-800/15">
                   <div className="text-3xl font-extrabold leading-none">{publishedDay}</div>
                   <div className="mt-1 text-xs font-semibold tracking-wider">{publishedMonthShort}</div>
                 </div>
               </div>
 
               <div className="flex-1">
-                <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-800">
+                <div className="inline-flex rounded-full bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">
                   {post.category}
                 </div>
-                <h1 className="mt-5 text-4xl font-black tracking-tight text-sky-900 sm:text-5xl">{post.title}</h1>
+                <h1 className="mt-5 text-4xl font-black tracking-tight text-yellow-800 sm:text-5xl">{post.title}</h1>
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
                   <span>By Doctor Kulot Clinic</span>
                   <span>{post.category}</span>
@@ -78,7 +78,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
                     eventName="appointment_click"
                     contentPostId={post.id}
                     metadata={{ source: "blog_article" }}
-                    className="inline-flex w-full max-w-md rounded-full bg-sky-700 px-6 py-3 text-center text-base font-semibold text-white shadow-sm transition hover:bg-sky-600"
+                    className="inline-flex w-full max-w-md rounded-full bg-yellow-400 px-6 py-3 text-center text-base font-semibold text-white shadow-sm transition hover:bg-yellow-400"
                   >
                     Book An Appointment
                   </TrackedLink>
@@ -102,7 +102,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
                   )}
                 </div>
 
-                <div className="mt-10 rounded-[1.75rem] border border-sky-100 bg-sky-50 px-6 py-5 text-sm leading-6 text-sky-900">
+                <div className="mt-10 rounded-[1.75rem] border border-yellow-100 bg-yellow-50 px-6 py-5 text-sm leading-6 text-yellow-800">
                   Health content is for education only. If symptoms are urgent, seek care immediately.
                 </div>
               </div>
@@ -110,11 +110,11 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
           </main>
 
           <aside className="space-y-6">
-            <div className="rounded-[2rem] border border-sky-100 bg-sky-50 p-6 shadow-sm">
-              <h3 className="text-lg font-black tracking-tight text-sky-800">Categories</h3>
+            <div className="rounded-[2rem] border border-yellow-100 bg-yellow-50 p-6 shadow-sm">
+              <h3 className="text-lg font-black tracking-tight text-yellow-700">Categories</h3>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
                 {contentCategories.map((c) => (
-                  <li key={c} className="border-b border-sky-100 py-3 hover:text-sky-700">
+                  <li key={c} className="border-b border-yellow-100 py-3 hover:text-yellow-700">
                     {c}
                   </li>
                 ))}
@@ -122,7 +122,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
             </div>
 
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-black tracking-tight text-sky-800">Recent</h3>
+              <h3 className="text-lg font-black tracking-tight text-yellow-700">Recent</h3>
               <div className="mt-4 space-y-4">
                 {recent.slice(0, 4).map((r) => (
                   <Link key={r.id} href={`/blog/${r.slug}`} className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-slate-50">

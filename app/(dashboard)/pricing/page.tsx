@@ -294,10 +294,10 @@ export default function PricingPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.20),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(186,230,253,0.16),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_70%)] p-6 shadow-[0_24px_70px_rgba(14,165,233,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.20),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(186,230,253,0.16),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_70%)] p-6 shadow-[0_24px_70px_rgba(133,77,14,0.12)]">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Pricing Management</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Pricing Management</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Manage consultation fees and service pricing</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Admin staff can add, edit, and delete pricing records here, while keeping the two required consultation fees clear:
@@ -316,8 +316,8 @@ export default function PricingPage() {
         <div
           className={`rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${
             feedback.tone === "success"
-              ? "border-sky-200 bg-sky-50 text-sky-800"
-              : "border-red-200 bg-red-50 text-red-800"
+              ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+              : "border-yellow-200 bg-yellow-50 text-yellow-800"
           }`}
         >
           {feedback.message}
@@ -325,11 +325,11 @@ export default function PricingPage() {
       ) : null}
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{error}</div>
       ) : null}
 
       {!canEdit ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
           Read-only view. Only clinic staff can update pricing and consultation fees.
         </div>
       ) : null}
@@ -344,7 +344,7 @@ export default function PricingPage() {
                 These rates power the appointment charge calculations. Example: a 1 hour online consultation uses the online rate shown here.
               </p>
             </div>
-            <span className="inline-flex w-fit rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+            <span className="inline-flex w-fit rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
               Primary doctor fee source
             </span>
           </div>
@@ -392,7 +392,7 @@ export default function PricingPage() {
                   type="button"
                   onClick={saveConsultationRates}
                   disabled={isSaving}
-                  className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-sky-200 disabled:text-sky-700"
+                  className="rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200 disabled:text-yellow-700"
                 >
                   {isSaving ? "Saving rates..." : "Save consultation rates"}
                 </button>
@@ -428,8 +428,8 @@ export default function PricingPage() {
                     <p className="mt-1 text-xs text-slate-500">{item.code}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sky-700">{peso(item.price)}</p>
-                    <p className={`mt-1 text-xs ${item.is_active ? "text-sky-600" : "text-slate-400"}`}>
+                    <p className="font-semibold text-yellow-700">{peso(item.price)}</p>
+                    <p className={`mt-1 text-xs ${item.is_active ? "text-amber-400" : "text-slate-400"}`}>
                       {item.is_active ? "Active" : "Inactive"}
                     </p>
                   </div>
@@ -442,9 +442,9 @@ export default function PricingPage() {
             )}
           </div>
 
-          <div className="mt-5 rounded-[1.5rem] border border-sky-100 bg-sky-50/70 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">Requirement Check</p>
-            <ul className="mt-3 space-y-2 text-sm text-sky-900">
+          <div className="mt-5 rounded-[1.5rem] border border-yellow-100 bg-yellow-50/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Requirement Check</p>
+            <ul className="mt-3 space-y-2 text-sm text-yellow-800">
               <li>Online consultation rates can be updated from this page.</li>
               <li>Clinic consultation fees can be updated from this page.</li>
               <li>Pricing records can be added, edited, and deleted from the catalog below.</li>
@@ -528,7 +528,7 @@ export default function PricingPage() {
                 type="checkbox"
                 checked={showInactive}
                 onChange={(event) => setShowInactive(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                className="h-4 w-4 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
               />
               Show inactive pricing
             </label>
@@ -579,7 +579,7 @@ export default function PricingPage() {
                                 <input
                                   value={editDraft.code}
                                   onChange={(event) => setEditDraft((current) => ({ ...current, code: event.target.value }))}
-                                  className="w-36 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                  className="w-36 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                                 />
                               ) : (
                                 <code className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{item.code}</code>
@@ -590,7 +590,7 @@ export default function PricingPage() {
                                 <input
                                   value={editDraft.name}
                                   onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))}
-                                  className="w-full min-w-[220px] rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                  className="w-full min-w-[220px] rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                                 />
                               ) : (
                                 <div>
@@ -606,7 +606,7 @@ export default function PricingPage() {
                                   onChange={(event) =>
                                     setEditDraft((current) => ({ ...current, category: event.target.value as PricingCategory }))
                                   }
-                                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                                 >
                                   {CATEGORIES.filter((categoryOption) => categoryOption !== "All").map((categoryOption) => (
                                     <option key={categoryOption} value={categoryOption}>
@@ -628,7 +628,7 @@ export default function PricingPage() {
                                   step="0.01"
                                   value={editDraft.price}
                                   onChange={(event) => setEditDraft((current) => ({ ...current, price: Number(event.target.value) || 0 }))}
-                                  className="w-32 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm outline-none focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                                  className="w-32 rounded-xl border border-slate-200 px-3 py-2 text-right text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                                 />
                               ) : (
                                 peso(item.price)
@@ -643,14 +643,14 @@ export default function PricingPage() {
                                     onChange={(event) =>
                                       setEditDraft((current) => ({ ...current, is_active: event.target.checked }))
                                     }
-                                    className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                                    className="h-4 w-4 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
                                   />
                                   Active
                                 </label>
                               ) : (
                                 <span
                                   className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                    item.is_active ? "bg-sky-50 text-sky-700" : "bg-slate-100 text-slate-500"
+                                    item.is_active ? "bg-yellow-50 text-yellow-700" : "bg-slate-100 text-slate-500"
                                   }`}
                                 >
                                   {item.is_active ? "Active" : "Inactive"}
@@ -666,7 +666,7 @@ export default function PricingPage() {
                                         type="button"
                                         onClick={saveEdit}
                                         disabled={isSaving}
-                                        className="rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700 disabled:bg-sky-200 disabled:text-sky-700"
+                                        className="rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-white transition hover:bg-yellow-400 disabled:bg-yellow-200 disabled:text-yellow-700"
                                       >
                                         Save
                                       </button>
@@ -690,7 +690,7 @@ export default function PricingPage() {
                                       <button
                                         type="button"
                                         onClick={() => deletePricing(item)}
-                                        className="rounded-xl border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50"
+                                        className="rounded-xl border border-yellow-200 px-3 py-2 text-xs font-medium text-yellow-700 transition hover:bg-yellow-50"
                                       >
                                         Delete
                                       </button>
@@ -725,8 +725,8 @@ function HeroStat({
 }) {
   const tone =
     accent === "sky"
-      ? "border-sky-200 bg-white/90 text-sky-800"
-      : "border-cyan-200 bg-white/90 text-cyan-800";
+      ? "border-yellow-200 bg-white/90 text-yellow-700"
+      : "border-yellow-200 bg-white/90 text-yellow-700";
 
   return (
     <div className={`rounded-[1.5rem] border px-4 py-4 shadow-sm backdrop-blur ${tone}`}>
@@ -749,8 +749,8 @@ function RateCard({
 }) {
   const accentStyles =
     accent === "sky"
-      ? "border-sky-100 bg-sky-50 text-sky-800"
-      : "border-cyan-100 bg-cyan-50 text-cyan-800";
+      ? "border-yellow-100 bg-yellow-50 text-yellow-700"
+      : "border-yellow-100 bg-yellow-50 text-yellow-700";
 
   return (
     <div className={`rounded-[1.5rem] border p-5 ${accentStyles}`}>
@@ -782,7 +782,7 @@ function Field({
         step="0.01"
         value={value}
         onChange={(event) => onChange(Number(event.target.value) || 0)}
-        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
       />
     </label>
   );
@@ -807,7 +807,7 @@ function TextInput({
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
       />
     </label>
   );
@@ -828,7 +828,7 @@ function SelectInput({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+        className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
       >
         {CATEGORIES.map((category) => (
           <option key={category} value={category}>

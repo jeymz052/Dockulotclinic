@@ -312,21 +312,21 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                 <div key={item.label} className="min-h-0">
                   <div
                     className={`group flex items-center rounded-xl px-2 py-2 transition-colors duration-150 ${
-                      itemActive ? "bg-sky-50" : "hover:bg-slate-100"
+                      itemActive ? "bg-yellow-50" : "hover:bg-slate-100"
                     }`}
                   >
                     <Link href={item.href} className="flex min-w-0 flex-1 items-center gap-2">
                       <item.icon
                         className={`h-4 w-4 shrink-0 ${
-                          itemActive ? "text-sky-600" : "text-slate-400 group-hover:text-sky-600"
+                          itemActive ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400"
                         }`}
                         aria-hidden="true"
                       />
                       <span
                         className={`truncate text-[15px] leading-4 ${
                           itemActive
-                            ? "font-semibold text-sky-700"
-                            : "font-medium text-slate-700 group-hover:text-sky-700"
+                            ? "font-semibold text-yellow-700"
+                            : "font-medium text-slate-700 group-hover:text-yellow-700"
                         }`}
                       >
                         {item.label}
@@ -336,7 +336,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                     {item.subItems ? (
                       <button
                         type="button"
-                        className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-sky-600"
+                        className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-amber-400"
                         onClick={() => toggleExpand(item.label)}
                         aria-label={`Toggle ${item.label} submenu`}
                       >
@@ -361,13 +361,13 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                             href={subItem.href}
                             className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] font-medium leading-4 transition ${
                               subItemActive
-                                ? "bg-sky-50 text-sky-700"
-                                  : "text-slate-500 hover:bg-slate-100 hover:text-sky-700"
+                                ? "bg-yellow-50 text-yellow-700"
+                                  : "text-slate-500 hover:bg-slate-100 hover:text-yellow-700"
                             }`}
                           >
                             <subItem.icon
                               className={`h-3.5 w-3.5 shrink-0 ${
-                                subItemActive ? "text-sky-600" : "text-slate-400"
+                                subItemActive ? "text-amber-400" : "text-slate-400"
                               }`}
                               aria-hidden="true"
                             />
@@ -384,14 +384,14 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
         </nav>
 
         <div className="shrink-0 border-t border-slate-200 bg-white px-3 py-3">
-          <div className="rounded-2xl border border-cyan-200/60 bg-linear-to-b from-cyan-100/70 via-sky-100/60 to-cyan-100/70 px-4 py-3 shadow-lg">
+          <div className="rounded-2xl border border-yellow-200/60 bg-linear-to-b from-amber-100/70 via-amber-100/60 to-amber-100/70 px-4 py-3 shadow-lg">
             {/* Status Header */}
             <div className="flex flex-col items-center justify-center gap-1 text-center">
               <div className="flex items-center justify-center gap-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-sky-700/80">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-yellow-700/80">
                   Doctora Kulot Clinic Status
                 </span>
-                <FaCircleCheck className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+                <FaCircleCheck className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
               </div>
             </div>
 
@@ -401,23 +401,23 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
             </div>
 
             {/* Location & Weather Combined */}
-            <div className="mt-2 rounded-xl border border-cyan-200/30 px-3 py-1.5">
+            <div className="mt-2 rounded-xl border border-yellow-200/30 px-3 py-1.5">
               <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-slate-700">
                 <div className="flex items-center gap-1">
-                  <FaMapLocationDot className="h-3 w-3 shrink-0 text-cyan-600" aria-hidden="true" />
+                  <FaMapLocationDot className="h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
                   <span>Zamboanga Sibugay</span>
                 </div>
-                <span className="text-cyan-300">•</span>
+                <span className="text-amber-300">•</span>
                 <div className="flex items-center gap-1">
-                  <FaCloud className="h-3 w-3 shrink-0 text-sky-600" aria-hidden="true" />
+                  <FaCloud className="h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
                   <span>28°C</span>
                 </div>
               </div>
             </div>
 
             {/* Hours */}
-            <div className="mt-1.5 rounded-xl border border-sky-200/40 bg-sky-50/50 px-3 py-1.5">
-              <div className="flex items-center justify-center gap-2 text-sky-700">
+            <div className="mt-1.5 rounded-xl border border-yellow-200/40 bg-yellow-50/50 px-3 py-1.5">
+              <div className="flex items-center justify-center gap-2 text-yellow-700">
                 <FaClock className="h-3 w-3 shrink-0" aria-hidden="true" />
                 <span className="text-xs font-semibold">8:00 AM - 5:00 PM</span>
               </div>

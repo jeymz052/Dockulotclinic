@@ -183,7 +183,7 @@ export default function WalkInIntakePage() {
 
   if (!canManage) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+      <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-sm text-yellow-700">
         Only clinic staff can add walk-in patients.
       </div>
     );
@@ -191,10 +191,10 @@ export default function WalkInIntakePage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-sky-100 bg-[radial-gradient(circle_at_top_left,_rgba(2,132,199,0.12),_transparent_34%),linear-gradient(135deg,_#f8fbff,_#eff7ff_48%,_#e0f2fe)] p-6 shadow-[0_30px_80px_rgba(2,132,199,0.12)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(120,53,15,0.12),_transparent_34%),linear-gradient(135deg,_#fffbeb,_#eff7ff_48%,_#fde68a)] p-6 shadow-[0_30px_80px_rgba(120,53,15,0.12)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Walk-In Intake</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Walk-In Intake</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Add walk-in patients and place them directly in today&apos;s clinic flow</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               This intake screen is for patients who did not book online and already arrived at the clinic. The secretary can register the patient, choose a live slot, and check them into the queue in one pass.
@@ -203,7 +203,7 @@ export default function WalkInIntakePage() {
 
           <Link
             href="/patients"
-            className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-5 py-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-50"
+            className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-5 py-3 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50"
           >
             <FaArrowLeft className="h-4 w-4" />
             Back to Patients
@@ -215,14 +215,14 @@ export default function WalkInIntakePage() {
         <div
           className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
             feedback.tone === "success"
-              ? "border border-sky-200 bg-sky-50 text-sky-800"
-              : "border border-red-200 bg-red-50 text-red-800"
+              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
+              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
           }`}
         >
             {feedback.tone === "success" ? (
-              <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+              <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
             ) : (
-              <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
             )}
           {feedback.message}
         </div>
@@ -236,11 +236,11 @@ export default function WalkInIntakePage() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_24rem]">
-        <form onSubmit={handleSubmit} className="rounded-4xl border border-sky-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <form onSubmit={handleSubmit} className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <div className="space-y-6">
-            <div className="rounded-[1.75rem] border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5">
+            <div className="rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                <span className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">
                   <FaUserPlus className="h-3.5 w-3.5" />
                   Step 1
                 </span>
@@ -249,27 +249,27 @@ export default function WalkInIntakePage() {
               <p className="mt-2 text-sm text-slate-600">Create or refresh the patient record before placing them in the active clinic queue.</p>
 
               <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                <Field label="Full Name"><input type="text" value={form.fullName} onChange={(event) => updateField("fullName", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Juan Dela Cruz" required /></Field>
-                <Field label="Email"><input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="juan@example.com" required /></Field>
-                <Field label="Phone"><input type="tel" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="+63 912 345 6789" required /></Field>
-                <Field label="Date of Birth"><input type="date" max={maxBirthDate} value={form.dateOfBirth} onChange={(event) => updateField("dateOfBirth", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" required /></Field>
+                <Field label="Full Name"><input type="text" value={form.fullName} onChange={(event) => updateField("fullName", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" placeholder="Juan Dela Cruz" required /></Field>
+                <Field label="Email"><input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" placeholder="juan@example.com" required /></Field>
+                <Field label="Phone"><input type="tel" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" placeholder="+63 912 345 6789" required /></Field>
+                <Field label="Date of Birth"><input type="date" max={maxBirthDate} value={form.dateOfBirth} onChange={(event) => updateField("dateOfBirth", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" required /></Field>
                 <Field label="Gender">
-                  <select value={form.gender} onChange={(event) => updateField("gender", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" required>
+                  <select value={form.gender} onChange={(event) => updateField("gender", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" required>
                     <option value="">Select gender</option>
                     {GENDER_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="Patient Type"><div className="mt-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700">Walk-in patient</div></Field>
+                <Field label="Patient Type"><div className="mt-2 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">Walk-in patient</div></Field>
               </div>
 
-              <Field label="Address"><input type="text" value={form.address} onChange={(event) => updateField("address", event.target.value)} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Street, barangay, city" required /></Field>
+              <Field label="Address"><input type="text" value={form.address} onChange={(event) => updateField("address", event.target.value)} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" placeholder="Street, barangay, city" required /></Field>
             </div>
 
-            <div className="rounded-[1.75rem] border border-sky-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5">
+            <div className="rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                <span className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">
                   <FaClock className="h-3.5 w-3.5" />
                   Step 2
                 </span>
@@ -278,14 +278,14 @@ export default function WalkInIntakePage() {
               <p className="mt-2 text-sm text-slate-600">Pick from the same availability used by the booking system so walk-ins follow the normal slot capacity and queue rules.</p>
 
               <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <Field label="Visit Date"><input type="date" min={today} value={form.date} onChange={(event) => { updateField("date", event.target.value); updateField("start", ""); }} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" required /></Field>
+                <Field label="Visit Date"><input type="date" min={today} value={form.date} onChange={(event) => { updateField("date", event.target.value); updateField("start", ""); }} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" required /></Field>
                 <Field label="Assigned Doctor"><div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">{selectedDoctor?.name ?? "Loading doctor..."}</div></Field>
               </div>
 
-              <Field label="Reason for Visit"><textarea value={form.reason} onChange={(event) => updateField("reason", event.target.value)} rows={4} className="mt-2 w-full rounded-2xl border border-sky-100 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Fever follow-up, cough and colds, blood pressure check, prescription refill..." required /></Field>
+              <Field label="Reason for Visit"><textarea value={form.reason} onChange={(event) => updateField("reason", event.target.value)} rows={4} className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100" placeholder="Fever follow-up, cough and colds, blood pressure check, prescription refill..." required /></Field>
 
-              {blockedReason ? <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{blockedReason}{nextAvailableSlot ? ` Next available slot: ${formatDisplayDate(nextAvailableSlot.date)} at ${formatRange(nextAvailableSlot.slot.start, nextAvailableSlot.slot.end)}.` : ""}</div> : null}
-              {availabilityError ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{availabilityError}</div> : null}
+              {blockedReason ? <div className="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{blockedReason}{nextAvailableSlot ? ` Next available slot: ${formatDisplayDate(nextAvailableSlot.date)} at ${formatRange(nextAvailableSlot.slot.start, nextAvailableSlot.slot.end)}.` : ""}</div> : null}
+              {availabilityError ? <div className="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{availabilityError}</div> : null}
 
               <div className="mt-5">
                 <SharedSlotPicker slotStatuses={slotStatuses} selectedStart={form.start} onSelect={(start) => updateField("start", start)} disabled={isSubmitting} loading={availabilityLoading} title="Available clinic slots for walk-in intake" />
@@ -293,17 +293,17 @@ export default function WalkInIntakePage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button type="submit" disabled={isSubmitting || !intakeReady} className="rounded-full bg-[linear-gradient(135deg,#0284c7,#0ea5e9)] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(2,132,199,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(2,132,199,0.2)] disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="submit" disabled={isSubmitting || !intakeReady} className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-6 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(120,53,15,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(120,53,15,0.2)] disabled:cursor-not-allowed disabled:opacity-60">
                 {isSubmitting ? "Saving Walk-In..." : "Add Walk-In Patient"}
               </button>
-              <Link href="/patients" className="rounded-full border border-sky-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-sky-50">Cancel</Link>
+              <Link href="/patients" className="rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50">Cancel</Link>
             </div>
           </div>
         </form>
 
         <aside className="space-y-4">
-          <div className="rounded-4xl border border-sky-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-600">Walk-In Summary</p>
+          <div className="rounded-4xl border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-400">Walk-In Summary</p>
             <h2 className="mt-2 text-lg font-bold text-slate-900">Ready for front desk handoff</h2>
             <div className="mt-4 space-y-3">
               <SummaryRow label="Patient">{form.fullName.trim() || "Waiting for patient name"}</SummaryRow>
@@ -331,8 +331,8 @@ export default function WalkInIntakePage() {
 
 function IntakeMetric({ label, value, detail, icon }: { label: string; value: string; detail: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-[1.75rem] border border-sky-100 bg-white p-5 shadow-[0_16px_34px_rgba(2,132,199,0.06)]">
-      <div className="flex items-center gap-2 text-sky-700">
+    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(120,53,15,0.06)]">
+      <div className="flex items-center gap-2 text-yellow-700">
         {icon}
         <p className="text-xs font-semibold uppercase tracking-[0.18em]">{label}</p>
       </div>
@@ -354,7 +354,7 @@ function SummaryRow({ label, children }: { label: string; children: React.ReactN
 function FlowStep({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
     <div className="flex gap-3 rounded-2xl border border-slate-100 bg-white/80 px-4 py-3">
-      <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-700">
+      <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-50 text-yellow-700">
         {icon}
       </div>
       <div>

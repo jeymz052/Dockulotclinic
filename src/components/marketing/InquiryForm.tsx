@@ -49,7 +49,7 @@ export default function InquiryForm() {
   }
 
   return (
-    <form className="rounded-3xl border border-slate-200 bg-sky-50/60 p-6 shadow-sm" onSubmit={submit}>
+    <form className="rounded-3xl border border-slate-200 bg-yellow-50/60 p-6 shadow-sm" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           required
@@ -88,12 +88,12 @@ export default function InquiryForm() {
       <button
         type="submit"
         disabled={status === "sending"}
-        className="mt-4 w-full rounded-full bg-sky-600 px-6 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
+        className="mt-4 w-full rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-400 sm:w-auto"
       >
         {status === "sending" ? "Sending..." : "Submit inquiry"}
       </button>
       {feedback ? (
-        <p className={`mt-4 text-sm font-semibold ${status === "error" ? "text-red-600" : "text-sky-700"}`}>
+        <p className={`mt-4 text-sm font-semibold ${status === "error" ? "text-yellow-600" : "text-yellow-700"}`}>
           {feedback}
         </p>
       ) : null}
