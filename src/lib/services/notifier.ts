@@ -30,7 +30,7 @@ export async function sendEmail(input: EmailInput): Promise<void> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.RESEND_FROM ?? "Doc Kulot Clinic <no-reply@dockulot.clinic>",
+      from: process.env.RESEND_FROM ?? "Doc Kulot <no-reply@dockulot.clinic>",
       to: input.to,
       subject: input.subject,
       text: input.body,
@@ -87,14 +87,14 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
   switch (template) {
     case "verify_email":
       return {
-        subject: "Verify your Doc Kulot Clinic account",
+        subject: "Verify your Doc Kulot account",
         body: verifyUrl
           ? `Please verify your email before signing in. Open this confirmation link to activate your account: ${verifyUrl}`
           : "Please verify your email before signing in. Use the confirmation link from your latest verification email.",
       };
     case "welcome":
       return {
-        subject: "Welcome to Doc Kulot Clinic",
+        subject: "Welcome to Doc Kulot",
         body: "Welcome! Your account is now active. You can book clinic visits and online consultations at any time.",
       };
     case "appointment_booked":
@@ -217,6 +217,6 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
         body: `Your prescription${prescriptionNo ? ` (${prescriptionNo})` : ""} is ready in the patient portal. You can view, download, or print it from Prescriptions.`,
       };
     default:
-      return { subject: "Notification from Doc Kulot Clinic", body: "You have a new notification." };
+      return { subject: "Notification from Doc Kulot", body: "You have a new notification." };
   }
 }

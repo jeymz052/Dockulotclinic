@@ -6,7 +6,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
       {blocks.map((block, index) => {
         if (block.type === "paragraph") {
           return (
-            <p key={`${block.type}-${index}`} className="text-base leading-8 text-slate-700 sm:text-lg">
+            <p key={`${block.type}-${index}`} className="text-base leading-8 text-neutral-700 sm:text-lg">
               {block.text}
             </p>
           );
@@ -14,7 +14,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "h2") {
           return (
-            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-yellow-800 sm:text-3xl">
+            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-gold-800 sm:text-3xl">
               {block.text}
             </h2>
           );
@@ -22,7 +22,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "h3") {
           return (
-            <h3 key={`${block.type}-${index}`} className="pt-2 text-xl font-bold text-slate-900 sm:text-2xl">
+            <h3 key={`${block.type}-${index}`} className="pt-2 text-xl font-bold text-neutral-900 sm:text-2xl">
               {block.text}
             </h3>
           );
@@ -32,7 +32,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
           return (
             <blockquote
               key={`${block.type}-${index}`}
-              className="rounded-[1.5rem] border-l-4 border-amber-400 bg-yellow-50 px-6 py-5 text-lg italic leading-8 text-slate-700"
+              className="rounded-[1.5rem] border-l-4 border-gold-400 bg-gold-50 px-6 py-5 text-lg italic leading-8 text-neutral-700"
             >
               {block.text}
             </blockquote>
@@ -43,8 +43,8 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
           const ListTag = block.type === "ol" ? "ol" : "ul";
           const listClassName =
             block.type === "ol"
-              ? "list-decimal space-y-3 pl-6 text-base leading-8 text-slate-700 sm:text-lg"
-              : "list-disc space-y-3 pl-6 text-base leading-8 text-slate-700 sm:text-lg";
+              ? "list-decimal space-y-3 pl-6 text-base leading-8 text-neutral-700 sm:text-lg"
+              : "list-disc space-y-3 pl-6 text-base leading-8 text-neutral-700 sm:text-lg";
           return (
             <ListTag key={`${block.type}-${index}`} className={listClassName}>
               {block.items?.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}
@@ -54,7 +54,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "image" && block.url) {
           return (
-            <figure key={`${block.type}-${index}`} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white">
+            <figure key={`${block.type}-${index}`} className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white">
               <img src={block.url} alt={block.alt || title} className="h-auto w-full object-cover" />
             </figure>
           );
@@ -62,7 +62,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "embed" && block.url) {
           return (
-            <div key={`${block.type}-${index}`} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-black">
+            <div key={`${block.type}-${index}`} className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-black">
               <iframe
                 title={`embed-${index}`}
                 src={block.url}
@@ -75,16 +75,16 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
         }
 
         if (block.type === "divider") {
-          return <hr key={`${block.type}-${index}`} className="border-slate-200" />;
+          return <hr key={`${block.type}-${index}`} className="border-neutral-200" />;
         }
 
         if (block.type === "cta") {
           return (
-            <div key={`${block.type}-${index}`} className="rounded-[1.75rem] bg-amber-700 px-6 py-8 text-center text-white">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-100">Take the next step</p>
+            <div key={`${block.type}-${index}`} className="rounded-[1.75rem] bg-black px-6 py-8 text-center text-white">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-gold-100">Take the next step</p>
               <a
                 href={block.buttonLink}
-                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
+                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
               >
                 {block.buttonText}
               </a>
@@ -94,9 +94,9 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "faq") {
           return (
-            <details key={`${block.type}-${index}`} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
-              <summary className="cursor-pointer text-lg font-bold text-slate-900">{block.question}</summary>
-              <p className="mt-3 text-base leading-7 text-slate-700">{block.answer}</p>
+            <details key={`${block.type}-${index}`} className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-5 py-4">
+              <summary className="cursor-pointer text-lg font-bold text-neutral-900">{block.question}</summary>
+              <p className="mt-3 text-base leading-7 text-neutral-700">{block.answer}</p>
             </details>
           );
         }

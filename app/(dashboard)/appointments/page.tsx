@@ -155,7 +155,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(133,77,14,0.16),transparent_34%),linear-gradient(135deg,#f0faff_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Appointments</p>

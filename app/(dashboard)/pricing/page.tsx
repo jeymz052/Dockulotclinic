@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import { normalizeConfiguredConsultationRate } from "@/src/lib/consultation-pricing";
+import {
+  FOLLOW_UP_CLINIC_CONSULTATION_FEE,
+  NEW_PATIENT_CLINIC_CONSULTATION_FEE,
+  ONLINE_CONSULTATION_FEE,
+  normalizeConfiguredClinicConsultationRate,
+  normalizeConfiguredOnlineConsultationRate,
+} from "@/src/lib/consultation-pricing";
 
 type PricingCategory = "Consultation" | "Lab" | "Medicine" | "Procedure" | "Other";
 
@@ -44,7 +50,7 @@ const EMPTY_DRAFT: Draft = {
   code: "",
   name: "",
   category: "Consultation",
-  price: 350,
+  price: ONLINE_CONSULTATION_FEE,
   is_active: true,
 };
 
@@ -75,7 +81,7 @@ function sanitizeDraft(draft: Draft): Draft {
 }
 
 function createExampleLabel(rate: number) {
-  return `1 hr online = ${peso(rate)}`;
+  return `Per online consult = ${peso(rate)}`;
 }
 
 export default function PricingPage() {
@@ -87,7 +93,10 @@ export default function PricingPage() {
   const [newDraft, setNewDraft] = useState<Draft>(EMPTY_DRAFT);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [rateDraft, setRateDraft] = useState<{ clinic: number; online: number }>({ clinic: 350, online: 350 });
+  const [rateDraft, setRateDraft] = useState<{ clinic: number; online: number }>({
+    clinic: NEW_PATIENT_CLINIC_CONSULTATION_FEE,
+    online: ONLINE_CONSULTATION_FEE,
+  });
   const [feedback, setFeedback] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<PricingCategory | "All">("All");
@@ -130,8 +139,8 @@ export default function PricingPage() {
           setItems(pricingPayload.pricing);
           setRates(doctorsPayload.doctors);
           const firstDoctor = doctorsPayload.doctors[0] ?? null;
-          const clinic = normalizeConfiguredConsultationRate(Number(firstDoctor?.consultation_fee_clinic ?? 0));
-          const online = normalizeConfiguredConsultationRate(Number(firstDoctor?.consultation_fee_online ?? 0));
+          const clinic = normalizeConfiguredClinicConsultationRate(Number(firstDoctor?.consultation_fee_clinic ?? 0));
+          const online = normalizeConfiguredOnlineConsultationRate(Number(firstDoctor?.consultation_fee_online ?? 0));
           setRateDraft({ clinic, online });
           setError(null);
         }
@@ -294,7 +303,7 @@ export default function PricingPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.20),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(186,230,253,0.16),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_70%)] p-6 shadow-[0_24px_70px_rgba(133,77,14,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.20),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(245,245,245,0.16),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_70%)] p-6 shadow-[0_24px_70px_rgba(17,17,17,0.12)]">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Pricing Management</p>
@@ -341,7 +350,7 @@ export default function PricingPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Required Fees</p>
               <h2 className="mt-2 text-2xl font-bold text-slate-900">Consultation rate controls</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                These rates power the appointment charge calculations. Example: a 1 hour online consultation uses the online rate shown here.
+                These rates power the consultation charges across booking and billing. Clinic follow-up visits use a fixed PHP 300 rate, while the clinic base fee and online consultation rate are managed here.
               </p>
             </div>
             <span className="inline-flex w-fit rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
@@ -359,16 +368,23 @@ export default function PricingPage() {
             <RateCard
               label="Clinic Consultation Fee"
               value={peso(clinicRate)}
-              note={`1 hr clinic consultation = ${peso(clinicRate)}`}
+              note={`New patient clinic consult = ${peso(clinicRate)}`}
               accent="cyan"
             />
+          </div>
+
+          <div className="mt-4 rounded-[1.4rem] border border-yellow-100 bg-yellow-50/70 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Fixed Follow-Up Rule</p>
+            <p className="mt-2 text-sm text-yellow-800">
+              Only New patients who already had a prior clinic consultation are charged {peso(FOLLOW_UP_CLINIC_CONSULTATION_FEE)}. Regular and old-record patients are not auto-classified into the follow-up rate.
+            </p>
           </div>
 
           <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Assigned Doctor</p>
               <h3 className="mt-2 text-lg font-bold text-slate-900">{doctorDisplayName(primaryDoctor)}</h3>
-              <p className="mt-1 text-sm text-slate-500">{primaryDoctor?.specialty ?? "Family Medicine Specialist"}</p>
+              <p className="mt-1 text-sm text-slate-500">{primaryDoctor?.specialty ?? "Family Medicine and Aesthetic Medicine"}</p>
               <p className="mt-4 text-sm text-slate-500">
                 The booking and billing flows already read these values separately, so editing them here updates the pricing source used across the system.
               </p>
@@ -377,14 +393,14 @@ export default function PricingPage() {
             {canEdit && primaryDoctor ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <Field
-                  label="Online rate per hour"
-                  hint="Used for online appointments."
+                  label="Online consultation fee"
+                  hint="Used for online consultations."
                   value={rateDraft.online}
                   onChange={(value) => setRateDraft((current) => ({ ...current, online: value }))}
                 />
                 <Field
-                  label="Clinic fee per hour"
-                  hint="Used for clinic POS consultation charges."
+                  label="New patient clinic fee"
+                  hint="Used for first-time clinic consultations."
                   value={rateDraft.clinic}
                   onChange={(value) => setRateDraft((current) => ({ ...current, clinic: value }))}
                 />
@@ -392,7 +408,7 @@ export default function PricingPage() {
                   type="button"
                   onClick={saveConsultationRates}
                   disabled={isSaving}
-                  className="rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-yellow-200 disabled:text-yellow-700"
+                  className="rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:bg-yellow-200 disabled:text-yellow-700"
                 >
                   {isSaving ? "Saving rates..." : "Save consultation rates"}
                 </button>
@@ -666,7 +682,7 @@ export default function PricingPage() {
                                         type="button"
                                         onClick={saveEdit}
                                         disabled={isSaving}
-                                        className="rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-white transition hover:bg-yellow-400 disabled:bg-yellow-200 disabled:text-yellow-700"
+                                        className="rounded-xl bg-black px-3 py-2 text-xs font-semibold text-white transition hover:bg-black disabled:bg-yellow-200 disabled:text-yellow-700"
                                       >
                                         Save
                                       </button>

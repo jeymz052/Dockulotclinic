@@ -19,8 +19,13 @@ type PatientRow = {
   dob: string | null;
   gender: string | null;
   address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
   family_history: string | null;
+  allergies: string | null;
+  medical_history: string | null;
   is_walk_in: boolean | null;
+  patient_category: "New" | "Regular" | "OldRecord" | null;
   profiles: {
     full_name: string;
     email: string;
@@ -77,8 +82,13 @@ function mapPatient(row: PatientRow): PatientRecordItem {
     dateOfBirth: row.dob ?? "",
     gender: row.gender ?? "",
     address: row.address ?? "",
+    emergencyContactName: row.emergency_contact_name ?? "",
+    emergencyContactPhone: row.emergency_contact_phone ?? "",
     familyHistory: row.family_history ?? "",
+    allergies: row.allergies ?? "",
+    medicalHistory: row.medical_history ?? "",
     isWalkIn: row.is_walk_in ?? false,
+    patientCategory: row.patient_category ?? "New",
     status: row.profiles?.is_active === false ? "Inactive" : "Active",
   };
 }
@@ -135,7 +145,7 @@ export async function GET(request: Request) {
   const [patientsResult, visitsResult] = await Promise.all([
     supabase
       .from("patients")
-      .select("id, dob, gender, address, family_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)")
+      .select("id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)")
       .eq("profiles.role", "patient")
       .order("id"),
     supabase
@@ -181,7 +191,14 @@ export async function PATCH(request: Request) {
   }
 
   const body = (await request.json().catch(() => null)) as
-    | { patientId?: string; familyHistory?: string }
+    | {
+        patientId?: string;
+        familyHistory?: string;
+        medicalHistory?: string;
+        allergies?: string;
+        emergencyContactName?: string;
+        emergencyContactPhone?: string;
+      }
     | null;
 
   if (!body?.patientId) {
@@ -191,7 +208,13 @@ export async function PATCH(request: Request) {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("patients")
-    .update({ family_history: body.familyHistory?.trim() || null })
+    .update({
+      family_history: body.familyHistory?.trim() || null,
+      medical_history: body.medicalHistory?.trim() || null,
+      allergies: body.allergies?.trim() || null,
+      emergency_contact_name: body.emergencyContactName?.trim() || null,
+      emergency_contact_phone: body.emergencyContactPhone?.trim() || null,
+    })
     .eq("id", body.patientId);
 
   if (error) {

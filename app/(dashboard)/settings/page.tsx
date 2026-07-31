@@ -11,7 +11,7 @@ const EMPTY: SystemSettings = {
   email: "",
   phone: "",
   address: "",
-  onlineConsultationFee: 0,
+  onlineConsultationFee: 800,
   maxPatientsPerHour: 5,
   clinicOpenTime: "08:00",
   clinicCloseTime: "17:00",
@@ -112,7 +112,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(133,77,14,0.16),transparent_34%),linear-gradient(135deg,#fef3c7_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f5f5f5_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Settings</p>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={isSaving || loading || meetingLinkClass.state === "invalid"}
-              className="rounded-full bg-yellow-400 px-6 py-3 font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-yellow-300"
+              className="rounded-full bg-black px-6 py-3 font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-yellow-300"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>

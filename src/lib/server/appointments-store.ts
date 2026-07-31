@@ -34,6 +34,7 @@ export type AppointmentCreatePayload = {
   start: string;
   type: AppointmentType;
   reason: string;
+  patientStatus?: "New" | "Existing";
 };
 
 type AppointmentCreateContext = {
@@ -234,10 +235,11 @@ export async function validateSharedSlotOrThrow(input: {
 }
 
 export async function resolveBookingPatientId(
-  payload: Pick<AppointmentCreatePayload, "email" | "patientName" | "phone">,
+  payload: Pick<AppointmentCreatePayload, "email" | "patientName" | "phone" | "patientStatus">,
   options: { actorRole?: AuthenticatedUser["role"]; actorUserId?: string } = {},
 ) {
   const supabase = getSupabaseAdmin();
+  const resolvedCategory = payload.patientStatus === "Existing" ? "Regular" : "New";
   if (options.actorRole === "PATIENT" && options.actorUserId) {
     const patientUuid = options.actorUserId;
     await supabase
@@ -254,16 +256,26 @@ export async function resolveBookingPatientId(
       .from("patients")
       .upsert({
         id: patientUuid,
+        patient_category: resolvedCategory,
       });
 
     return patientUuid;
   }
 
-  return findOrCreatePatientByEmail(
+  const patientUuid = await findOrCreatePatientByEmail(
     payload.email,
     payload.patientName,
     payload.phone,
   );
+
+  await supabase
+    .from("patients")
+    .upsert({
+      id: patientUuid,
+      patient_category: resolvedCategory,
+    });
+
+  return patientUuid;
 }
 
 async function hydrateRows(rows: V2Appointment[]): Promise<AppointmentRecord[]> {

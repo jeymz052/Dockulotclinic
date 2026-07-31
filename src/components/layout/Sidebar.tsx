@@ -27,7 +27,6 @@ import {
   FaMapLocationDot,
   FaCloud,
   FaWandMagicSparkles,
-  FaBoxesStacked,
   FaInbox,
   FaPrescriptionBottleMedical,
   FaShieldHalved,
@@ -99,7 +98,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Pricing", href: "/pricing", icon: FaCreditCard },
     { label: "Reports", href: "/reports", icon: FaChartLine },
     { label: "Security", href: "/security", icon: FaShieldHalved },
-    { label: "Inventory", href: "/inventory", icon: FaBoxesStacked },
     { label: "Prescriptions", href: "/prescriptions", icon: FaPrescriptionBottleMedical },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
@@ -136,7 +134,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
-    { label: "Inventory", href: "/inventory", icon: FaBoxesStacked },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
     { label: "FAQ Content", href: "/faq-content", icon: FaCircleQuestion },
@@ -189,7 +186,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Pricing", href: "/pricing", icon: FaCreditCard },
     { label: "Reports", href: "/reports", icon: FaChartLine },
     { label: "Security", href: "/security", icon: FaShieldHalved },
-    { label: "Inventory", href: "/inventory", icon: FaBoxesStacked },
     { label: "Prescriptions", href: "/prescriptions", icon: FaPrescriptionBottleMedical },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
@@ -265,7 +261,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
   return (
     <>
       <div
-        className={`fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-sm lg:hidden ${
+        className={`fixed inset-0 z-30 bg-neutral-900/60 backdrop-blur-sm lg:hidden ${
           isOpen ? "block" : "hidden"
         }`}
         onClick={onClose}
@@ -273,15 +269,15 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-svh max-h-svh w-[min(17rem,86vw)] flex-col overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-300 lg:h-screen lg:max-h-screen lg:w-56 lg:translate-x-0 lg:shadow-none ${
+        className={`fixed left-0 top-0 z-40 flex h-svh max-h-svh w-[min(17rem,86vw)] flex-col overflow-hidden border-r border-neutral-200 bg-white shadow-2xl transition-transform duration-300 lg:h-screen lg:max-h-screen lg:w-56 lg:translate-x-0 lg:shadow-none ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2">
+        <div className="shrink-0 border-b border-neutral-200 bg-white px-4 py-2">
           <div className="flex items-center justify-between">
             <Image
               src="/images/dockulotslogonobg.png"
-              alt="Doctora Kulot Clinic Logo"
+              alt="Doc Kulot Logo"
               width={669}
               height={373}
               priority
@@ -290,7 +286,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
               className="object-contain -my-2 sm:w-45"
             />
             <button
-              className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 lg:hidden"
+              className="rounded-md p-2 text-black/70 transition hover:bg-black/5 lg:hidden"
               onClick={onClose}
               type="button"
               aria-label="Close sidebar"
@@ -312,21 +308,21 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                 <div key={item.label} className="min-h-0">
                   <div
                     className={`group flex items-center rounded-xl px-2 py-2 transition-colors duration-150 ${
-                      itemActive ? "bg-yellow-50" : "hover:bg-slate-100"
+                      itemActive ? "bg-white" : "hover:bg-black/5"
                     }`}
                   >
                     <Link href={item.href} className="flex min-w-0 flex-1 items-center gap-2">
                       <item.icon
                         className={`h-4 w-4 shrink-0 ${
-                          itemActive ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400"
+                          itemActive ? "text-black" : "text-black/60 group-hover:text-black"
                         }`}
                         aria-hidden="true"
                       />
                       <span
                         className={`truncate text-[15px] leading-4 ${
                           itemActive
-                            ? "font-semibold text-yellow-700"
-                            : "font-medium text-slate-700 group-hover:text-yellow-700"
+                            ? "font-semibold text-black"
+                            : "font-medium text-black/75 group-hover:text-black"
                         }`}
                       >
                         {item.label}
@@ -336,7 +332,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                     {item.subItems ? (
                       <button
                         type="button"
-                        className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-amber-400"
+                        className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-black/60 transition hover:bg-black/5 hover:text-black"
                         onClick={() => toggleExpand(item.label)}
                         aria-label={`Toggle ${item.label} submenu`}
                       >
@@ -351,7 +347,7 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                   </div>
 
                   {item.subItems && expanded[item.label] ? (
-                    <div className="ml-6 mt-1 space-y-1 border-l border-slate-200 pl-2">
+                    <div className="ml-6 mt-1 space-y-1 border-l border-neutral-200 pl-2">
                       {item.subItems.map((subItem) => {
                         const subItemActive = isActive(subItem.href);
 
@@ -361,13 +357,13 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                             href={subItem.href}
                             className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] font-medium leading-4 transition ${
                               subItemActive
-                                ? "bg-yellow-50 text-yellow-700"
-                                  : "text-slate-500 hover:bg-slate-100 hover:text-yellow-700"
+                                ? "bg-white text-black"
+                                : "text-black/65 hover:bg-black/5 hover:text-black"
                             }`}
                           >
                             <subItem.icon
                               className={`h-3.5 w-3.5 shrink-0 ${
-                                subItemActive ? "text-amber-400" : "text-slate-400"
+                                subItemActive ? "text-black" : "text-black/60"
                               }`}
                               aria-hidden="true"
                             />
@@ -383,45 +379,45 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
           </div>
         </nav>
 
-        <div className="shrink-0 border-t border-slate-200 bg-white px-3 py-3">
-          <div className="rounded-2xl border border-yellow-200/60 bg-linear-to-b from-amber-100/70 via-amber-100/60 to-amber-100/70 px-4 py-3 shadow-lg">
+        <div className="shrink-0 border-t border-neutral-200 bg-white px-3 py-3">
+          <div className="rounded-2xl border border-black/10 bg-white px-4 py-3 shadow-lg">
             {/* Status Header */}
             <div className="flex flex-col items-center justify-center gap-1 text-center">
               <div className="flex items-center justify-center gap-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-yellow-700/80">
-                  Doctora Kulot Clinic Status
+                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-black/70">
+                  Doc Kulot Today
                 </span>
-                <FaCircleCheck className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+                <FaCircleCheck className="h-3.5 w-3.5 text-black" aria-hidden="true" />
               </div>
             </div>
 
             {/* Status */}
             <div className="mt-1.5 text-center">
-              <p className="text-lg font-semibold leading-none text-slate-800">Open Today</p>
+              <p className="text-lg font-semibold leading-none text-neutral-800">Open Today</p>
             </div>
 
             {/* Location & Weather Combined */}
-            <div className="mt-2 rounded-xl border border-yellow-200/30 px-3 py-1.5">
-              <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-slate-700">
+            <div className="mt-2 rounded-xl border border-black/10 px-3 py-1.5">
+              <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-black/75">
                 <div className="flex items-center gap-1">
-                  <FaMapLocationDot className="h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
+                  <FaMapLocationDot className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
                   <span>Zamboanga Sibugay</span>
                 </div>
-                <span className="text-amber-300">•</span>
+                <span className="text-black/20">•</span>
                 <div className="flex items-center gap-1">
-                  <FaCloud className="h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
+                  <FaCloud className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
                   <span>28°C</span>
                 </div>
               </div>
             </div>
 
             {/* Hours */}
-            <div className="mt-1.5 rounded-xl border border-yellow-200/40 bg-yellow-50/50 px-3 py-1.5">
-              <div className="flex items-center justify-center gap-2 text-yellow-700">
-                <FaClock className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <div className="mt-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5">
+              <div className="flex items-center justify-center gap-2 text-black/75">
+                <FaClock className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
                 <span className="text-xs font-semibold">8:00 AM - 5:00 PM</span>
               </div>
-              <p className="mt-0.5 text-center text-[9px] text-slate-600/75">{todayLabel}</p>
+              <p className="mt-0.5 text-center text-[9px] text-neutral-600/75">{todayLabel}</p>
             </div>
           </div>
         </div>

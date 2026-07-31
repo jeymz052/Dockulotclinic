@@ -1,8 +1,11 @@
 import { httpError, ok } from "@/src/lib/http";
-import { normalizeConfiguredConsultationRate } from "@/src/lib/consultation-pricing";
+import {
+  normalizeConfiguredClinicConsultationRate,
+  normalizeConfiguredOnlineConsultationRate,
+} from "@/src/lib/consultation-pricing";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 
-const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine Specialist";
+const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
 
 type DoctorRow = {
   id: string;
@@ -56,8 +59,8 @@ export async function GET() {
           full_name: fullName,
           specialty: doctor.specialty?.trim() || FALLBACK_DOCTOR_SPECIALTY,
           license_no: doctor.license_no,
-          consultation_fee_clinic: normalizeConfiguredConsultationRate(Number(doctor.consultation_fee_clinic ?? 0)),
-          consultation_fee_online: normalizeConfiguredConsultationRate(Number(doctor.consultation_fee_online ?? 0)),
+          consultation_fee_clinic: normalizeConfiguredClinicConsultationRate(Number(doctor.consultation_fee_clinic ?? 0)),
+          consultation_fee_online: normalizeConfiguredOnlineConsultationRate(Number(doctor.consultation_fee_online ?? 0)),
           profiles: {
             full_name: fullName,
             email: profile?.email ?? "",

@@ -205,7 +205,7 @@ export default function TimeSlotsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_30%),linear-gradient(135deg,#f5fbff_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_30%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Blocked Dates</p>
@@ -313,7 +313,7 @@ export default function TimeSlotsPage() {
               <button
                 type="submit"
                 disabled={!canManage || isSaving}
-                className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving
                   ? "Saving..."
@@ -351,7 +351,7 @@ export default function TimeSlotsPage() {
                   onClick={() => setViewType(type)}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     viewType === type
-                      ? "border-amber-400 bg-yellow-400 text-white"
+                      ? "border-amber-400 bg-black text-white"
                       : "border-yellow-100 bg-white text-slate-700 hover:bg-yellow-50"
                   }`}
                 >
@@ -374,7 +374,7 @@ export default function TimeSlotsPage() {
                     key={slot.start}
                     className={`rounded-[1.4rem] border px-4 py-4 ${
                       available
-                        ? "border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)]"
+                        ? "border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)]"
                         : "border-slate-200 bg-slate-50"
                     }`}
                   >
@@ -419,7 +419,7 @@ export default function TimeSlotsPage() {
             doctorBlocks.map((record) => (
               <div
                 key={record.id}
-                className="flex flex-col gap-3 rounded-[1.4rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 rounded-[1.4rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">

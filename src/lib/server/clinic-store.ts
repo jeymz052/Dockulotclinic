@@ -135,8 +135,13 @@ type PatientJoinRow = {
   dob: string | null;
   gender: string | null;
   address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
   family_history: string | null;
+  allergies: string | null;
+  medical_history: string | null;
   is_walk_in: boolean | null;
+  patient_category: "New" | "Regular" | "OldRecord" | null;
   profiles: {
     full_name: string;
     email: string;
@@ -155,8 +160,13 @@ function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
     dateOfBirth: row.dob ?? "",
     gender: row.gender ?? "",
     address: row.address ?? "",
+    emergencyContactName: row.emergency_contact_name ?? "",
+    emergencyContactPhone: row.emergency_contact_phone ?? "",
     familyHistory: row.family_history ?? "",
+    allergies: row.allergies ?? "",
+    medicalHistory: row.medical_history ?? "",
     isWalkIn: row.is_walk_in ?? false,
+    patientCategory: row.patient_category ?? "New",
     status: row.profiles?.is_active === false ? "Inactive" : "Active",
   };
 }
@@ -165,7 +175,7 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("patients")
-    .select("id, dob, gender, address, family_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)")
+    .select("id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)")
     .eq("profiles.role", "patient")
     .order("id");
   if (error) throw error;
@@ -222,8 +232,13 @@ export async function createPatient(
       dob: normalized.dateOfBirth || null,
       gender: normalized.gender || null,
       address: normalized.address || null,
+      emergency_contact_name: payload.emergencyContactName?.trim() || null,
+      emergency_contact_phone: payload.emergencyContactPhone?.trim() || null,
       family_history: payload.familyHistory?.trim() || null,
+      allergies: payload.allergies?.trim() || null,
+      medical_history: payload.medicalHistory?.trim() || null,
       is_walk_in: payload.isWalkIn,
+      patient_category: payload.patientCategory ?? "New",
     });
 
   return readPatients();
@@ -250,8 +265,13 @@ export async function updatePatient(
       dob: normalized.dateOfBirth || null,
       gender: normalized.gender || null,
       address: normalized.address || null,
+      emergency_contact_name: updatedPatient.emergencyContactName.trim() || null,
+      emergency_contact_phone: updatedPatient.emergencyContactPhone.trim() || null,
       family_history: updatedPatient.familyHistory.trim() || null,
+      allergies: updatedPatient.allergies.trim() || null,
+      medical_history: updatedPatient.medicalHistory.trim() || null,
       is_walk_in: updatedPatient.isWalkIn,
+      patient_category: updatedPatient.patientCategory,
     })
     .eq("id", updatedPatient.id);
   return readPatients();

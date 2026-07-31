@@ -1,4 +1,5 @@
 import { HttpError, httpError, ok, requireActor } from "@/src/lib/http";
+import { sendEmail } from "@/src/lib/services/notifier";
 import { enqueueNotification } from "@/src/lib/services/notification";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { DbRole } from "@/src/lib/db/types";
@@ -128,6 +129,56 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/v2/prescriptio
       });
     }
     return ok({ prescription: data });
+  } catch (e) {
+    return httpError(e);
+  }
+}
+
+export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescriptions/[id]">) {
+  try {
+    const actor = await requireActor(req);
+    if (!canManagePrescriptions(actor.profile.role)) {
+      throw new HttpError(403, "Only doctors and admins can email prescriptions.");
+    }
+
+    const { id } = await ctx.params;
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("prescriptions")
+      .select("prescription_no, released_to_patient, patients(profiles(full_name,email)), doctors(profiles(full_name))")
+      .eq("id", id)
+      .maybeSingle<{
+        prescription_no: string;
+        released_to_patient: boolean;
+        patients?: { profiles?: { full_name?: string | null; email?: string | null } | null } | null;
+        doctors?: { profiles?: { full_name?: string | null } | null } | null;
+      }>();
+    if (error) throw error;
+    if (!data) throw new HttpError(404, "Prescription not found.");
+
+    const patientEmail = data.patients?.profiles?.email?.trim();
+    if (!patientEmail) {
+      throw new HttpError(400, "Patient email is missing.");
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "";
+    const portalUrl = appUrl ? `${appUrl}/prescriptions` : "/prescriptions";
+    await sendEmail({
+      to: patientEmail,
+      subject: `Your prescription ${data.prescription_no} is ready`,
+      body: [
+        `Hello ${data.patients?.profiles?.full_name ?? "Patient"},`,
+        "",
+        `Your prescription ${data.prescription_no} from ${data.doctors?.profiles?.full_name ?? "Doc Kulot"} is ready.`,
+        `Open your patient portal to view, download, or print the PDF: ${portalUrl}`,
+        "",
+        data.released_to_patient
+          ? "The prescription is already visible in the portal."
+          : "The prescription is currently not released to the patient portal.",
+      ].join("\n"),
+    });
+
+    return ok({ message: "Prescription email sent." });
   } catch (e) {
     return httpError(e);
   }

@@ -6,12 +6,13 @@ import { DOCTORS } from "@/src/lib/appointments";
 import {
   CLINIC_CONSULTATION_HOURLY_RATE,
   ONLINE_CONSULTATION_HOURLY_RATE,
-  normalizeConfiguredConsultationRate,
+  normalizeConfiguredClinicConsultationRate,
+  normalizeConfiguredOnlineConsultationRate,
 } from "@/src/lib/consultation-pricing";
 
 const DEFAULT_DOCTOR = DOCTORS[0];
 const FALLBACK_DOCTOR_NAME = "Doctor";
-const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine Specialist";
+const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
 
 export type BookingDoctor = {
   id: string;
@@ -57,8 +58,8 @@ export function useDoctors() {
           slug: doctor.slug ?? doctor.id,
           name: doctor.full_name ?? doctor.name ?? DEFAULT_DOCTOR?.name ?? FALLBACK_DOCTOR_NAME,
           specialty: doctor.specialty ?? DEFAULT_DOCTOR?.specialty ?? FALLBACK_DOCTOR_SPECIALTY,
-          consultation_fee_clinic: normalizeConfiguredConsultationRate(Number(doctor.consultation_fee_clinic ?? 0)),
-          consultation_fee_online: normalizeConfiguredConsultationRate(Number(doctor.consultation_fee_online ?? 0)),
+          consultation_fee_clinic: normalizeConfiguredClinicConsultationRate(Number(doctor.consultation_fee_clinic ?? 0)),
+          consultation_fee_online: normalizeConfiguredOnlineConsultationRate(Number(doctor.consultation_fee_online ?? 0)),
         }));
 
         if (nextDoctors.length > 0) {

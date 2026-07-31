@@ -20,7 +20,7 @@ create table if not exists public.landing_content (
   hero_eyebrow text not null default '',
   hero_title_line1 text not null default 'Complete care,',
   hero_title_line2 text not null default 'Trusted content',
-  hero_subtitle text not null default 'Expert healthcare from Doctora Kulot, MD. Book clinic visits or online consultations with flexibility and convenience.',
+  hero_subtitle text not null default 'Expert healthcare from Dr. Fatimah Al-Zahra T. Ditti. Book clinic visits or online consultations with flexibility and convenience.',
   hero_cta_primary text not null default 'Book Appointment Now',
   hero_cta_secondary text not null default 'Learn More',
   hero_background_url text,
@@ -48,7 +48,7 @@ create table if not exists public.landing_content (
 
   -- Closing CTA banner ---------------------------------------------------
   cta_title text not null default 'Ready to Schedule Your Appointment?',
-  cta_subtitle text not null default 'Book now with Doctora Kulot, MD. Flexible scheduling for clinic and online consultations.',
+  cta_subtitle text not null default 'Book now with Dr. Fatimah Al-Zahra T. Ditti. Flexible scheduling for clinic and online consultations.',
   cta_button_label text not null default 'Book Appointment Now',
 
   -- Testimonials ([{ name, title, quote }, ...]) ------------------------

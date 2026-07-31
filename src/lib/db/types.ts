@@ -106,6 +106,7 @@ export type OnlineBookingReservation = {
   id: string;
   patient_id: string;
   doctor_id: string;
+  appointment_type: ApptType;
   appointment_date: string;
   start_time: string;
   end_time: string;
@@ -170,6 +171,13 @@ export type LandingTestimonial = {
   quote: string;
 };
 
+export type LandingProgramSlide = {
+  key: string;
+  name: string;
+  description: string;
+  ctaLabel: string;
+};
+
 export type LandingNavItem = {
   label: string;
   href: string;
@@ -226,6 +234,7 @@ export type LandingContent = {
   testimonials: LandingTestimonial[];
   // Phase 2 fields — see migrations/20260508b_landing_content_full.sql
   nav_items: LandingNavItem[];
+  program_slides: LandingProgramSlide[];
   services_eyebrow: string;
   services_title: string;
   services_subtitle: string;
@@ -243,6 +252,12 @@ export type LandingContent = {
   live_title: string;
   live_subtitle: string;
   live_cta_label: string;
+  results_eyebrow: string;
+  results_title: string;
+  results_subtitle: string;
+  faq_eyebrow: string;
+  faq_title: string;
+  faq_subtitle: string;
   how_to_eyebrow: string;
   how_to_title: string;
   how_to_steps: LandingHowToStep[];
@@ -256,6 +271,10 @@ export type LandingContent = {
   contact_subtitle: string;
   contact_info_title: string;
   contact_hours_label: string;
+  contact_facebook_label: string;
+  contact_facebook_url: string;
+  contact_youtube_label: string;
+  contact_youtube_url: string;
   footer_brand_blurb: string;
   footer_services: string[];
   footer_hours: string[];

@@ -194,32 +194,32 @@ function getNotificationTone(item: NotificationItem) {
   if (item.status === "failed") {
     return {
       card:
-        "border-transparent bg-transparent hover:bg-slate-50",
-      label: "text-yellow-700",
-      iconWrap: "border-yellow-200 bg-yellow-50 text-yellow-600",
-      action: "text-yellow-700 hover:text-yellow-800",
-      status: "text-yellow-700",
+        "border-transparent bg-transparent hover:bg-neutral-50",
+      label: "text-neutral-700",
+      iconWrap: "border-black/10 bg-white text-black",
+      action: "text-neutral-700 hover:text-neutral-900",
+      status: "text-neutral-700",
     };
   }
 
   if (!item.is_read) {
     return {
       card:
-        "border-transparent bg-transparent hover:bg-slate-50",
-      label: "text-amber-700",
-      iconWrap: "border-amber-200 bg-amber-50 text-amber-700",
-      action: "text-amber-700 hover:text-amber-700",
-      status: "text-amber-700",
+        "border-transparent bg-transparent hover:bg-neutral-50",
+      label: "text-neutral-700",
+      iconWrap: "border-black/10 bg-white text-black",
+      action: "text-neutral-700 hover:text-neutral-900",
+      status: "text-neutral-700",
     };
   }
 
   return {
     card:
-      "border-transparent bg-transparent hover:bg-slate-50",
-    label: "text-slate-600",
-    iconWrap: "border-slate-200 bg-slate-50 text-slate-600",
-    action: "text-slate-700 hover:text-slate-900",
-    status: "text-slate-500",
+      "border-transparent bg-transparent hover:bg-neutral-50",
+    label: "text-neutral-600",
+    iconWrap: "border-black/10 bg-white text-black",
+    action: "text-neutral-700 hover:text-neutral-900",
+    status: "text-neutral-500",
   };
 }
 
@@ -418,12 +418,12 @@ export function DashboardHeader({
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_72%)] backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8f8f7_72%)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-600 shadow-sm hover:bg-neutral-50 lg:hidden"
             onClick={onOpenSidebar}
             aria-label="Open sidebar"
           >
@@ -431,8 +431,8 @@ export function DashboardHeader({
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">Doc Kulot Workspace</p>
-            <h1 className="truncate text-base font-bold text-slate-900 sm:text-xl">{pageTitle}</h1>
+            <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-black/50 sm:block">Doc Kulot Workspace</p>
+            <h1 className="truncate text-base font-bold text-neutral-900 sm:text-xl">{pageTitle}</h1>
           </div>
         </div>
 
@@ -440,8 +440,8 @@ export function DashboardHeader({
           <div className="relative" ref={notifMenuRef}>
             <button
               type="button"
-              className={`relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-400 bg-white text-amber-400 shadow-sm transition hover:border-amber-300 hover:text-amber-700 sm:h-12 sm:w-12 ${
-                notifPulse ? "ring-4 ring-yellow-200 ring-offset-2 ring-offset-white animate-pulse" : ""
+              className={`relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-neutral-300 bg-white text-neutral-700 shadow-sm transition hover:border-neutral-400 hover:text-neutral-900 sm:h-12 sm:w-12 ${
+                notifPulse ? "ring-4 ring-neutral-200 ring-offset-2 ring-offset-white animate-pulse" : ""
               }`}
               aria-label="Notifications"
               onClick={() => {
@@ -450,9 +450,9 @@ export function DashboardHeader({
                 setNotifPulse(false);
               }}
             >
-              <FaBell className="h-4 w-4" />
+              <FaBell className="h-4 w-4 text-black/80" />
               {notifCount > 0 ? (
-                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-yellow-500 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
+                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-neutral-900 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
                   {notifCount > 99 ? "99+" : notifCount}
                 </span>
               ) : null}
@@ -461,31 +461,31 @@ export function DashboardHeader({
             {isNotifOpen ? (
               <button
                 type="button"
-                className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-[1px] sm:hidden"
+                className="fixed inset-0 z-30 bg-neutral-900/20 backdrop-blur-[1px] sm:hidden"
                 aria-label="Close notifications"
                 onClick={() => setIsNotifOpen(false)}
               />
             ) : null}
 
             {isNotifOpen ? (
-              <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)+4.3rem)] z-40 w-auto overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_56px_rgba(15,23,42,0.14)] sm:absolute sm:right-0 sm:inset-x-auto sm:top-auto sm:mt-3 sm:w-[min(22rem,calc(100vw-2rem))]">
-                <div className="border-b border-slate-200 bg-white px-4 py-3">
+              <div className="fixed inset-x-3 top-[calc(env(safe-area-inset-top,0px)+4.3rem)] z-40 w-auto overflow-hidden rounded-[1.5rem] border border-neutral-200 bg-white shadow-[0_18px_56px_rgba(15,23,42,0.14)] sm:absolute sm:right-0 sm:inset-x-auto sm:top-auto sm:mt-3 sm:w-[min(22rem,calc(100vw-2rem))]">
+                <div className="border-b border-neutral-200 bg-white px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                          <FaBell className="h-3.5 w-3.5" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-700">
+                          <FaBell className="h-3.5 w-3.5 text-black/80" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[15px] font-bold text-slate-900">Notifications</p>
-                          <p className="text-[11px] text-slate-500">{notifCount === 0 ? "All caught up" : `${notifCount} unread`}</p>
+                          <p className="text-[15px] font-bold text-neutral-900">Notifications</p>
+                          <p className="text-[11px] text-black/50">{notifCount === 0 ? "All caught up" : `${notifCount} unread`}</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                         <button
                           type="button"
-                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-50"
                           onClick={() => {
                             void markAllRead();
                           }}
@@ -495,7 +495,7 @@ export function DashboardHeader({
                         </button>
                         <button
                           type="button"
-                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-yellow-600 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
                           onClick={async () => {
                             if (!accessToken) return;
                             try {
@@ -529,11 +529,11 @@ export function DashboardHeader({
                     <div className="space-y-1 py-1.5">
                       {[0, 1, 2, 3].map((key) => (
                         <div key={key} className="flex items-start gap-2.5 rounded-xl px-1 py-2">
-                          <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-100" />
+                          <div className="h-8 w-8 animate-pulse rounded-lg bg-neutral-100" />
                           <div className="min-w-0 flex-1 space-y-1.5">
-                            <div className="h-2.5 w-20 animate-pulse rounded-full bg-slate-100" />
-                            <div className="h-3.5 w-36 animate-pulse rounded-full bg-slate-100" />
-                            <div className="h-3 w-44 animate-pulse rounded-full bg-slate-100" />
+                            <div className="h-2.5 w-20 animate-pulse rounded-full bg-neutral-100" />
+                            <div className="h-3.5 w-36 animate-pulse rounded-full bg-neutral-100" />
+                            <div className="h-3 w-44 animate-pulse rounded-full bg-neutral-100" />
                           </div>
                         </div>
                       ))}
@@ -547,7 +547,7 @@ export function DashboardHeader({
                         return (
                           <div
                             key={item.id}
-                            className={`group flex gap-2.5 border-b border-slate-100 py-2.5 last:border-b-0 ${tone.card}`}
+                            className={`group flex gap-2.5 border-b border-neutral-100 py-2.5 last:border-b-0 ${tone.card}`}
                           >
                                 <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${tone.iconWrap}`}>
                                   <Icon className="h-3 w-3" />
@@ -562,17 +562,17 @@ export function DashboardHeader({
                                             {mapTemplateToLabel(item.template)}
                                           </span>
                                           {!item.is_read ? (
-                                            <span className="rounded-full bg-slate-900 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white">
+                                            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white">
                                               New
                                             </span>
                                           ) : null}
                                         </div>
-                                        <p className="mt-0.5 truncate text-[12.5px] font-semibold text-slate-900">{item.subject}</p>
-                                        <p className="mt-0.5 truncate text-[11px] text-slate-500">{item.body}</p>
+                                        <p className="mt-0.5 truncate text-[12.5px] font-semibold text-neutral-900">{item.subject}</p>
+                                        <p className="mt-0.5 truncate text-[11px] text-black/55">{item.body}</p>
                                       </div>
 
                                       <div className="flex shrink-0 items-center gap-1.5">
-                                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                        <span className="rounded-full bg-black/5 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-black/55">
                                           {formatChannels(item.channels)}
                                         </span>
                                         <span className={`text-[10px] font-semibold ${tone.status}`}>
@@ -581,9 +581,9 @@ export function DashboardHeader({
                                       </div>
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-slate-500">
+                                    <div className="flex flex-wrap items-center gap-1 text-[10px] text-black/55">
                                       <span>{formatRelativeDate(item.created_at)}</span>
-                                      <span className="text-slate-300">•</span>
+                                      <span className="text-neutral-300">•</span>
                                       <span>{item.channels.length > 0 ? "Delivered" : "In-app only"}</span>
                                     </div>
 
@@ -603,7 +603,7 @@ export function DashboardHeader({
                                       {item.href ? (
                                         <button
                                           type="button"
-                                          className="text-slate-900 transition hover:text-amber-700"
+                                          className="text-neutral-900 transition hover:text-neutral-600"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             void openNotification(item);
@@ -621,11 +621,11 @@ export function DashboardHeader({
                     </div>
                   ) : (
                     <div className="px-2 py-8 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
-                          <FaInbox className="h-5 w-5" />
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-600">
+                          <FaInbox className="h-5 w-5 text-black" />
                       </div>
-                      <p className="mt-3 text-sm font-semibold text-slate-900">No notifications yet</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-500">New activity will show up here.</p>
+                      <p className="mt-3 text-sm font-semibold text-neutral-900">No notifications yet</p>
+                      <p className="mt-1 text-xs leading-5 text-black/55">New activity will show up here.</p>
                     </div>
                   )}
                 </div>
@@ -636,68 +636,68 @@ export function DashboardHeader({
           <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
-              className="flex min-w-0 max-w-48 items-center gap-2 rounded-[1.4rem] border-2 border-amber-400 bg-white px-2.5 py-1.5 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md sm:max-w-none sm:gap-3 sm:rounded-[1.75rem] sm:px-3 sm:py-2 sm:pr-4"
+              className="flex min-w-0 max-w-48 items-center gap-2 rounded-[1.4rem] border-2 border-neutral-300 bg-white px-2.5 py-1.5 text-left shadow-sm transition hover:border-neutral-400 hover:shadow-md sm:max-w-none sm:gap-3 sm:rounded-[1.75rem] sm:px-3 sm:py-2 sm:pr-4"
               onClick={() => {
                 setIsMenuOpen((current) => !current);
                 setIsNotifOpen(false);
               }}
               aria-label="Open account menu"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] border-amber-400 bg-[radial-gradient(circle_at_top,#163b7a_0%,#0f2147_80%)] text-xs font-bold text-white sm:h-11 sm:w-11 sm:border-4 sm:text-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] border-neutral-300 bg-black text-xs font-bold text-white sm:h-11 sm:w-11 sm:border-4 sm:text-sm">
                 {initials}
               </div>
 
               <div className="hidden min-w-0 sm:block">
-                <p className="truncate text-sm font-extrabold uppercase tracking-[0.04em] text-slate-900">
+                <p className="truncate text-sm font-extrabold uppercase tracking-[0.04em] text-neutral-900">
                   {displayName}
                 </p>
-                <p className="truncate text-[11px] uppercase tracking-[0.18em] text-slate-500">{roleLabel}</p>
+                <p className="truncate text-[11px] uppercase tracking-[0.18em] text-black/55">{roleLabel}</p>
               </div>
 
               <div className="min-w-0 sm:hidden">
-                <p className="max-w-19 truncate text-[11px] font-extrabold uppercase tracking-[0.03em] text-slate-900">
+                <p className="max-w-19 truncate text-[11px] font-extrabold uppercase tracking-[0.03em] text-neutral-900">
                   {compactName}
                 </p>
               </div>
 
-              <FaChevronDown className={`h-3 w-3 shrink-0 text-slate-500 transition ${isMenuOpen ? "rotate-180" : ""}`} />
+              <FaChevronDown className={`h-3 w-3 shrink-0 text-black/70 transition ${isMenuOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isMenuOpen ? (
-              <div className="absolute right-0 mt-3 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
-                <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
-                  <p className="truncate text-sm font-bold uppercase tracking-[0.04em] text-slate-900">{displayName}</p>
-                  <p className="truncate text-xs text-slate-500">{displayEmail}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400">{roleLabel}</p>
+              <div className="absolute right-0 mt-3 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
+                <div className="border-b border-neutral-100 bg-neutral-50/80 px-5 py-4">
+                  <p className="truncate text-sm font-bold uppercase tracking-[0.04em] text-neutral-900">{displayName}</p>
+                  <p className="truncate text-xs text-black/55">{displayEmail}</p>
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-black/45">{roleLabel}</p>
                 </div>
 
                 <div className="p-2">
                   <Link
                     href="/profile"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-amber-700"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <FaRegUser className="h-4 w-4" />
+                    <FaRegUser className="h-4 w-4 text-black/80" />
                     <span>Profile</span>
                   </Link>
 
                   <Link
                     href={settingsHref}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-amber-700"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <FaGear className="h-4 w-4" />
+                    <FaGear className="h-4 w-4 text-black/80" />
                     <span>Settings</span>
                   </Link>
                 </div>
 
-                <div className="border-t border-slate-100 p-2">
+                <div className="border-t border-neutral-100 p-2">
                   <button
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-yellow-50 hover:text-yellow-700"
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 hover:text-neutral-900"
                     onClick={handleLogoutClick}
                   >
-                    <FaArrowRightFromBracket className="h-4 w-4" />
+                    <FaArrowRightFromBracket className="h-4 w-4 text-black/80" />
                     <span>Logout</span>
                   </button>
                 </div>

@@ -58,14 +58,14 @@ alter table public.landing_content
 
   -- Contact section
   add column if not exists contact_eyebrow text not null default 'Get in Touch',
-  add column if not exists contact_title text not null default 'Contact Doctora Kulot Clinic',
+  add column if not exists contact_title text not null default 'Contact Doc Kulot',
   add column if not exists contact_subtitle text not null default 'Have questions or need help booking? Send us a message or call us — we''re here to help.',
   add column if not exists contact_info_title text not null default 'Contact Info',
   add column if not exists contact_hours_label text not null default 'Office Hours: Mon - Fri, 8:00 AM - 5:00 PM',
 
   -- Footer
-  add column if not exists footer_brand_blurb text not null default 'Expert healthcare with Doctora Kulot, MD.',
+  add column if not exists footer_brand_blurb text not null default 'Expert healthcare from Dr. Fatimah Al-Zahra T. Ditti.',
   add column if not exists footer_services jsonb not null default '["Clinic Visits","Online Consultations","Appointments"]'::jsonb,
   add column if not exists footer_hours jsonb not null default '["Mon - Fri: 8:00 AM - 5:00 PM","Sat: By Appointment","Sun: Closed"]'::jsonb,
   add column if not exists footer_contact_text text not null default 'Visit our contact section above to send a message or call us directly.',
-  add column if not exists footer_copyright text not null default '© 2026 Doctora Kulot Clinic. All rights reserved.';
+  add column if not exists footer_copyright text not null default '© 2026 Doc Kulot. All rights reserved.';

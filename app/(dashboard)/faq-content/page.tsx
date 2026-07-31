@@ -76,7 +76,7 @@ export default function FaqContentPage() {
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Add and publish FAQs for appointments, clinic services, online consultation, payments, prescriptions, patient portal help, vlog/content, and contact inquiries.
         </p>
-        <Link href="/faq" className="mt-5 inline-flex rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white">
+        <Link href="/faq" className="mt-5 inline-flex rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">
           View public FAQ
         </Link>
       </section>
@@ -94,7 +94,7 @@ export default function FaqContentPage() {
           <input className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Question" value={form.question} onChange={(e) => setForm((s) => ({ ...s, question: e.target.value }))} required />
         </div>
         <textarea className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100" placeholder="Answer" value={form.answer} onChange={(e) => setForm((s) => ({ ...s, answer: e.target.value }))} required />
-        <button className="mt-4 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white">Save FAQ</button>
+        <button className="mt-4 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">Save FAQ</button>
       </form>
 
       {feedback ? <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</p> : null}

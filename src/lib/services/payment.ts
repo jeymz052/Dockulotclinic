@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { HttpError, isStaff, type Actor } from "@/src/lib/http";
+import { isProcedureServiceTitle } from "@/src/lib/appointment-context";
 import type {
   Appointment,
   OnlineBookingReservation,
@@ -12,7 +13,7 @@ import {
   enqueueAppointmentTeamNotifications,
   enqueueNotification,
 } from "@/src/lib/services/notification";
-import { calculateOnlineConsultationCharge } from "@/src/lib/consultation-pricing";
+import { ONLINE_CONSULTATION_FEE, PROCEDURE_DOWNPAYMENT_AMOUNT } from "@/src/lib/consultation-pricing";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 import { finalizeInventorySaleForBilling } from "@/src/lib/services/billing";
 import { createStripeCheckoutSessionForReservation } from "@/src/lib/services/stripe";
@@ -56,8 +57,31 @@ const ENABLED_NEW_BOOKING_OPTIONS: ReadonlySet<OnlineCheckoutOption> = new Set([
 
 export type OnlineCheckoutBookingInput = Pick<
   AppointmentCreatePayload,
-  "patientName" | "email" | "phone" | "doctorId" | "date" | "start" | "reason"
+  "patientName" | "email" | "phone" | "doctorId" | "date" | "start" | "reason" | "patientStatus" | "type"
 >;
+
+function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { service?: string }) {
+  if (input.type === "Online") return ONLINE_CONSULTATION_FEE;
+  if (input.type === "Clinic" && isProcedureServiceTitle(input.service)) {
+    return PROCEDURE_DOWNPAYMENT_AMOUNT;
+  }
+  throw new HttpError(400, "Only online consultations or clinic procedure bookings can use online checkout.");
+}
+
+function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string }) {
+  if (input.type === "Online") {
+    return {
+      description: `Online consultation on ${input.date}`,
+      lineItemName: "Online Consultation",
+    };
+  }
+
+  const procedureName = input.service?.trim() || "Clinic procedure";
+  return {
+    description: `${procedureName} downpayment on ${input.date}`,
+    lineItemName: `${procedureName} Downpayment`,
+  };
+}
 
 // Resolve the meeting link for a freshly confirmed Online consultation.
 // Strategy: read the clinic-wide default meeting link saved in
@@ -151,6 +175,7 @@ export async function createOnlineCheckoutSession(
   input: OnlineCheckoutBookingInput & {
     reservationId?: string;
     checkoutOption?: OnlineCheckoutOption;
+    service?: string;
   },
   actor: Actor,
 ): Promise<{
@@ -173,7 +198,7 @@ export async function createOnlineCheckoutSession(
     actorRole: actor.profile.role,
     date: input.date,
     start: input.start,
-    type: "Online" as const,
+    type: input.type,
     checkoutOption: input.checkoutOption ?? "paymongo_gcash",
     reservationId: input.reservationId ?? null,
   };
@@ -192,7 +217,8 @@ export async function createOnlineCheckoutSession(
   const start_time = `${input.start}:00`;
   const end_time = `${addOneHour(input.start)}:00`;
   await getDoctor(doctorId);
-  const amount = calculateOnlineConsultationCharge(start_time, end_time);
+  const amount = resolveCheckoutAmount(input);
+  const { description, lineItemName } = describeCheckout(input);
   stage("computed-amount", { amount });
 
   const supabase = getSupabaseAdmin();
@@ -267,7 +293,7 @@ export async function createOnlineCheckoutSession(
       }
 
       const checkout = await createPayMongoCheckoutSession({
-        description: `Online consultation on ${existing.appointment_date}`,
+        description,
         amount: existing.amount,
         customerEmail: input.email,
         customerName: input.patientName,
@@ -275,6 +301,7 @@ export async function createOnlineCheckoutSession(
         paymentMethods: mapCheckoutMethods(paymongoMethodGroup(checkoutOption)),
         successPath: `/appointments?reservation_paid=${encodeURIComponent(existing.id)}`,
         metadata: { reservation_id: existing.id },
+        lineItemName,
       });
 
       const { data: updated, error: updateError } = await supabase
@@ -311,7 +338,7 @@ export async function createOnlineCheckoutSession(
     date: input.date,
     start_time,
     end_time,
-    type: "Online",
+    type: input.type,
     patientId,
   });
   stage("validated-slot", { queueNumber });
@@ -321,6 +348,7 @@ export async function createOnlineCheckoutSession(
     .insert({
       patient_id: patientId,
       doctor_id: doctorId,
+      appointment_type: input.type,
       appointment_date: input.date,
       start_time,
       end_time,
@@ -391,7 +419,7 @@ export async function createOnlineCheckoutSession(
     const paymentMethods = mapCheckoutMethods(paymongoMethodGroup(checkoutOption));
     stage("calling-paymongo", { paymentMethods });
     const checkout = await createPayMongoCheckoutSession({
-      description: `Online consultation on ${reservation.appointment_date}`,
+      description,
       amount,
       customerEmail: input.email,
       customerName: input.patientName,
@@ -399,6 +427,7 @@ export async function createOnlineCheckoutSession(
       paymentMethods,
       successPath: `/appointments?reservation_paid=${encodeURIComponent(reservation.id)}`,
       metadata: { reservation_id: reservation.id },
+      lineItemName,
     });
     stage("paymongo-session-created", { sessionId: checkout.sessionId });
 
@@ -488,7 +517,7 @@ async function confirmReservationPayment(
     date: reservation.appointment_date,
     start_time: reservation.start_time,
     end_time: reservation.end_time,
-    type: "Online",
+    type: reservation.appointment_type,
     patientId: reservation.patient_id,
     ignoreReservationId: reservation.id,
   });
@@ -501,7 +530,7 @@ async function confirmReservationPayment(
       appointment_date: reservation.appointment_date,
       start_time: reservation.start_time,
       end_time: reservation.end_time,
-      appointment_type: "Online",
+      appointment_type: reservation.appointment_type,
       status: "Confirmed",
       queue_number: reservation.queue_number,
       reason: reservation.reason,
@@ -510,14 +539,21 @@ async function confirmReservationPayment(
     .single<Appointment>();
   if (appointmentError) throw appointmentError;
 
-  const meetingLink = await resolveDefaultMeetingLink();
-  const { data: updatedAppointment, error: updateAppointmentError } = await supabase
-    .from("appointments")
-    .update({ meeting_link: meetingLink })
-    .eq("id", insertedAppointment.id)
-    .select()
-    .single<Appointment>();
-  if (updateAppointmentError) throw updateAppointmentError;
+  const meetingLink = reservation.appointment_type === "Online"
+    ? await resolveDefaultMeetingLink()
+    : null;
+  const updatedAppointment = meetingLink
+    ? await (async () => {
+      const { data, error: updateAppointmentError } = await supabase
+        .from("appointments")
+        .update({ meeting_link: meetingLink })
+        .eq("id", insertedAppointment.id)
+        .select()
+        .single<Appointment>();
+      if (updateAppointmentError) throw updateAppointmentError;
+      return data;
+    })()
+    : insertedAppointment;
 
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
@@ -547,12 +583,14 @@ async function confirmReservationPayment(
     user_id: updatedAppointment.patient_id,
     template: "appointment_booked",
     channels: ["email", "sms"],
-    payload: { appointment_id: updatedAppointment.id, appointment_type: "Online" },
+    payload: { appointment_id: updatedAppointment.id, appointment_type: updatedAppointment.appointment_type },
   });
-  await notifyOnlineConfirmed(updatedAppointment, meetingLink);
+  if (reservation.appointment_type === "Online") {
+    await notifyOnlineConfirmed(updatedAppointment, meetingLink);
+  }
   await enqueueAppointmentTeamNotifications({
     appointment_id: updatedAppointment.id,
-    appointment_type: "Online",
+    appointment_type: updatedAppointment.appointment_type,
     patient_user_id: updatedAppointment.patient_id,
     appointment_date: updatedAppointment.appointment_date,
     start_time: updatedAppointment.start_time,

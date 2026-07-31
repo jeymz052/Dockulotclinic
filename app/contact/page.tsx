@@ -10,7 +10,7 @@ export default function ContactPage() {
           <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Send an inquiry</h1>
           <p className="mt-4 leading-8 text-slate-600">
             Ask about appointments, services, consultations, vlog or content collaborations, or general questions. The
-            clinic team can reply, close, and convert relevant inquiries into appointments.
+            Doc Kulot team can reply, close, and convert relevant inquiries into appointments.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {[
@@ -25,7 +25,7 @@ export default function ContactPage() {
               </span>
             ))}
           </div>
-          <Link href="/#booking" className="mt-8 inline-flex rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-white">
+          <Link href="/#booking" className="mt-8 inline-flex rounded-full bg-black px-6 py-3 text-sm font-bold text-white">
             Go to booking
           </Link>
         </section>

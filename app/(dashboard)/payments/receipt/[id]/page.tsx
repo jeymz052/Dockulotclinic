@@ -334,7 +334,7 @@ export default function ReceiptPage() {
                 <input
                   value={clinicDraft.name}
                   onChange={(e) => setClinicDraft((c) => ({ ...c, name: e.target.value }))}
-                  placeholder="Doc Kulot Clinic"
+                  placeholder="Doc Kulot"
                   className="rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
                 />
               </label>

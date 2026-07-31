@@ -1,6 +1,6 @@
 alter table public.landing_content
   add column if not exists blog_eyebrow text not null default 'Blogs',
-  add column if not exists blog_title text not null default 'Fresh health tips from the clinic',
+  add column if not exists blog_title text not null default 'Fresh health tips from Doc Kulot',
   add column if not exists blog_subtitle text not null default 'Published blog and health tip posts are created in the internal creator system and surfaced here for visitors on the landing page.',
   add column if not exists blog_categories_title text not null default 'Categories',
   add column if not exists blog_recent_posts_title text not null default 'Recent Posts',
@@ -15,7 +15,7 @@ alter table public.landing_content
     "Live Replays"
   ]'::jsonb,
   add column if not exists videos_eyebrow text not null default 'Videos',
-  add column if not exists videos_title text not null default 'Doctor vlogs, replays, and featured clinic content',
+  add column if not exists videos_title text not null default 'Doctor vlogs, replays, and featured Doc Kulot content',
   add column if not exists videos_subtitle text not null default 'Video and announcement posts published from the internal content creator platform appear here for public visitors and followers.',
   add column if not exists live_eyebrow text not null default 'Live Schedule',
   add column if not exists live_title text not null default 'Upcoming live health talks and webinar schedules',

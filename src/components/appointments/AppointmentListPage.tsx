@@ -61,7 +61,6 @@ import {
   type AppointmentStatus,
   type AppointmentType,
 } from "@/src/lib/appointments";
-import type { PatientRecordItem } from "@/src/lib/clinic";
 import { getClinicToday } from "@/src/lib/timezone";
 
 const today = getClinicToday();
@@ -161,16 +160,6 @@ export default function AppointmentListPage() {
     const sortDir = timeframe === "past" ? -1 : 1;
     return [...map.entries()].sort(([a], [b]) => sortDir * a.localeCompare(b));
   }, [filteredAppointments, timeframe]);
-
-  useEffect(() => {
-    if (!highlightedAppointmentId) return;
-    const match = appointments.find((appointment) => appointment.id === highlightedAppointmentId);
-    if (!match) return;
-    setTimeframe("all");
-    setSearchQuery("");
-    setStatusFilter("all");
-    setTypeFilter("all");
-  }, [appointments, highlightedAppointmentId]);
 
   useEffect(() => {
     if (!highlightedAppointmentId || !highlightedRef.current) return;
@@ -371,7 +360,7 @@ export default function AppointmentListPage() {
   return (
     <div className="space-y-6 pb-10">
       {/* Hero header */}
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_right,rgba(133,77,14,0.18),transparent_38%),linear-gradient(135deg,#fffbeb_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_right,rgba(17,17,17,0.18),transparent_38%),linear-gradient(135deg,#fafafa_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
@@ -390,7 +379,7 @@ export default function AppointmentListPage() {
             <div className="flex flex-wrap gap-2.5">
               <Link
                 href="/appointments"
-                className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(133,77,14,0.30)]"
+                className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_rgba(17,17,17,0.30)]"
               >
                 <FaPlus className="h-3 w-3" aria-hidden="true" />
                 New Appointment
@@ -658,9 +647,9 @@ export default function AppointmentListPage() {
                       ref={isHighlighted ? highlightedRef : null}
                       className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
                         isHighlighted
-                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(133,77,14,0.16)] ring-2 ring-yellow-300"
+                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-yellow-300"
                           : isEditing
-                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(133,77,14,0.16)] ring-2 ring-yellow-200"
+                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-yellow-200"
                           : "border-slate-200 hover:border-yellow-200 hover:shadow-md"
                       }`}
                     >
@@ -723,7 +712,7 @@ export default function AppointmentListPage() {
                               href={appointment.meetingLink}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-yellow-400"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-black"
                             >
                               <FaVideo className="h-3 w-3" aria-hidden="true" />
                               Join Meeting
@@ -738,7 +727,7 @@ export default function AppointmentListPage() {
                                   type="button"
                                   onClick={() => approveAppointment(appointment.id)}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#fbbf24,#fbbf24)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(251,191,36,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#737373,#737373)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                                   Approve
@@ -751,7 +740,7 @@ export default function AppointmentListPage() {
                                   type="button"
                                   onClick={() => markArrived(appointment.id)}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(133,77,14,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#111111,#111111)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(17,17,17,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <FaPersonWalkingArrowRight className="h-3 w-3" aria-hidden="true" />
                                   Mark Arrived
@@ -783,7 +772,7 @@ export default function AppointmentListPage() {
                                   type="button"
                                   onClick={() => startConsultation(appointment.id)}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#854D0E,#A16207)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(133,77,14,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#111111,#111111)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(17,17,17,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <FaPlay className="h-3 w-3" aria-hidden="true" />
                                   Start Consultation
@@ -794,7 +783,7 @@ export default function AppointmentListPage() {
                                   type="button"
                                   onClick={() => completeConsultation(appointment.id)}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(133,77,14,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#111111,#111111)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(17,17,17,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <FaFlagCheckered className="h-3 w-3" aria-hidden="true" />
                                   Complete
@@ -994,7 +983,7 @@ export default function AppointmentListPage() {
                               type="button"
                               onClick={saveDraft}
                               disabled={isUpdating || !draft.start}
-                              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-5 py-2 text-sm font-bold text-white shadow-[0_14px_24px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-2 text-sm font-bold text-white shadow-[0_14px_24px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                               {isUpdating ? "Saving..." : "Save Changes"}
@@ -1044,9 +1033,6 @@ function VitalsModal({
   // (front-desk staff are usually keyboard-heavy).
   const { accessToken } = useRole();
   const { data: patients, setData: setPatients } = usePatients();
-  const [familyHistoryDraft, setFamilyHistoryDraft] = useState("");
-  const [familyFeedback, setFamilyFeedback] = useState<string | null>(null);
-  const [isSavingFamilyHistory, startSavingFamilyHistory] = useTransition();
   useEffectEsc(onClose);
   const patientRecord =
     patients.find((patient) => patient.email === patientEmail)
@@ -1056,55 +1042,6 @@ function VitalsModal({
         && (patient.phone === patientPhone || !patient.phone || !patientPhone),
     )
     ?? null;
-
-  useEffect(() => {
-    setFamilyHistoryDraft(patientRecord?.familyHistory ?? "");
-    setFamilyFeedback(null);
-  }, [patientRecord?.id, patientRecord?.familyHistory]);
-
-  function saveFamilyHistory() {
-    if (!accessToken) {
-      setFamilyFeedback("Your session expired. Please sign in again.");
-      return;
-    }
-    if (!patientRecord) {
-      setFamilyFeedback("No matching patient record was found for this appointment.");
-      return;
-    }
-
-    startSavingFamilyHistory(async () => {
-      const response = await fetch("/api/patient-records", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          patientId: patientRecord.id,
-          familyHistory: familyHistoryDraft,
-        }),
-      });
-      const payload = (await response.json().catch(() => null)) as { message?: string } | { ok: true } | null;
-      if (!response.ok) {
-        const message =
-          payload && "message" in payload && typeof payload.message === "string"
-            ? payload.message
-            : "Unable to save family history.";
-        setFamilyFeedback(message);
-        return;
-      }
-      setPatients((current) =>
-        current.map((patient) =>
-          patient.id === patientRecord.id
-            ? { ...patient, familyHistory: familyHistoryDraft.trim() }
-            : patient,
-        ),
-      );
-      setFamilyFeedback("Family history saved.");
-    });
-  }
-
-  const familyHistoryDirty = familyHistoryDraft !== (patientRecord?.familyHistory ?? "");
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6 backdrop-blur-sm"
@@ -1129,45 +1066,185 @@ function VitalsModal({
         </div>
         <div className="space-y-4 p-4">
           <VitalSignsForm appointmentId={appointmentId} onSaved={() => undefined} />
-          <section className="rounded-xl border border-yellow-100 bg-white p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Family History</h4>
-                <p className="text-xs text-slate-500">Shared patient history for clinic visits.</p>
-              </div>
-              <button
-                type="button"
-                onClick={saveFamilyHistory}
-                disabled={isSavingFamilyHistory || !patientRecord || !familyHistoryDirty}
-                className="rounded-full border border-yellow-200 bg-white px-4 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSavingFamilyHistory ? "Saving..." : "Save Family History"}
-              </button>
-            </div>
-            <textarea
-              value={familyHistoryDraft}
-              onChange={(e) => {
-                setFamilyHistoryDraft(e.target.value);
-                setFamilyFeedback(null);
-              }}
-              rows={4}
-              placeholder="Hypertension, diabetes, stroke, asthma, cancer, or other conditions reported in the family"
-              className="mt-3 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
-            />
-            {familyFeedback ? (
-              <p className={`mt-2 text-xs font-semibold ${familyFeedback.includes("saved") ? "text-yellow-700" : "text-yellow-700"}`}>
-                {familyFeedback}
-              </p>
-            ) : null}
-            {!patientRecord ? (
-              <p className="mt-2 text-xs text-yellow-700">
-                This appointment did not match a patient record, so family history cannot be saved here yet.
-              </p>
-            ) : null}
-          </section>
+          <PatientRecordEditor
+            key={patientRecord?.id ?? `${patientEmail}-${patientName}-${appointmentId}`}
+            accessToken={accessToken}
+            patientRecord={patientRecord}
+            setPatients={setPatients}
+          />
         </div>
       </div>
     </div>
+  );
+}
+
+function PatientRecordEditor({
+  accessToken,
+  patientRecord,
+  setPatients,
+}: {
+  accessToken: string | null;
+  patientRecord: ReturnType<typeof usePatients>["data"][number] | null;
+  setPatients: ReturnType<typeof usePatients>["setData"];
+}) {
+  const [patientRecordDraft, setPatientRecordDraft] = useState({
+    familyHistory: patientRecord?.familyHistory ?? "",
+    medicalHistory: patientRecord?.medicalHistory ?? "",
+    allergies: patientRecord?.allergies ?? "",
+    emergencyContactName: patientRecord?.emergencyContactName ?? "",
+    emergencyContactPhone: patientRecord?.emergencyContactPhone ?? "",
+  });
+  const [recordFeedback, setRecordFeedback] = useState<string | null>(null);
+  const [isSavingPatientRecord, startSavingPatientRecord] = useTransition();
+
+  function savePatientRecord() {
+    if (!accessToken) {
+      setRecordFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+    if (!patientRecord) {
+      setRecordFeedback("No matching patient record was found for this appointment.");
+      return;
+    }
+
+    startSavingPatientRecord(async () => {
+      const response = await fetch("/api/patient-records", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          patientId: patientRecord.id,
+          familyHistory: patientRecordDraft.familyHistory,
+          medicalHistory: patientRecordDraft.medicalHistory,
+          allergies: patientRecordDraft.allergies,
+          emergencyContactName: patientRecordDraft.emergencyContactName,
+          emergencyContactPhone: patientRecordDraft.emergencyContactPhone,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as { message?: string } | { ok: true } | null;
+      if (!response.ok) {
+        const message =
+          payload && "message" in payload && typeof payload.message === "string"
+            ? payload.message
+            : "Unable to save patient record.";
+        setRecordFeedback(message);
+        return;
+      }
+      setPatients((current) =>
+        current.map((patient) =>
+          patient.id === patientRecord.id
+            ? {
+                ...patient,
+                familyHistory: patientRecordDraft.familyHistory.trim(),
+                medicalHistory: patientRecordDraft.medicalHistory.trim(),
+                allergies: patientRecordDraft.allergies.trim(),
+                emergencyContactName: patientRecordDraft.emergencyContactName.trim(),
+                emergencyContactPhone: patientRecordDraft.emergencyContactPhone.trim(),
+              }
+            : patient,
+        ),
+      );
+      setRecordFeedback("Patient record saved.");
+    });
+  }
+
+  const patientRecordDirty =
+    patientRecordDraft.familyHistory !== (patientRecord?.familyHistory ?? "")
+    || patientRecordDraft.medicalHistory !== (patientRecord?.medicalHistory ?? "")
+    || patientRecordDraft.allergies !== (patientRecord?.allergies ?? "")
+    || patientRecordDraft.emergencyContactName !== (patientRecord?.emergencyContactName ?? "")
+    || patientRecordDraft.emergencyContactPhone !== (patientRecord?.emergencyContactPhone ?? "");
+
+  return (
+    <section className="rounded-xl border border-yellow-100 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h4 className="text-sm font-bold text-slate-900">Patient Record</h4>
+          <p className="text-xs text-slate-500">Shared medical background used across clinic visits.</p>
+        </div>
+        <button
+          type="button"
+          onClick={savePatientRecord}
+          disabled={isSavingPatientRecord || !patientRecord || !patientRecordDirty}
+          className="rounded-full border border-yellow-200 bg-white px-4 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSavingPatientRecord ? "Saving..." : "Save Patient Record"}
+        </button>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <label className="block text-sm font-medium text-slate-700">
+          Emergency Contact Name
+          <input
+            value={patientRecordDraft.emergencyContactName}
+            onChange={(event) => {
+              setPatientRecordDraft((current) => ({ ...current, emergencyContactName: event.target.value }));
+              setRecordFeedback(null);
+            }}
+            className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+            placeholder="Parent, spouse, sibling, or guardian"
+          />
+        </label>
+        <label className="block text-sm font-medium text-slate-700">
+          Emergency Contact Phone
+          <input
+            value={patientRecordDraft.emergencyContactPhone}
+            onChange={(event) => {
+              setPatientRecordDraft((current) => ({ ...current, emergencyContactPhone: event.target.value }));
+              setRecordFeedback(null);
+            }}
+            className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+            placeholder="+63 9XX XXX XXXX"
+          />
+        </label>
+      </div>
+      <label className="mt-3 block text-sm font-medium text-slate-700">
+        Medical History
+        <textarea
+          value={patientRecordDraft.medicalHistory}
+          onChange={(event) => {
+            setPatientRecordDraft((current) => ({ ...current, medicalHistory: event.target.value }));
+            setRecordFeedback(null);
+          }}
+          rows={4}
+          placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant background"
+          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+        />
+      </label>
+      <label className="mt-3 block text-sm font-medium text-slate-700">
+        Allergies
+        <textarea
+          value={patientRecordDraft.allergies}
+          onChange={(event) => {
+            setPatientRecordDraft((current) => ({ ...current, allergies: event.target.value }));
+            setRecordFeedback(null);
+          }}
+          rows={3}
+          placeholder="Drug allergies, food allergies, latex, or no known allergies"
+          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+        />
+      </label>
+      <label className="mt-3 block text-sm font-medium text-slate-700">
+        Family History
+        <textarea
+          value={patientRecordDraft.familyHistory}
+          onChange={(event) => {
+            setPatientRecordDraft((current) => ({ ...current, familyHistory: event.target.value }));
+            setRecordFeedback(null);
+          }}
+          rows={4}
+          placeholder="Hypertension, diabetes, stroke, asthma, cancer, or other conditions reported in the family"
+          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+        />
+      </label>
+      {recordFeedback ? <p className="mt-2 text-xs font-semibold text-yellow-700">{recordFeedback}</p> : null}
+      {!patientRecord ? (
+        <p className="mt-2 text-xs text-yellow-700">
+          This appointment did not match a patient record, so shared patient information cannot be saved here yet.
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -1252,10 +1329,10 @@ function FilterChip({
 }) {
   const activeMap = {
     slate: "bg-slate-900 text-white border-slate-900",
-    emerald: "bg-yellow-400 text-white border-yellow-400",
-    sky: "bg-yellow-400 text-white border-yellow-400",
+    emerald: "bg-black text-white border-yellow-400",
+    sky: "bg-black text-white border-yellow-400",
     amber: "bg-yellow-300 text-white border-yellow-300",
-    teal: "bg-yellow-400 text-white border-yellow-400",
+    teal: "bg-black text-white border-yellow-400",
   } as const;
   return (
     <button
@@ -1407,7 +1484,7 @@ function ConfirmCancelInline({
           type="button"
           onClick={onConfirm}
           disabled={isUpdating}
-          className="rounded-md bg-yellow-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isUpdating ? "Cancelling…" : "Confirm cancel"}
         </button>
@@ -1507,7 +1584,7 @@ function EmptyState({
         ) : null}
         <Link
           href="/appointments"
-          className="inline-flex items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#A16207,#CA8A04)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5"
         >
           <FaPlus className="h-3 w-3" aria-hidden="true" />
           Book new appointment

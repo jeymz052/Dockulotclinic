@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden pr-8 md:pr-20 lg:pr-32">
       <Image
           src="/images/dockulotbgs.png"
-        alt="Clinic consultation background"
+        alt="Doc Kulot consultation background"
         fill
         priority
         quality={100}
@@ -133,12 +133,12 @@ export default function ResetPasswordPage() {
       />
       <div className="absolute inset-0 bg-black/15" />
 
-      <section className="relative z-10 w-full max-w-xs rounded-2xl border-2 border-amber-400/50 bg-transparent p-5 shadow-xl backdrop-blur-[2px] overflow-hidden">
+      <section className="relative z-10 w-full max-w-xs rounded-2xl border-2 border-white/20 bg-transparent p-5 shadow-xl backdrop-blur-[2px] overflow-hidden">
         <div className="relative z-10">
           <div className="flex justify-center -mb-4 overflow-hidden">
             <Image
               src="/images/dockulotslogonobg.png"
-              alt="Doctora Kulot Clinic Logo"
+              alt="Doc Kulot Logo"
               width={669}
               height={373}
               priority
@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 pr-11 text-white placeholder:text-white/60 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-amber-300"
+                    className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 pr-11 text-white placeholder:text-white/60 outline-none transition focus:border-white/70 focus:ring-2 focus:ring-white/30"
                     placeholder="........"
                     required
                   />
@@ -190,7 +190,7 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirm}
                     onChange={(event) => setConfirm(event.target.value)}
-                    className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 pr-11 text-white placeholder:text-white/60 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-amber-300"
+                    className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 pr-11 text-white placeholder:text-white/60 outline-none transition focus:border-white/70 focus:ring-2 focus:ring-white/30"
                     placeholder="........"
                     required
                   />
@@ -208,7 +208,7 @@ export default function ResetPasswordPage() {
               {feedback ? (
                 <div
                   className={`rounded-xl px-4 py-3 text-sm ${
-                    "border border-amber-400/30 bg-yellow-300/15 text-amber-200"
+                    "border border-white/20 bg-white/10 text-white/90"
                   }`}
                 >
                   {feedback}
@@ -218,7 +218,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2.5 font-semibold text-white shadow-lg shadow-yellow-800/30 transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-amber-700 disabled:text-amber-300"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2.5 font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-neutral-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-300"
               >
                 {isPending ? "Updating..." : "Update password"}
               </button>
@@ -229,7 +229,7 @@ export default function ResetPasswordPage() {
                 <div
                   className={`rounded-xl px-4 py-3 text-sm ${
                     step === "done"
-                      ? "border border-yellow-300/60 bg-yellow-300/20 text-amber-100"
+                      ? "border border-white/20 bg-white/10 text-white/90"
                       : "border border-white/15 bg-white/10 text-white/90"
                   }`}
                 >
@@ -241,7 +241,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="button"
                   onClick={() => router.replace("/login")}
-                  className="w-full rounded-lg bg-yellow-400 px-3 py-2.5 font-semibold text-white shadow-lg shadow-yellow-800/30 transition hover:bg-yellow-300"
+                  className="w-full rounded-lg bg-white px-3 py-2.5 font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-neutral-200"
                 >
                   Back to login
                 </button>

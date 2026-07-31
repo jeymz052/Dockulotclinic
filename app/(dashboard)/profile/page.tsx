@@ -184,7 +184,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <section className="relative overflow-hidden rounded-[2.25rem] border border-yellow-200/70 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.25),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(184,134,11,0.2),transparent_28%),linear-gradient(135deg,#ffffff_0%,#fffbeb_38%,#fef3c7_100%)] p-6 text-black shadow-[0_24px_80px_rgba(184,134,11,0.15)] sm:p-8">
+      <section className="relative overflow-hidden rounded-[2.25rem] border border-yellow-200/70 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.25),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.2),transparent_28%),linear-gradient(135deg,#ffffff_0%,#fafafa_38%,#f5f5f5_100%)] p-6 text-black shadow-[0_24px_80px_rgba(17,17,17,0.15)] sm:p-8">
         <div className="absolute inset-y-0 right-0 hidden w-72 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.22),transparent_66%)] lg:block" />
 
         <div className="relative flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
@@ -194,7 +194,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,rgba(133,77,14,0.95),rgba(120,53,15,0.96))] text-3xl font-bold text-white shadow-[0_18px_40px_rgba(120,53,15,0.22)]">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[2rem] border border-white/70 bg-[linear-gradient(145deg,rgba(17,17,17,0.95),rgba(120,53,15,0.96))] text-3xl font-bold text-white shadow-[0_18px_40px_rgba(120,53,15,0.22)]">
                 {initials}
               </div>
 
@@ -202,7 +202,7 @@ export default function ProfilePage() {
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-yellow-800">Account Profile</p>
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-black sm:text-4xl">{detailsForm.fullName}</h1>
                 <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-yellow-300/80 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-black">
-                  <span className="h-2 w-2 rounded-full bg-yellow-400" />
+                  <span className="h-2 w-2 rounded-full bg-black" />
                   {roleProfile.label}
                 </p>
               </div>
@@ -297,7 +297,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={isSavingDetails}
-                className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FaPenToSquare className="h-4 w-4" />
                 {isSavingDetails ? "Saving..." : "Save Details"}
@@ -373,7 +373,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={isSavingPassword}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FaKey className="h-4 w-4" />
                 {isSavingPassword ? "Updating..." : "Update Password"}
@@ -461,7 +461,7 @@ function InfoCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[1.6rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] p-5">
+    <div className="rounded-[1.6rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5">
       <div className="flex items-center gap-2 text-yellow-700">
         {icon}
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
@@ -523,7 +523,7 @@ function Feedback({
 }
 
 const INPUT_CLASS =
-  "w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100";
+  "w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100";
 
 const DARK_INPUT_CLASS =
   "w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white placeholder:text-white/55 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-400/20";

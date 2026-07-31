@@ -33,30 +33,30 @@ const WEEKDAY_NAMES = [
 
 const BOOKING_RULES = {
   Clinic: {
-    days: [5, 6, 0],
+    days: [2, 4, 6, 5, 0],
     start: "09:00",
     end: "15:00",
-    label: "Clinic visits are available Friday to Sunday from 9:00 AM to 3:00 PM.",
+    label: "Clinic visits are available on Tuesday, Thursday, Saturday, Friday, and select Sundays from 9:00 AM to 3:00 PM.",
   },
   Online: {
     weekday: {
       days: [1, 2, 3, 4, 5],
       start: "10:00",
       end: "20:00",
-      label: "Virtual consults are available Monday to Friday from 10:00 AM to 8:00 PM.",
+      label: "Telemedicine is available Monday to Friday from 10:00 AM to 8:00 PM.",
     },
     weekend: {
       days: [0, 6],
       start: "10:00",
       end: "18:00",
-      label: "Virtual consults are available Saturday and Sunday from 10:00 AM to 6:00 PM.",
+      label: "Telemedicine is available Saturday and Sunday from 10:00 AM to 6:00 PM.",
     },
   },
   Both: {
     days: [0, 6],
     start: "10:00",
     end: "15:00",
-    label: "Combined clinic and virtual slots are only available Saturday and Sunday from 10:00 AM to 3:00 PM.",
+    label: "Combined clinic and virtual slots are only available on limited weekend clinic days.",
   },
 } as const;
 

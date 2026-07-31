@@ -2,12 +2,51 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #111111;
   --surface: #ffffff;
-  --surface-muted: #fafaf9;
-  --gold: #b8860b;
-  --gold-light: #fbbf24;
-  --gold-dark: #92400e;
+  --surface-muted: #fafafa;
+  --surface-strong: #111111;
+  --border-subtle: #e5e5e5;
+  --yellow-50: #fffbeb;
+  --yellow-100: #fef3c7;
+  --yellow-200: #fde68a;
+  --yellow-300: #fcd34d;
+  --yellow-400: #fbbf24;
+  --yellow-500: #f59e0b;
+  --yellow-600: #d97706;
+  --yellow-700: #b45309;
+  --yellow-800: #92400e;
+  --yellow-900: #78350f;
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-200: #fde68a;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+  --amber-800: #92400e;
+  --amber-900: #78350f;
+  --blue-50: #fafafa;
+  --blue-100: #f5f5f5;
+  --blue-200: #e5e5e5;
+  --blue-300: #d4d4d4;
+  --blue-400: #a3a3a3;
+  --blue-500: #737373;
+  --blue-600: #525252;
+  --blue-700: #404040;
+  --blue-800: #262626;
+  --blue-900: #171717;
+  --gold-50: #fffaf0;
+  --gold-100: #fef3c7;
+  --gold-200: #fde68a;
+  --gold-300: #fcd34d;
+  --gold-400: #f59e0b;
+  --gold-500: #d97706;
+  --gold-600: #b45309;
+  --gold-700: #92400e;
+  --gold-800: #78350f;
+  --gold-900: #5c3b00;
   --font-geist-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-geist-mono: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
@@ -17,9 +56,48 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
-  --color-gold: var(--gold);
-  --color-gold-light: var(--gold-light);
-  --color-gold-dark: var(--gold-dark);
+  --color-surface-strong: var(--surface-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-yellow-50: var(--yellow-50);
+  --color-yellow-100: var(--yellow-100);
+  --color-yellow-200: var(--yellow-200);
+  --color-yellow-300: var(--yellow-300);
+  --color-yellow-400: var(--yellow-400);
+  --color-yellow-500: var(--yellow-500);
+  --color-yellow-600: var(--yellow-600);
+  --color-yellow-700: var(--yellow-700);
+  --color-yellow-800: var(--yellow-800);
+  --color-yellow-900: var(--yellow-900);
+  --color-amber-50: var(--amber-50);
+  --color-amber-100: var(--amber-100);
+  --color-amber-200: var(--amber-200);
+  --color-amber-300: var(--amber-300);
+  --color-amber-400: var(--amber-400);
+  --color-amber-500: var(--amber-500);
+  --color-amber-600: var(--amber-600);
+  --color-amber-700: var(--amber-700);
+  --color-amber-800: var(--amber-800);
+  --color-amber-900: var(--amber-900);
+  --color-blue-50: var(--blue-50);
+  --color-blue-100: var(--blue-100);
+  --color-blue-200: var(--blue-200);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+  --color-blue-900: var(--blue-900);
+  --color-gold-50: var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+  --color-gold-800: var(--gold-800);
+  --color-gold-900: var(--gold-900);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -45,8 +123,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
   background-image:
-    radial-gradient(circle at 8% -10%, rgba(184, 134, 11, 0.10), transparent 42%),
-    radial-gradient(circle at 94% 0%, rgba(146, 64, 14, 0.06), transparent 36%);
+    radial-gradient(circle at 8% -10%, rgba(17, 17, 17, 0.06), transparent 42%),
+    radial-gradient(circle at 94% 0%, rgba(255, 255, 255, 0.92), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0));
 }
 
 img,
@@ -59,6 +138,123 @@ canvas {
 
 .responsive-content > * {
   min-width: 0;
+}
+
+.booking-mono {
+  box-shadow:
+    inset 0 1px 0 rgba(200, 173, 95, 0.22),
+    0 24px 70px rgba(17, 17, 17, 0.1);
+}
+
+.booking-mono [class*="text-yellow"],
+.booking-mono [class*="text-amber"],
+.booking-mono [class*="text-gold"] {
+  color: #404040 !important;
+}
+
+.booking-mono [class*="bg-yellow-50"],
+.booking-mono [class*="bg-yellow-100"],
+.booking-mono [class*="bg-amber-50"],
+.booking-mono [class*="bg-amber-100"],
+.booking-mono [class*="bg-gold-50"],
+.booking-mono [class*="bg-gold-100"] {
+  background-color: #f5f5f5 !important;
+}
+
+.booking-mono [class*="bg-yellow-200"],
+.booking-mono [class*="bg-yellow-300"],
+.booking-mono [class*="bg-yellow-400"],
+.booking-mono [class*="bg-yellow-500"],
+.booking-mono [class*="bg-amber-200"],
+.booking-mono [class*="bg-amber-300"],
+.booking-mono [class*="bg-gold-200"],
+.booking-mono [class*="bg-gold-300"] {
+  background-color: #111111 !important;
+}
+
+.booking-mono [class*="border-yellow"],
+.booking-mono [class*="border-amber"],
+.booking-mono [class*="border-gold"] {
+  border-color: #d4d4d4 !important;
+}
+
+.booking-mono [class*="ring-yellow"],
+.booking-mono [class*="ring-amber"],
+.booking-mono [class*="ring-gold"] {
+  --tw-ring-color: rgba(200, 173, 95, 0.35) !important;
+}
+
+.booking-mono [class*="focus:ring-yellow"],
+.booking-mono [class*="focus:ring-amber"],
+.booking-mono [class*="focus:ring-gold"],
+.booking-mono [class*="focus-visible:ring-yellow"],
+.booking-mono [class*="focus-visible:ring-amber"],
+.booking-mono [class*="focus-visible:ring-gold"] {
+  --tw-ring-color: rgba(200, 173, 95, 0.28) !important;
+}
+
+.booking-mono [class*="from-yellow"],
+.booking-mono [class*="from-amber"],
+.booking-mono [class*="from-gold"] {
+  --tw-gradient-from: #ffffff !important;
+}
+
+.booking-mono [class*="to-yellow"],
+.booking-mono [class*="to-amber"],
+.booking-mono [class*="to-gold"],
+.booking-mono [class*="via-yellow"],
+.booking-mono [class*="via-amber"],
+.booking-mono [class*="via-gold"] {
+  --tw-gradient-to: #f5f5f5 !important;
+  --tw-gradient-via: #f5f5f5 !important;
+}
+
+.booking-mono [class*="hover:bg-yellow"]:hover,
+.booking-mono [class*="hover:bg-amber"]:hover,
+.booking-mono [class*="hover:bg-gold"]:hover {
+  background-color: #eeeeee !important;
+}
+
+.booking-mono [class*="hover:border-yellow"]:hover,
+.booking-mono [class*="hover:border-amber"]:hover,
+.booking-mono [class*="hover:border-gold"]:hover {
+  border-color: #111111 !important;
+}
+
+.booking-mono .bg-yellow-300.text-white,
+.booking-mono .bg-yellow-400.text-white,
+.booking-mono .bg-yellow-500.text-white,
+.booking-mono .bg-yellow-300.text-black,
+.booking-mono .bg-yellow-400.text-black,
+.booking-mono .bg-yellow-500.text-black,
+.booking-mono span[class*="bg-yellow-300"],
+.booking-mono span[class*="bg-yellow-400"],
+.booking-mono span[class*="bg-yellow-500"] {
+  background-color: #c8ad5f !important;
+}
+
+.booking-mono [class*="border-yellow-300"],
+.booking-mono [class*="border-amber-300"],
+.booking-mono [class*="border-gold-300"] {
+  border-color: rgba(200, 173, 95, 0.55) !important;
+}
+
+.booking-mono [class*="text-yellow-500"],
+.booking-mono [class*="text-amber-500"],
+.booking-mono [class*="text-gold-500"] {
+  color: #a98c45 !important;
+}
+
+.booking-mono [class*="text-yellow-700"],
+.booking-mono [class*="text-yellow-800"],
+.booking-mono [class*="text-amber-700"],
+.booking-mono [class*="text-gold-700"] {
+  color: #171717 !important;
+}
+
+.booking-mono input[type="checkbox"],
+.booking-mono input[type="radio"] {
+  accent-color: #111111;
 }
 
 /* ─────────────────────────── Animations ─────────────────────────── */
@@ -90,8 +286,8 @@ canvas {
 }
 
 @keyframes softPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.35); }
-  50%      { box-shadow: 0 0 0 8px rgba(184, 134, 11, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.2); }
+  50%      { box-shadow: 0 0 0 8px rgba(17, 17, 17, 0); }
 }
 
 @keyframes shimmer {
@@ -192,12 +388,12 @@ canvas {
 }
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.2);
 }
 
 /* Shimmer skeleton loader */
 .shimmer {
-  background: linear-gradient(90deg, #fafaf9 0%, #f5f5f4 50%, #fafaf9 100%);
+  background: linear-gradient(90deg, #f5f5f4 0%, #e7e5e4 50%, #f5f5f4 100%);
   background-size: 800px 100%;
   animation: shimmer 1.4s linear infinite;
 }

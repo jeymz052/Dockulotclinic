@@ -11,6 +11,11 @@ import { GENDER_OPTIONS, validatePatientRegistrationFields } from "@/src/lib/pat
 type PatientDraft = PatientRecordItem;
 type PatientFilter = "all" | "registered" | "walk-in";
 type StatusFilter = "all" | "Active" | "Inactive";
+const PATIENT_CATEGORY_LABELS: Record<PatientRecordItem["patientCategory"], string> = {
+  New: "New",
+  Regular: "Regular",
+  OldRecord: "Old Record",
+};
 
 export default function PatientsPage() {
   const { accessToken, role } = useRole();
@@ -121,7 +126,7 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(133,77,14,0.24),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(133,77,14,0.14)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.24),_transparent_34%),linear-gradient(135deg,_#f8f8f7,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(17,17,17,0.14)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Front Desk Patients</p>
@@ -135,7 +140,7 @@ export default function PatientsPage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/patients/add"
-                className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(133,77,14,0.28)]"
+                className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(17,17,17,0.28)]"
               >
                 Add Walk-In Patient
               </Link>
@@ -222,6 +227,7 @@ export default function PatientsPage() {
                 <th className="px-4 py-3 font-semibold text-slate-700">Gender</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Address</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Patient Pricing</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Type</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Actions</th>
               </tr>
@@ -229,7 +235,7 @@ export default function PatientsPage() {
             <tbody>
               {filteredPatients.length === 0 && !isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={10} className="px-4 py-10 text-center text-slate-400">
                     No patient records matched the current search and filters.
                   </td>
                 </tr>
@@ -249,6 +255,11 @@ export default function PatientsPage() {
                         }`}
                     >
                       {patient.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      {PATIENT_CATEGORY_LABELS[patient.patientCategory]}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -332,7 +343,7 @@ export default function PatientsPage() {
                 type="button"
                 onClick={() => confirmDelete(deleteTarget.id)}
                 disabled={isMutating}
-                className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700 disabled:bg-yellow-300"
+                className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:bg-yellow-300"
               >
                 {isMutating ? "Deleting..." : "Delete"}
               </button>
@@ -346,7 +357,7 @@ export default function PatientsPage() {
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(133,77,14,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_40px_rgba(133,77,14,0.12)]">
+    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(17,17,17,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_40px_rgba(17,17,17,0.12)]">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
       <p className="mt-3 text-3xl font-black text-slate-900">{value}</p>
     </div>
@@ -489,6 +500,57 @@ function PatientFormModal({
             </Field>
           </div>
 
+          <Field label="Patient Pricing Category">
+            <select
+              value={patient.patientCategory}
+              onChange={(event) => onChange("patientCategory", event.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="New">New patient</option>
+              <option value="Regular">Regular / follow-up patient</option>
+              <option value="OldRecord">Old patient record</option>
+            </select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Emergency Contact Name">
+              <input
+                type="text"
+                value={patient.emergencyContactName}
+                onChange={(event) => onChange("emergencyContactName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </Field>
+            <Field label="Emergency Contact Phone">
+              <input
+                type="text"
+                value={patient.emergencyContactPhone}
+                onChange={(event) => onChange("emergencyContactPhone", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </Field>
+          </div>
+
+          <Field label="Medical History">
+            <textarea
+              value={patient.medicalHistory}
+              onChange={(event) => onChange("medicalHistory", event.target.value)}
+              rows={4}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="Past illnesses, surgeries, maintenance medicines, OB/GYN or other important history"
+            />
+          </Field>
+
+          <Field label="Allergies">
+            <textarea
+              value={patient.allergies}
+              onChange={(event) => onChange("allergies", event.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="Drug, food, or other allergies"
+            />
+          </Field>
+
           <Field label="Family History">
             <textarea
               value={patient.familyHistory}
@@ -510,7 +572,7 @@ function PatientFormModal({
             <button
               type="submit"
               disabled={isMutating}
-              className="rounded-lg bg-yellow-400 px-5 py-2 text-sm font-semibold text-white hover:bg-yellow-400 disabled:bg-yellow-300"
+              className="rounded-lg bg-black px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:bg-yellow-300"
             >
               {confirmLabel}
             </button>

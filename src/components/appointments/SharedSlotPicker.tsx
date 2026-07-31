@@ -24,7 +24,7 @@ export function SharedSlotPicker({
   const selectedSlot = slotStatuses.find((slot) => slot.start === selectedStart) ?? null;
 
   return (
-    <div className="overflow-hidden rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5 shadow-[0_20px_60px_rgba(133,77,14,0.08)] transition-transform duration-300 hover:-translate-y-0.5">
+    <div className="overflow-hidden rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5 shadow-[0_20px_60px_rgba(17,17,17,0.08)] transition-transform duration-300 hover:-translate-y-0.5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-500">Time Selection</p>
@@ -74,9 +74,9 @@ export function SharedSlotPicker({
               onClick={() => onSelect(slot.start)}
               className={`group rounded-[1.4rem] border px-4 py-4 text-left transition-all duration-200 ${
                 isSelected
-                  ? "border-yellow-300 bg-[linear-gradient(180deg,#fffbeb_0%,#fde68a_100%)] shadow-[0_16px_35px_rgba(133,77,14,0.18)]"
+                  ? "border-yellow-300 bg-[linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] shadow-[0_16px_35px_rgba(17,17,17,0.18)]"
                   : available
-                    ? "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50/40 hover:shadow-[0_14px_28px_rgba(133,77,14,0.12)]"
+                    ? "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50/40 hover:shadow-[0_14px_28px_rgba(17,17,17,0.12)]"
                     : "cursor-not-allowed border-slate-200 bg-slate-50/80 opacity-70"
               }`}
             >
@@ -117,7 +117,7 @@ export function SharedSlotPicker({
                       className={`h-1.5 w-4 rounded-full transition-all ${
                         dot <= slot.bookedCount
                           ? slot.bookedCount >= 5
-                            ? "bg-yellow-400"
+                            ? "bg-black"
                             : "bg-yellow-300"
                           : isSelected
                             ? "bg-white/80"
@@ -138,12 +138,12 @@ export function SharedSlotPicker({
                       : slot.bookedCount === 1
                         ? "w-1/5 bg-yellow-300"
                         : slot.bookedCount === 2
-                          ? "w-2/5 bg-yellow-400"
+                          ? "w-2/5 bg-black"
                           : slot.bookedCount === 3
                             ? "w-3/5 bg-yellow-300"
                             : slot.bookedCount === 4
-                              ? "w-4/5 bg-yellow-400"
-                              : "w-full bg-yellow-400"
+                              ? "w-4/5 bg-black"
+                              : "w-full bg-black"
                   }`}
                 />
               </div>

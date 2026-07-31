@@ -46,6 +46,14 @@ type OnlineConsultationRecord = {
   status: string;
 };
 
+type PatientRecordDraft = {
+  familyHistory: string;
+  medicalHistory: string;
+  allergies: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+};
+
 export default function OnlineConsultationPage() {
   const { accessToken, role } = useRole();
   const { appointments, setAppointments } = useAppointments();
@@ -61,7 +69,13 @@ export default function OnlineConsultationPage() {
     status: "Ready",
     visibleToPatient: false,
   });
-  const [familyHistoryDraft, setFamilyHistoryDraft] = useState("");
+  const [patientRecordDraft, setPatientRecordDraft] = useState<PatientRecordDraft>({
+    familyHistory: "",
+    medicalHistory: "",
+    allergies: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+  });
   const [isSaving, startTransition] = useTransition();
 
   const canManage = role !== "PATIENT";
@@ -97,7 +111,12 @@ export default function OnlineConsultationPage() {
   const activeOnlineConsultation = activeAppointment
     ? onlineConsultations.find((item) => item.appointment_id === activeAppointment.id) ?? null
     : null;
-  const familyHistoryDirty = familyHistoryDraft !== (activePatientRecord?.familyHistory ?? "");
+  const patientRecordDirty =
+    patientRecordDraft.familyHistory !== (activePatientRecord?.familyHistory ?? "")
+    || patientRecordDraft.medicalHistory !== (activePatientRecord?.medicalHistory ?? "")
+    || patientRecordDraft.allergies !== (activePatientRecord?.allergies ?? "")
+    || patientRecordDraft.emergencyContactName !== (activePatientRecord?.emergencyContactName ?? "")
+    || patientRecordDraft.emergencyContactPhone !== (activePatientRecord?.emergencyContactPhone ?? "");
 
   useEffect(() => {
     if (!accessToken || role === "PATIENT") return;
@@ -147,7 +166,13 @@ export default function OnlineConsultationPage() {
       status: inferredStatus,
       visibleToPatient: existing?.visibleToPatient ?? false,
     });
-    setFamilyHistoryDraft(patientRecord?.familyHistory ?? "");
+    setPatientRecordDraft({
+      familyHistory: patientRecord?.familyHistory ?? "",
+      medicalHistory: patientRecord?.medicalHistory ?? "",
+      allergies: patientRecord?.allergies ?? "",
+      emergencyContactName: patientRecord?.emergencyContactName ?? "",
+      emergencyContactPhone: patientRecord?.emergencyContactPhone ?? "",
+    });
     setFeedback(null);
 
     if (appointment.meetingLink) {
@@ -208,7 +233,7 @@ export default function OnlineConsultationPage() {
     });
   }
 
-  function saveFamilyHistory(appointment: AppointmentRecord) {
+  function savePatientRecord(appointment: AppointmentRecord) {
     if (!accessToken) {
       setFeedback("Your session expired. Please sign in again.");
       return;
@@ -229,7 +254,11 @@ export default function OnlineConsultationPage() {
         },
         body: JSON.stringify({
           patientId: patientRecord.id,
-          familyHistory: familyHistoryDraft,
+          familyHistory: patientRecordDraft.familyHistory,
+          medicalHistory: patientRecordDraft.medicalHistory,
+          allergies: patientRecordDraft.allergies,
+          emergencyContactName: patientRecordDraft.emergencyContactName,
+          emergencyContactPhone: patientRecordDraft.emergencyContactPhone,
         }),
       });
 
@@ -242,7 +271,7 @@ export default function OnlineConsultationPage() {
         const message =
           payload && "message" in payload && typeof payload.message === "string"
             ? payload.message
-            : "Unable to save family history.";
+            : "Unable to save patient record.";
         setFeedback(message);
         return;
       }
@@ -250,17 +279,24 @@ export default function OnlineConsultationPage() {
       setPatients((current) =>
         current.map((patient) =>
           patient.id === patientRecord.id
-            ? { ...patient, familyHistory: familyHistoryDraft.trim() }
+            ? {
+                ...patient,
+                familyHistory: patientRecordDraft.familyHistory.trim(),
+                medicalHistory: patientRecordDraft.medicalHistory.trim(),
+                allergies: patientRecordDraft.allergies.trim(),
+                emergencyContactName: patientRecordDraft.emergencyContactName.trim(),
+                emergencyContactPhone: patientRecordDraft.emergencyContactPhone.trim(),
+              }
             : patient,
         ),
       );
-      setFeedback("Family history saved.");
+      setFeedback("Patient record saved.");
     });
   }
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(133,77,14,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
@@ -381,7 +417,7 @@ export default function OnlineConsultationPage() {
                       <button
                         type="button"
                         onClick={() => openConsultation(appointment)}
-                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.20)] transition hover:-translate-y-0.5"
+                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.20)] transition hover:-translate-y-0.5"
                       >
                         <FaNotesMedical className="h-3.5 w-3.5" aria-hidden="true" />
                         {appointment.meetingLink ? "Open Workspace" : "Write Notes"}
@@ -413,7 +449,7 @@ export default function OnlineConsultationPage() {
         <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={activeAppointment.type === "Online" ? "sky" : "emerald"}>
@@ -440,7 +476,7 @@ export default function OnlineConsultationPage() {
                       href={activeAppointment.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400"
+                      className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
                     >
                       <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
                       Launch Meeting
@@ -473,7 +509,7 @@ export default function OnlineConsultationPage() {
                   icon={<FaUserDoctor className="h-4 w-4" />}
                   label="Patient Record"
                   value={activePatientRecord ? "Matched" : "Needs review"}
-                  hint={activePatientRecord ? "Family history can be updated here" : "No patient record match found"}
+                  hint={activePatientRecord ? "Medical background can be updated here" : "No patient record match found"}
                 />
               </div>
 
@@ -551,11 +587,77 @@ export default function OnlineConsultationPage() {
 
                   <div className="grid gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
                     <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <label className="block text-sm font-medium text-slate-700">
+                          Emergency Contact Name
+                          <input
+                            value={patientRecordDraft.emergencyContactName}
+                            onChange={(event) =>
+                              setPatientRecordDraft((current) => ({
+                                ...current,
+                                emergencyContactName: event.target.value,
+                              }))
+                            }
+                            className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                            placeholder="Parent, spouse, sibling, or guardian"
+                          />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-700">
+                          Emergency Contact Phone
+                          <input
+                            value={patientRecordDraft.emergencyContactPhone}
+                            onChange={(event) =>
+                              setPatientRecordDraft((current) => ({
+                                ...current,
+                                emergencyContactPhone: event.target.value,
+                              }))
+                            }
+                            className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                            placeholder="+63 9XX XXX XXXX"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="mt-4 block text-sm font-medium text-slate-700">
+                        Medical History
+                        <textarea
+                          value={patientRecordDraft.medicalHistory}
+                          onChange={(event) =>
+                            setPatientRecordDraft((current) => ({
+                              ...current,
+                              medicalHistory: event.target.value,
+                            }))
+                          }
+                          className="mt-2 min-h-28 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant medical background"
+                        />
+                      </label>
+
+                      <label className="mt-4 block text-sm font-medium text-slate-700">
+                        Allergies
+                        <textarea
+                          value={patientRecordDraft.allergies}
+                          onChange={(event) =>
+                            setPatientRecordDraft((current) => ({
+                              ...current,
+                              allergies: event.target.value,
+                            }))
+                          }
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies"
+                        />
+                      </label>
+
                       <label className="block text-sm font-medium text-slate-700">
                         Family History
                         <textarea
-                          value={familyHistoryDraft}
-                          onChange={(event) => setFamilyHistoryDraft(event.target.value)}
+                          value={patientRecordDraft.familyHistory}
+                          onChange={(event) =>
+                            setPatientRecordDraft((current) => ({
+                              ...current,
+                              familyHistory: event.target.value,
+                            }))
+                          }
                           className="mt-2 min-h-32 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                           placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
                         />
@@ -585,11 +687,11 @@ export default function OnlineConsultationPage() {
                       <div className="mt-5 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => saveFamilyHistory(activeAppointment)}
-                          disabled={isSaving || !activePatientRecord || !familyHistoryDirty}
+                          onClick={() => savePatientRecord(activeAppointment)}
+                          disabled={isSaving || !activePatientRecord || !patientRecordDirty}
                           className="rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-semibold text-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {isSaving ? "Saving..." : "Save Family History"}
+                          {isSaving ? "Saving..." : "Save Patient Record"}
                         </button>
                       </div>
                     </div>
@@ -670,7 +772,7 @@ export default function OnlineConsultationPage() {
               ) : null}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>
@@ -731,7 +833,7 @@ function PatientConsultationLobby({
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(133,77,14,0.14),transparent_28%),linear-gradient(135deg,#f5fbff_0%,#ffffff_56%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
@@ -822,7 +924,7 @@ function PatientConsultationLobby({
                           href={appointment.meetingLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5"
+                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5"
                         >
                           <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
                           Join Consultation
@@ -847,7 +949,7 @@ function PatientConsultationLobby({
         <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="sky">Online</Badge>
@@ -872,7 +974,7 @@ function PatientConsultationLobby({
                       href={activeAppointment.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400"
+                      className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
                     >
                       <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
                       Open Meeting
@@ -910,7 +1012,7 @@ function PatientConsultationLobby({
               )}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f5fbff_0%,#ffffff_100%)] p-8 text-center">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>

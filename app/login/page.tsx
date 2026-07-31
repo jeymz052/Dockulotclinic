@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -236,7 +236,7 @@ export default function LoginPage() {
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
       <Image
         src="/images/dockulotbgs.png"
-        alt="Clinic consultation background"
+        alt="Doc Kulot consultation background"
         fill
         priority
         unoptimized
@@ -246,12 +246,12 @@ export default function LoginPage() {
       />
       <div className="absolute inset-0 bg-black/60" />
 
-      <section className="relative z-10 w-full max-w-[390px] rounded-2xl border border-yellow-200 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
+      <section className="relative z-10 w-full max-w-[390px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
         <div className="relative z-10">
           <div className="flex justify-center mb-2 overflow-hidden">
             <Image
               src="/images/dockulotslogonobg.png"
-              alt="Doctora Kulot Clinic Logo"
+              alt="Doc Kulot Logo"
               width={669}
               height={373}
               priority
@@ -262,8 +262,8 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center mb-2" style={{ fontFamily: "Inter, Segoe UI, Arial, sans-serif" }}>
-            <p className="text-lg font-extrabold text-slate-900">Welcome Back!</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Sign in to continue your journey</p>
+            <p className="text-lg font-extrabold text-black">Welcome Back!</p>
+            <p className="text-[11px] text-black/60 mt-0.5">Sign in to continue your journey</p>
           </div>
 
           <form className="space-y-2" onSubmit={handleSubmit}>
@@ -272,8 +272,8 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
-                placeholder="name@clinicmail.com"
+                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                placeholder="name@example.com"
                 autoComplete="email"
                 required
               />
@@ -285,7 +285,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-11 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                   placeholder="••••••••"
                   minLength={8}
                   title="Use at least 8 characters with uppercase, lowercase, number, and special character."
@@ -294,7 +294,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-white/80 hover:text-white"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-black/60 hover:text-black"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -311,18 +311,18 @@ export default function LoginPage() {
             </Field>
 
             <div className="mt-1 flex items-center justify-between">
-              <label className="inline-flex items-center gap-1.5 text-[10px] text-slate-600">
+              <label className="inline-flex items-center gap-1.5 text-[10px] text-black/70">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 bg-white accent-amber-500"
+                  className="h-3.5 w-3.5 rounded border-slate-300 bg-white accent-black"
                 />
                 Remember Me
               </label>
               <button
                 type="button"
-                className="text-[10px] font-semibold text-yellow-600 hover:text-yellow-700 hover:underline"
+                className="text-[10px] font-semibold text-black/75 hover:text-black hover:underline"
                 onClick={() => {
                   setShowReset(true);
                   setResetEmail(email);
@@ -338,8 +338,8 @@ export default function LoginPage() {
               <div
                   className={`rounded-xl px-4 py-3 text-sm ${
                   isSuccessFeedback(feedback)
-                    ? "border border-yellow-300 bg-yellow-50 text-yellow-800"
-                    : "border border-yellow-300 bg-yellow-50 text-yellow-800"
+                    ? "border border-gold-200 bg-gold-50 text-gold-800"
+                    : "border border-black/10 bg-white text-black"
                 }`}
               >
                 {feedback}
@@ -351,7 +351,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={resendVerificationEmail}
                 disabled={isPending || isVerifyCoolingDown}
-                className="w-full rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-black transition hover:border-gold-300 hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isVerifyCoolingDown ? "Verification Email Sent" : "Resend Verification Email"}
               </button>
@@ -360,7 +360,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-linear-to-r from-amber-500 to-yellow-400 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-yellow-500/20 transition hover:from-amber-600 hover:to-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:from-amber-700 disabled:to-amber-500 disabled:text-amber-200"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-black px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-black/20 transition hover:bg-neutral-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral-500 disabled:text-neutral-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3.5 w-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6L16.5 12L10.5 18" />
@@ -373,18 +373,18 @@ export default function LoginPage() {
           <div className="mt-2 text-center">
             <p className="text-[11px] text-slate-600">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-semibold text-yellow-600 hover:text-yellow-700 hover:underline">
+              <Link href="/register" className="font-semibold text-black/80 hover:text-black hover:underline">
                 Sign Up
               </Link>
             </p>
             <div className="mt-2.5 space-y-1 text-center">
-              <p className="text-[10px] text-slate-500">© 2026 Doctora Kulot Clinic | All rights reserved | Powered by Doctora Kulot Clinic</p>
-              <p className="text-[10px] text-slate-500">Having trouble?</p>
+              <p className="text-[10px] text-black/55">© 2026 Doc Kulot | All rights reserved | Powered by Doc Kulot</p>
+              <p className="text-[10px] text-black/55">Having trouble?</p>
               <div className="flex items-center justify-center gap-4 text-[11px]">
-                <button type="button" className="text-slate-600 hover:text-yellow-600 hover:underline">
+                <button type="button" className="text-black/70 hover:text-black hover:underline">
                   Contact Support
                 </button>
-                <button type="button" className="text-slate-600 hover:text-yellow-600 hover:underline">
+                <button type="button" className="text-black/70 hover:text-black hover:underline">
                   Help Center
                 </button>
               </div>
@@ -417,8 +417,8 @@ export default function LoginPage() {
                   type="email"
                   value={resetEmail}
                   onChange={(event) => setResetEmail(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 text-white placeholder:text-white/60 outline-none transition focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
-                  placeholder="name@clinicmail.com"
+                  className="mt-1 w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2.5 text-white placeholder:text-white/60 outline-none transition focus:ring-2 focus:ring-white/30 focus:border-white/70"
+                  placeholder="name@example.com"
                   required
                 />
               </Field>
@@ -427,7 +427,7 @@ export default function LoginPage() {
                 <div
                   className={`rounded-xl px-4 py-3 text-xs ${
                     isSuccessFeedback(resetFeedback)
-                      ? "border border-yellow-300/60 bg-yellow-300/20 text-amber-100"
+                      ? "border border-white/20 bg-white/10 text-white/90"
                       : "border border-white/15 bg-white/10 text-white/90"
                   }`}
                 >
@@ -442,7 +442,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isPending || isResetCoolingDown}
-                className="w-full rounded-lg bg-yellow-400 px-3 py-2.5 font-semibold text-white shadow-lg shadow-yellow-800/30 transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-amber-700 disabled:text-amber-200"
+                className="w-full rounded-lg bg-white px-3 py-2.5 font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-neutral-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-300"
               >
                 {isPending ? "Sending..." : isResetCoolingDown ? "Please wait..." : "Send reset link"}
               </button>

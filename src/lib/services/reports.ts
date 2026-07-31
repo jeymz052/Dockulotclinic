@@ -73,14 +73,6 @@ export type PosReportSummary = {
   items_sold: number;
 };
 
-export type InventoryReportSummary = {
-  products: number;
-  low_stock: number;
-  expiring_soon: number;
-  stock_value: number;
-  stock_cost: number;
-};
-
 export type ContentReportItem = {
   id: string;
   title: string;
@@ -114,7 +106,6 @@ export type ReportsPayload = {
   appointment_summary: AppointmentStatusSummary;
   sales_summary: SalesSnapshot;
   pos_summary: PosReportSummary;
-  inventory_summary: InventoryReportSummary;
   top_blogs: ContentReportItem[];
   top_videos: ContentReportItem[];
   content_clicks_total: number;
@@ -176,15 +167,6 @@ type BillingRow = {
         quantity?: number | string | null;
       }[]
     | null;
-};
-
-type InventoryRow = {
-  stock_qty: number | string;
-  reorder_level: number | string;
-  cost_price: number | string;
-  selling_price: number | string;
-  expiry_date: string | null;
-  is_active: boolean;
 };
 
 type ContentRow = {
@@ -307,16 +289,6 @@ async function getBillings(from?: string, to?: string) {
   return ((data ?? []) as BillingRow[]).filter((row) =>
     isWithinRange(normalizeDate(row.issued_at ?? row.created_at), from, to),
   );
-}
-
-async function getInventorySnapshot() {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("inventory_products")
-    .select("stock_qty, reorder_level, cost_price, selling_price, expiry_date, is_active");
-  if (error) throw error;
-
-  return (data ?? []) as InventoryRow[];
 }
 
 async function getContentRows() {
@@ -571,21 +543,6 @@ export async function getPosSummary(from?: string, to?: string): Promise<PosRepo
   };
 }
 
-export async function getInventorySummary(): Promise<InventoryReportSummary> {
-  const rows = await getInventorySnapshot();
-  const now = Date.now();
-  const expiringCutoff = now + 1000 * 60 * 60 * 24 * 45;
-  const activeRows = rows.filter((row) => row.is_active);
-
-  return {
-    products: activeRows.length,
-    low_stock: activeRows.filter((row) => parseAmount(row.stock_qty) <= parseAmount(row.reorder_level)).length,
-    expiring_soon: activeRows.filter((row) => row.expiry_date && new Date(row.expiry_date).getTime() <= expiringCutoff).length,
-    stock_value: activeRows.reduce((sum, row) => sum + parseAmount(row.stock_qty) * parseAmount(row.selling_price), 0),
-    stock_cost: activeRows.reduce((sum, row) => sum + parseAmount(row.stock_qty) * parseAmount(row.cost_price), 0),
-  };
-}
-
 export async function getContentSummary(from?: string, to?: string) {
   const [contentRows, analyticsRows] = await Promise.all([getContentRows(), getWebsiteAnalytics(from, to)]);
   const rows = !from && !to
@@ -682,7 +639,6 @@ export async function getReportsDashboard(from?: string, to?: string): Promise<R
     appointment_summary,
     sales_summary,
     pos_summary,
-    inventory_summary,
     contentSummary,
     visitor_traffic,
     requested_services,
@@ -698,7 +654,6 @@ export async function getReportsDashboard(from?: string, to?: string): Promise<R
     getAppointmentSummary(from, to),
     getSalesSummary(),
     getPosSummary(from, to),
-    getInventorySummary(),
     getContentSummary(from, to),
     getWebsiteTraffic(from, to),
     getRequestedServices(from, to),
@@ -716,7 +671,6 @@ export async function getReportsDashboard(from?: string, to?: string): Promise<R
     appointment_summary,
     sales_summary,
     pos_summary,
-    inventory_summary,
     top_blogs: contentSummary.top_blogs,
     top_videos: contentSummary.top_videos,
     content_clicks_total: contentSummary.content_clicks_total,

@@ -93,7 +93,7 @@ export default function PatientFilesPage() {
                   href={file.file_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-semibold text-white transition hover:bg-yellow-400"
+                  className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
                 >
                   Open File
                   <FaArrowUpRightFromSquare className="h-3.5 w-3.5" />

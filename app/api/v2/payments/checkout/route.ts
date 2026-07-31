@@ -12,7 +12,9 @@ type BookingCheckoutBody = {
   date?: string;
   start?: string;
   reason?: string;
-  type?: "Online";
+  type?: "Online" | "Clinic";
+  patientStatus?: "New" | "Existing";
+  service?: string;
   reservation_id?: string;
   payment_option?: OnlineCheckoutOption;
 };
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as BookingCheckoutBody;
 
     if (
-      body.type !== "Online"
+      !body.type
       || !body.patientName
       || !body.email
       || !body.phone
@@ -31,7 +33,7 @@ export async function POST(req: Request) {
       || !body.date
       || !body.start
     ) {
-      throw new HttpError(400, "Online booking details are required");
+      throw new HttpError(400, "Booking payment details are required");
     }
 
     const result = await createOnlineCheckoutSession({
@@ -42,6 +44,9 @@ export async function POST(req: Request) {
       date: body.date,
       start: body.start,
       reason: body.reason ?? "",
+      type: body.type,
+      patientStatus: body.patientStatus,
+      service: body.service,
       reservationId: body.reservation_id,
       checkoutOption: body.payment_option,
     }, actor);

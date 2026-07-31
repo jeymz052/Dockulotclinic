@@ -64,11 +64,12 @@ export async function GET(req: Request, { params }: Ctx) {
     });
 
     const lines = [
-      "Doctora Kulot Clinic",
+      "Doc Kulot",
+      "Family Medicine | Aesthetic Medicine",
       "Prescription for pharmacy reference",
       `Prescription No: ${data.prescription_no}`,
       `Patient: ${data.patients?.profiles?.full_name ?? "Patient"}`,
-      `Doctor: ${data.doctors?.profiles?.full_name ?? "Doctor"}`,
+      `Doctor: ${data.doctors?.profiles?.full_name ?? "Dr. Fatimah Al-Zahra T. Ditti"}`,
       `Created: ${new Date(data.created_at).toLocaleDateString("en-US")}`,
       data.diagnoses?.diagnosis_text ? `Diagnosis: ${data.diagnoses.diagnosis_text}` : "Diagnosis: Not set",
       data.diagnoses?.treatment_plan ? `Treatment Plan: ${data.diagnoses.treatment_plan}` : "Treatment Plan: Not set",
@@ -86,6 +87,9 @@ export async function GET(req: Request, { params }: Ctx) {
       "General Instructions",
       data.general_instructions ?? "No general instructions provided.",
       " ",
+      "Physician Signature: ________________________________",
+      "Dr. Fatimah Al-Zahra T. Ditti",
+      "PRC No.: 0141185",
       "Please present this prescription to the pharmacy if needed.",
     ];
 

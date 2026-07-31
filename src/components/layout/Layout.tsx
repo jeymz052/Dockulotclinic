@@ -62,8 +62,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   // won't flash on routine token refreshes and won't wipe in-progress forms.
   if (isLoading) {
     return (
-      <div className="flex min-h-[100svh] items-center justify-center bg-slate-50">
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">
+      <div className="flex min-h-[100svh] items-center justify-center bg-neutral-50">
+        <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-5 text-sm text-neutral-600 shadow-sm">
           Loading...
         </div>
       </div>
@@ -75,8 +75,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(120,53,15,0.06),transparent_28%),linear-gradient(180deg,#fffbeb_0%,#f1faff_36%,#f8fafc_100%)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-amber-100/70 to-transparent" />
+    <div className="relative min-h-[100svh] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.05),transparent_28%),linear-gradient(180deg,#ffffff_0%,#f8f8f7_36%,#fafafa_100%)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/5 to-transparent" />
       <Sidebar role={role} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="min-w-0 lg:pl-56">

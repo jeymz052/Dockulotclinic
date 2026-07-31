@@ -3,14 +3,39 @@ function parseClockToMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
-export const CONSULTATION_HOURLY_RATE = 350;
-export const CLINIC_CONSULTATION_HOURLY_RATE = CONSULTATION_HOURLY_RATE;
-export const ONLINE_CONSULTATION_HOURLY_RATE = CONSULTATION_HOURLY_RATE;
+export type ClinicPatientCategory = "New" | "Regular" | "OldRecord";
+export type BookingPatientStatus = "New" | "Existing";
 
-export function normalizeConfiguredConsultationRate(value: number) {
+export const NEW_PATIENT_CLINIC_CONSULTATION_FEE = 600;
+export const FOLLOW_UP_CLINIC_CONSULTATION_FEE = 300;
+export const ONLINE_CONSULTATION_FEE = 800;
+export const PROCEDURE_DOWNPAYMENT_AMOUNT = 1000;
+
+export const CLINIC_CONSULTATION_HOURLY_RATE = NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+export const ONLINE_CONSULTATION_HOURLY_RATE = ONLINE_CONSULTATION_FEE;
+
+export function normalizeConfiguredClinicConsultationRate(value: number) {
   return Number.isFinite(value) && value > 0
-    ? Math.max(value, CONSULTATION_HOURLY_RATE)
-    : CONSULTATION_HOURLY_RATE;
+    ? value
+    : CLINIC_CONSULTATION_HOURLY_RATE;
+}
+
+export function normalizeConfiguredOnlineConsultationRate(value: number) {
+  return Number.isFinite(value) && value > 0
+    ? value
+    : ONLINE_CONSULTATION_HOURLY_RATE;
+}
+
+export function resolveClinicConsultationFee(input: {
+  patientCategory?: ClinicPatientCategory | null;
+  patientStatus?: BookingPatientStatus | null;
+  hasPriorClinicConsultation?: boolean;
+}) {
+  const isNewPatient = input.patientStatus === "New" || input.patientCategory === "New";
+  if (isNewPatient && input.hasPriorClinicConsultation) {
+    return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  }
+  return NEW_PATIENT_CLINIC_CONSULTATION_FEE;
 }
 
 export function getAppointmentDurationMinutes(start: string, end: string) {
@@ -27,7 +52,9 @@ export function calculateConsultationCharge(hourlyRate: number, start: string, e
 }
 
 export function calculateOnlineConsultationCharge(start: string, end: string) {
-  return calculateConsultationCharge(ONLINE_CONSULTATION_HOURLY_RATE, start, end);
+  void start;
+  void end;
+  return ONLINE_CONSULTATION_FEE;
 }
 
 export function formatDurationLabel(start: string, end: string) {

@@ -10,17 +10,25 @@ export type AppointmentContext = {
 };
 
 export function getServiceOptionsForType(type: AppointmentType) {
-  const services = clinicServices.filter((service) =>
-    type === "Online"
-      ? service.title !== "General Consultation"
-      : service.title !== "Online Consultation",
-  );
+  const services = clinicServices.filter((service) => {
+    const modes = service.modes ?? ["Clinic", "Online"];
+    return modes.includes(type);
+  });
 
   return services.map((service) => service.title);
 }
 
+export function isProcedureServiceTitle(service: string | null | undefined) {
+  const normalized = (service ?? "").trim();
+  if (!normalized) return false;
+  return clinicServices.some((item) => item.appointmentOnly && item.title === normalized);
+}
+
 export function getDefaultServiceForType(type: AppointmentType) {
-  return getServiceOptionsForType(type)[0] ?? (type === "Online" ? "Online Consultation" : "General Consultation");
+  if (type === "Online") {
+    return getServiceOptionsForType(type)[0] ?? "Telemedicine Services";
+  }
+  return getServiceOptionsForType(type)[0] ?? "General Consultation";
 }
 
 export function encodeAppointmentContext(service: string, reason: string) {

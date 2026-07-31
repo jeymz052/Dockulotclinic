@@ -64,7 +64,6 @@ const ROLE_PERMISSION_CATALOG: Record<RoleKey, PermissionItem[]> = {
     { key: "consultations.manage", label: "Consultations" },
     { key: "schedules.manage", label: "Schedules" },
     { key: "payments.pos", label: "Billing / POS" },
-    { key: "inventory.manage", label: "Inventory" },
     { key: "inquiries.manage", label: "Inquiries" },
     { key: "faq.manage", label: "FAQ content" },
     { key: "landing.manage", label: "Website content" },
@@ -79,7 +78,6 @@ const ROLE_PERMISSION_CATALOG: Record<RoleKey, PermissionItem[]> = {
     { key: "queue.manage", label: "Queue list" },
     { key: "billing.manage", label: "Billing" },
     { key: "payments.pos", label: "POS" },
-    { key: "inventory.manage", label: "Inventory" },
     { key: "inquiries.manage", label: "Inquiries" },
     { key: "faq.manage", label: "FAQ content" },
     { key: "landing.manage", label: "Website content" },
@@ -100,7 +98,6 @@ const ROLE_PERMISSION_CATALOG: Record<RoleKey, PermissionItem[]> = {
     { key: "consultations.manage", label: "Consultations" },
     { key: "schedules.manage", label: "Schedules" },
     { key: "payments.pos", label: "Billing / POS" },
-    { key: "inventory.manage", label: "Inventory" },
     { key: "inquiries.manage", label: "Inquiries" },
     { key: "faq.manage", label: "FAQ content" },
     { key: "landing.manage", label: "Website content" },
@@ -115,7 +112,7 @@ const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   doctor:
     "Clinical lead. Manages appointments, consultations, prescriptions, schedules, and clinic operations.",
   secretary:
-    "Front-desk staff. Handles bookings, walk-in registration, queueing, billing, inventory, inquiries, and website content.",
+    "Front-desk staff. Handles bookings, walk-in registration, queueing, billing, inquiries, and website content.",
   patient:
     "Patient account. Books visits, checks portal records, follows up, and manages personal care details.",
   super_admin:
@@ -718,7 +715,7 @@ export default function UsersPage() {
       {/* Toolbar header — same compact style as the POS terminal so the dashboard reads as one tool, not many. */}
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-400 text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-white">
             <FaUsers className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
@@ -763,7 +760,7 @@ export default function UsersPage() {
                 setFeedback(null);
                 setShowAddModal(true);
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-black"
             >
               <FaUserPlus className="h-3 w-3" aria-hidden="true" />
               Add User
@@ -1027,7 +1024,7 @@ export default function UsersPage() {
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-[10px] font-bold text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
                       {u.full_name
                         .split(" ")
                         .filter(Boolean)
@@ -1157,7 +1154,7 @@ export default function UsersPage() {
                 type="button"
                 onClick={saveRolePermissions}
                 disabled={!rolesDirty || isMutating}
-                className="inline-flex items-center gap-1.5 rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                 {isMutating ? "Saving…" : "Save Permissions"}
@@ -1176,7 +1173,7 @@ export default function UsersPage() {
                   count: doctorUsers,
                   accent: "border-yellow-200 bg-yellow-50/40",
                   badge: "bg-yellow-100 text-yellow-700",
-                  iconBg: "bg-yellow-400",
+                  iconBg: "bg-black",
                 },
                 {
                   key: "secretary",
@@ -1185,7 +1182,7 @@ export default function UsersPage() {
                   count: secretaryUsers,
                   accent: "border-yellow-200 bg-yellow-50/40",
                   badge: "bg-yellow-100 text-yellow-700",
-                  iconBg: "bg-yellow-400",
+                  iconBg: "bg-black",
                 },
                 {
                   key: "patient",
@@ -1203,7 +1200,7 @@ export default function UsersPage() {
                   count: superAdminUsers,
                   accent: "border-yellow-200 bg-yellow-50/40",
                   badge: "bg-yellow-100 text-yellow-700",
-                  iconBg: "bg-yellow-400",
+                  iconBg: "bg-black",
                 },
               ] as const
             ).map((cfg) => {
@@ -1343,7 +1340,7 @@ export default function UsersPage() {
 
             {doctorUsers > 0 ? (
               <p className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-[11px] text-yellow-700">
-                This clinic is configured for one doctor only: Doctora Kulot, MD.
+                This clinic is configured for one doctor only: Dr. Fatimah Al-Zahra T. Ditti.
               </p>
             ) : null}
 
@@ -1362,7 +1359,7 @@ export default function UsersPage() {
               <button
                 type="submit"
                 disabled={isMutating || isCheckingDuplicate || emailCheck.status === "duplicate"}
-                className="inline-flex items-center gap-1.5 rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 <FaUserPlus className="h-3 w-3" aria-hidden="true" />
                 {isCheckingDuplicate ? "Checking email…" : isMutating ? "Creating…" : "Create User"}
@@ -1439,7 +1436,7 @@ export default function UsersPage() {
               <button
                 type="submit"
                 disabled={isMutating}
-                className="inline-flex items-center gap-1.5 rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                className="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
               >
                 <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                 {isMutating ? "Saving…" : "Save Changes"}

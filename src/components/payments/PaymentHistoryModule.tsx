@@ -167,21 +167,21 @@ export function PaymentHistoryModule() {
   const paginatedRows = currentRows.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
 
   return (
-    <section className="rounded-4xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+    <section className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Payment History</p>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">History</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">Payment History</p>
+          <h1 className="mt-2 text-2xl font-bold text-neutral-900">History</h1>
         </div>
 
-        <div className="inline-flex rounded-full border border-yellow-100 bg-yellow-50/70 p-1">
+        <div className="inline-flex rounded-full border border-gold-100 bg-gold-50/70 p-1">
           <button
             type="button"
             onClick={() => setActiveTab("online")}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === "online"
-                ? "bg-[linear-gradient(135deg,#854D0E,#A16207)] text-white shadow-sm"
-                : "text-slate-600 hover:text-yellow-700"
+                ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
+                : "text-neutral-600 hover:text-gold-700"
             }`}
           >
             Online Payments
@@ -191,8 +191,8 @@ export function PaymentHistoryModule() {
             onClick={() => setActiveTab("pos")}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === "pos"
-                ? "bg-[linear-gradient(135deg,#854D0E,#A16207)] text-white shadow-sm"
-                : "text-slate-600 hover:text-yellow-700"
+                ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
+                : "text-neutral-600 hover:text-gold-700"
             }`}
           >
             Clinic POS
@@ -200,7 +200,7 @@ export function PaymentHistoryModule() {
         </div>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-3xl border border-yellow-100">
+      <div className="mt-6 overflow-hidden rounded-3xl border border-gold-100">
         {activeTab === "online" ? (
           <HistoryTable
             columns={["Patient", "Details", "Amount", "Method", "Status", "Created", "Paid At"]}
@@ -234,7 +234,7 @@ export function PaymentHistoryModule() {
                   {billing.status}
                 </StatusPill>,
                 billing.issued,
-                <Link key={`${billing.id}-receipt`} href={billing.receiptHref} className="font-semibold text-yellow-700 hover:text-yellow-700">
+                <Link key={`${billing.id}-receipt`} href={billing.receiptHref} className="font-semibold text-gold-700 hover:text-gold-700">
                   Open receipt
                 </Link>,
               ];
@@ -262,10 +262,10 @@ function StatusPill({
 }) {
   const classes =
     tone === "Paid"
-      ? "bg-yellow-50 text-yellow-700"
+      ? "bg-gold-50 text-gold-700"
       : tone === "Failed"
-        ? "bg-yellow-50 text-yellow-700"
-        : "bg-yellow-50 text-yellow-700";
+        ? "bg-gold-50 text-gold-700"
+        : "bg-gold-50 text-gold-700";
 
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
 }
@@ -282,27 +282,27 @@ function HistoryTable({
   loading: boolean;
 }) {
   if (loading) {
-    return <div className="h-32 animate-pulse bg-slate-100" />;
+    return <div className="h-32 animate-pulse bg-neutral-100" />;
   }
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-amber-100 text-sm">
-        <thead className="bg-yellow-50/70">
+      <table className="min-w-full divide-y divide-gold-100 text-sm">
+        <thead className="bg-gold-50/70">
           <tr>
             {columns.map((column) => (
-              <th key={column} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <th key={column} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
                 {column}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-amber-50 bg-white">
+        <tbody className="divide-y divide-gold-50 bg-white">
           {rows.length > 0 ? (
             rows.map((row, rowIndex) => (
               <tr key={rowIndex} className="align-top">
                 {row.map((cell, cellIndex) => (
-                  <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-4 text-slate-700">
+                  <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-4 text-neutral-700">
                     {cell}
                   </td>
                 ))}
@@ -310,7 +310,7 @@ function HistoryTable({
             ))
           ) : (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-slate-500">
+              <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-neutral-500">
                 {emptyLabel}
               </td>
             </tr>
@@ -334,7 +334,7 @@ function Pagination({
 }) {
   return (
     <div className="mt-5 flex items-center justify-between gap-3">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-neutral-500">
         Page {page} of {totalPages}
       </p>
         <div className="flex gap-2">
@@ -342,7 +342,7 @@ function Pagination({
           type="button"
           onClick={onPrevious}
           disabled={page <= 1}
-          className="rounded-full border border-yellow-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-gold-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
@@ -350,7 +350,7 @@ function Pagination({
           type="button"
           onClick={onNext}
           disabled={page >= totalPages}
-          className="rounded-full border border-yellow-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-gold-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>

@@ -44,7 +44,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
           return (
             <article
               key={post.id}
-              className={`overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+              className={`overflow-hidden rounded-[2rem] border border-neutral-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
                 variant === "compact" ? "" : ""
               }`}
             >
@@ -57,7 +57,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                 aria-label={canPlayInline ? `Play ${post.title}` : post.title}
                 disabled={!canPlayInline}
               >
-                <div className={`relative overflow-hidden bg-slate-100 ${variant === "compact" ? "aspect-[16/10]" : "aspect-[16/9]"}`}>
+                <div className={`relative overflow-hidden bg-neutral-100 ${variant === "compact" ? "aspect-[16/10]" : "aspect-[16/9]"}`}>
                   {thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -66,7 +66,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">
+                    <div className="flex h-full items-center justify-center text-sm font-semibold text-neutral-500">
                       Media preview not attached yet
                     </div>
                   )}
@@ -83,7 +83,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                     </div>
                     {canPlayInline ? (
                       <span
-                        className={`inline-flex items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition group-hover:scale-105 ${
+                        className={`inline-flex items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-lg transition group-hover:scale-105 ${
                           variant === "compact" ? "h-10 w-10" : "h-12 w-12"
                         }`}
                       >
@@ -95,10 +95,10 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
               </button>
 
               <div className={variant === "compact" ? "space-y-4 p-5" : "space-y-4 p-6"}>
-                <p className="text-sm leading-7 text-slate-600">
+                <p className="text-sm leading-7 text-neutral-600">
                   {post.excerpt || "This creator video or announcement will show more detail once the content team adds a summary."}
                 </p>
-                <div className="rounded-[1.35rem] border border-yellow-100 bg-yellow-50/70 px-4 py-3 text-sm text-slate-600">
+                <div className="rounded-[1.35rem] border border-gold-100 bg-gold-50/70 px-4 py-3 text-sm text-neutral-600">
                   {post.content_type === "LiveReplay"
                     ? "Missed the live session? Open the replay, then check the live schedule for the next health talk."
                     : post.content_type === "Announcement"
@@ -110,7 +110,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                     <button
                       type="button"
                       onClick={() => setActivePostId(post.id)}
-                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-300"
+                      className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-gold-300"
                     >
                       Watch here
                       <FaArrowRight />
@@ -118,14 +118,14 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
                   ) : null}
                   <Link
                     href="/#booking"
-                    className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-5 py-2.5 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-5 py-2.5 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
                   >
                     <FaCalendarCheck />
                     Book appointment
                   </Link>
                   <Link
                     href="/live"
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-5 py-2.5 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200"
                   >
                     <FaVideo />
                     Live schedule
@@ -137,7 +137,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
         })}
 
         {!posts.length ? (
-          <div className="rounded-[2rem] border border-dashed border-slate-300 px-6 py-10 text-center text-sm leading-7 text-slate-500 lg:col-span-2">
+          <div className="rounded-[2rem] border border-dashed border-neutral-300 px-6 py-10 text-center text-sm leading-7 text-neutral-500 lg:col-span-2">
             No public video posts have been published yet. Once the creator team publishes videos, replays, or announcements, they will appear here.
           </div>
         ) : null}
@@ -157,7 +157,7 @@ export default function PublicVideoGallery({ posts, variant = "default" }: Publi
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4 text-white">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">Now playing</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Now playing</p>
                 <h2 className="mt-1 text-lg font-black tracking-tight sm:text-xl">{activePost.title}</h2>
               </div>
               <button

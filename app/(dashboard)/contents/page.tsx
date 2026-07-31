@@ -16,10 +16,10 @@ import {
   FaUserDoctor,
 } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import type { LandingContent, LandingHighlight, LandingService } from "@/src/lib/db/types";
+import type { LandingContent, LandingHighlight, LandingProgramSlide, LandingService, LandingTestimonial } from "@/src/lib/db/types";
 import { clinicServices, contentCategories, faqCategories } from "@/src/lib/healthcare-content";
 
-type Tab = "home" | "about" | "services" | "blog" | "videos" | "faq";
+type Tab = "home" | "programs" | "services" | "about" | "results" | "booking" | "blog" | "videos" | "live" | "testimonials" | "faq" | "contact" | "footer";
 type Feedback = { kind: "ok" | "err"; msg: string } | null;
 type Faq = {
   id: string;
@@ -31,13 +31,13 @@ type Faq = {
 };
 
 const DEFAULT_HERO = "/images/dockulotbgs.png";
-const DEFAULT_DOCTOR = "/images/dockulotslogonobg.png";
+const DEFAULT_DOCTOR = "/images/SEF_0442.jpeg";
 const DEFAULT_ABOUT_HIGHLIGHTS: LandingHighlight[] = [
-  { title: "Specialty", body: "Family Medicine" },
-  { title: "Experience", body: "8 Years of clinical practice" },
-  { title: "Subspecialty", body: "PCOS Management and Weightloss Management" },
-  { title: "Care Focus", body: "Primary care, prevention, and follow-up support" },
-  { title: "Education", body: "Silliman University, 2017 | Zamboanga City Medical Center, 2021" },
+  { title: "Specialty", body: "Family Medicine and Aesthetic Medicine" },
+  { title: "Medical School", body: "Silliman University Medical School, 2017" },
+  { title: "Residency", body: "Zamboanga City Medical Center" },
+  { title: "Pre-Med", body: "BS Nursing, Western Mindanao State University" },
+  { title: "Care Focus", body: "Telemedicine, women's health, weight loss, and procedures" },
 ];
 const EMPTY_FAQ_FORM = {
   category: faqCategories[0],
@@ -47,12 +47,19 @@ const EMPTY_FAQ_FORM = {
   is_published: true,
 };
 const TABS: Array<{ id: Tab; label: string; detail: string }> = [
-  { id: "home", label: "Home", detail: "Hero section on the landing page" },
-  { id: "about", label: "About", detail: "Doctor introduction section" },
-  { id: "services", label: "Services", detail: "Clinic and online booking section" },
-  { id: "blog", label: "Blog", detail: "Landing blog texts only" },
-  { id: "videos", label: "Videos", detail: "Vlogs and live schedule texts only" },
+  { id: "home", label: "Home", detail: "Hero carousel copy" },
+  { id: "programs", label: "Programs", detail: "Rx program carousel" },
+  { id: "services", label: "Services", detail: "Service showcase cards" },
+  { id: "about", label: "About", detail: "Doctor profile section" },
+  { id: "results", label: "Results", detail: "Before and after heading" },
+  { id: "booking", label: "Booking", detail: "Booking CTA banner" },
+  { id: "blog", label: "Blog", detail: "Blog section labels" },
+  { id: "videos", label: "Videos", detail: "Vlog section labels" },
+  { id: "live", label: "Live", detail: "Live schedule labels" },
+  { id: "testimonials", label: "Testimonials", detail: "Patient story cards" },
   { id: "faq", label: "FAQ", detail: "Landing-page FAQs" },
+  { id: "contact", label: "Contact", detail: "Contact copy and socials" },
+  { id: "footer", label: "Footer", detail: "Footer copy and lists" },
 ];
 
 export default function ContentsManagerPage() {
@@ -175,6 +182,48 @@ export default function ContentsManagerPage() {
     patchArray("services", (current) => (current as LandingService[]).filter((_, itemIndex) => itemIndex !== index));
   }
 
+  function addProgramSlide() {
+    patchArray("program_slides", (current) => [
+      ...ensureProgramSlides(current as LandingProgramSlide[]),
+      { key: "program", name: "", description: "", ctaLabel: "Book a consultation" },
+    ] as LandingContent["program_slides"]);
+  }
+
+  function updateProgramSlide(index: number, patch: Partial<LandingProgramSlide>) {
+    patchArray("program_slides", (current) => {
+      const next = ensureProgramSlides(current as LandingProgramSlide[]).slice();
+      next[index] = { ...next[index], ...patch };
+      return next as LandingContent["program_slides"];
+    });
+  }
+
+  function removeProgramSlide(index: number) {
+    patchArray("program_slides", (current) =>
+      ensureProgramSlides(current as LandingProgramSlide[]).filter((_, itemIndex) => itemIndex !== index) as LandingContent["program_slides"],
+    );
+  }
+
+  function addTestimonial() {
+    patchArray("testimonials", (current) => [
+      ...ensureTestimonials(current as LandingTestimonial[]),
+      { name: "", title: "", quote: "" },
+    ] as LandingContent["testimonials"]);
+  }
+
+  function updateTestimonial(index: number, patch: Partial<LandingTestimonial>) {
+    patchArray("testimonials", (current) => {
+      const next = ensureTestimonials(current as LandingTestimonial[]).slice();
+      next[index] = { ...next[index], ...patch };
+      return next as LandingContent["testimonials"];
+    });
+  }
+
+  function removeTestimonial(index: number) {
+    patchArray("testimonials", (current) =>
+      ensureTestimonials(current as LandingTestimonial[]).filter((_, itemIndex) => itemIndex !== index) as LandingContent["testimonials"],
+    );
+  }
+
   function updateBlogCategory(index: number, value: string) {
     patchArray("blog_categories", (current) => {
       const next = Array.isArray(current) ? [...current] : [];
@@ -211,6 +260,7 @@ export default function ContentsManagerPage() {
         doctor_title: content.doctor_title,
         doctor_photo_url: content.doctor_photo_url,
         about_highlights: content.about_highlights,
+        program_slides: content.program_slides,
         services_eyebrow: content.services_eyebrow,
         services_title: content.services_title,
         services_subtitle: content.services_subtitle,
@@ -230,6 +280,28 @@ export default function ContentsManagerPage() {
         live_title: content.live_title,
         live_subtitle: content.live_subtitle,
         live_cta_label: content.live_cta_label,
+        results_eyebrow: content.results_eyebrow,
+        results_title: content.results_title,
+        results_subtitle: content.results_subtitle,
+        testimonials_eyebrow: content.testimonials_eyebrow,
+        testimonials_title: content.testimonials_title,
+        testimonials_subtitle: content.testimonials_subtitle,
+        testimonials: content.testimonials,
+        faq_eyebrow: content.faq_eyebrow,
+        faq_title: content.faq_title,
+        faq_subtitle: content.faq_subtitle,
+        contact_eyebrow: content.contact_eyebrow,
+        contact_title: content.contact_title,
+        contact_subtitle: content.contact_subtitle,
+        contact_facebook_label: content.contact_facebook_label,
+        contact_facebook_url: content.contact_facebook_url,
+        contact_youtube_label: content.contact_youtube_label,
+        contact_youtube_url: content.contact_youtube_url,
+        footer_brand_blurb: content.footer_brand_blurb,
+        footer_services: content.footer_services,
+        footer_hours: content.footer_hours,
+        footer_contact_text: content.footer_contact_text,
+        footer_copyright: content.footer_copyright,
       };
       const res = await fetch("/api/v2/landing-content", {
         method: "PATCH",
@@ -344,7 +416,7 @@ export default function ContentsManagerPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.32),_transparent_36%),linear-gradient(135deg,#ffffff_0%,#f4faff_52%,#fef3c7_100%)] p-6 shadow-[0_28px_70px_-48px_rgba(14,116,194,0.45)]">
+      <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.32),_transparent_36%),linear-gradient(135deg,#ffffff_0%,#f7f7f7_52%,#f5f5f5_100%)] p-6 shadow-[0_28px_70px_-48px_rgba(17,17,17,0.35)]">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-yellow-700">Website Content</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-5xl">
@@ -358,7 +430,7 @@ export default function ContentsManagerPage() {
             <Link
               href="/"
               target="_blank"
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-bold text-white transition hover:bg-black"
             >
               Preview landing page
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -385,7 +457,7 @@ export default function ContentsManagerPage() {
       ) : null}
 
       <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-2 shadow-sm">
-        <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-5">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
@@ -395,7 +467,7 @@ export default function ContentsManagerPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`rounded-[1.35rem] px-4 py-4 text-left transition ${
                   active
-                    ? "bg-[linear-gradient(135deg,#A16207_0%,#854D0E_100%)] text-white shadow-[0_16px_35px_-20px_rgba(120,53,15,0.7)]"
+                    ? "bg-[linear-gradient(135deg,#111111_0%,#111111_100%)] text-white shadow-[0_16px_35px_-20px_rgba(120,53,15,0.7)]"
                     : "bg-slate-50 text-slate-800 hover:bg-yellow-50"
                 }`}
               >
@@ -454,6 +526,42 @@ export default function ContentsManagerPage() {
                 </div>
               </div>
             </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
+      {activeTab === "programs" ? (
+        <EditorSection
+          title="Programs"
+          note="These are the Rx program slides shown immediately after the hero on the landing page."
+          action={
+            <button
+              type="button"
+              onClick={addProgramSlide}
+              className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-100"
+            >
+              <FaPlus className="h-3 w-3" aria-hidden="true" />
+              Add program
+            </button>
+          }
+        >
+          <div className="grid gap-4 xl:grid-cols-2">
+            {ensureProgramSlides(content.program_slides).map((program, index) => (
+              <div key={`${program.key}-${index}`} className="rounded-[1.4rem] border border-yellow-100 bg-slate-50/70 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">Program {index + 1}</p>
+                  <RemoveButton onClick={() => removeProgramSlide(index)} title="Remove program" compact />
+                </div>
+                <div className="space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field label="Key" value={program.key} onChange={(value) => updateProgramSlide(index, { key: value })} />
+                    <Field label="Name" value={program.name} onChange={(value) => updateProgramSlide(index, { name: value })} />
+                  </div>
+                  <Textarea label="Description" rows={5} value={program.description} onChange={(value) => updateProgramSlide(index, { description: value })} />
+                  <Field label="CTA label" value={program.ctaLabel} onChange={(value) => updateProgramSlide(index, { ctaLabel: value })} />
+                </div>
+              </div>
+            ))}
           </div>
         </EditorSection>
       ) : null}
@@ -548,6 +656,25 @@ export default function ContentsManagerPage() {
         </EditorSection>
       ) : null}
 
+      {activeTab === "results" ? (
+        <EditorSection title="Results" note="This heading appears above the before-and-after carousel on the landing page.">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-4">
+              <Field label="Eyebrow" value={content.results_eyebrow ?? ""} onChange={(value) => update("results_eyebrow", value)} />
+              <Field label="Title" value={content.results_title ?? ""} onChange={(value) => update("results_title", value)} />
+              <Textarea label="Subtitle" rows={4} value={content.results_subtitle ?? ""} onChange={(value) => update("results_subtitle", value)} />
+            </div>
+            <PreviewCard title="Results Preview">
+              <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.results_eyebrow}</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.results_title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{content.results_subtitle}</p>
+              </div>
+            </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
       {activeTab === "services" ? (
         <EditorSection
           title="Services"
@@ -609,6 +736,24 @@ export default function ContentsManagerPage() {
         </EditorSection>
       ) : null}
 
+      {activeTab === "booking" ? (
+        <EditorSection title="Booking" note="This edits the dark booking callout before the blog section.">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-4">
+              <Field label="Title" value={content.booking_title ?? ""} onChange={(value) => update("booking_title", value)} />
+              <Textarea label="Subtitle" rows={4} value={content.booking_subtitle ?? ""} onChange={(value) => update("booking_subtitle", value)} />
+            </div>
+            <PreviewCard title="Booking Preview">
+              <div className="rounded-[1.6rem] bg-black p-5 text-white shadow-sm">
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#c8ad5f]">Ready to book?</p>
+                <h3 className="mt-3 text-2xl font-black tracking-tight">{content.booking_title}</h3>
+                <p className="mt-3 text-sm leading-7 text-white/70">{content.booking_subtitle}</p>
+              </div>
+            </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
       {activeTab === "blog" ? (
         <EditorSection
           title="Blog"
@@ -616,7 +761,7 @@ export default function ContentsManagerPage() {
           action={
             <Link
               href="/creator-content"
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
+              className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-black"
             >
               Open Blog Builder
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -626,7 +771,7 @@ export default function ContentsManagerPage() {
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-4">
               <Field label="Eyebrow" value={content.blog_eyebrow ?? "Blogs"} onChange={(value) => update("blog_eyebrow", value)} />
-              <Field label="Title" value={content.blog_title ?? "Fresh health tips from the clinic"} onChange={(value) => update("blog_title", value)} />
+              <Field label="Title" value={content.blog_title ?? "Fresh health tips from Doc Kulot"} onChange={(value) => update("blog_title", value)} />
               <Textarea label="Subtitle" rows={4} value={content.blog_subtitle ?? ""} onChange={(value) => update("blog_subtitle", value)} />
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Categories heading" value={content.blog_categories_title ?? "Categories"} onChange={(value) => update("blog_categories_title", value)} />
@@ -644,7 +789,7 @@ export default function ContentsManagerPage() {
             <PreviewCard title="Blog Preview">
               <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.blog_eyebrow ?? "Blogs"}</p>
-                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.blog_title ?? "Fresh health tips from the clinic"}</h3>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.blog_title ?? "Fresh health tips from Doc Kulot"}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{content.blog_subtitle}</p>
                 <div className="mt-5 grid gap-4">
                   <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
@@ -692,11 +837,11 @@ export default function ContentsManagerPage() {
       {activeTab === "videos" ? (
         <EditorSection
           title="Videos"
-          note="Only the landing texts for vlogs and live schedule are editable here. The actual videos and live events stay in Content Creator."
+          note="Only the landing texts for vlogs are editable here. The actual videos stay in Content Creator."
           action={
             <Link
               href="/creator-content"
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white transition hover:bg-yellow-400"
+              className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-black"
             >
               Open Content Creator
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
@@ -708,18 +853,6 @@ export default function ContentsManagerPage() {
               <Field label="Videos eyebrow" value={content.videos_eyebrow ?? "Videos"} onChange={(value) => update("videos_eyebrow", value)} />
               <Field label="Videos title" value={content.videos_title ?? ""} onChange={(value) => update("videos_title", value)} />
               <Textarea label="Videos subtitle" rows={4} value={content.videos_subtitle ?? ""} onChange={(value) => update("videos_subtitle", value)} />
-              <div className="rounded-[1.35rem] border border-yellow-100 bg-yellow-50/60 p-4">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-100 text-yellow-700">
-                  <FaCalendarDays className="h-4 w-4" aria-hidden="true" />
-                </div>
-                <p className="mt-4 text-sm font-black tracking-tight text-black">Live schedule copy</p>
-                <div className="mt-4 space-y-4">
-                  <Field label="Live eyebrow" value={content.live_eyebrow ?? "Live Schedule"} onChange={(value) => update("live_eyebrow", value)} />
-                  <Field label="Live title" value={content.live_title ?? ""} onChange={(value) => update("live_title", value)} />
-                  <Textarea label="Live subtitle" rows={4} value={content.live_subtitle ?? ""} onChange={(value) => update("live_subtitle", value)} />
-                  <Field label="Live CTA label" value={content.live_cta_label ?? "Open live schedule page"} onChange={(value) => update("live_cta_label", value)} />
-                </div>
-              </div>
             </div>
 
             <PreviewCard title="Videos Preview">
@@ -740,16 +873,74 @@ export default function ContentsManagerPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.live_eyebrow ?? "Live Schedule"}</p>
-                  <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.live_title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{content.live_subtitle}</p>
-                  <div className="mt-5 inline-flex rounded-full border border-yellow-200 px-4 py-2 text-sm font-bold text-yellow-700">
-                    {content.live_cta_label ?? "Open live schedule page"}
-                  </div>
+              </div>
+            </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
+      {activeTab === "live" ? (
+        <EditorSection title="Live Schedule" note="Only the landing labels for live events are editable here. Actual event entries stay in Content Creator.">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-4">
+              <Field label="Eyebrow" value={content.live_eyebrow ?? "Live Schedule"} onChange={(value) => update("live_eyebrow", value)} />
+              <Field label="Title" value={content.live_title ?? ""} onChange={(value) => update("live_title", value)} />
+              <Textarea label="Subtitle" rows={4} value={content.live_subtitle ?? ""} onChange={(value) => update("live_subtitle", value)} />
+              <Field label="CTA label" value={content.live_cta_label ?? "Open live schedule page"} onChange={(value) => update("live_cta_label", value)} />
+            </div>
+            <PreviewCard title="Live Preview">
+              <div className="rounded-[1.6rem] border border-yellow-100 bg-white p-5 shadow-sm">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-100 text-yellow-700">
+                  <FaCalendarDays className="h-4 w-4" aria-hidden="true" />
+                </div>
+                <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.live_eyebrow}</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.live_title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{content.live_subtitle}</p>
+                <div className="mt-5 inline-flex rounded-full border border-yellow-200 px-4 py-2 text-sm font-bold text-yellow-700">
+                  {content.live_cta_label}
                 </div>
               </div>
             </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
+      {activeTab === "testimonials" ? (
+        <EditorSection
+          title="Testimonials"
+          note="These minimal testimonial cards now appear after the live schedule on the landing page."
+          action={
+            <button
+              type="button"
+              onClick={addTestimonial}
+              className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm font-bold text-yellow-700 transition hover:bg-yellow-100"
+            >
+              <FaPlus className="h-3 w-3" aria-hidden="true" />
+              Add testimonial
+            </button>
+          }
+        >
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Eyebrow / heading" value={content.testimonials_eyebrow ?? ""} onChange={(value) => update("testimonials_eyebrow", value)} />
+              <Field label="Title" value={content.testimonials_title ?? ""} onChange={(value) => update("testimonials_title", value)} />
+              <Field label="Subtitle" value={content.testimonials_subtitle ?? ""} onChange={(value) => update("testimonials_subtitle", value)} />
+            </div>
+            <div className="grid gap-4 xl:grid-cols-3">
+              {ensureTestimonials(content.testimonials).map((testimonial, index) => (
+                <div key={`${testimonial.name}-${index}`} className="rounded-[1.4rem] border border-yellow-100 bg-slate-50/70 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">Card {index + 1}</p>
+                    <RemoveButton onClick={() => removeTestimonial(index)} title="Remove testimonial" compact />
+                  </div>
+                  <div className="space-y-3">
+                    <Field label="Name" value={testimonial.name} onChange={(value) => updateTestimonial(index, { name: value })} />
+                    <Field label="Title / handle" value={testimonial.title} onChange={(value) => updateTestimonial(index, { title: value })} />
+                    <Textarea label="Quote" rows={5} value={testimonial.quote} onChange={(value) => updateTestimonial(index, { quote: value })} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </EditorSection>
       ) : null}
@@ -791,7 +982,7 @@ export default function ContentsManagerPage() {
                 <button
                   type="button"
                   onClick={() => void handleAddFaq()}
-                  className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400"
+                  className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-black"
                 >
                   <FaPlus className="h-3 w-3" aria-hidden="true" />
                   Save FAQ
@@ -887,6 +1078,71 @@ export default function ContentsManagerPage() {
         </EditorSection>
       ) : null}
 
+      {activeTab === "contact" ? (
+        <EditorSection title="Contact" note="This controls the contact section copy and public social links on the landing page.">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-4">
+              <Field label="Eyebrow" value={content.contact_eyebrow ?? ""} onChange={(value) => update("contact_eyebrow", value)} />
+              <Field label="Title" value={content.contact_title ?? ""} onChange={(value) => update("contact_title", value)} />
+              <Textarea label="Subtitle" rows={4} value={content.contact_subtitle ?? ""} onChange={(value) => update("contact_subtitle", value)} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Facebook label" value={content.contact_facebook_label ?? ""} onChange={(value) => update("contact_facebook_label", value)} />
+                <Field label="Facebook URL" value={content.contact_facebook_url ?? ""} onChange={(value) => update("contact_facebook_url", value)} />
+                <Field label="YouTube label" value={content.contact_youtube_label ?? ""} onChange={(value) => update("contact_youtube_label", value)} />
+                <Field label="YouTube URL" value={content.contact_youtube_url ?? ""} onChange={(value) => update("contact_youtube_url", value)} />
+              </div>
+            </div>
+            <PreviewCard title="Contact Preview">
+              <div className="rounded-[1.6rem] border border-neutral-200 bg-white p-5 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-700">{content.contact_eyebrow}</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.contact_title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{content.contact_subtitle}</p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-black/15 px-4 py-2 text-xs font-bold text-black">{content.contact_facebook_label}</span>
+                  <span className="rounded-full border border-black/15 px-4 py-2 text-xs font-bold text-black">{content.contact_youtube_label}</span>
+                </div>
+              </div>
+            </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
+      {activeTab === "footer" ? (
+        <EditorSection title="Footer" note="This controls the landing page footer copy and simple service/hour lists.">
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="space-y-4">
+              <Textarea label="Brand blurb" rows={4} value={content.footer_brand_blurb ?? ""} onChange={(value) => update("footer_brand_blurb", value)} />
+              <Textarea label="Contact text" rows={4} value={content.footer_contact_text ?? ""} onChange={(value) => update("footer_contact_text", value)} />
+              <Field label="Copyright" value={content.footer_copyright ?? ""} onChange={(value) => update("footer_copyright", value)} />
+            </div>
+            <div className="space-y-4">
+              <StringListEditor
+                label="Footer services"
+                items={content.footer_services ?? []}
+                onAdd={() => patchArray("footer_services", (current) => [...((current as string[]) || []), ""])}
+                onRemove={(index) => patchArray("footer_services", (current) => ((current as string[]) || []).filter((_, itemIndex) => itemIndex !== index))}
+                onChange={(index, value) => patchArray("footer_services", (current) => {
+                  const next = [...((current as string[]) || [])];
+                  next[index] = value;
+                  return next;
+                })}
+              />
+              <StringListEditor
+                label="Footer hours"
+                items={content.footer_hours ?? []}
+                onAdd={() => patchArray("footer_hours", (current) => [...((current as string[]) || []), ""])}
+                onRemove={(index) => patchArray("footer_hours", (current) => ((current as string[]) || []).filter((_, itemIndex) => itemIndex !== index))}
+                onChange={(index, value) => patchArray("footer_hours", (current) => {
+                  const next = [...((current as string[]) || [])];
+                  next[index] = value;
+                  return next;
+                })}
+              />
+            </div>
+          </div>
+        </EditorSection>
+      ) : null}
+
       <div className="sticky bottom-4 z-30 mt-2 flex flex-col items-stretch gap-3 rounded-2xl border border-yellow-100 bg-white/95 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <p className={`text-xs font-semibold ${dirty ? "text-yellow-700" : "text-slate-500"}`}>
           {dirty ? "Unsaved landing-page changes" : "Landing-page content is up to date"}
@@ -904,7 +1160,7 @@ export default function ContentsManagerPage() {
             type="button"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded-full bg-yellow-400 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-black px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save website content"}
           </button>
@@ -935,7 +1191,13 @@ function groupFaqsByCategory(faqs: Faq[]) {
 }
 
 function normalizeLandingContent(content: LandingContent): LandingContent {
+  const hasLegacyAboutDefaults =
+    content.about_title === "Dr. Fatimah Al-Zahra Ditti"
+    || content.doctor_title === "Medical Doctor"
+    || content.doctor_photo_url?.includes("dockulots-removebg-preview.png");
   const normalizedHighlights = ensureAboutHighlights(content.about_highlights);
+  const normalizedProgramSlides = ensureProgramSlides(content.program_slides);
+  const normalizedTestimonials = ensureTestimonials(content.testimonials);
   const normalizedServices = content.services.length
     ? content.services
     : clinicServices.map((service, index) => ({
@@ -945,17 +1207,30 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
         bullets: [],
       }));
 
-  if (
-    content.services.length
-    && JSON.stringify(normalizedHighlights) === JSON.stringify(content.about_highlights ?? [])
-  ) {
-    return content;
-  }
-
   return {
     ...content,
-    about_highlights: normalizedHighlights,
+    about_eyebrow: hasLegacyAboutDefaults ? "About the Doctor" : content.about_eyebrow,
+    about_title: hasLegacyAboutDefaults ? "Dr. Fatimah Al-Zahra T. Ditti (Doc Kulot) | Injector Queen" : content.about_title,
+    about_subtitle: hasLegacyAboutDefaults
+      ? "Doc Kulot is a Family Medicine and Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics."
+      : content.about_subtitle,
+    doctor_name: hasLegacyAboutDefaults ? "Dr. Fatimah Al-Zahra T. Ditti" : content.doctor_name,
+    doctor_title: hasLegacyAboutDefaults ? "Family Medicine | Aesthetic Medicine" : content.doctor_title,
+    doctor_photo_url: hasLegacyAboutDefaults ? null : content.doctor_photo_url,
+    about_highlights: hasLegacyAboutDefaults ? DEFAULT_ABOUT_HIGHLIGHTS : normalizedHighlights,
+    program_slides: normalizedProgramSlides,
+    testimonials: normalizedTestimonials,
     services: normalizedServices,
+    results_eyebrow: content.results_eyebrow ?? "Before and After",
+    results_title: content.results_title ?? "GlowRx and aesthetic results",
+    results_subtitle: content.results_subtitle ?? "Selected GlowRx weight-loss progress and aesthetic before-and-after outcomes.",
+    faq_eyebrow: content.faq_eyebrow ?? "FAQ",
+    faq_title: content.faq_title ?? "Quick answers for common questions for Doc Kulot patients",
+    faq_subtitle: content.faq_subtitle ?? "Frequently asked questions now live on the landing page instead of a separate page.",
+    contact_facebook_label: content.contact_facebook_label ?? "Doc Kulot Facebook",
+    contact_facebook_url: content.contact_facebook_url ?? "https://www.facebook.com/share/1GnJA9tPm2/",
+    contact_youtube_label: content.contact_youtube_label ?? "Doc Kulot YouTube",
+    contact_youtube_url: content.contact_youtube_url ?? "https://www.youtube.com/@DocKulot",
   };
 }
 
@@ -967,6 +1242,41 @@ function ensureAboutHighlights(highlights?: LandingHighlight[] | null) {
     }))
     .filter((item) => item.title || item.body);
   return normalized.length ? normalized : DEFAULT_ABOUT_HIGHLIGHTS;
+}
+
+function ensureProgramSlides(slides?: LandingProgramSlide[] | null) {
+  const normalized = (slides ?? [])
+    .map((item) => ({
+      key: String(item.key ?? "").trim() || "program",
+      name: String(item.name ?? "").trim(),
+      description: String(item.description ?? "").trim(),
+      ctaLabel: String(item.ctaLabel ?? "").trim() || "Book a consultation",
+    }))
+    .filter((item) => item.name || item.description);
+  return normalized.length ? normalized : [
+    {
+      key: "glowrx",
+      name: "GlowRx by Doc Kulot",
+      description: "Medical weight loss and aesthetic wellness programs supervised by Doc Kulot.",
+      ctaLabel: "Book a consultation",
+    },
+    {
+      key: "hormonerx",
+      name: "HormoneRx by Doc Kulot",
+      description: "Personalized care for PCOS, hormonal acne, and women's hormonal health.",
+      ctaLabel: "Book a consultation",
+    },
+  ];
+}
+
+function ensureTestimonials(testimonials?: LandingTestimonial[] | null) {
+  return (testimonials ?? [])
+    .map((item) => ({
+      name: String(item.name ?? "").trim(),
+      title: String(item.title ?? "").trim(),
+      quote: String(item.quote ?? "").trim(),
+    }))
+    .filter((item) => item.name || item.quote);
 }
 
 function EditorSection({
@@ -996,7 +1306,7 @@ function EditorSection({
 
 function PreviewCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <aside className="rounded-[1.7rem] border border-yellow-100 bg-[linear-gradient(180deg,#f8fcff_0%,#edf7ff_100%)] p-4">
+    <aside className="rounded-[1.7rem] border border-neutral-200 bg-[linear-gradient(180deg,#f8f8f7_0%,#f0f0f0_100%)] p-4">
       <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-yellow-700">{title}</p>
       <div className="mt-3">{children}</div>
     </aside>
@@ -1117,7 +1427,7 @@ function ImageUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FaCloudArrowUp className="h-3 w-3" aria-hidden="true" />
           {uploading ? "Uploading..." : currentUrl ? "Replace image" : "Upload image"}

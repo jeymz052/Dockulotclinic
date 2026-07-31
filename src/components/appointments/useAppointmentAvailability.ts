@@ -53,12 +53,15 @@ export function useAppointmentAvailability(
           throw new Error(body.message ?? "Failed to load slot availability.");
         }
 
+        if (controller.signal.aborted) return;
         setData(body);
       } catch (loadError) {
         if ((loadError as Error).name === "AbortError") return;
+        if (controller.signal.aborted) return;
         setError(loadError instanceof Error ? loadError.message : "Failed to load slot availability.");
         setData(null);
       } finally {
+        if (controller.signal.aborted) return;
         setIsLoading(false);
       }
     }

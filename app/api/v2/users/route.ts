@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { logActivity } from "@/src/lib/services/activity-log";
 import type { DbRole, Profile } from "@/src/lib/db/types";
 
-const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine Specialist";
+const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
 
 type CreateUserBody = {
   email: string;

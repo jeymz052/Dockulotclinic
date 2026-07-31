@@ -65,6 +65,8 @@ create table public.patients (
   allergies text,
   medical_history text,
   is_walk_in boolean not null default false,
+  patient_category text not null default 'New'
+    check (patient_category in ('New', 'Regular', 'OldRecord')),
   portal_notes_visible boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -73,11 +75,11 @@ create table public.patients (
 create table public.doctors (
   id uuid primary key references public.profiles(id) on delete cascade,
   slug text not null unique,
-  specialty text not null default 'Family Medicine Specialist',
+  specialty text not null default 'Family Medicine and Aesthetic Medicine',
   license_no text,
   bio text,
-  consultation_fee_clinic numeric(12,2) not null default 350,
-  consultation_fee_online numeric(12,2) not null default 350,
+  consultation_fee_clinic numeric(12,2) not null default 600,
+  consultation_fee_online numeric(12,2) not null default 800,
   default_meeting_link text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -92,11 +94,11 @@ create table public.role_permissions (
 
 create table public.system_settings (
   id boolean primary key default true,
-  clinic_name text not null default 'Doctora Kulot Clinic',
+  clinic_name text not null default 'Doc Kulot',
   email text not null default 'admin@doctora-kulot.test',
   phone text not null default '',
   address text not null default '',
-  online_consultation_fee numeric(12,2) not null default 350,
+  online_consultation_fee numeric(12,2) not null default 800,
   max_patients_per_hour integer not null default 5,
   clinic_open_time time not null default '08:00',
   clinic_close_time time not null default '17:00',
@@ -201,6 +203,7 @@ create table public.online_booking_reservations (
   id uuid primary key default gen_random_uuid(),
   patient_id uuid not null references public.patients(id) on delete cascade,
   doctor_id uuid not null references public.doctors(id) on delete cascade,
+  appointment_type text not null default 'Online' check (appointment_type in ('Clinic', 'Online')),
   appointment_date date not null,
   start_time time not null,
   end_time time not null,
@@ -432,29 +435,29 @@ create table public.landing_content (
   hero_eyebrow text not null default 'Healthcare & Doctor Creator Platform',
   hero_title_line1 text not null default 'Complete care,',
   hero_title_line2 text not null default 'trusted content',
-  hero_subtitle text not null default 'Book clinic visits, online consultations, and follow doctor-created health education.',
+  hero_subtitle text not null default 'Book clinic visits, telemedicine, and procedure-only visits with flexible scheduling and careful follow-up.',
   hero_cta_primary text not null default 'Book Appointment',
   hero_cta_secondary text not null default 'View Services',
   hero_background_url text,
   about_eyebrow text not null default 'About the Doctor',
-  about_title text not null default 'Dr. Fatimah Al-Zahra Ditti',
-  about_subtitle text not null default 'Medical Doctor focused on family medicine, women''s health, preventive care, and everyday primary care support for patients and families.',
-  doctor_name text not null default 'Dr. Fatimah Al-Zahra Ditti',
-  doctor_title text not null default 'Medical Doctor',
+  about_title text not null default 'Dr. Fatimah Al-Zahra T. Ditti',
+  about_subtitle text not null default 'Family Medicine and Aesthetic Medicine doctor focused on telemedicine, women''s health, procedure support, and practical family care.',
+  doctor_name text not null default 'Dr. Fatimah Al-Zahra T. Ditti',
+  doctor_title text not null default 'Family Medicine | Aesthetic Medicine',
   about_highlights jsonb not null default '[
-    {"title":"Specialty","body":"Family Medicine"},
-    {"title":"Experience","body":"8 Years of clinical practice"},
-    {"title":"Subspecialty","body":"PCOS Management and Weightloss Management"},
-    {"title":"Care Focus","body":"Primary care, prevention, and follow-up support"},
-    {"title":"Education","body":"Silliman University, 2017 | Zamboanga City Medical Center, 2021"}
+    {"title":"Specialty","body":"Family Medicine and Aesthetic Medicine"},
+    {"title":"Medical School","body":"Silliman University Medical School, 2017"},
+    {"title":"Residency","body":"Zamboanga City Medical Center"},
+    {"title":"Pre-Med","body":"BS Nursing, Western Mindanao State University"},
+    {"title":"Care Focus","body":"Telemedicine, women''s health, weight loss, and procedures"}
   ]'::jsonb,
   doctor_photo_url text,
   feature_1_title text not null default 'Specialty',
-  feature_1_body text not null default 'Family Medicine',
-  feature_2_title text not null default 'Experience',
-  feature_2_body text not null default '8 Years',
-  feature_3_title text not null default 'Subspecialty',
-  feature_3_body text not null default 'PCOS Management and Weightloss Management',
+  feature_1_body text not null default 'Family Medicine and Aesthetic Medicine',
+  feature_2_title text not null default 'Medical School',
+  feature_2_body text not null default 'Silliman University Medical School, 2017',
+  feature_3_title text not null default 'Residency',
+  feature_3_body text not null default 'Zamboanga City Medical Center',
   cta_title text not null default 'Ready to schedule?',
   cta_subtitle text not null default 'Choose a service, date, and time.',
   cta_button_label text not null default 'Book Appointment',
@@ -473,15 +476,15 @@ create table public.landing_content (
   booking_title text not null default 'Book an appointment',
   booking_subtitle text not null default 'Select service, date, and time.',
   contact_eyebrow text not null default 'Contact',
-  contact_title text not null default 'Contact Doctora Kulot Clinic',
+  contact_title text not null default 'Contact Doc Kulot',
   contact_subtitle text not null default 'Ask about appointments, services, consultations, or collaborations.',
   contact_info_title text not null default 'Contact Info',
   contact_hours_label text not null default 'Office Hours: Mon - Fri, 8:00 AM - 5:00 PM',
-  footer_brand_blurb text not null default 'Expert healthcare with Doctora Kulot, MD.',
+  footer_brand_blurb text not null default 'Expert healthcare from Dr. Fatimah Al-Zahra T. Ditti.',
   footer_services jsonb not null default '[]'::jsonb,
   footer_hours jsonb not null default '[]'::jsonb,
   footer_contact_text text not null default 'Use the contact page to send a message.',
-  footer_copyright text not null default '© 2026 Doctora Kulot Clinic. All rights reserved.',
+  footer_copyright text not null default '© 2026 Doc Kulot. All rights reserved.',
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles(id) on delete set null,
   constraint landing_content_singleton check (id)
@@ -757,28 +760,42 @@ insert into public.landing_content (id) values (true)
 on conflict (id) do nothing;
 
 insert into public.system_settings (id, clinic_name, email, phone, address, online_consultation_fee, max_patients_per_hour)
-values (true, 'Doctora Kulot Clinic', 'admin@doctora-kulot.test', '', '', 350, 5)
+values (true, 'Doc Kulot', 'info@dockulot.clinic', '+63 917 154 4754', 'Zamboanga City, Zamboanga del Sur', 800, 5)
 on conflict (id) do nothing;
 
 insert into public.clinic_services (code, name, category, description, service_mode, base_price, sort_order) values
-  ('GEN-CONSULT', 'General Consultation', 'Consultation', 'General clinic consultation', 'Clinic', 350, 1),
-  ('ONLINE-CONSULT', 'Online Consultation', 'Consultation', 'Virtual consultation for eligible concerns', 'Online', 350, 2),
-  ('FOLLOW-UP', 'Follow-up Checkup', 'Consultation', 'Follow-up visit and progress review', 'Both', 350, 3),
+  ('GEN-CONSULT', 'General Consultation', 'Consultation', 'First-time clinic consultation', 'Clinic', 600, 1),
+  ('ONLINE-CONSULT', 'Telemedicine Services', 'Consultation', 'Weight loss management, PCOS management, chronic disease review, lab interpretation, and prescription refill', 'Online', 800, 2),
+  ('FOLLOW-UP', 'Clinic Follow-up Consultation', 'Consultation', 'Regular follow-up visit and progress review', 'Clinic', 300, 3),
   ('MED-CERT', 'Medical Certificate Request', 'Document', 'Medical certificate after doctor approval', 'Clinic', 0, 4),
   ('LAB-REF', 'Laboratory Referral', 'Referral', 'Laboratory referral based on assessment', 'Both', 0, 5),
-  ('RX-RENEW', 'Prescription Renewal', 'Prescription', 'Medication renewal review', 'Online', 350, 6),
-  ('HEALTH-COACH', 'Health Coaching', 'Wellness', 'Health coaching and adherence support', 'Both', 350, 7),
-  ('WELLNESS', 'Wellness Consultation', 'Wellness', 'Lifestyle and wellness consultation', 'Both', 350, 8)
+  ('RX-RENEW', 'Prescription Refill', 'Prescription', 'Medication refill review', 'Online', 800, 6),
+  ('HEALTH-COACH', 'Women''s Health and Aesthetic Care', 'Wellness', 'PCOS, acne, hormonal acne, and weight loss support', 'Both', 800, 7),
+  ('WELLNESS', 'Aesthetic Procedures', 'Wellness', 'Botox, Mesolipo, fillers, threads, sclerotherapy, GLP initiation, mole surgery, wart and skin tag removal', 'Clinic', 800, 8)
 on conflict (code) do nothing;
 
 insert into public.pricing (code, name, category, price, service_id)
 select code, name, category, base_price, id from public.clinic_services
 on conflict (code) do nothing;
 
+insert into public.pricing (code, name, category, price)
+values
+  ('PROC-BOTOX', 'Botox', 'Procedure', 200),
+  ('PROC-MESOLIPO', 'Mesolipo', 'Procedure', 4900),
+  ('PROC-FILLERS', 'Fillers', 'Procedure', 4999),
+  ('PROC-SCLEROTHERAPY', 'Sclerotherapy', 'Procedure', 5999),
+  ('PROC-WART-REMOVAL', 'Wart Removal', 'Procedure', 2999),
+  ('PROC-MOLE-SURGERY', 'Mole Surgery', 'Procedure', 6999)
+on conflict (code) do update
+set
+  name = excluded.name,
+  category = excluded.category,
+  price = excluded.price;
+
 insert into public.faqs (category, question, answer, sort_order) values
   ('Appointment FAQ', 'How to book an appointment?', 'Open the booking page, choose your service, select date and time, and submit your details.', 1),
-  ('Clinic Services FAQ', 'Do you accept walk-in patients?', 'Walk-ins can be encoded by staff, but scheduled patients are prioritized.', 2),
-  ('Prescription FAQ', 'How can I access my prescription?', 'Log in to the patient portal and open your consultation or prescription history.', 3),
-  ('Online Consultation FAQ', 'How do I book an online consultation?', 'Choose online consultation during booking and wait for confirmation and meeting details.', 4),
+  ('Clinic Services FAQ', 'Do you accept walk-in patients?', 'Walk-ins can be encoded by staff, but procedure days and limited clinic slots still follow the doctor''s posted schedule.', 2),
+  ('Prescription FAQ', 'How can I access my prescription?', 'Log in to the patient portal and open your consultation or prescription history. Prescriptions can be viewed, printed, downloaded, or emailed as PDF.', 3),
+  ('Online Consultation FAQ', 'How do I book an online consultation?', 'Choose telemedicine during booking and wait for confirmation and meeting details.', 4),
   ('Content FAQ', 'Where can I watch doctor videos?', 'Open the Videos page for educational videos and live replays.', 5)
 on conflict do nothing;

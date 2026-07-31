@@ -111,7 +111,7 @@ const ROUTE_ACCESS_RULES: RouteAccessRule[] = [
     allowedRoles: ["SUPER_ADMIN", "DOCTOR"],
   },
   {
-    prefixes: ["/inventory", "/inquiries", "/faq-content"],
+    prefixes: ["/inquiries", "/faq-content"],
     allowedRoles: ["SUPER_ADMIN", "SECRETARY", "DOCTOR"],
   },
   {

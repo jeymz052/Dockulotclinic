@@ -16,8 +16,13 @@ export type PatientRecordItem = {
   dateOfBirth: string;
   gender: string;
   address: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
   familyHistory: string;
+  allergies: string;
+  medicalHistory: string;
   isWalkIn: boolean;
+  patientCategory: "New" | "Regular" | "OldRecord";
   status: "Active" | "Inactive";
 };
 
@@ -88,11 +93,11 @@ export type SystemSettings = {
 // All clinic data now lives in Supabase. Only INITIAL_SYSTEM_SETTINGS remains
 // as an in-memory default returned if the system_settings row is missing.
 export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
-  clinicName: "Doctora Kulot Clinic",
-  email: "admin@doctora-kulot.test",
-  phone: "+1 (555) 123-4567",
-  address: "123 Medical Avenue",
-  onlineConsultationFee: 120,
+  clinicName: "Doc Kulot",
+  email: "info@dockulot.clinic",
+  phone: "+63 917 154 4754",
+  address: "Zamboanga City, Zamboanga del Sur",
+  onlineConsultationFee: 800,
   maxPatientsPerHour: 5,
   clinicOpenTime: "08:00",
   clinicCloseTime: "17:00",

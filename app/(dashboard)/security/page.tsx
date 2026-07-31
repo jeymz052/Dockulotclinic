@@ -136,7 +136,7 @@ export default function SecurityPage() {
             type="button"
             onClick={downloadBackup}
             disabled={!canExportBackups || isDownloading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
           >
             <FaCloudArrowDown className="h-4 w-4" aria-hidden="true" />
             {isDownloading ? "Preparing..." : "Export Backup"}
@@ -178,7 +178,7 @@ export default function SecurityPage() {
             {[
               ["Doctor", "Clinical workflow, schedules, consultations, reports, backup export"],
               ["Admin", "Full user, settings, security, and system configuration"],
-              ["Staff", "Appointments, patients, POS billing, inventory, reports, logs"],
+              ["Staff", "Appointments, patients, POS billing, reports, logs"],
               ["Patient", "Own bookings, payments, prescriptions, files, and profile"],
             ].map(([label, detail]) => (
               <div key={label} className="grid gap-1 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[120px_1fr]">

@@ -12,10 +12,10 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-64 rounded bg-slate-100 animate-pulse" />
+        <div className="h-8 w-64 rounded bg-neutral-100 animate-pulse" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-32 rounded-2xl bg-slate-100 animate-pulse" />
+            <div key={i} className="h-32 rounded-2xl bg-neutral-100 animate-pulse" />
           ))}
         </div>
       </div>

@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import type { IconType } from "react-icons";
 import {
   FaArrowPointer,
-  FaBoxesStacked,
   FaCalendarCheck,
   FaCalendarDay,
   FaCalendarXmark,
@@ -42,7 +41,6 @@ type VolumeReport = { total_patients: number };
 type AppointmentStatusSummary = { total: number; completed: number; cancelled: number };
 type SalesSnapshot = { daily: number; monthly: number; pos_daily: number; pos_monthly: number };
 type PosSummary = { invoices: number; paid_invoices: number; paid_total: number; average_ticket: number; items_sold: number };
-type InventorySummary = { products: number; low_stock: number; expiring_soon: number; stock_value: number; stock_cost: number };
 type ContentReportItem = {
   id: string;
   title: string;
@@ -66,7 +64,6 @@ type ReportsPayload = {
   appointment_summary: AppointmentStatusSummary;
   sales_summary: SalesSnapshot;
   pos_summary: PosSummary;
-  inventory_summary: InventorySummary;
   daily_trends: DailyTrendPoint[];
   top_blogs: ContentReportItem[];
   top_videos: ContentReportItem[];
@@ -197,21 +194,10 @@ ${worksheet("Clinic Summary", [
   ["Monthly Sales", data.sales_summary.monthly],
   ["POS Collections", data.pos_summary.paid_total],
   ["POS Invoices", data.pos_summary.invoices],
-  ["Inventory Products", data.inventory_summary.products],
-  ["Low Stock Alert", data.inventory_summary.low_stock],
-  ["Expiring Soon", data.inventory_summary.expiring_soon],
 ])}
 ${worksheet("Sales Trend", [
   ["Date", "Revenue", "Appointments", "Patients"],
   ...data.daily_trends.map((row) => [row.date, row.revenue, row.appointments, row.patients]),
-])}
-${worksheet("Inventory Summary", [
-  ["Metric", "Value"],
-  ["Products Tracked", data.inventory_summary.products],
-  ["Low Stock Alert", data.inventory_summary.low_stock],
-  ["Expiring Soon", data.inventory_summary.expiring_soon],
-  ["Stock Value", data.inventory_summary.stock_value],
-  ["Stock Cost", data.inventory_summary.stock_cost],
 ])}
 ${worksheet("Content Summary", [
   ["Metric", "Value"],
@@ -314,10 +300,6 @@ function buildPdfLines(data: ReportsPayload, from: string, to: string) {
     ["Monthly sales", `PHP ${formatMoneyPdf(data.sales_summary.monthly)}`],
     ["POS collections", `PHP ${formatMoneyPdf(data.pos_summary.paid_total)}`],
     ["POS paid invoices", data.pos_summary.paid_invoices],
-    ["Inventory products", data.inventory_summary.products],
-    ["Low stock alert", data.inventory_summary.low_stock],
-    ["Expiring soon", data.inventory_summary.expiring_soon],
-    ["Stock value", `PHP ${formatMoneyPdf(data.inventory_summary.stock_value)}`],
   ], [34, 28]);
 
   appendPdfTable(lines, "Sales Trend", ["Date", "Revenue", "Appts", "Patients"], data.daily_trends.slice(0, 22).map((row) => [
@@ -522,13 +504,6 @@ export default function ReportsPage() {
         accent: KPI_ACCENTS[6],
         icon: FaChartLine,
       },
-      {
-        label: "Inventory Reports",
-        value: loading ? "..." : String(data?.inventory_summary.products ?? 0),
-        hint: `${data?.inventory_summary.low_stock ?? 0} low stock items`,
-        accent: KPI_ACCENTS[7],
-        icon: FaBoxesStacked,
-      },
     ],
     [data, loading],
   );
@@ -611,23 +586,6 @@ export default function ReportsPage() {
     [data],
   );
 
-  const inventoryData = useMemo(
-    () => [
-      { label: "Products", value: data?.inventory_summary.products ?? 0 },
-      { label: "Low Stock", value: data?.inventory_summary.low_stock ?? 0 },
-      { label: "Expiring", value: data?.inventory_summary.expiring_soon ?? 0 },
-    ],
-    [data],
-  );
-
-  const inventoryValueData = useMemo(
-    () => [
-      { label: "Stock Value", value: data?.inventory_summary.stock_value ?? 0 },
-      { label: "Stock Cost", value: data?.inventory_summary.stock_cost ?? 0 },
-    ],
-    [data],
-  );
-
   const blogChartData = useMemo(
     () => (data?.top_blogs ?? []).slice(0, 5).map((row) => ({
       name: shorten(row.title),
@@ -657,12 +615,11 @@ export default function ReportsPage() {
                 Clinic performance, content reach, and service demand
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-50/95">
-                A calm reporting workspace for appointments, sales, POS, inventory, patient count, content views, website traffic, and booking intent.
+                A calm reporting workspace for appointments, sales, POS, patient count, content views, website traffic, and booking intent.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <QuickLink href="/appointments" label="Appointments" />
                 <QuickLink href="/payments/pos" label="POS" />
-                <QuickLink href="/inventory" label="Inventory" />
                 <QuickLink href="/contents" label="Content" />
               </div>
             </div>
@@ -848,56 +805,6 @@ export default function ReportsPage() {
           )}
         </Panel>
 
-        <Panel title="Inventory Reports" subtitle="Stock summary focused on the required inventory analytics">
-          {loading ? (
-            <LoadingBlock className="h-[360px]" />
-          ) : (
-            <div className="space-y-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <InfoTile label="Products tracked" value={String(data?.inventory_summary.products ?? 0)} />
-                <InfoTile label="Low stock alert" value={String(data?.inventory_summary.low_stock ?? 0)} />
-                <InfoTile label="Expiring soon" value={String(data?.inventory_summary.expiring_soon ?? 0)} />
-                <InfoTile label="Stock value" value={formatMoney(data?.inventory_summary.stock_value ?? 0)} />
-              </div>
-              <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-                <ChartShell title="Inventory Health" caption="Product count against low-stock and expiring-soon alerts">
-                  <div className="h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={inventoryData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-                        <CartesianGrid stroke="#dbeafe" strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" stroke="#64748b" fontSize={12} />
-                        <YAxis allowDecimals={false} stroke="#64748b" fontSize={12} />
-                        <Tooltip formatter={(value) => `${numberFromChartValue(value)} items`} />
-                        <Bar dataKey="value" radius={[12, 12, 0, 0]}>
-                          {inventoryData.map((row, index) => (
-                            <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </ChartShell>
-                <ChartShell title="Inventory Valuation" caption="Selling value compared with recorded stock cost">
-                  <div className="h-[280px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={inventoryValueData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                        <CartesianGrid stroke="#dbeafe" strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="label" stroke="#64748b" fontSize={12} />
-                        <YAxis stroke="#64748b" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
-                        <Tooltip formatter={(value) => formatMoney(numberFromChartValue(value))} />
-                        <Bar dataKey="value" radius={[12, 12, 0, 0]}>
-                          {inventoryValueData.map((row, index) => (
-                            <Cell key={row.label} fill={BAR_COLORS[(index + 1) % BAR_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </ChartShell>
-              </div>
-            </div>
-          )}
-        </Panel>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]">

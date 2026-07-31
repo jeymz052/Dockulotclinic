@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -32,12 +32,12 @@ const INITIAL_CONSENTS: Record<ConsentKey, boolean> = {
 
 const POLICY_CONTENT = {
   terms: {
-    title: "Doctora Kulot Clinic Terms and Conditions",
+    title: "Doc Kulot Terms and Conditions",
     sections: [
       {
         heading: "1. Appointment and Account Information",
         body:
-          "By creating an account with Doctora Kulot Clinic, you confirm that the personal details you provide are accurate, complete, and updated. You are responsible for keeping your login credentials secure and for any activity made through your account.",
+          "By creating an account with Doc Kulot, you confirm that the personal details you provide are accurate, complete, and updated. You are responsible for keeping your login credentials secure and for any activity made through your account.",
       },
       {
         heading: "2. Use of Clinic Services",
@@ -47,7 +47,7 @@ const POLICY_CONTENT = {
       {
         heading: "3. Medical and Administrative Limitations",
         body:
-          "Booking an appointment through the website does not replace emergency care or professional medical advice. Doctora Kulot Clinic may reschedule, adjust, or decline appointments when necessary because of doctor availability, emergencies, or incomplete patient information.",
+          "Booking an appointment through the website does not replace emergency care or professional medical advice. Doc Kulot may reschedule, adjust, or decline appointments when necessary because of doctor availability, emergencies, or incomplete patient information.",
       },
       {
         heading: "4. Privacy and Records",
@@ -57,12 +57,12 @@ const POLICY_CONTENT = {
       {
         heading: "5. Acceptance of Policies",
         body:
-          "By proceeding with account registration, you acknowledge that you have read and accepted these terms together with the clinic cancellation policy. Doctora Kulot Clinic may update these terms from time to time, and continued use of the platform means you accept the latest version.",
+          "By proceeding with account registration, you acknowledge that you have read and accepted these terms together with the clinic cancellation policy. Doc Kulot may update these terms from time to time, and continued use of the platform means you accept the latest version.",
       },
     ],
   },
   cancellation: {
-    title: "Doctora Kulot Clinic Cancellation Policy",
+    title: "Doc Kulot Cancellation Policy",
     sections: [
       {
         heading: "1. Notice of Cancellation",
@@ -72,7 +72,7 @@ const POLICY_CONTENT = {
       {
         heading: "2. Late Cancellation and No-Show",
         body:
-          "Repeated late cancellations or failure to attend a scheduled appointment without notice may affect future booking privileges. Doctora Kulot Clinic may flag or review accounts that repeatedly reserve slots without completing appointments.",
+          "Repeated late cancellations or failure to attend a scheduled appointment without notice may affect future booking privileges. Doc Kulot may flag or review accounts that repeatedly reserve slots without completing appointments.",
       },
       {
         heading: "3. Online Booking and Payment-Related Appointments",
@@ -82,7 +82,7 @@ const POLICY_CONTENT = {
       {
         heading: "4. Clinic-Initiated Changes",
         body:
-          "Doctora Kulot Clinic may reschedule or cancel appointments when required due to doctor emergencies, unforeseen schedule changes, technical issues, or patient safety concerns. When possible, the clinic will notify affected patients using the contact details on file.",
+          "Doc Kulot may reschedule or cancel appointments when required due to doctor emergencies, unforeseen schedule changes, technical issues, or patient safety concerns. When possible, the clinic will notify affected patients using the contact details on file.",
       },
       {
         heading: "5. Patient Responsibility",
@@ -259,7 +259,7 @@ export default function RegisterPage() {
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
       <Image
         src="/images/dockulotbgs.png"
-        alt="Clinic consultation background"
+        alt="Doc Kulot consultation background"
         fill
         priority
         unoptimized
@@ -269,12 +269,12 @@ export default function RegisterPage() {
       />
       <div className="absolute inset-0 bg-black/60" />
 
-      <section className="relative z-10 w-full max-w-[400px] rounded-2xl border border-yellow-200 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
+      <section className="relative z-10 w-full max-w-[400px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
         <div className="relative z-10">
           <div className="flex justify-center mb-2">
             <Image
               src="/images/dockulotslogonobg.png"
-              alt="Doctora Kulot Clinic Logo"
+              alt="Doc Kulot Logo"
               width={669}
               height={373}
               priority
@@ -285,7 +285,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-1 text-center" style={{ fontFamily: "Inter, Segoe UI, Arial, sans-serif" }}>
-            <p className="text-lg font-extrabold text-slate-900">Create Account</p>
+            <p className="text-lg font-extrabold text-black">Create Account</p>
           </div>
 
           <form className="space-y-1.5" onSubmit={handleSubmit}>
@@ -294,7 +294,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.fullName}
                 onChange={(event) => updateField("fullName", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                 placeholder="Juan Dela Cruz"
                 minLength={2}
                 maxLength={80}
@@ -307,8 +307,8 @@ export default function RegisterPage() {
 
             <Field label="Phone">
               <div className="relative mt-0.5">
-                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-slate-500">
-                  <div className="flex h-5 w-7 items-center justify-center overflow-hidden rounded-[3px] border border-slate-300 shadow-sm">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-black/60">
+                  <div className="flex h-5 w-7 items-center justify-center overflow-hidden rounded-[3px] border border-black/15 shadow-sm">
                     <PhilippineFlagIcon />
                   </div>
                   <span className="text-sm font-medium">+63</span>
@@ -317,7 +317,7 @@ export default function RegisterPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={(event) => updateField("phone", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-24 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                  className="w-full rounded-lg border border-black/10 bg-white py-2 pl-24 pr-3 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                   placeholder="912 345 6789"
                   inputMode="tel"
                   title="Use PH format (+639XXXXXXXXX or 09XXXXXXXXX) or international +countrycode."
@@ -332,8 +332,8 @@ export default function RegisterPage() {
                 type="email"
                 value={formData.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
-                placeholder="name@clinicmail.com"
+                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                placeholder="name@example.com"
                 autoComplete="email"
                 required
               />
@@ -346,7 +346,7 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(event) => updateField("password", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-11 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-11 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                   placeholder="••••••••"
                   minLength={8}
                   title="Use at least 8 characters with uppercase, lowercase, number, and special character."
@@ -355,7 +355,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-yellow-600"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-black/60 hover:text-black"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -379,7 +379,7 @@ export default function RegisterPage() {
                   value={formData.dateOfBirth}
                   onChange={(event) => updateField("dateOfBirth", event.target.value)}
                   max={maxBirthDate}
-                  className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                   required
                 />
                 {fieldErrors.dateOfBirth ? <FieldError message={fieldErrors.dateOfBirth} /> : null}
@@ -390,16 +390,16 @@ export default function RegisterPage() {
                   <select
                     value={formData.gender}
                     onChange={(event) => updateField("gender", event.target.value)}
-                     className={`w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200 ${
-                       formData.gender ? "text-slate-900" : "text-slate-400"
+                     className={`w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 ${
+                       formData.gender ? "text-black" : "text-black/35"
                      }`}
                     required
                   >
-                    <option value="" className="bg-white text-slate-900">
+                    <option value="" className="bg-white text-black">
                       Select Gender
                     </option>
                     {GENDER_OPTIONS.map((option) => (
-                      <option key={option} value={option} className="bg-white text-slate-900">
+                        <option key={option} value={option} className="bg-white text-black">
                         {option}
                       </option>
                     ))}
@@ -408,7 +408,7 @@ export default function RegisterPage() {
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
                     fill="none"
-                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60"
                     aria-hidden="true"
                   >
                     <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -423,7 +423,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.address}
                 onChange={(event) => updateField("address", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-yellow-200"
+                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
                 placeholder="123 Main Street, City"
                 required
               />
@@ -431,20 +431,20 @@ export default function RegisterPage() {
             </Field>
 
             <div className="space-y-1.5 pt-0.5">
-              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-slate-600">
+              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-black/70">
                 <input
                   type="checkbox"
                   checked={consents.termsAccepted}
                   onChange={(event) => updateConsent("termsAccepted", event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 bg-white accent-amber-500"
+                  className="mt-0.5 h-4 w-4 rounded border-black/20 bg-white accent-black"
                   required
                 />
                 <span>
-                  I agree with Doctora Kulot Clinic{" "}
+                  I agree with Doc Kulot{" "}
                   <button
                     type="button"
                     onClick={() => setActiveModal("terms")}
-                    className="font-semibold text-yellow-600 underline underline-offset-2 hover:text-yellow-700"
+                    className="font-semibold text-black/80 underline underline-offset-2 hover:text-black"
                   >
                     terms and conditions
                   </button>
@@ -452,12 +452,12 @@ export default function RegisterPage() {
               </label>
               {fieldErrors.termsAccepted ? <FieldError message={fieldErrors.termsAccepted} /> : null}
 
-              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-slate-600">
+              <label className="flex items-start gap-2 text-[11px] font-medium leading-snug text-black/70">
                 <input
                   type="checkbox"
                   checked={consents.cancellationAccepted}
                   onChange={(event) => updateConsent("cancellationAccepted", event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 bg-white accent-amber-500"
+                  className="mt-0.5 h-4 w-4 rounded border-black/20 bg-white accent-black"
                   required
                 />
                 <span>
@@ -465,7 +465,7 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setActiveModal("cancellation")}
-                    className="font-semibold text-yellow-600 underline underline-offset-2 hover:text-yellow-700"
+                    className="font-semibold text-black/80 underline underline-offset-2 hover:text-black"
                   >
                     cancellation policy
                   </button>
@@ -478,8 +478,8 @@ export default function RegisterPage() {
               <div
                 className={`rounded-xl px-4 py-3 text-sm ${
                   isSuccessFeedback(feedback)
-                    ? "border border-yellow-300 bg-yellow-50 text-yellow-800"
-                    : "border border-yellow-300 bg-yellow-50 text-yellow-800"
+                    ? "border border-gold-200 bg-gold-50 text-gold-800"
+                    : "border border-black/10 bg-white text-black"
                 }`}
               >
                 {feedback}
@@ -489,7 +489,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-amber-500 to-yellow-400 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-yellow-500/20 transition hover:from-amber-600 hover:to-amber-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:from-amber-700 disabled:to-amber-500 disabled:text-amber-200"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-black px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white shadow-lg shadow-black/20 transition hover:bg-neutral-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral-500 disabled:text-neutral-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -501,9 +501,9 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-1.5 text-center">
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-black/65">
               Already have an account?{" "}
-              <Link href="/login" className="text-yellow-600 font-semibold hover:text-yellow-700 hover:underline">
+              <Link href="/login" className="text-black/80 font-semibold hover:text-black hover:underline">
                 Sign In
               </Link>
             </p>
@@ -534,19 +534,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function PhilippineFlagIcon() {
   return (
     <svg viewBox="0 0 28 20" className="h-full w-full" aria-hidden="true">
-      <rect width="28" height="10" fill="#1D4ED8" />
-      <rect y="10" width="28" height="10" fill="#DC2626" />
+      <rect width="28" height="10" fill="#0038A8" />
+      <rect y="10" width="28" height="10" fill="#CE1126" />
       <polygon points="0,0 12,10 0,20" fill="#FFFFFF" />
-      <circle cx="4.4" cy="10" r="2.3" fill="#FACC15" />
-      <circle cx="2.2" cy="2.7" r="1" fill="#FACC15" />
-      <circle cx="2.2" cy="17.3" r="1" fill="#FACC15" />
-      <circle cx="9.2" cy="10" r="1" fill="#FACC15" />
+      <circle cx="4.4" cy="10" r="2.3" fill="#FCD116" />
+      <circle cx="2.2" cy="2.7" r="1" fill="#FCD116" />
+      <circle cx="2.2" cy="17.3" r="1" fill="#FCD116" />
+      <circle cx="9.2" cy="10" r="1" fill="#FCD116" />
     </svg>
   );
 }
 
 function FieldError({ message }: { message: string }) {
-  return <p className="mt-1 text-[10px] text-yellow-300">{message}</p>;
+  return <p className="mt-1 text-[10px] text-black/55">{message}</p>;
 }
 
 function PolicyModalCard({
@@ -560,32 +560,32 @@ function PolicyModalCard({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-xl rounded-[28px] border border-yellow-300/55 bg-white p-5 shadow-2xl shadow-black/30">
+      <div className="w-full max-w-xl rounded-[28px] border border-black/10 bg-white p-5 shadow-2xl shadow-black/30">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-400/85">Policy Details</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-700">Policy Details</p>
             <h2 className="mt-1 text-lg font-bold text-slate-900">{title}</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-600">Please review this policy before continuing with registration.</p>
+            <p className="mt-1 text-xs leading-5 text-black/65">Please review this policy before continuing with registration.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-slate-900"
+            className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold text-black/75 transition hover:border-gold-300 hover:bg-gold-50 hover:text-black"
           >
             Close
           </button>
         </div>
 
-        <div className="mt-4 h-px w-full bg-linear-to-r from-yellow-300/0 via-amber-300/45 to-yellow-300/0" />
+        <div className="mt-4 h-px w-full bg-linear-to-r from-transparent via-gold-200 to-transparent" />
 
         <div className="policy-scroll mt-4 max-h-[65vh] space-y-3 overflow-y-auto pr-1">
           {sections.map((section) => (
             <div
               key={section.heading}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5"
+              className="rounded-2xl border border-black/10 bg-white p-3.5"
             >
-              <h3 className="text-sm font-semibold text-yellow-700">{section.heading}</h3>
-              <p className="mt-1.5 text-xs leading-5 text-slate-700">{section.body}</p>
+              <h3 className="text-sm font-semibold text-black">{section.heading}</h3>
+              <p className="mt-1.5 text-xs leading-5 text-black/70">{section.body}</p>
             </div>
           ))}
         </div>

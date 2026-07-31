@@ -274,7 +274,7 @@ export default function SchedulesPage() {
   const activeScheduleCount = schedules.filter((item) => item.is_active).length;
   const weeklyHoursText = `${settings.clinicOpenTime} - ${settings.clinicCloseTime}`;
   const selectedDoctorName = doctorDisplayName(selectedDoctor);
-  const selectedDoctorSpecialty = selectedDoctor?.specialty ?? "Family Medicine Specialist";
+  const selectedDoctorSpecialty = selectedDoctor?.specialty ?? "Family Medicine and Aesthetic Medicine";
   const totalConfiguredMinutes = schedules
     .filter((item) => item.is_active)
     .reduce((sum, item) => {
@@ -432,7 +432,7 @@ export default function SchedulesPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_30%),linear-gradient(135deg,#f5fbff_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(133,77,14,0.10)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_30%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_74%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Schedule Management</p>
@@ -573,7 +573,7 @@ export default function SchedulesPage() {
               <button
                 type="submit"
                 disabled={!canManageClinicHours || isSavingHours || settingsLoading}
-                className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSavingHours ? "Saving..." : "Save Reference Hours"}
               </button>
@@ -603,7 +603,7 @@ export default function SchedulesPage() {
             ) : null}
           </div>
 
-          <div className="mt-5 rounded-[1.6rem] border border-yellow-100 bg-[linear-gradient(135deg,#fef3c7_0%,#effcf3_100%)] p-4">
+          <div className="mt-5 rounded-[1.6rem] border border-yellow-100 bg-[linear-gradient(135deg,#f5f5f5_0%,#effcf3_100%)] p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Editing {nextFormDayLabel}</p>
@@ -717,7 +717,7 @@ export default function SchedulesPage() {
               <button
                 type="submit"
                 disabled={!canManageSchedule || isSavingSchedule || !selectedDoctorId}
-                className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSavingSchedule ? "Saving..." : editingId ? "Update Schedule" : "Save Schedule"}
               </button>
@@ -776,9 +776,9 @@ export default function SchedulesPage() {
                     key={day}
                     className={`rounded-3xl border p-4 transition ${
                       hasActive
-                        ? "border-yellow-200 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_100%)] shadow-[0_10px_24px_rgba(133,77,14,0.08)]"
+                        ? "border-yellow-200 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] shadow-[0_10px_24px_rgba(17,17,17,0.08)]"
                         : daySchedules.length
-                          ? "border-yellow-200 bg-[linear-gradient(180deg,#fffdf7_0%,#fffbeb_100%)]"
+                          ? "border-yellow-200 bg-[linear-gradient(180deg,#fffdf7_0%,#fafafa_100%)]"
                           : "border-slate-200 bg-slate-50/85"
                     }`}
                   >

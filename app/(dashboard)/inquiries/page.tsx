@@ -115,7 +115,7 @@ export default function InquiriesPage() {
         (payload.doctors ?? []).map((doctor) => ({
           id: doctor.id,
           name: doctor.name ?? doctor.full_name ?? "Doctor",
-          specialty: doctor.specialty ?? "Family Medicine Specialist",
+          specialty: doctor.specialty ?? "Family Medicine and Aesthetic Medicine",
         })),
       );
     }
@@ -326,7 +326,7 @@ export default function InquiriesPage() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => updateInquiry(item.id, { reply: replyById[item.id] ?? "", status: "Replied" })}
-                      className="rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-white"
+                      className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white"
                     >
                       Save reply
                     </button>

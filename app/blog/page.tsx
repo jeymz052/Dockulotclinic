@@ -7,12 +7,12 @@ export default async function BlogPage() {
   const posts = await getPublishedContentPosts(24);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-black">
+    <main className="min-h-screen bg-neutral-50 text-black">
       <PublicHeader />
 
       <section className="mx-auto max-w-7xl px-4 pt-20 pb-10 sm:px-6 sm:pt-24 sm:pb-14">
-        <div className="mb-8 border-b border-slate-200 pb-4 text-sm font-semibold text-slate-500">
-          <span className="text-slate-700">Blog</span>
+        <div className="mb-8 border-b border-neutral-200 pb-4 text-sm font-semibold text-neutral-500">
+          <span className="text-neutral-700">Blog</span>
         </div>
         <BlogIndex posts={posts} categories={contentCategories} mode="page" />
       </section>

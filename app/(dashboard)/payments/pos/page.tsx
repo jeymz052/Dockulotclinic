@@ -254,24 +254,15 @@ export default function POSBillingPage() {
   useEffect(() => {
     if (authLoading || !accessToken) return;
     (async () => {
-      const [pricingRes, productsRes] = await Promise.all([
-        fetch("/api/v2/pricing", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store",
-        }),
-        fetch("/api/v2/inventory/products?active=true", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store",
-        }),
-      ]);
+      const pricingRes = await fetch("/api/v2/pricing", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
       if (pricingRes.ok) {
         const payload = (await pricingRes.json()) as { pricing: PricingItem[] };
         setPricing(payload.pricing);
       }
-      if (productsRes.ok) {
-        const payload = (await productsRes.json()) as { products: ProductItem[] };
-        setProducts(payload.products);
-      }
+      setProducts([]);
     })();
   }, [accessToken, authLoading]);
 
@@ -808,7 +799,7 @@ export default function POSBillingPage() {
     <div className="space-y-4 pb-8">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-400 text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-white">
             <FaReceipt className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
@@ -1226,7 +1217,7 @@ export default function POSBillingPage() {
                     }}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                       discountKind === option.value
-                        ? "border-amber-400 bg-yellow-400 text-white"
+                        ? "border-amber-400 bg-black text-white"
                         : "border-slate-300 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
@@ -1376,7 +1367,7 @@ export default function POSBillingPage() {
                     }}
                     className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${
                       paymentMethod === method.value
-                        ? "border-amber-400 bg-yellow-400 text-white"
+                        ? "border-amber-400 bg-black text-white"
                         : method.available
                           ? "border-slate-300 bg-white text-slate-700 hover:border-amber-400"
                           : "border-slate-200 bg-slate-100 text-slate-400"
@@ -1521,10 +1512,10 @@ export default function POSBillingPage() {
                     type="button"
                     onClick={openIssueConfirm}
                     disabled={!canUse || isWorking || !selectedApptId || discountExceedsSubtotal}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-yellow-400 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-black px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                   >
                     Generate Bill
-                    <kbd className="rounded border border-amber-400 bg-yellow-400 px-1 font-mono text-[9px] text-amber-100">F2</kbd>
+                    <kbd className="rounded border border-amber-400 bg-black px-1 font-mono text-[9px] text-amber-100">F2</kbd>
                   </button>
                   <button
                     type="button"
@@ -1540,10 +1531,10 @@ export default function POSBillingPage() {
                     type="button"
                     onClick={recordPayment}
                     disabled={isWorking || !canAcceptPayment}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-yellow-400 px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-md bg-black px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                   >
                     {isWorking ? "Processing…" : isQR ? "Open QR Ph Checkout" : `Accept ${paymentMethodLabel}`}
-                    <kbd className="rounded border border-amber-400 bg-yellow-400 px-1 font-mono text-[9px] text-amber-100">F2</kbd>
+                    <kbd className="rounded border border-amber-400 bg-black px-1 font-mono text-[9px] text-amber-100">F2</kbd>
                   </button>
                   <Link
                     href={`/payments/receipt/${issuedBillingId}`}
@@ -1632,7 +1623,7 @@ export default function POSBillingPage() {
               type="button"
               onClick={commitIssueBill}
               disabled={isWorking}
-              className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-yellow-400 disabled:opacity-60"
+              className="rounded-full bg-black px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-black disabled:opacity-60"
             >
               {isWorking ? "Issuing…" : "Confirm & Issue"}
             </button>
@@ -1675,7 +1666,7 @@ export default function POSBillingPage() {
               type="button"
               onClick={commitVoid}
               disabled={isWorking || voidReason.trim().length < 4}
-              className="rounded-full bg-yellow-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-yellow-700 disabled:opacity-60"
+              className="rounded-full bg-black px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-black disabled:opacity-60"
             >
               {isWorking ? "Voiding…" : "Confirm Void"}
             </button>
@@ -1765,7 +1756,7 @@ function POSStepCard({
   const styles = {
     complete: {
       shell: "border-yellow-200 bg-yellow-50/70",
-      badge: "bg-yellow-400 text-white",
+      badge: "bg-black text-white",
       title: "text-yellow-800",
       body: "text-yellow-700/80",
     },

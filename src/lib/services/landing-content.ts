@@ -5,6 +5,7 @@ import type {
   LandingHowToStep,
   LandingHighlight,
   LandingNavItem,
+  LandingProgramSlide,
   LandingService,
   LandingServiceBullet,
   LandingTestimonial,
@@ -22,6 +23,7 @@ export type LandingContentInput = Partial<
     | "about_highlights"
     | "testimonials"
     | "nav_items"
+    | "program_slides"
     | "services"
     | "blog_categories"
     | "how_to_steps"
@@ -32,6 +34,7 @@ export type LandingContentInput = Partial<
   about_highlights?: LandingHighlight[];
   testimonials?: LandingTestimonial[];
   nav_items?: LandingNavItem[];
+  program_slides?: LandingProgramSlide[];
   services?: LandingService[];
   blog_categories?: string[];
   how_to_steps?: LandingHowToStep[];
@@ -127,6 +130,12 @@ export async function updateLandingContent(
     "live_title",
     "live_subtitle",
     "live_cta_label",
+    "results_eyebrow",
+    "results_title",
+    "results_subtitle",
+    "faq_eyebrow",
+    "faq_title",
+    "faq_subtitle",
     "how_to_eyebrow",
     "how_to_title",
     "testimonials_eyebrow",
@@ -139,6 +148,10 @@ export async function updateLandingContent(
     "contact_subtitle",
     "contact_info_title",
     "contact_hours_label",
+    "contact_facebook_label",
+    "contact_facebook_url",
+    "contact_youtube_label",
+    "contact_youtube_url",
     "footer_brand_blurb",
     "footer_contact_text",
     "footer_copyright",
@@ -193,6 +206,18 @@ export async function updateLandingContent(
             .filter((b) => b.title || b.body)
         : [],
     }));
+  }
+
+  if (input.program_slides !== undefined) {
+    if (!Array.isArray(input.program_slides)) throw new HttpError(400, "program_slides must be an array");
+    patch.program_slides = input.program_slides
+      .map((s): LandingProgramSlide => ({
+        key: String(s.key ?? "").trim() || "program",
+        name: String(s.name ?? "").trim(),
+        description: String(s.description ?? "").trim(),
+        ctaLabel: String(s.ctaLabel ?? "").trim() || "Book a consultation",
+      }))
+      .filter((s) => s.name || s.description);
   }
 
   if (input.about_highlights !== undefined) {

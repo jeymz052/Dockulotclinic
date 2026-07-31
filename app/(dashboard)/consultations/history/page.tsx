@@ -73,7 +73,7 @@ export default function ConsultationHistoryPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.18),transparent_42%),radial-gradient(circle_at_70%_10%,rgba(56,189,248,0.12),transparent_35%),linear-gradient(135deg,#f5fbff_0%,#ffffff_58%,#fef3c7_100%)] p-6 shadow-[0_20px_60px_rgba(133,77,14,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_42%),radial-gradient(circle_at_70%_10%,rgba(245,245,245,0.12),transparent_35%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_58%,#f5f5f5_100%)] p-6 shadow-[0_20px_60px_rgba(17,17,17,0.12)]">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
@@ -125,7 +125,7 @@ export default function ConsultationHistoryPage() {
                 onClick={() => setStatusFilter(option)}
                 className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                   statusFilter === option
-                    ? "bg-yellow-400 text-white shadow-sm"
+                    ? "bg-black text-white shadow-sm"
                     : "border border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:text-yellow-700"
                 }`}
               >

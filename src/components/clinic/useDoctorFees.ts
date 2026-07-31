@@ -5,7 +5,8 @@ import { useRole } from "@/src/components/layout/RoleProvider";
 import {
   CLINIC_CONSULTATION_HOURLY_RATE,
   ONLINE_CONSULTATION_HOURLY_RATE,
-  normalizeConfiguredConsultationRate,
+  normalizeConfiguredClinicConsultationRate,
+  normalizeConfiguredOnlineConsultationRate,
 } from "@/src/lib/consultation-pricing";
 
 export type DoctorFees = {
@@ -51,8 +52,8 @@ export function useDoctorFees(slug?: string): {
           payload.doctors[0];
         if (match && active) {
           setFees({
-            clinic: normalizeConfiguredConsultationRate(Number(match.consultation_fee_clinic ?? 0)),
-            online: normalizeConfiguredConsultationRate(Number(match.consultation_fee_online ?? 0)),
+            clinic: normalizeConfiguredClinicConsultationRate(Number(match.consultation_fee_clinic ?? 0)),
+            online: normalizeConfiguredOnlineConsultationRate(Number(match.consultation_fee_online ?? 0)),
           });
         }
       } finally {

@@ -38,7 +38,7 @@ const PATIENT_SHORTCUTS = [
 export default function PatientHelpPage() {
   return (
     <div className="space-y-6 pb-10">
-      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.24),transparent_34%),linear-gradient(135deg,#f8fcff_0%,#ecf8ff_48%,#dff2ff_100%)] p-6 shadow-[0_24px_70px_rgba(14,116,194,0.10)] sm:p-8">
+      <section className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.24),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#f3f3f3_48%,#eaeaea_100%)] p-6 shadow-[0_24px_70px_rgba(17,17,17,0.10)] sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Patient Help Center</p>
@@ -46,7 +46,7 @@ export default function PatientHelpPage() {
               Help for booking, consultations, and portal tasks
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Everything here is focused on the patient experience inside Doc Kulot Clinic, with clear shortcuts to the pages you use most.
+              Everything here is focused on the patient experience inside Doc Kulot, with clear shortcuts to the pages you use most.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -82,7 +82,7 @@ export default function PatientHelpPage() {
               <Link
                 key={card.href}
                 href={card.href}
-                className="group rounded-[1.4rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fcff_100%)] p-4 transition hover:-translate-y-0.5 hover:border-yellow-200 hover:shadow-[0_14px_34px_rgba(14,116,194,0.08)]"
+                className="group rounded-[1.4rem] border border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8f8f7_100%)] p-4 transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_14px_34px_rgba(17,17,17,0.08)]"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -140,7 +140,7 @@ export default function PatientHelpPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-3 text-sm font-bold text-white transition hover:bg-yellow-400"
+              className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-bold text-white transition hover:bg-black"
             >
               Contact clinic
               <FaArrowRight className="h-3.5 w-3.5" />

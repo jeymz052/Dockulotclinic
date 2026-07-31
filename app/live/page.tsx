@@ -31,18 +31,18 @@ export default async function LivePage() {
           {events.map((event) => (
             <article
               key={event.id}
-              className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[linear-gradient(135deg,#ffffff_0%,#fffbeb_52%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_-36px_rgba(14,116,194,0.35)]"
+              className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[linear-gradient(135deg,#ffffff_0%,#fafafa_52%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_-36px_rgba(17,17,17,0.22)]"
             >
               <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)_280px] lg:items-stretch">
                 <div className="flex flex-row gap-4 lg:flex-col">
-                  <div className="min-w-[110px] rounded-[1.75rem] bg-[linear-gradient(180deg,#0f4c81_0%,#0b78c5_100%)] px-5 py-5 text-white shadow-lg shadow-yellow-800/20">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-100">
+                  <div className="min-w-[110px] rounded-[1.75rem] bg-[linear-gradient(180deg,#111111_0%,#2a2a2a_100%)] px-5 py-5 text-white shadow-lg shadow-black/20">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-200">
                       {new Date(event.starts_at).toLocaleDateString(undefined, { month: "short" })}
                     </p>
                     <p className="mt-2 text-4xl font-black leading-none">
                       {new Date(event.starts_at).toLocaleDateString(undefined, { day: "2-digit" })}
                     </p>
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-amber-100">
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-neutral-200">
                       {new Date(event.starts_at).toLocaleDateString(undefined, { year: "numeric" })}
                     </p>
                   </div>
@@ -60,10 +60,10 @@ export default async function LivePage() {
 
                 <div className="rounded-[1.9rem] border border-white/70 bg-white/80 p-5 backdrop-blur">
                   <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">
-                    <span className="rounded-full bg-yellow-50 px-3 py-1.5">{event.status}</span>
-                    {event.platform ? <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">{event.platform}</span> : null}
+                    <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-neutral-800">{event.status}</span>
+                    {event.platform ? <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-neutral-700">{event.platform}</span> : null}
                     {event.registration_enabled ? (
-                      <span className="rounded-full bg-white px-3 py-1.5 text-slate-600">Registration enabled</span>
+                      <span className="rounded-full bg-white px-3 py-1.5 text-neutral-600">Registration enabled</span>
                     ) : null}
                   </div>
 
@@ -83,7 +83,7 @@ export default async function LivePage() {
                   </p>
 
                   <div className="mt-5 flex flex-wrap items-center gap-3">
-                    <span className="inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-700">
+                    <span className="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-700">
                       Live health talk
                     </span>
                     {event.content_posts?.title ? (
@@ -98,9 +98,9 @@ export default async function LivePage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between rounded-[1.9rem] border border-yellow-100 bg-white/90 p-5 shadow-sm">
+                <div className="flex flex-col justify-between rounded-[1.9rem] border border-neutral-200 bg-white/90 p-5 shadow-sm">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">Next step</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Next step</p>
                     <h3 className="mt-2 text-xl font-black tracking-tight text-black">
                       {event.registration_enabled ? "Reserve your slot" : "Open the live stream"}
                     </h3>
@@ -117,14 +117,14 @@ export default async function LivePage() {
                         href={event.live_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center rounded-full bg-yellow-400 px-5 py-3 text-sm font-bold text-white transition hover:bg-yellow-300"
+                        className="inline-flex items-center justify-center rounded-full bg-black px-5 py-3 text-sm font-bold text-white transition hover:bg-neutral-800"
                       >
                         {event.registration_enabled ? "Register / Join live" : "Open live link"}
                       </Link>
                     ) : null}
                     <Link
                       href="/#live"
-                      className="inline-flex items-center justify-center rounded-full border border-yellow-200 px-5 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
+                      className="inline-flex items-center justify-center rounded-full border border-neutral-200 px-5 py-3 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
                     >
                       Back to landing section
                     </Link>

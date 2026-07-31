@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { logActivity } from "@/src/lib/services/activity-log";
 import type { DbRole } from "@/src/lib/db/types";
 
-const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine Specialist";
+const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
 
 type UpdateUserBody = {
   full_name?: string;
@@ -64,8 +64,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         slug: slugifyDoctorName(body.full_name ?? `doctor-${id}`),
         specialty: CANONICAL_DOCTOR_SPECIALTY,
         license_no: `AUTO-${id}`,
-        consultation_fee_clinic: 0,
-        consultation_fee_online: 0,
+        consultation_fee_clinic: 600,
+        consultation_fee_online: 800,
       });
       if (insertDoctorError) throw insertDoctorError;
     }

@@ -13,8 +13,6 @@ const BACKUP_TABLES = [
   "prescriptions",
   "billings",
   "payments",
-  "inventory_products",
-  "inventory_movements",
   "content_posts",
   "inquiries",
   "follow_up_inquiries",

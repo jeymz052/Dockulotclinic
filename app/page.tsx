@@ -3,81 +3,125 @@ import Link from "next/link";
 import {
   FaArrowRight,
   FaFacebookF,
-  FaHeartPulse,
-  FaLaptopMedical,
-  FaStethoscope,
+  FaStar,
   FaYoutube,
-  FaUserDoctor,
 } from "react-icons/fa6";
-import BookAppointmentPage from "@/src/components/appointments/BookAppointmentPage";
 import InlineArticleBrowser from "@/src/components/blog/InlineArticleBrowser";
 import PublicHeader from "@/src/components/layout/PublicHeader";
 import InquiryForm from "@/src/components/marketing/InquiryForm";
+import HomeServicesShowcase from "@/src/components/marketing/HomeServicesShowcase";
+import LandingBookingModal from "@/src/components/marketing/LandingBookingModal";
+import OfferProgramsHero from "@/src/components/marketing/OfferProgramsHero";
+import RxHeroCarousel from "@/src/components/marketing/RxHeroCarousel";
+import ScrollReveal from "@/src/components/marketing/ScrollReveal";
 import PublicVideoGallery from "@/src/components/videos/PublicVideoGallery";
-import HeroTitle from "@/src/components/ui/HeroTitle";
-import { clinicServices, contentCategories } from "@/src/lib/healthcare-content";
+import { BeforeAfterCarousel } from "@/src/components/marketing/BeforeAfterCarousel";
+import {
+  beforeAfterResults,
+  clinicLocations,
+  contentCategories,
+} from "@/src/lib/healthcare-content";
 import { getPublishedContentPosts, getPublishedMediaPosts } from "@/src/lib/services/content-posts";
+import type { LandingContent, LandingTestimonial } from "@/src/lib/db/types";
 import { getPublishedFaqs, type PublicFaq } from "@/src/lib/services/faqs";
 import { getLandingContent } from "@/src/lib/services/landing-content";
 import { getPublicLiveEvents } from "@/src/lib/services/live-events";
 
-const DEFAULT_HERO = "/images/chiarabg.png";
-const DEFAULT_DOCTOR = "/images/dockulots-removebg-preview.png";
-const DOCTOR_PROFILE = {
+const FALLBACK_TESTIMONIALS: LandingTestimonial[] = [
+  {
+    name: "GlowRx Patient",
+    title: "Medical weight loss program",
+    quote:
+      "The plan felt realistic from the start. I had structure, regular follow-up, and clear medical guidance that helped me stay consistent and more confident in my progress.",
+  },
+  {
+    name: "HormoneRx Patient",
+    title: "PCOS and hormonal health care",
+    quote:
+      "I finally felt listened to. My concerns were explained clearly, my treatment plan felt personalized, and I could actually understand the next steps for my hormone health.",
+  },
+  {
+    name: "HeartRx Patient",
+    title: "Cardiovascular wellness support",
+    quote:
+      "The consultations helped me take my blood pressure and overall heart health seriously without feeling overwhelmed. Everything was practical, encouraging, and easy to follow.",
+  },
+  {
+    name: "PreventRx Patient",
+    title: "Executive check-up program",
+    quote:
+      "The preventive approach gave me peace of mind. Screenings, risk review, and lifestyle advice all came together in a way that felt proactive and reassuring.",
+  },
+  {
+    name: "MetabolicRx Patient",
+    title: "Metabolic health care",
+    quote:
+      "I appreciated how the guidance connected my lab results, nutrition habits, and long-term health goals. It felt like a complete plan instead of quick advice.",
+  },
+  {
+    name: "Clinic Patient",
+    title: "General consultation experience",
+    quote:
+      "From booking to follow-up, the experience was smooth and professional. I felt respected, informed, and comfortable asking questions throughout the consultation.",
+  },
+];
+
+const PREVIOUS_ABOUT = {
   eyebrow: "About the Doctor",
-  title: "Dr. Fatimah Al-Zahra Ditti",
+  title: "Dr. Fatimah Al-Zahra T. Ditti (Doc Kulot) | Injector Queen",
   subtitle:
-    "Medical Doctor focused on family medicine, women's health, preventive care, and everyday primary care support for patients and families.",
-  name: "Dr. Fatimah Al-Zahra Ditti",
-  titleLabel: "Medical Doctor",
+    "Doc Kulot is a Family Medicine and Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics.",
+  name: "Dr. Fatimah Al-Zahra T. Ditti",
+  titleLabel: "Family Medicine | Aesthetic Medicine",
+  photo: "/images/SEF_0442.jpeg",
+  highlights: [
+    { title: "Specialty", body: "Family Medicine and Aesthetic Medicine" },
+    { title: "Medical School", body: "Silliman University Medical School, 2017" },
+    { title: "Residency", body: "Zamboanga City Medical Center" },
+    { title: "Pre-Med", body: "BS Nursing, Western Mindanao State University" },
+    { title: "Care Focus", body: "Telemedicine, women's health, weight loss, and procedures" },
+  ],
 } as const;
 
-const ABOUT_HIGHLIGHTS = [
-  { title: "Specialty", body: "Family Medicine" },
-  { title: "Experience", body: "8 Years of clinical practice" },
-  { title: "Subspecialty", body: "PCOS Management and Weightloss Management" },
-  { title: "Care Focus", body: "Primary care, prevention, and follow-up support" },
-  { title: "Education", body: "Silliman University, 2017 | Zamboanga City Medical Center, 2021" },
-] as const;
+function getTestimonials(items: LandingTestimonial[]) {
+  const normalized = items
+    .map((item) => ({
+      name: String(item.name ?? "").trim(),
+      title: String(item.title ?? "").trim(),
+      quote: String(item.quote ?? "").trim(),
+    }))
+    .filter((item) => item.name && item.quote);
 
-function getAboutProfile(landingContent: {
-  about_eyebrow: string;
-  about_title: string;
-  about_subtitle: string;
-  doctor_name: string;
-  doctor_title: string;
-  about_highlights?: Array<{ title?: string | null; body?: string | null }>;
-}) {
-  const isLegacyAbout =
-    landingContent.about_title === "Expert Healthcare Provider"
-    || landingContent.doctor_name === "Doctora Kulot, MD"
-    || landingContent.doctor_title === "Family Medicine Specialist";
-
-  const sanitize = (value: string, fallback: string) =>
-    /nowserving/i.test(value) ? fallback : value;
-
-  return {
-    eyebrow: isLegacyAbout ? DOCTOR_PROFILE.eyebrow : landingContent.about_eyebrow,
-    title: isLegacyAbout ? DOCTOR_PROFILE.title : landingContent.about_title,
-    subtitle: isLegacyAbout ? DOCTOR_PROFILE.subtitle : sanitize(landingContent.about_subtitle, DOCTOR_PROFILE.subtitle),
-    name: isLegacyAbout ? DOCTOR_PROFILE.name : landingContent.doctor_name,
-    titleLabel: isLegacyAbout ? DOCTOR_PROFILE.titleLabel : landingContent.doctor_title,
-    highlights: isLegacyAbout
-      ? ABOUT_HIGHLIGHTS
-      : sanitizeHighlights(landingContent.about_highlights),
-  };
+  return normalized.length ? normalized : FALLBACK_TESTIMONIALS;
 }
 
-function sanitizeHighlights(
-  highlights: Array<{ title?: string | null; body?: string | null }> | undefined,
-) {
-  const normalized = (highlights ?? [])
-    .map((item) => ({
-      title: String(item.title ?? "").trim(),
-      body: String(item.body ?? "").trim(),
-    }))
-    .filter((item) => item.title || item.body);
-  return normalized.length ? normalized : ABOUT_HIGHLIGHTS;
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function getAboutProfile(content: LandingContent) {
+  const hasLegacyDefaults =
+    content.about_title === "Dr. Fatimah Al-Zahra Ditti"
+    || content.doctor_title === "Medical Doctor"
+    || content.doctor_photo_url?.includes("dockulots-removebg-preview.png");
+
+  return {
+    eyebrow: hasLegacyDefaults ? PREVIOUS_ABOUT.eyebrow : content.about_eyebrow,
+    title: hasLegacyDefaults ? PREVIOUS_ABOUT.title : content.about_title,
+    subtitle: hasLegacyDefaults ? PREVIOUS_ABOUT.subtitle : content.about_subtitle,
+    name: hasLegacyDefaults ? PREVIOUS_ABOUT.name : content.doctor_name,
+    titleLabel: hasLegacyDefaults ? PREVIOUS_ABOUT.titleLabel : content.doctor_title,
+    photo: hasLegacyDefaults ? PREVIOUS_ABOUT.photo : content.doctor_photo_url || PREVIOUS_ABOUT.photo,
+    highlights: hasLegacyDefaults || !content.about_highlights?.length
+      ? PREVIOUS_ABOUT.highlights
+      : content.about_highlights,
+  };
 }
 
 export default async function HomePage() {
@@ -93,193 +137,176 @@ export default async function HomePage() {
   const liveEvents = liveSchedule;
   const faqGroups = groupFaqsByCategory(faqItems);
   const aboutProfile = getAboutProfile(landingContent);
-  const services = landingContent.services.length
-    ? landingContent.services
-    : clinicServices.map((service, index) => ({
-        kind: index === 1 ? "online" : "clinic",
-        title: service.title,
-        description: service.description,
-        bullets: [],
-      }));
+  const blogHeadline = landingContent.blog_title?.trim() || "Learn from Doc Kulot";
+  const blogSubheadline
+    = landingContent.blog_subtitle?.trim() || "Articles written by Doc Kulot.";
   const blogCategories = landingContent.blog_categories?.length ? landingContent.blog_categories : contentCategories;
+  const testimonials = getTestimonials(landingContent.testimonials);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
       <PublicHeader />
+      <LandingBookingModal />
 
-      <section id="hero" className="relative isolate min-h-[100svh] overflow-hidden">
-        <Image
-          src={landingContent.hero_background_url || DEFAULT_HERO}
-          alt="Clinic background"
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          className="object-cover object-left md:object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-slate-950/25 to-yellow-900/20 md:bg-gradient-to-r md:from-black/50 md:via-slate-950/35 md:to-yellow-900/20" />
-        <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-center justify-center px-4 pb-14 pt-20 sm:px-6 sm:pt-24 lg:justify-end lg:pt-16">
-          <div className="max-w-2xl text-center lg:max-w-3xl lg:text-right">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-yellow-200 sm:tracking-[0.28em]">
-              {landingContent.hero_eyebrow}
-            </p>
-            <HeroTitle line1={landingContent.hero_title_line1} line2={landingContent.hero_title_line2} />
-            <p className="mx-auto mt-5 max-w-xl text-center text-sm leading-7 text-slate-200 sm:mt-6 sm:text-base sm:leading-8 lg:ml-auto lg:mr-0 lg:max-w-2xl lg:text-right lg:text-lg">
-              {landingContent.hero_subtitle}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-end">
-              <Link
-                href="/#online"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-yellow-600 px-6 py-3 text-sm font-bold text-white shadow-xl shadow-black/20 transition hover:bg-yellow-500"
-              >
-                {landingContent.hero_cta_primary}
-                <FaArrowRight />
-              </Link>
-              <Link
-                href="/#clinic"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white/70 px-6 py-3 text-sm font-bold text-yellow-900 backdrop-blur transition hover:bg-white/90"
-              >
-                {landingContent.hero_cta_secondary}
-              </Link>
-            </div>
-          </div>
-        </div>
+      <section id="hero" className="bg-white md:pt-16">
+        <RxHeroCarousel />
       </section>
 
-      <section id="about" className="bg-white py-16 md:py-24">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div className="overflow-hidden rounded-[2rem] border border-yellow-100 bg-yellow-50 p-4 shadow-sm">
-            <Image
-              src={landingContent.doctor_photo_url || DEFAULT_DOCTOR}
-              alt={aboutProfile.name}
-              width={900}
-              height={1100}
-              unoptimized
-              className="h-auto w-full object-contain"
-            />
-          </div>
-          <section>
-            <p className="text-sm font-bold uppercase tracking-[0.38em] text-yellow-800">{aboutProfile.eyebrow}</p>
-            <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+      <ScrollReveal as="section" id="programs" className="bg-white" delayMs={40}>
+        <OfferProgramsHero slides={landingContent.program_slides} />
+      </ScrollReveal>
+
+      <ScrollReveal delayMs={80}>
+        <HomeServicesShowcase
+          eyebrow={landingContent.services_eyebrow}
+          title={landingContent.services_title}
+          subtitle={landingContent.services_subtitle}
+          services={landingContent.services}
+        />
+      </ScrollReveal>
+
+      <ScrollReveal
+        as="section"
+        id="about"
+        className="relative isolate overflow-hidden bg-black"
+        delayMs={120}
+      >
+        <div className="grid min-h-[520px] lg:min-h-[760px] lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
+          <section className="relative flex h-full flex-col justify-center px-6 py-12 text-white sm:px-8 sm:py-14 lg:px-12 lg:py-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/80 backdrop-blur">
+              {aboutProfile.eyebrow}
+            </div>
+
+            <h2 className="mt-5 max-w-3xl text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
               {aboutProfile.title}
             </h2>
-            <p className="mt-3 text-lg font-semibold text-slate-700">{aboutProfile.titleLabel}</p>
-            <p className="mt-5 max-w-2xl leading-8 text-slate-600">{aboutProfile.subtitle}</p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {aboutProfile.highlights.map((feature) => (
-                  <div key={`${feature.title}-${feature.body}`} className="rounded-2xl border border-yellow-100 bg-yellow-50/40 p-5 shadow-sm">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-800">{feature.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-700">{feature.body}</p>
+
+            <p className="mt-4 max-w-xl text-lg font-semibold text-[#d8c58a]">{aboutProfile.titleLabel}</p>
+
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg sm:leading-9">
+              {aboutProfile.subtitle}
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {aboutProfile.highlights.map((feature, index) => (
+                <div
+                  key={`${feature.title}-${feature.body}`}
+                  className={`rounded-[1.5rem] border p-5 backdrop-blur ${
+                    index === 0 ? "border-white/16 bg-white/8" : "border-white/10 bg-white/6"
+                  }`}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d8c58a]">
+                    {feature.title}
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-white/82">{feature.body}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-8">
-                <Link href="/#booking" className="inline-flex rounded-full bg-yellow-700 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-600">
-                Book an appointment
+
+          </section>
+
+          <div className="relative min-h-[520px] lg:min-h-[760px]">
+            <Image
+              src={aboutProfile.photo}
+              alt={aboutProfile.name}
+              fill
+              priority
+              unoptimized
+              className="object-cover object-center"
+              sizes="100vw"
+            />
+          </div>
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" id="results" className="bg-white py-16 md:py-24" delayMs={80}>
+        <div>
+          <div className="px-4 sm:px-6">
+          <SectionHeading
+            eyebrow={landingContent.results_eyebrow}
+            title={landingContent.results_title}
+            description={landingContent.results_subtitle}
+            eyebrowClassName="text-sm font-semibold uppercase tracking-[0.25em] text-[#a98c45]"
+          />
+          </div>
+          <BeforeAfterCarousel items={beforeAfterResults} />
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" id="booking" className="bg-white py-12 md:py-16" delayMs={100}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="relative overflow-hidden rounded-[2rem] border border-black/10 bg-[linear-gradient(135deg,#080808_0%,#171717_58%,#050505_100%)] px-6 py-9 text-white shadow-[0_30px_90px_-50px_rgba(0,0,0,0.85)] sm:px-8 md:px-10">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c8ad5f]/45 to-transparent" />
+            <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="max-w-3xl">
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#c8ad5f]">Ready to book?</p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                  {landingContent.booking_title}
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 sm:text-base">
+                  {landingContent.booking_subtitle}
+                </p>
+              </div>
+
+              <Link
+                href="/#booking"
+                className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-black transition hover:bg-neutral-200"
+              >
+                Open booking form
               </Link>
             </div>
-          </section>
-        </div>
-      </section>
-
-      <section id="clinic" className="bg-yellow-50 py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow={landingContent.services_eyebrow}
-            title={landingContent.services_title}
-            description={landingContent.services_subtitle}
-          />
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {services.map((service) => {
-              const ServiceIcon = service.kind === "online"
-                ? FaLaptopMedical
-                : service.kind === "wellness"
-                  ? FaHeartPulse
-                  : service.kind === "doctor"
-                    ? FaUserDoctor
-                    : FaStethoscope;
-              return (
-                <article key={`${service.kind}-${service.title}`} className="rounded-2xl border border-yellow-100 bg-white p-5 shadow-sm">
-                  <ServiceIcon className="text-2xl text-yellow-700" />
-                  <h3 className="mt-4 text-lg font-bold text-slate-950">{service.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{service.description}</p>
-                </article>
-              );
-            })}
           </div>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            <ScheduleCard
-              title="Clinic Visit"
-              schedule="Friday to Sunday"
-              hours="9:00 AM - 3:00 PM"
-              detail="Face-to-face visits at FamMed Family Clinic."
-            />
-            <ScheduleCard
-              title="Virtual Consult"
-              schedule="Monday to Friday"
-              hours="10:00 AM - 8:00 PM"
-              detail="Online consults for weekdays."
-            />
-            <ScheduleCard
-              title="Weekend Virtual"
-              schedule="Saturday and Sunday"
-              hours="10:00 AM - 6:00 PM"
-              detail="Extended virtual consult hours on weekends."
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" id="blog" className="scroll-mt-20 bg-slate-50 py-16 md:scroll-mt-24 md:py-24" delayMs={120}>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="border-t border-black/10 pt-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">Our Blog</p>
+                <h2 className="font-mono text-4xl font-black tracking-[-0.03em] text-black sm:text-5xl">
+                  {blogHeadline}
+                </h2>
+                <p className="mt-3 max-w-2xl font-mono text-base text-neutral-500 sm:text-lg">
+                  {blogSubheadline}
+                </p>
+              </div>
+
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-2 self-start border-b border-black pb-1 text-sm uppercase tracking-[0.14em] text-black transition hover:text-slate-700"
+              >
+                Read our blog
+                <FaArrowRight className="text-xs" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <InlineArticleBrowser
+              posts={featuredContent}
+              categories={blogCategories}
+              labels={{
+                categoriesTitle: landingContent.blog_categories_title,
+                recentPostsTitle: landingContent.blog_recent_posts_title,
+              }}
             />
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section id="online" className="bg-white py-16 md:py-24">
+      <ScrollReveal as="section" id="videos" className="bg-white py-16 md:py-24" delayMs={100}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading
-            eyebrow="Online / Booking Services"
-            title={landingContent.booking_title}
-            description={landingContent.booking_subtitle}
-          />
-          <div id="booking" className="w-full overflow-visible rounded-3xl border border-yellow-100 bg-white p-4 shadow-xl sm:p-6">
-            <BookAppointmentPage />
-          </div>
-        </div>
-      </section>
-
-      <section id="blog" className="scroll-mt-20 bg-yellow-50 py-16 md:scroll-mt-24 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <p className="mb-3 text-sm font-bold uppercase tracking-[0.38em] text-yellow-800">Blogs</p>
-          <SectionHeading
-            eyebrow={landingContent.blog_eyebrow}
-            title={landingContent.blog_title}
-            description={landingContent.blog_subtitle}
-            eyebrowClassName="text-sm font-bold uppercase tracking-[0.38em] text-yellow-800"
-          />
-          <div className="mb-5 flex justify-between">
-            <Link href="/#blog" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-800 hover:text-yellow-900">
-              View all blog posts <FaArrowRight />
-            </Link>
-          </div>
-
-          <InlineArticleBrowser
-            posts={featuredContent}
-            categories={blogCategories}
-            labels={{
-              categoriesTitle: landingContent.blog_categories_title,
-              recentPostsTitle: landingContent.blog_recent_posts_title,
-            }}
-          />
-        </div>
-      </section>
-
-      <section id="videos" className="bg-white py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.38em] text-yellow-800">Vlogs</p>
+          <p className="mb-3 text-sm font-bold uppercase tracking-[0.38em] text-black">Vlogs</p>
           <SectionHeading
             eyebrow={landingContent.videos_eyebrow}
             title={landingContent.videos_title}
             description={landingContent.videos_subtitle}
-            eyebrowClassName="text-sm font-bold uppercase tracking-[0.38em] text-yellow-800"
+            eyebrowClassName="text-sm font-bold uppercase tracking-[0.38em] text-black"
           />
           <div className="mb-5 flex justify-between">
-            <Link href="/videos" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-800 hover:text-yellow-900">
+            <Link href="/videos" className="inline-flex items-center gap-2 text-sm font-bold text-black hover:text-slate-700">
               Open video page <FaArrowRight />
             </Link>
           </div>
@@ -288,26 +315,26 @@ export default async function HomePage() {
 
           {mediaPosts.length ? (
             <div className="mt-6 flex justify-end">
-              <Link href="/videos" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-900 transition hover:text-yellow-800">
+              <Link href="/videos" className="inline-flex items-center gap-2 text-sm font-bold text-black transition hover:text-slate-700">
                 Browse all vlogs
                 <FaArrowRight />
               </Link>
             </div>
-          ) : null}
+            ) : null}
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section id="live" className="scroll-mt-20 bg-yellow-50 py-16 md:scroll-mt-24 md:py-24">
+      <ScrollReveal as="section" id="live" className="scroll-mt-20 bg-white py-16 md:scroll-mt-24 md:py-24" delayMs={120}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <p className="mb-3 text-sm font-bold uppercase tracking-[0.38em] text-yellow-800">Live Schedule</p>
+          <p className="mb-3 text-sm font-bold uppercase tracking-[0.38em] text-black">Live Schedule</p>
           <SectionHeading
             eyebrow={landingContent.live_eyebrow}
             title={landingContent.live_title}
             description={landingContent.live_subtitle}
-            eyebrowClassName="text-sm font-bold uppercase tracking-[0.38em] text-yellow-800"
+            eyebrowClassName="text-sm font-bold uppercase tracking-[0.38em] text-black"
           />
           <div className="mb-5 flex justify-between">
-            <Link href="/live" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-800 hover:text-yellow-900">
+            <Link href="/live" className="inline-flex items-center gap-2 text-sm font-bold text-black hover:text-slate-700">
               {landingContent.live_cta_label} <FaArrowRight />
             </Link>
           </div>
@@ -316,24 +343,24 @@ export default async function HomePage() {
             {liveEvents.map((event) => (
               <article
                 key={event.id}
-                className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[linear-gradient(135deg,#ffffff_0%,#fffbeb_52%,#fef3c7_100%)] p-6 shadow-[0_24px_60px_-36px_rgba(180,83,9,0.25)]"
+                className="overflow-hidden rounded-[2.25rem] border border-black/10 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_52%,#f1f5f9_100%)] p-6 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.25)]"
               >
                 <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)_280px] lg:items-stretch">
                   <div className="flex flex-row gap-4 lg:flex-col">
-                    <div className="min-w-[110px] rounded-[1.75rem] bg-[linear-gradient(180deg,#78350f_0%,#b45309_100%)] px-5 py-5 text-white shadow-lg shadow-yellow-900/20">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-100">
+                    <div className="min-w-[110px] rounded-[1.75rem] bg-[linear-gradient(180deg,#0f172a_0%,#334155_100%)] px-5 py-5 text-white shadow-lg shadow-black/20">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-300">
                         {new Date(event.starts_at).toLocaleDateString(undefined, { month: "short" })}
                       </p>
                       <p className="mt-2 text-4xl font-black leading-none">
                         {new Date(event.starts_at).toLocaleDateString(undefined, { day: "2-digit" })}
                       </p>
-                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-yellow-100">
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
                         {new Date(event.starts_at).toLocaleDateString(undefined, { year: "numeric" })}
                       </p>
                     </div>
 
-                    <div className="rounded-[1.5rem] border border-yellow-100 bg-white/85 px-4 py-4 text-sm text-slate-600">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-800">Starts at</p>
+                    <div className="rounded-[1.5rem] border border-black/10 bg-white/85 px-4 py-4 text-sm text-slate-600">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-black">Starts at</p>
                       <p className="mt-2 text-base font-bold text-slate-950">
                         {new Date(event.starts_at).toLocaleTimeString(undefined, {
                           hour: "numeric",
@@ -344,8 +371,8 @@ export default async function HomePage() {
                   </div>
 
                   <div className="rounded-[1.9rem] border border-white/70 bg-white/80 p-5 backdrop-blur">
-                    <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-800">
-                      <span className="rounded-full bg-yellow-50 px-3 py-1.5">{event.status}</span>
+                    <div className="flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-black">
+                      <span className="rounded-full bg-slate-100 px-3 py-1.5">{event.status}</span>
                       {event.platform ? <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">{event.platform}</span> : null}
                       {event.registration_enabled ? (
                         <span className="rounded-full bg-white px-3 py-1.5 text-slate-600">Registration enabled</span>
@@ -368,7 +395,7 @@ export default async function HomePage() {
                     </p>
 
                     <div className="mt-5 flex flex-wrap items-center gap-3">
-                      <span className="inline-flex rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-yellow-900">
+                      <span className="inline-flex rounded-full border border-black bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-black">
                         Live health talk
                       </span>
                       {event.content_posts?.title ? (
@@ -383,9 +410,9 @@ export default async function HomePage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between rounded-[1.9rem] border border-yellow-100 bg-white/90 p-5 shadow-sm">
+                  <div className="flex flex-col justify-between rounded-[1.9rem] border border-black/10 bg-white/90 p-5 shadow-sm">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-800">Next step</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-black">Next step</p>
                       <h4 className="mt-2 text-xl font-black tracking-tight text-slate-950">
                         {event.registration_enabled ? "Reserve your slot" : "Open the live stream"}
                       </h4>
@@ -402,14 +429,14 @@ export default async function HomePage() {
                           href={event.live_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center rounded-full bg-yellow-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-yellow-500"
+                          className="inline-flex items-center justify-center rounded-full bg-black px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
                         >
                           {event.registration_enabled ? "Register / Join" : "Open stream"}
                         </Link>
                       ) : null}
                       <Link
                         href="/live"
-                        className="inline-flex items-center justify-center rounded-full border border-yellow-200 px-5 py-3 text-sm font-bold text-yellow-900 transition hover:bg-yellow-50"
+                        className="inline-flex items-center justify-center rounded-full border border-black px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-50"
                       >
                         View schedule page
                       </Link>
@@ -426,22 +453,65 @@ export default async function HomePage() {
             ) : null}
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section id="faq" className="bg-yellow-50 py-16 md:py-24">
+      <ScrollReveal as="section" id="testimonials" className="bg-white py-14 md:py-20" delayMs={80}>
+        <div className="mx-auto max-w-7xl px-5 sm:px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="font-mono text-4xl font-medium leading-none text-black sm:text-5xl">
+              {landingContent.testimonials_eyebrow || "Testimonials"}
+            </h2>
+            <p className="mt-5 font-mono text-base text-neutral-600">
+              {landingContent.testimonials_subtitle || "Believe the hype!"}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+            {testimonials.map((testimonial, index) => (
+              <article
+                key={`${testimonial.name}-${index}`}
+                className="flex min-h-[26.5rem] flex-col items-center rounded-[1.25rem] border border-neutral-100 bg-white px-8 py-9 text-center shadow-[0_16px_28px_rgba(0,0,0,0.16),0_2px_10px_rgba(0,0,0,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_34px_rgba(0,0,0,0.18),0_4px_14px_rgba(0,0,0,0.08)] sm:px-10"
+              >
+                <div className="mx-auto flex min-h-[8.75rem] max-w-[18rem] items-start">
+                  <p className="line-clamp-5 text-base leading-6 text-neutral-500">
+                    {testimonial.quote}
+                  </p>
+                </div>
+
+                <div className="mt-7 flex h-[5.75rem] w-[5.75rem] items-center justify-center rounded-full bg-[linear-gradient(180deg,#f8f8f8_0%,#eeeeee_100%)] text-2xl font-semibold text-neutral-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
+                  {getInitials(testimonial.name)}
+                </div>
+
+                <div className="mt-7 flex justify-center gap-1 text-[#f4b400]">
+                  {Array.from({ length: 5 }).map((_, starIndex) => (
+                    <FaStar key={starIndex} className="h-3.5 w-3.5" />
+                  ))}
+                </div>
+
+                <h3 className="mt-7 text-lg font-bold leading-tight text-black">
+                  {testimonial.name}
+                </h3>
+                <p className="mt-1 text-base font-bold leading-5 text-black">{testimonial.title}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </ScrollReveal>
+
+      <ScrollReveal as="section" id="faq" className="bg-slate-50 py-16 md:py-24" delayMs={100}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <SectionHeading
-            eyebrow="FAQ"
-            title="Quick answers for common clinic questions"
-            description="Frequently asked questions now live on the landing page instead of a separate page."
+            eyebrow={landingContent.faq_eyebrow}
+            title={landingContent.faq_title}
+            description={landingContent.faq_subtitle}
           />
 
-          <div className="rounded-[2.25rem] border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fef9c3_52%,#fef3c7_100%)] p-5 shadow-[0_25px_60px_-40px_rgba(180,83,9,0.25)] sm:p-6">
+          <div className="rounded-[2.25rem] border border-black/10 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_52%,#f1f5f9_100%)] p-5 shadow-[0_25px_60px_-40px_rgba(0,0,0,0.25)] sm:p-6">
             <div className="flex flex-wrap gap-2">
               {faqGroups.map((group) => (
                 <span
                   key={group.category}
-                  className="rounded-full border border-yellow-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-yellow-900 shadow-sm"
+                  className="rounded-full border border-black bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-black shadow-sm"
                 >
                   {group.category}
                 </span>
@@ -452,14 +522,14 @@ export default async function HomePage() {
               {faqGroups.map((group) => (
                 <section
                   key={group.category}
-                  className="rounded-[1.85rem] border border-yellow-100 bg-white/95 p-5 shadow-[0_18px_40px_-32px_rgba(180,83,9,0.25)]"
+                  className="rounded-[1.85rem] border border-black/10 bg-white/95 p-5 shadow-[0_18px_40px_-32px_rgba(0,0,0,0.25)]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-yellow-800">FAQ Category</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.22em] text-black">FAQ Category</p>
                       <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{group.category}</h3>
                     </div>
-                    <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-yellow-800">
+                    <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-black">
                       {group.items.length} question{group.items.length === 1 ? "" : "s"}
                     </span>
                   </div>
@@ -474,61 +544,61 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section id="contact" className="bg-white py-16 md:py-24">
+      <ScrollReveal as="section" id="contact" className="bg-white py-16 md:py-24" delayMs={120}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <section>
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-yellow-800">{landingContent.contact_eyebrow}</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">{landingContent.contact_title}</h2>
-              <p className="mt-4 leading-8 text-slate-600">{landingContent.contact_subtitle}</p>
-              <Link href="/#booking" className="mt-8 inline-flex rounded-full bg-yellow-700 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-600">
+          <div className="grid gap-10 border-t border-black/10 pt-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <section className="max-w-xl">
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a98c45]">{landingContent.contact_eyebrow}</p>
+              <h2 className="mt-3 font-mono text-4xl font-medium leading-tight text-black sm:text-5xl">{landingContent.contact_title}</h2>
+              <p className="mt-5 text-base leading-8 text-neutral-600">{landingContent.contact_subtitle}</p>
+              <Link href="/#booking" className="mt-8 inline-flex rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition hover:bg-neutral-800">
                 Go to booking
               </Link>
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
-                  href="https://www.facebook.com/share/1GnJA9tPm2/"
+                  href={landingContent.contact_facebook_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-bold text-yellow-900 transition hover:bg-yellow-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#1877F2] text-white">
                     <FaFacebookF className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
-                  Doc Kulot Facebook
+                  {landingContent.contact_facebook_label}
                 </a>
                 <a
-                  href="https://www.youtube.com/@DocKulot"
+                  href={landingContent.contact_youtube_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-bold text-yellow-900 transition hover:bg-yellow-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#FF0000] text-white">
                     <FaYoutube className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
-                  Doc Kulot YouTube
+                  {landingContent.contact_youtube_label}
                 </a>
               </div>
             </section>
             <InquiryForm />
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <footer className="relative overflow-hidden bg-[linear-gradient(180deg,#fff8e1_0%,#ffecb3_55%,#ffe082_100%)] text-slate-800">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
-        <div className="absolute left-[-6rem] top-[-4rem] h-40 w-40 rounded-full bg-yellow-200/40 blur-3xl" />
-        <div className="absolute right-[-5rem] bottom-[-4rem] h-44 w-44 rounded-full bg-yellow-400/25 blur-3xl" />
+      <footer className="relative overflow-hidden bg-white text-slate-800">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />
+        <div className="absolute left-[-6rem] top-[-4rem] h-40 w-40 rounded-full bg-black/5 blur-3xl" />
+        <div className="absolute right-[-5rem] bottom-[-4rem] h-44 w-44 rounded-full bg-black/5 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6">
-          <div className="grid gap-8 border-b border-yellow-400/25 pb-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_0.9fr]">
+          <div className="grid gap-8 border-b border-black/10 pb-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_0.9fr]">
             <div className="max-w-lg">
               <div className="flex items-center gap-3">
                 <div className="flex h-36 w-36 items-center justify-center">
                   <Image
                     src="/images/dockulotslogonobg.png"
-                    alt="Doctor Kulot Clinic logo"
+                    alt="Doc Kulot logo"
                     width={320}
                     height={320}
                     className="h-36 w-36 object-contain"
@@ -536,8 +606,8 @@ export default async function HomePage() {
                   />
                 </div>
                 <div>
-                  <p className="text-xl font-black tracking-tight text-slate-950">Doctor Kulot Clinic</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.28em] text-yellow-800">Family Medicine</p>
+                  <p className="text-xl font-black tracking-tight text-slate-950">Doc Kulot</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.28em] text-black">Family Medicine</p>
                 </div>
               </div>
 
@@ -546,13 +616,13 @@ export default async function HomePage() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href="/#booking"
-                  className="inline-flex items-center justify-center rounded-full bg-yellow-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-500"
+                  className="inline-flex items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
                 >
                   Book appointment
                 </Link>
                 <Link
                   href="/#contact"
-                  className="inline-flex items-center justify-center rounded-full border border-yellow-300 bg-white/70 px-5 py-2.5 text-sm font-bold text-yellow-900 transition hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-black bg-white/70 px-5 py-2.5 text-sm font-bold text-black transition hover:bg-white"
                 >
                   Send inquiry
                 </Link>
@@ -560,7 +630,7 @@ export default async function HomePage() {
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-yellow-800">Quick Links</p>
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-black">Quick Links</p>
               <ul className="mt-5 space-y-3 text-sm">
                 {[
                   { label: "Home", href: "/#hero" },
@@ -580,54 +650,54 @@ export default async function HomePage() {
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-yellow-800">Services</p>
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-black">Services</p>
               <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
                 {landingContent.footer_services.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
 
-              <p className="mt-6 text-sm font-bold uppercase tracking-[0.22em] text-yellow-800">Clinic Hours</p>
+              <p className="mt-6 text-sm font-bold uppercase tracking-[0.22em] text-black">Schedule</p>
               <div className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
-                <p>Clinic Visit: Friday to Sunday, 9:00 AM - 3:00 PM</p>
-                <p>Virtual Consult: Monday to Friday, 10:00 AM - 8:00 PM</p>
-                <p>Weekend Virtual: Saturday and Sunday, 10:00 AM - 6:00 PM</p>
+                {clinicLocations.map((location) => (
+                  <p key={location.name}>{location.name}: {location.schedule}</p>
+                ))}
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-yellow-800">Contact</p>
+              <p className="text-sm font-bold uppercase tracking-[0.22em] text-black">Contact</p>
               <p className="mt-4 text-sm leading-7 text-slate-700">{landingContent.footer_contact_text}</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
-                  href="https://www.facebook.com/share/1GnJA9tPm2/"
+                  href={landingContent.contact_facebook_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-transparent px-4 py-2.5 text-sm font-bold text-yellow-900 transition hover:bg-white/40"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-transparent px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white/40"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#1877F2] text-white shadow-sm">
                     <FaFacebookF className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
-                  Doc Kulot Facebook
+                  {landingContent.contact_facebook_label}
                 </a>
                 <a
-                  href="https://www.youtube.com/@DocKulot"
+                  href={landingContent.contact_youtube_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-transparent px-4 py-2.5 text-sm font-bold text-yellow-900 transition hover:bg-white/40"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-transparent px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white/40"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#FF0000] text-white shadow-sm">
                     <FaYoutube className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
-                  Doc Kulot YouTube
+                  {landingContent.contact_youtube_label}
                 </a>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 py-5 text-sm text-slate-600 md:flex-row md:items-center md:justify-between">
-            <p>All rights reserved 2026</p>
-            <p className="text-slate-500">Doctor Kulot Clinic</p>
+            <p>{landingContent.footer_copyright}</p>
+            <p className="text-slate-500">Doc Kulot</p>
           </div>
         </div>
       </footer>
@@ -640,11 +710,11 @@ function SectionHeading({
   title,
   description,
   inverted = false,
-  eyebrowClassName = "text-sm font-semibold uppercase tracking-[0.25em] text-yellow-700",
+  eyebrowClassName = "text-sm font-semibold uppercase tracking-[0.25em] text-black",
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   inverted?: boolean;
   eyebrowClassName?: string;
 }) {
@@ -654,7 +724,7 @@ function SectionHeading({
       <h2 className={`mt-3 text-3xl font-black tracking-tight sm:text-4xl ${inverted ? "text-white" : "text-slate-950"}`}>
         {title}
       </h2>
-      <p className={`mt-4 leading-7 ${inverted ? "text-slate-300" : "text-slate-600"}`}>{description}</p>
+      {description ? <p className={`mt-4 leading-7 ${inverted ? "text-slate-300" : "text-slate-600"}`}>{description}</p> : null}
     </div>
   );
 }
@@ -676,33 +746,12 @@ function groupFaqsByCategory(faqs: PublicFaq[]) {
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <details className="group rounded-[1.4rem] border border-slate-200 bg-slate-50/80 px-4 py-4 transition hover:border-yellow-300 hover:bg-white">
+    <details className="group rounded-[1.4rem] border border-slate-200 bg-slate-50/80 px-4 py-4 transition hover:border-black hover:bg-white">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3 text-left">
         <span className="text-base font-bold leading-7 text-slate-950">{question}</span>
-        <span className="mt-1 text-lg font-black leading-none text-yellow-700 transition group-open:rotate-45">+</span>
+        <span className="mt-1 text-lg font-black leading-none text-black transition group-open:rotate-45">+</span>
       </summary>
       <p className="mt-4 border-t border-slate-200 pt-4 text-sm leading-7 text-slate-600">{answer}</p>
     </details>
-  );
-}
-
-function ScheduleCard({
-  title,
-  schedule,
-  hours,
-  detail,
-}: {
-  title: string;
-  schedule: string;
-  hours: string;
-  detail: string;
-}) {
-  return (
-    <article className="rounded-[1.8rem] border border-yellow-100 bg-white p-5 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-yellow-800">{title}</p>
-      <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">{hours}</h3>
-      <p className="mt-2 text-sm font-semibold text-slate-700">{schedule}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{detail}</p>
-    </article>
   );
 }

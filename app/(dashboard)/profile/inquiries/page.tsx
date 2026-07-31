@@ -119,7 +119,7 @@ export default function PatientFollowUpInquiriesPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-white disabled:bg-slate-400"
+              className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white disabled:bg-slate-400"
             >
               <FaPaperPlane className="h-3.5 w-3.5" />
               {isSubmitting ? "Sending..." : "Send inquiry"}

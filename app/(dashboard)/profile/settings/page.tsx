@@ -57,7 +57,7 @@ export default function PatientProfileSettingsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <section className="rounded-[2.25rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.92),transparent_34%),linear-gradient(135deg,#fffbeb_0%,#e6f4ff_42%,#cbe7ff_100%)] p-6 shadow-[0_24px_80px_rgba(133,77,14,0.10)] sm:p-8">
+      <section className="rounded-[2.25rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.92),transparent_34%),linear-gradient(135deg,#fafafa_0%,#e6f4ff_42%,#cbe7ff_100%)] p-6 shadow-[0_24px_80px_rgba(17,17,17,0.10)] sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Patient Settings</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-black">Your account settings</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
@@ -82,7 +82,7 @@ export default function PatientProfileSettingsPage() {
               <input
                 value={form.fullName}
                 onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                 placeholder="Enter your full name"
               />
             </Field>
@@ -99,7 +99,7 @@ export default function PatientProfileSettingsPage() {
               <input
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fefce8_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
                 placeholder="Enter your phone number"
               />
             </Field>
@@ -124,7 +124,7 @@ export default function PatientProfileSettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving ? "Saving..." : "Save Changes"}
               </button>

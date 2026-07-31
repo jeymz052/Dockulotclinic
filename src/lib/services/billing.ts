@@ -11,9 +11,11 @@ import type {
 import { getAppointment, getDoctor } from "@/src/lib/services/booking";
 import { enqueueNotification } from "@/src/lib/services/notification";
 import {
-  calculateConsultationCharge,
+  FOLLOW_UP_CLINIC_CONSULTATION_FEE,
+  NEW_PATIENT_CLINIC_CONSULTATION_FEE,
   formatDurationLabel,
-  normalizeConfiguredConsultationRate,
+  normalizeConfiguredClinicConsultationRate,
+  resolveClinicConsultationFee,
 } from "@/src/lib/consultation-pricing";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 
@@ -273,19 +275,40 @@ export async function issueBilling(input: {
     };
   });
   const doctor = await getDoctor(appt.doctor_id);
-  const consultationHourlyRate = normalizeConfiguredConsultationRate(
+  const { data: patientProfile, error: patientProfileError } = await supabase
+    .from("patients")
+    .select("patient_category")
+    .eq("id", appt.patient_id)
+    .maybeSingle<{ patient_category: "New" | "Regular" | "OldRecord" | null }>();
+  if (patientProfileError) throw patientProfileError;
+  const { data: priorClinicAppointments, error: priorClinicAppointmentsError } = await supabase
+    .from("appointments")
+    .select("id")
+    .eq("patient_id", appt.patient_id)
+    .eq("appointment_type", "Clinic")
+    .not("status", "in", '("Cancelled","NoShow")')
+    .neq("id", appt.id)
+    .limit(1);
+  if (priorClinicAppointmentsError) throw priorClinicAppointmentsError;
+
+  const newPatientClinicRate = normalizeConfiguredClinicConsultationRate(
     Number(doctor.consultation_fee_clinic),
   );
+  const consultationFee = resolveClinicConsultationFee({
+    patientCategory: patientProfile?.patient_category ?? "New",
+    hasPriorClinicConsultation: (priorClinicAppointments?.length ?? 0) > 0,
+  }) === NEW_PATIENT_CLINIC_CONSULTATION_FEE
+    ? newPatientClinicRate
+    : FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  const consultationLabel = consultationFee === FOLLOW_UP_CLINIC_CONSULTATION_FEE
+    ? "Clinic consultation - Follow-up for returning new patient"
+    : "Clinic consultation - First-time / new patient";
   const consultationLine = {
     pricing_id: null,
     product_id: null,
-    description: `Clinic consultation (${formatDurationLabel(appt.start_time, appt.end_time)} @ PHP ${consultationHourlyRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/hr)`,
+    description: `${consultationLabel} (${formatDurationLabel(appt.start_time, appt.end_time)})`,
     quantity: 1,
-    unit_price: calculateConsultationCharge(
-      consultationHourlyRate,
-      appt.start_time,
-      appt.end_time,
-    ),
+    unit_price: consultationFee,
   };
 
   const allItems = [consultationLine, ...normalizedItems];

@@ -17,7 +17,13 @@ export default function PatientRecordsPage() {
   const [visits, setVisits] = useState<PatientVisitRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [search, setSearch] = useState("");
-  const [familyHistoryDraft, setFamilyHistoryDraft] = useState("");
+  const [recordDraft, setRecordDraft] = useState({
+    familyHistory: "",
+    medicalHistory: "",
+    allergies: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -78,15 +84,28 @@ export default function PatientRecordsPage() {
     ?? null;
 
   useEffect(() => {
-    setFamilyHistoryDraft(selectedPatient?.familyHistory ?? "");
-  }, [selectedPatient?.id, selectedPatient?.familyHistory]);
+    setRecordDraft({
+      familyHistory: selectedPatient?.familyHistory ?? "",
+      medicalHistory: selectedPatient?.medicalHistory ?? "",
+      allergies: selectedPatient?.allergies ?? "",
+      emergencyContactName: selectedPatient?.emergencyContactName ?? "",
+      emergencyContactPhone: selectedPatient?.emergencyContactPhone ?? "",
+    });
+  }, [
+    selectedPatient?.id,
+    selectedPatient?.familyHistory,
+    selectedPatient?.medicalHistory,
+    selectedPatient?.allergies,
+    selectedPatient?.emergencyContactName,
+    selectedPatient?.emergencyContactPhone,
+  ]);
 
   const patientVisits = useMemo(
     () => visits.filter((visit) => visit.patientId === selectedPatient?.id),
     [selectedPatient?.id, visits],
   );
 
-  function saveFamilyHistory() {
+  function savePatientRecordDetails() {
     if (!accessToken || !selectedPatient) return;
 
     startTransition(async () => {
@@ -98,7 +117,11 @@ export default function PatientRecordsPage() {
         },
         body: JSON.stringify({
           patientId: selectedPatient.id,
-          familyHistory: familyHistoryDraft,
+          familyHistory: recordDraft.familyHistory,
+          medicalHistory: recordDraft.medicalHistory,
+          allergies: recordDraft.allergies,
+          emergencyContactName: recordDraft.emergencyContactName,
+          emergencyContactPhone: recordDraft.emergencyContactPhone,
         }),
       });
 
@@ -107,7 +130,7 @@ export default function PatientRecordsPage() {
         const message =
           payload && "message" in payload && typeof payload.message === "string"
             ? payload.message
-            : "Unable to save family history.";
+            : "Unable to save patient record details.";
         setFeedback(message);
         return;
       }
@@ -115,20 +138,33 @@ export default function PatientRecordsPage() {
       setPatients((current) =>
         current.map((patient) =>
           patient.id === selectedPatient.id
-            ? { ...patient, familyHistory: familyHistoryDraft.trim() }
+            ? {
+                ...patient,
+                familyHistory: recordDraft.familyHistory.trim(),
+                medicalHistory: recordDraft.medicalHistory.trim(),
+                allergies: recordDraft.allergies.trim(),
+                emergencyContactName: recordDraft.emergencyContactName.trim(),
+                emergencyContactPhone: recordDraft.emergencyContactPhone.trim(),
+              }
             : patient,
         ),
       );
-      setFeedback("Family history saved.");
+      setFeedback("Patient record details saved.");
     });
   }
 
   const pendingFamilyHistorySave =
-    selectedPatient != null && familyHistoryDraft !== (selectedPatient.familyHistory ?? "");
+    selectedPatient != null && (
+      recordDraft.familyHistory !== (selectedPatient.familyHistory ?? "")
+      || recordDraft.medicalHistory !== (selectedPatient.medicalHistory ?? "")
+      || recordDraft.allergies !== (selectedPatient.allergies ?? "")
+      || recordDraft.emergencyContactName !== (selectedPatient.emergencyContactName ?? "")
+      || recordDraft.emergencyContactPhone !== (selectedPatient.emergencyContactPhone ?? "")
+    );
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(133,77,14,0.24),_transparent_34%),linear-gradient(135deg,_#f0faff,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(133,77,14,0.14)]">
+      <section className="overflow-hidden rounded-[2.5rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.24),_transparent_34%),linear-gradient(135deg,_#f8f8f7,_#eef9ff_48%,_#e0f6ff)] p-6 shadow-[0_30px_80px_rgba(17,17,17,0.14)]">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Patient Records</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Medical history, vitals, and family history in one view</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
@@ -208,34 +244,90 @@ export default function PatientRecordsPage() {
                   <DetailRow label="Visits on record" value={String(patientVisits.length)} />
                   <DetailRow label="Latest status" value={patientVisits[0]?.status ?? "No visits yet"} />
                   <DetailRow label="Type" value={selectedPatient.isWalkIn ? "Walk-in patient" : "Registered patient"} />
+                  <DetailRow label="Record status" value={selectedPatient.patientCategory} />
                 </InfoCard>
               </div>
 
               <div className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Family History</p>
-                    <h2 className="mt-2 text-xl font-bold text-slate-900">Shared patient background</h2>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Patient Record</p>
+                    <h2 className="mt-2 text-xl font-bold text-slate-900">Background, allergies, and emergency contact</h2>
                   </div>
                   <button
                     type="button"
-                    onClick={saveFamilyHistory}
+                    onClick={savePatientRecordDetails}
                     disabled={isSaving || !pendingFamilyHistorySave}
-                    className="rounded-full bg-yellow-400 px-5 py-2 text-sm font-semibold text-white transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSaving ? "Saving..." : "Save Family History"}
+                    {isSaving ? "Saving..." : "Save Patient Record"}
                   </button>
                 </div>
-                <textarea
-                  value={familyHistoryDraft}
-                  onChange={(event) => {
-                    setFamilyHistoryDraft(event.target.value);
-                    setFeedback(null);
-                  }}
-                  rows={5}
-                  placeholder="Document illnesses or conditions seen in the family, for example hypertension, diabetes, stroke, asthma, or cancer."
-                  className="mt-4 w-full rounded-3xl border border-yellow-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
-                />
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Emergency Contact Name
+                    <input
+                      value={recordDraft.emergencyContactName}
+                      onChange={(event) => {
+                        setRecordDraft((current) => ({ ...current, emergencyContactName: event.target.value }));
+                        setFeedback(null);
+                      }}
+                      className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                      placeholder="Spouse, parent, sibling, or guardian"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    Emergency Contact Phone
+                    <input
+                      value={recordDraft.emergencyContactPhone}
+                      onChange={(event) => {
+                        setRecordDraft((current) => ({ ...current, emergencyContactPhone: event.target.value }));
+                        setFeedback(null);
+                      }}
+                      className="mt-2 w-full rounded-2xl border border-yellow-100 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                      placeholder="+63 9XX XXX XXXX"
+                    />
+                  </label>
+                </div>
+                <label className="mt-4 block text-sm font-medium text-slate-700">
+                  Medical History
+                  <textarea
+                    value={recordDraft.medicalHistory}
+                    onChange={(event) => {
+                      setRecordDraft((current) => ({ ...current, medicalHistory: event.target.value }));
+                      setFeedback(null);
+                    }}
+                    rows={4}
+                    placeholder="Past illnesses, operations, maintenance medicines, hypertension, diabetes, asthma, pregnancy history, or other relevant medical background."
+                    className="mt-2 w-full rounded-3xl border border-yellow-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                  />
+                </label>
+                <label className="mt-4 block text-sm font-medium text-slate-700">
+                  Allergies
+                  <textarea
+                    value={recordDraft.allergies}
+                    onChange={(event) => {
+                      setRecordDraft((current) => ({ ...current, allergies: event.target.value }));
+                      setFeedback(null);
+                    }}
+                    rows={3}
+                    placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies."
+                    className="mt-2 w-full rounded-3xl border border-yellow-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                  />
+                </label>
+                <label className="mt-4 block text-sm font-medium text-slate-700">
+                  Family History
+                  <textarea
+                    value={recordDraft.familyHistory}
+                    onChange={(event) => {
+                      setRecordDraft((current) => ({ ...current, familyHistory: event.target.value }));
+                      setFeedback(null);
+                    }}
+                    rows={5}
+                    placeholder="Document illnesses or conditions seen in the family, for example hypertension, diabetes, stroke, asthma, cancer, thyroid disease, or heart disease."
+                    className="mt-2 w-full rounded-3xl border border-yellow-100 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                  />
+                </label>
               </div>
 
               <div className="rounded-4xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
@@ -347,7 +439,7 @@ export default function PatientRecordsPage() {
 
 function InfoCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(133,77,14,0.08)]">
+    <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-5 shadow-[0_16px_34px_rgba(17,17,17,0.08)]">
       <div className="flex items-center gap-2 text-yellow-700">
         {icon}
         <p className="text-xs font-semibold uppercase tracking-[0.18em]">{title}</p>

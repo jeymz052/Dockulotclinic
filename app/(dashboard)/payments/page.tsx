@@ -83,7 +83,7 @@ export default function OnlinePaymentPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.22),transparent_32%),linear-gradient(135deg,#0c4a6e_0%,#854D0E_46%,#075985_100%)] p-6 text-white shadow-[0_28px_70px_rgba(133,77,14,0.18)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_32%),linear-gradient(135deg,#111111_0%,#1f1f1f_46%,#111111_100%)] p-6 text-white shadow-[0_28px_70px_rgba(17,17,17,0.18)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-100">Payments</p>
@@ -117,7 +117,7 @@ export default function OnlinePaymentPage() {
           </div>
           <Link
             href="/payments/history"
-            className="rounded-full bg-[linear-gradient(135deg,#854D0E,#A16207)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(133,77,14,0.22)] transition hover:-translate-y-0.5"
+            className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5"
           >
             View Payment History
           </Link>
