@@ -1,4 +1,14 @@
 import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Dr. Fatimah Al-Zahra T. Ditti",
+  description:
+    "Learn about Doc Kulot, Dr. Fatimah Al-Zahra T. Ditti, a family medicine and aesthetic medicine doctor serving patients in Zamboanga City.",
+  alternates: {
+    canonical: "/about",
+  },
+};
 
 const ABOUT_ITEMS = [
   { label: "Specialty", value: "Family Medicine and Aesthetic Medicine" },

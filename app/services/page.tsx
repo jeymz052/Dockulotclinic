@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   FaArrowRight,
   FaCheck,
@@ -7,6 +8,15 @@ import {
   FaStethoscope,
 } from "react-icons/fa6";
 import { clinicServices } from "@/src/lib/healthcare-content";
+
+export const metadata: Metadata = {
+  title: "Services",
+  description:
+    "Browse Doc Kulot services including clinic consultation, telemedicine, women's health, aesthetic procedures, prescription refill, laboratory interpretation, and wellness care.",
+  alternates: {
+    canonical: "/services",
+  },
+};
 
 const TELEMEDICINE_HIGHLIGHTS = [
   "Weight loss management",

@@ -112,10 +112,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f5f5f5_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f5f5f5_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Settings</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Settings</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Manage clinic details and hours</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">Update the clinic profile, hours, and consultation fee settings.</p>
           </div>
@@ -131,8 +131,8 @@ export default function SettingsPage() {
         <div
           className={`rounded-xl px-4 py-3 text-sm font-medium ${
             feedback.type === "success"
-              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
-              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
+              ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
+              : "border border-neutral-200 bg-neutral-50 text-neutral-800"
           }`}
         >
           {feedback.message}
@@ -140,12 +140,12 @@ export default function SettingsPage() {
       ) : null}
 
       {!canEdit ? (
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
           Read-only view. Only Super Admin and Doctor can modify system settings.
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="rounded-4xl border border-yellow-100 bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1">
+      <form onSubmit={handleSubmit} className="rounded-4xl border border-neutral-100 bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1">
         <h2 className="text-lg font-bold text-slate-900">General</h2>
         <fieldset disabled={loading || !canEdit || isSaving} className="mt-6 space-y-6">
           <div>
@@ -154,7 +154,7 @@ export default function SettingsPage() {
               type="text"
               value={settings.clinicName}
               onChange={(e) => updateField("clinicName", e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
             />
           </div>
 
@@ -165,7 +165,7 @@ export default function SettingsPage() {
                 type="email"
                 value={settings.email}
                 onChange={(e) => updateField("email", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </div>
             <div>
@@ -174,7 +174,7 @@ export default function SettingsPage() {
                 type="tel"
                 value={settings.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function SettingsPage() {
               type="text"
               value={settings.address}
               onChange={(e) => updateField("address", e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
             />
           </div>
 
@@ -196,7 +196,7 @@ export default function SettingsPage() {
                 type="time"
                 value={settings.clinicOpenTime}
                 onChange={(e) => updateField("clinicOpenTime", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </div>
             <div>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
                 type="time"
                 value={settings.clinicCloseTime}
                 onChange={(e) => updateField("clinicCloseTime", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-3 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </div>
           </div>
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                 step="0.01"
                 value={settings.onlineConsultationFee}
                 onChange={(e) => updateField("onlineConsultationFee", Number(e.target.value))}
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-400"
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-neutral-400"
               />
             </div>
             <div>
@@ -230,14 +230,14 @@ export default function SettingsPage() {
                 max={20}
                 value={settings.maxPatientsPerHour}
                 onChange={(e) => updateField("maxPatientsPerHour", Number(e.target.value))}
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-400"
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-neutral-400"
               />
             </div>
           </div>
 
-          <div className="border-t border-yellow-100 pt-6">
+          <div className="border-t border-neutral-100 pt-6">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-100 text-yellow-700">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
                 <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
               <div>
@@ -259,33 +259,33 @@ export default function SettingsPage() {
                 onChange={(e) => updateField("defaultMeetingLink", e.target.value)}
                 className={`mt-2 w-full rounded-2xl border px-3 py-3 outline-none transition focus:ring-4 ${
                   meetingLinkClass.state === "invalid"
-                    ? "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"
-                    : "border-yellow-100 focus:border-amber-400 focus:ring-amber-100"
+                    ? "border-neutral-300 focus:border-neutral-400 focus:ring-neutral-100"
+                    : "border-neutral-100 focus:border-neutral-400 focus:ring-neutral-100"
                 }`}
               />
 
               <div className="mt-2 space-y-2 text-xs">
                 {meetingLinkClass.state === "empty" ? (
-                  <p className="inline-flex items-center gap-1.5 text-yellow-700">
+                  <p className="inline-flex items-center gap-1.5 text-neutral-700">
                     <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
                     No link saved. Online bookings will be confirmed without a meeting link until you add one.
                   </p>
                 ) : null}
                 {meetingLinkClass.state === "invalid" ? (
-                  <p className="inline-flex items-center gap-1.5 text-yellow-700">
+                  <p className="inline-flex items-center gap-1.5 text-neutral-700">
                     <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
-                    That doesn&apos;t look like a valid <code className="rounded bg-yellow-50 px-1">https://</code> URL.
+                    That doesn&apos;t look like a valid <code className="rounded bg-neutral-50 px-1">https://</code> URL.
                   </p>
                 ) : null}
                   {meetingLinkClass.state === "valid-known" ? (
-                    <p className="inline-flex items-center gap-1.5 text-yellow-700">
-                      <FaCircleCheck className="h-3 w-3 text-amber-400" aria-hidden="true" />
+                    <p className="inline-flex items-center gap-1.5 text-neutral-700">
+                      <FaCircleCheck className="h-3 w-3 text-neutral-400" aria-hidden="true" />
                       Looks good — host detected: <span className="font-semibold">{meetingLinkClass.host}</span>
                     </p>
                   ) : null}
                 {meetingLinkClass.state === "valid-unknown" ? (
                     <p className="inline-flex items-center gap-1.5 text-slate-600">
-                    <FaCircleCheck className="h-3 w-3 text-amber-400" aria-hidden="true" />
+                    <FaCircleCheck className="h-3 w-3 text-neutral-400" aria-hidden="true" />
                     Saved as-is. Host <span className="font-semibold">{meetingLinkClass.host}</span> isn&apos;t a recognised meeting provider — double-check it works.
                   </p>
                 ) : null}
@@ -296,12 +296,12 @@ export default function SettingsPage() {
                   </summary>
                   <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs leading-5">
                     <li>
-                      For Google Meet, open <a href="https://meet.new" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-yellow-700 hover:underline">meet.new <FaUpRightFromSquare className="h-2.5 w-2.5" aria-hidden="true" /></a> while signed in to the doctor&apos;s Google account.
+                      For Google Meet, open <a href="https://meet.new" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-neutral-700 hover:underline">meet.new <FaUpRightFromSquare className="h-2.5 w-2.5" aria-hidden="true" /></a> while signed in to the doctor&apos;s Google account.
                     </li>
                     <li>
                       Copy the URL from the address bar for Google Meet, or paste your Zoom meeting URL directly.
                     </li>
-                    <li>Paste it above and save. Patients will receive this link in their booking-confirmation email and SMS.</li>
+                    <li>Paste it above and save. Patients will receive this link in email and the patient portal; SMS reminders stay short to save credits.</li>
                     <li>
                       <span className="font-semibold">Privacy tip:</span> if your platform uses a waiting room or lobby, only admit the patient whose slot is active.
                     </li>
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                       href={settings.defaultMeetingLink.trim()}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-100"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100"
                     >
                       <FaUpRightFromSquare className="h-2.5 w-2.5" aria-hidden="true" />
                       Test the link
@@ -328,7 +328,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={isSaving || loading || meetingLinkClass.state === "invalid"}
-              className="rounded-full bg-black px-6 py-3 font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-yellow-300"
+              className="rounded-full bg-black px-6 py-3 font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.18)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
@@ -343,9 +343,10 @@ function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-yellow-100 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50"
+      className="rounded-full border border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
     >
       {label}
     </Link>
   );
 }
+

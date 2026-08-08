@@ -146,7 +146,7 @@ export default function AppointmentsPage() {
   }, [isLoading, role, router]);
 
   if (isLoading || role === "DOCTOR") {
-    return <div className="h-40 rounded-4xl border border-yellow-100 bg-white animate-pulse shadow-sm" />;
+    return <div className="h-40 rounded-4xl border border-neutral-100 bg-white animate-pulse shadow-sm" />;
   }
 
   const isStaff = role === "SUPER_ADMIN" || role === "SECRETARY";
@@ -155,10 +155,10 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Appointments</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Appointments</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Book and manage visits in one place</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               A calmer booking flow for patients and front-desk staff, with shortcuts to payments and records.
@@ -173,19 +173,19 @@ export default function AppointmentsPage() {
       </section>
 
       {finalize.kind === "running" ? (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-700">
-          <span className="inline-block h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-yellow-300 border-t-amber-600" aria-hidden="true" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
+          <span className="inline-block h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" aria-hidden="true" />
           <span>Finalizing your booking — confirming the payment with PayMongo…</span>
         </div>
       ) : null}
       {finalize.kind === "success" ? (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-700">
-          <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
+          <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
           <div>
             <p className="font-semibold">Booking confirmed!</p>
             <p className="mt-0.5">
               Your online consultation has been recorded.{" "}
-              <Link href={manageHref} className="font-semibold underline underline-offset-2 hover:text-yellow-800">
+              <Link href={manageHref} className="font-semibold underline underline-offset-2 hover:text-neutral-800">
                 View your appointments →
               </Link>
             </p>
@@ -193,8 +193,8 @@ export default function AppointmentsPage() {
         </div>
       ) : null}
       {finalize.kind === "error" ? (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
-          <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-800">
+          <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
           <div>
             <p className="font-semibold">We couldn&apos;t finalize the booking automatically</p>
             <p className="mt-0.5">{finalize.message}</p>
@@ -211,9 +211,10 @@ function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-yellow-100 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50"
+      className="rounded-full border border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
     >
       {label}
     </Link>
   );
 }
+

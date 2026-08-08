@@ -56,7 +56,7 @@ export default function HelpPage() {
       <section className="overflow-hidden rounded-[2.5rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.24),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#f3f3f3_48%,#eaeaea_100%)] p-6 shadow-[0_24px_70px_rgba(17,17,17,0.10)] sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Help Center</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Help Center</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl">
               Doc Kulot clinic help for staff workflows
             </h1>
@@ -72,7 +72,7 @@ export default function HelpPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-yellow-100 bg-white p-4 shadow-sm sm:p-5">
+      <section className="rounded-[2rem] border border-neutral-100 bg-white p-4 shadow-sm sm:p-5">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <StatCard title="Appointments" value="Booking, queue, approval" />
           <StatCard title="POS Billing" value="Invoices, payments, receipts" />
@@ -80,13 +80,13 @@ export default function HelpPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-sm sm:p-6">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-700">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
               <FaStethoscope className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-yellow-700">Quick Modules</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-700">Quick Modules</p>
               <h2 className="text-xl font-black tracking-tight text-black">Where to go for each task</h2>
             </div>
           </div>
@@ -100,15 +100,15 @@ export default function HelpPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-yellow-700">{card.kicker}</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">{card.kicker}</p>
                     <h3 className="mt-2 text-lg font-black tracking-tight text-black">{card.title}</h3>
                   </div>
-                  <span className="rounded-full bg-yellow-50 p-2 text-yellow-700 transition group-hover:bg-yellow-100">
+                  <span className="rounded-full bg-neutral-50 p-2 text-neutral-700 transition group-hover:bg-neutral-100">
                     {card.icon}
                   </span>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{card.description}</p>
-                <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-yellow-700">
+                <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                   Open module
                   <FaArrowRight className="h-3.5 w-3.5" />
                 </p>
@@ -117,35 +117,35 @@ export default function HelpPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-sm sm:p-6">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-700">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
               <FaInbox className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-yellow-700">Common Questions</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-700">Common Questions</p>
               <h2 className="text-xl font-black tracking-tight text-black">Answers for front-desk and clinic staff</h2>
             </div>
           </div>
 
           <div className="mt-5 space-y-3">
             {STAFF_TOPICS.map((faq) => (
-              <details key={faq.question} className="group rounded-[1.35rem] border border-yellow-100 bg-yellow-50/45">
+              <details key={faq.question} className="group rounded-[1.35rem] border border-neutral-100 bg-neutral-50/45">
                 <summary className="flex cursor-pointer items-center justify-between gap-4 px-4 py-4 text-left font-semibold text-slate-900">
                   <span>{faq.question}</span>
-                  <span className="shrink-0 text-yellow-700 transition group-open:rotate-45">+</span>
+                  <span className="shrink-0 text-neutral-700 transition group-open:rotate-45">+</span>
                 </summary>
-                <p className="border-t border-yellow-100 px-4 py-4 text-sm leading-6 text-slate-600">{faq.answer}</p>
+                <p className="border-t border-neutral-100 px-4 py-4 text-sm leading-6 text-slate-600">{faq.answer}</p>
               </details>
             ))}
           </div>
         </section>
       </div>
 
-      <section className="rounded-[2rem] border border-yellow-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8f8f7_100%)] p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-neutral-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8f8f7_100%)] p-6 shadow-sm">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-yellow-700">Need a hand?</p>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-700">Need a hand?</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-black">Use the clinic tools, then reach out if something still needs review.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
               If a task still feels blocked, open the relevant module first. For anything that needs manual review, use the Contact page or the inquiry queue so the team can help.
@@ -161,7 +161,7 @@ export default function HelpPage() {
             </Link>
             <Link
               href="/inquiries"
-              className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-5 py-3 text-sm font-bold text-yellow-700 transition hover:bg-yellow-50"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
             >
               Open inquiries
             </Link>
@@ -176,7 +176,7 @@ function Shortcut({ href, label, icon }: { href: string; label: string; icon: Re
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-200 hover:bg-white"
+      className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-200 hover:bg-white"
     >
       {icon}
       {label}
@@ -186,8 +186,8 @@ function Shortcut({ href, label, icon }: { href: string; label: string; icon: Re
 
 function StatCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-[1.4rem] border border-yellow-100 bg-yellow-50/50 p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-yellow-700">{title}</p>
+    <div className="rounded-[1.4rem] border border-neutral-100 bg-neutral-50/50 p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">{title}</p>
       <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{value}</p>
     </div>
   );
@@ -230,3 +230,4 @@ const MODULE_CARDS = [
     icon: <FaShieldHalved className="h-4 w-4" />,
   },
 ] as const;
+

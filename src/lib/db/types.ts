@@ -121,6 +121,37 @@ export type OnlineBookingReservation = {
   updated_at: string;
 };
 
+export type PatientProcedureConsent = {
+  id: string;
+  patient_id: string;
+  appointment_id: string | null;
+  reservation_id: string | null;
+  procedure_name: string;
+  patient_name: string;
+  patient_signature: string;
+  witness_name: string | null;
+  witness_signature: string | null;
+  witness_signed_at: string | null;
+  physician_name: string | null;
+  physician_signature: string | null;
+  physician_signed_at: string | null;
+  consent_form_url: string;
+  consent_version: string;
+  consent_snapshot: Record<string, unknown>;
+  procedure_explained: boolean;
+  outcomes_vary_acknowledged: boolean;
+  risk_acknowledged: boolean;
+  liability_acknowledged: boolean;
+  withdrawal_acknowledged: boolean;
+  voluntary_acknowledged: boolean;
+  aftercare_acknowledged: boolean;
+  aftercare_guide_title: string | null;
+  aftercare_image_url: string | null;
+  signed_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Billing = {
   id: string;
   appointment_id: string | null;

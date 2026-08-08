@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { HttpError, isStaff, type Actor } from "@/src/lib/http";
-import { isProcedureServiceTitle } from "@/src/lib/appointment-context";
+import { isProcedureServiceTitle, parseAppointmentContext } from "@/src/lib/appointment-context";
 import type {
   Appointment,
   OnlineBookingReservation,
@@ -13,6 +13,12 @@ import {
   enqueueAppointmentTeamNotifications,
   enqueueNotification,
 } from "@/src/lib/services/notification";
+import {
+  linkProcedureConsentToAppointment,
+  upsertProcedureConsentForReservation,
+  validateProcedureConsentPayload,
+  type ProcedureConsentPayload,
+} from "@/src/lib/services/procedure-consent";
 import { ONLINE_CONSULTATION_FEE, PROCEDURE_DOWNPAYMENT_AMOUNT } from "@/src/lib/consultation-pricing";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 import { finalizeInventorySaleForBilling } from "@/src/lib/services/billing";
@@ -24,10 +30,12 @@ import {
   validateSharedSlotOrThrow,
   type AppointmentCreatePayload,
 } from "@/src/lib/server/appointments-store";
-import { addOneHour } from "@/src/lib/server/legacy-bridge";
+import { addOneHourSql, normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
 
 const DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS =
   "Send the transfer to the clinic's bank account, then wait for staff verification. Your appointment stays unconfirmed until payment is marked as paid.";
+const FINALIZATION_WAIT_ATTEMPTS = 12;
+const FINALIZATION_WAIT_MS = 250;
 
 // All online consultation payments are processed by PayMongo:
 //   - paymongo_gcash → QR Ph (currently routes everything via QR Ph; once
@@ -118,8 +126,48 @@ function paymongoProviderTag(option: OnlineCheckoutOption): string {
   return "paymongo_gcash";
 }
 
+function isMissingReservationTypeColumn(error: { code?: string; message?: string } | null | undefined) {
+  return error?.code === "PGRST204" && /appointment_type/i.test(error.message ?? "");
+}
+
+function coerceReservationType(
+  reservation: OnlineBookingReservation,
+  fallbackType: "Online" | "Clinic" = "Online",
+): OnlineBookingReservation {
+  return {
+    ...reservation,
+    appointment_type: reservation.appointment_type ?? fallbackType,
+  };
+}
+
 function getManualTransferInstructions() {
   return process.env.ONLINE_BANK_TRANSFER_INSTRUCTIONS ?? DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function findPaymentByProviderRef(provider: string, providerRef: string): Promise<Payment | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: exact, error: exactError } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("provider", provider)
+    .eq("provider_ref", providerRef)
+    .maybeSingle<Payment>();
+  if (exactError) throw exactError;
+  if (exact) return exact;
+
+  if (provider !== "paymongo") return null;
+
+  const { data: fallback, error: fallbackError } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("provider_ref", providerRef)
+    .maybeSingle<Payment>();
+  if (fallbackError) throw fallbackError;
+  return fallback ?? null;
 }
 
 function buildManualTransferReference(reservationId: string) {
@@ -139,7 +187,7 @@ async function findReservationByPaymentRef(
     .eq("payment_ref", provider_ref)
     .maybeSingle<OnlineBookingReservation>();
   if (exactError) throw exactError;
-  if (exact) return exact;
+  if (exact) return coerceReservationType(exact);
 
   const { data: fallback, error: fallbackError } = await supabase
     .from("online_booking_reservations")
@@ -147,27 +195,41 @@ async function findReservationByPaymentRef(
     .eq("payment_ref", provider_ref)
     .maybeSingle<OnlineBookingReservation>();
   if (fallbackError) throw fallbackError;
-  return fallback ?? null;
+  return fallback ? coerceReservationType(fallback) : null;
 }
 
-async function notifyOnlineConfirmed(appt: Appointment, meetingLink: string | null) {
+function buildPaidBookingNotificationPayload(
+  reservation: OnlineBookingReservation,
+  appointment: Appointment,
+  meetingLink: string | null,
+) {
+  const context = parseAppointmentContext(reservation.reason);
+  const service = context.service || (reservation.appointment_type === "Online" ? "Telemedicine Services" : "Medical Procedure");
+  const isProcedureReservation =
+    reservation.appointment_type === "Clinic" && isProcedureServiceTitle(service);
+
+  return {
+    appointment_id: appointment.id,
+    appointment_type: appointment.appointment_type,
+    appointment_date: appointment.appointment_date,
+    start_time: appointment.start_time,
+    service,
+    amount: reservation.amount,
+    meeting_link: meetingLink,
+    payment_purpose: isProcedureReservation ? "procedure_downpayment" : "online_consultation",
+  };
+}
+
+async function notifyPaidBookingConfirmed(
+  reservation: OnlineBookingReservation,
+  appt: Appointment,
+  meetingLink: string | null,
+) {
   await enqueueNotification({
     user_id: appt.patient_id,
-    template: "appointment_confirmed",
+    template: "appointment_paid_and_confirmed",
     channels: ["email", "sms"],
-    payload: { appointment_id: appt.id, meeting_link: meetingLink },
-  });
-  await enqueueNotification({
-    user_id: appt.patient_id,
-    template: "appointment_payment_success",
-    channels: ["email", "sms"],
-    payload: { appointment_id: appt.id, meeting_link: meetingLink },
-  });
-  await enqueueNotification({
-    user_id: appt.patient_id,
-    template: "online_meeting_link",
-    channels: ["email", "sms"],
-    payload: { appointment_id: appt.id, meeting_link: meetingLink },
+    payload: buildPaidBookingNotificationPayload(reservation, appt, meetingLink),
   });
 }
 
@@ -176,6 +238,7 @@ export async function createOnlineCheckoutSession(
     reservationId?: string;
     checkoutOption?: OnlineCheckoutOption;
     service?: string;
+    procedureConsent?: ProcedureConsentPayload;
   },
   actor: Actor,
 ): Promise<{
@@ -214,11 +277,14 @@ export async function createOnlineCheckoutSession(
     actorUserId: actor.profile.role === "patient" ? actor.id : undefined,
   });
   stage("resolved-patient", { patientId });
-  const start_time = `${input.start}:00`;
-  const end_time = `${addOneHour(input.start)}:00`;
+  const start_time = normalizeSqlTime(input.start);
+  const end_time = addOneHourSql(input.start);
   await getDoctor(doctorId);
   const amount = resolveCheckoutAmount(input);
   const { description, lineItemName } = describeCheckout(input);
+  const procedureConsent = input.type === "Clinic" && isProcedureServiceTitle(input.service)
+    ? validateProcedureConsentPayload(input.procedureConsent, input.patientName)
+    : null;
   stage("computed-amount", { amount });
 
   const supabase = getSupabaseAdmin();
@@ -245,11 +311,30 @@ export async function createOnlineCheckoutSession(
       .maybeSingle<OnlineBookingReservation>();
     if (existingErr) throw existingErr;
     if (!existing) throw new HttpError(404, "Reservation not found");
-    if (existing.status !== "Pending") throw new HttpError(409, "Reservation is not pending");
+    const normalizedExisting = coerceReservationType(existing, input.type);
+    if (normalizedExisting.status !== "Pending") throw new HttpError(409, "Reservation is not pending");
+    const reservationMatchesBooking =
+      normalizedExisting.patient_id === patientId
+      && normalizedExisting.doctor_id === doctorId
+      && normalizedExisting.appointment_date === input.date
+      && normalizedExisting.start_time === start_time
+      && normalizedExisting.end_time === end_time
+      && normalizedExisting.appointment_type === input.type;
+    if (!reservationMatchesBooking) {
+      throw new HttpError(409, "Saved reservation no longer matches this booking. Please start over and choose the slot again.");
+    }
+    if (procedureConsent) {
+      await upsertProcedureConsentForReservation({
+        reservationId: existing.id,
+        patientId,
+        appointmentId: existing.appointment_id,
+        consent: procedureConsent,
+      });
+    }
 
     try {
       if (checkoutOption === "bank_transfer") {
-        const paymentReference = existing.payment_ref ?? buildManualTransferReference(existing.id);
+        const paymentReference = normalizedExisting.payment_ref ?? buildManualTransferReference(normalizedExisting.id);
         const { data: updated, error: updateError } = await supabase
           .from("online_booking_reservations")
           .update({
@@ -257,14 +342,14 @@ export async function createOnlineCheckoutSession(
             payment_ref: paymentReference,
             status: "Pending",
           })
-          .eq("id", existing.id)
+          .eq("id", normalizedExisting.id)
           .select()
           .single<OnlineBookingReservation>();
         if (updateError) throw updateError;
 
         return {
           url: null,
-          reservation: updated,
+          reservation: coerceReservationType(updated, input.type),
           checkoutMode: "manual",
           instructions: getManualTransferInstructions(),
           paymentReference,
@@ -280,27 +365,27 @@ export async function createOnlineCheckoutSession(
         const { data: updated, error: updateError } = await supabase
           .from("online_booking_reservations")
           .update({ payment_provider: "stripe", payment_ref: checkout.session.id })
-          .eq("id", existing.id)
+          .eq("id", normalizedExisting.id)
           .select()
           .single<OnlineBookingReservation>();
         if (updateError) throw updateError;
 
         return {
           url: checkout.session.url,
-          reservation: updated,
+          reservation: coerceReservationType(updated, input.type),
           checkoutMode: "redirect",
         };
       }
 
       const checkout = await createPayMongoCheckoutSession({
         description,
-        amount: existing.amount,
+        amount: normalizedExisting.amount,
         customerEmail: input.email,
         customerName: input.patientName,
         customerPhone: input.phone,
         paymentMethods: mapCheckoutMethods(paymongoMethodGroup(checkoutOption)),
-        successPath: `/appointments?reservation_paid=${encodeURIComponent(existing.id)}`,
-        metadata: { reservation_id: existing.id },
+        successPath: `/appointments?reservation_paid=${encodeURIComponent(normalizedExisting.id)}`,
+        metadata: { reservation_id: normalizedExisting.id },
         lineItemName,
       });
 
@@ -310,14 +395,14 @@ export async function createOnlineCheckoutSession(
           payment_provider: paymongoProviderTag(checkoutOption),
           payment_ref: checkout.sessionId,
         })
-        .eq("id", existing.id)
+        .eq("id", normalizedExisting.id)
         .select()
         .single<OnlineBookingReservation>();
       if (updateError) throw updateError;
 
       return {
         url: checkout.checkoutUrl,
-        reservation: updated,
+        reservation: coerceReservationType(updated, input.type),
         checkoutMode: "redirect",
       };
     } catch (error) {
@@ -325,7 +410,7 @@ export async function createOnlineCheckoutSession(
         await supabase
           .from("online_booking_reservations")
           .update({ status: "Failed" })
-          .eq("id", existing.id);
+          .eq("id", normalizedExisting.id);
       }
       throw error;
     }
@@ -343,9 +428,7 @@ export async function createOnlineCheckoutSession(
   });
   stage("validated-slot", { queueNumber });
 
-  const { data: reservation, error: reservationError } = await supabase
-    .from("online_booking_reservations")
-    .insert({
+  const reservationInsert = {
       patient_id: patientId,
       doctor_id: doctorId,
       appointment_type: input.type,
@@ -356,9 +439,22 @@ export async function createOnlineCheckoutSession(
       reason: input.reason,
       amount,
       status: "Pending",
-    })
+  };
+  let { data: reservation, error: reservationError } = await supabase
+    .from("online_booking_reservations")
+    .insert(reservationInsert)
     .select()
     .single<OnlineBookingReservation>();
+  if (isMissingReservationTypeColumn(reservationError) && input.type === "Online") {
+    const { appointment_type: _appointmentType, ...legacyReservationInsert } = reservationInsert;
+    const retry = await supabase
+      .from("online_booking_reservations")
+      .insert(legacyReservationInsert)
+      .select()
+      .single<OnlineBookingReservation>();
+    reservation = retry.data ? coerceReservationType(retry.data, "Online") : retry.data;
+    reservationError = retry.error;
+  }
   if (reservationError) {
     console.error("[online-checkout] reservation-insert-failed", {
       ...logCtx,
@@ -367,9 +463,24 @@ export async function createOnlineCheckoutSession(
       hint: reservationError.hint,
       code: reservationError.code,
     });
+    if (isMissingReservationTypeColumn(reservationError)) {
+      throw new HttpError(
+        500,
+        "Medical procedure reservations need the latest database migration. Please apply the online_booking_reservations appointment_type migration in Supabase.",
+      );
+    }
     throw reservationError;
   }
+  if (!reservation) throw new HttpError(500, "Reservation could not be created.");
+  reservation = coerceReservationType(reservation, input.type);
   stage("inserted-reservation", { reservationId: reservation.id });
+  if (procedureConsent) {
+    await upsertProcedureConsentForReservation({
+      reservationId: reservation.id,
+      patientId,
+      consent: procedureConsent,
+    });
+  }
 
   try {
     if (checkoutOption === "bank_transfer") {
@@ -417,7 +528,7 @@ export async function createOnlineCheckoutSession(
     }
 
     const paymentMethods = mapCheckoutMethods(paymongoMethodGroup(checkoutOption));
-    stage("calling-paymongo", { paymentMethods });
+    stage("calling-paymongo", { reservationId: reservation.id, paymentMethods });
     const checkout = await createPayMongoCheckoutSession({
       description,
       amount,
@@ -429,7 +540,7 @@ export async function createOnlineCheckoutSession(
       metadata: { reservation_id: reservation.id },
       lineItemName,
     });
-    stage("paymongo-session-created", { sessionId: checkout.sessionId });
+    stage("paymongo-session-created", { reservationId: reservation.id, sessionId: checkout.sessionId });
 
     const { data: updated, error: updateError } = await supabase
       .from("online_booking_reservations")
@@ -538,6 +649,7 @@ async function confirmReservationPayment(
     .select()
     .single<Appointment>();
   if (appointmentError) throw appointmentError;
+  await linkProcedureConsentToAppointment(reservation.id, insertedAppointment.id);
 
   const meetingLink = reservation.appointment_type === "Online"
     ? await resolveDefaultMeetingLink()
@@ -579,15 +691,7 @@ async function confirmReservationPayment(
     .eq("id", reservation.id);
   if (reservationError) throw reservationError;
 
-  await enqueueNotification({
-    user_id: updatedAppointment.patient_id,
-    template: "appointment_booked",
-    channels: ["email", "sms"],
-    payload: { appointment_id: updatedAppointment.id, appointment_type: updatedAppointment.appointment_type },
-  });
-  if (reservation.appointment_type === "Online") {
-    await notifyOnlineConfirmed(updatedAppointment, meetingLink);
-  }
+  await notifyPaidBookingConfirmed(reservation, updatedAppointment, meetingLink);
   await enqueueAppointmentTeamNotifications({
     appointment_id: updatedAppointment.id,
     appointment_type: updatedAppointment.appointment_type,
@@ -600,6 +704,40 @@ async function confirmReservationPayment(
   });
 
   return { appointment: updatedAppointment, payment };
+}
+
+async function findConvertedReservationPayment(
+  reservationId: string,
+  provider: string,
+  providerRef: string,
+): Promise<{ appointment: Appointment; payment: Payment } | null> {
+  const supabase = getSupabaseAdmin();
+  const { data: latest, error: reservationError } = await supabase
+    .from("online_booking_reservations")
+    .select("*")
+    .eq("id", reservationId)
+    .maybeSingle<OnlineBookingReservation>();
+  if (reservationError) throw reservationError;
+  if (!latest?.appointment_id) return null;
+
+  const payment = await findPaymentByProviderRef(provider, providerRef);
+  if (!payment) return null;
+
+  const appointment = await getAppointment(latest.appointment_id);
+  return { appointment, payment };
+}
+
+async function waitForConvertedReservationPayment(
+  reservationId: string,
+  provider: string,
+  providerRef: string,
+): Promise<{ appointment: Appointment; payment: Payment } | null> {
+  for (let attempt = 0; attempt < FINALIZATION_WAIT_ATTEMPTS; attempt += 1) {
+    const result = await findConvertedReservationPayment(reservationId, provider, providerRef);
+    if (result) return result;
+    await sleep(FINALIZATION_WAIT_MS);
+  }
+  return null;
 }
 
 async function finalizeClinicBillingPayment(payment: Payment): Promise<Appointment | null> {
@@ -646,16 +784,18 @@ export async function confirmPaymentByRef(
   provider_ref: string,
 ): Promise<{ appointment: Appointment | null; payment: Payment }> {
   const supabase = getSupabaseAdmin();
-  const { data: payment, error } = await supabase
-    .from("payments")
-    .select("*")
-    .eq("provider", provider)
-    .eq("provider_ref", provider_ref)
-    .maybeSingle<Payment>();
-  if (error) throw error;
+  const payment = await findPaymentByProviderRef(provider, provider_ref);
   if (payment) {
     if (payment.status === "Paid") {
       const appt = await finalizeClinicBillingPayment(payment);
+      if (!appt) {
+        const reservation = await findReservationByPaymentRef(provider, provider_ref);
+        if (reservation) {
+          const converted = await waitForConvertedReservationPayment(reservation.id, provider, provider_ref);
+          if (converted) return converted;
+        }
+        throw new HttpError(409, "Payment is already being finalized. Please refresh your appointments in a few seconds.");
+      }
       return { payment, appointment: appt };
     }
 
@@ -668,6 +808,14 @@ export async function confirmPaymentByRef(
     if (updateErr) throw updateErr;
 
     const appt = await finalizeClinicBillingPayment(paid);
+    if (!appt) {
+      const reservation = await findReservationByPaymentRef(provider, provider_ref);
+      if (reservation) {
+        const converted = await waitForConvertedReservationPayment(reservation.id, provider, provider_ref);
+        if (converted) return converted;
+      }
+      throw new HttpError(409, "Payment is already being finalized. Please refresh your appointments in a few seconds.");
+    }
     return { payment: paid, appointment: appt };
   }
 
@@ -678,22 +826,37 @@ export async function confirmPaymentByRef(
     .eq("payment_ref", provider_ref)
     .maybeSingle<OnlineBookingReservation>();
   if (reservationError) throw reservationError;
-  const resolvedReservation = reservation ?? await findReservationByPaymentRef(provider, provider_ref);
+  const resolvedReservation = reservation
+    ? coerceReservationType(reservation)
+    : await findReservationByPaymentRef(provider, provider_ref);
   if (!resolvedReservation) throw new HttpError(404, "Payment not found");
 
-  const result = await confirmReservationPayment(
-    resolvedReservation.status === "Pending"
-      ? resolvedReservation
-      : { ...resolvedReservation, status: "Paid" },
-  );
+  if (resolvedReservation.appointment_id || resolvedReservation.status === "Converted") {
+    return confirmReservationPayment(resolvedReservation);
+  }
 
-  await supabase
+  if (resolvedReservation.status !== "Pending") {
+    const converted = await waitForConvertedReservationPayment(resolvedReservation.id, provider, provider_ref);
+    if (converted) return converted;
+    throw new HttpError(409, "Payment is already being finalized. Please refresh your appointments in a few seconds.");
+  }
+
+  const { data: claimedReservation, error: claimError } = await supabase
     .from("online_booking_reservations")
     .update({ status: "Paid" })
     .eq("id", resolvedReservation.id)
-    .in("status", ["Pending", "Paid"]);
+    .eq("status", "Pending")
+    .select()
+    .maybeSingle<OnlineBookingReservation>();
+  if (claimError) throw claimError;
 
-  return result;
+  if (!claimedReservation) {
+    const converted = await waitForConvertedReservationPayment(resolvedReservation.id, provider, provider_ref);
+    if (converted) return converted;
+    throw new HttpError(409, "Payment is already being finalized. Please refresh your appointments in a few seconds.");
+  }
+
+  return confirmReservationPayment(coerceReservationType(claimedReservation, resolvedReservation.appointment_type));
 }
 
 export async function failPaymentByRef(provider: string, provider_ref: string): Promise<Payment> {
@@ -761,7 +924,19 @@ export async function failPaymentByRef(provider: string, provider_ref: string): 
     user_id: resolvedReservation.patient_id,
     template: "appointment_payment_failed",
     channels: ["email"],
-    payload: { reservation_id: resolvedReservation.id },
+    payload: {
+      reservation_id: resolvedReservation.id,
+      appointment_type: resolvedReservation.appointment_type,
+      appointment_date: resolvedReservation.appointment_date,
+      start_time: resolvedReservation.start_time,
+      amount: resolvedReservation.amount,
+      service: parseAppointmentContext(resolvedReservation.reason).service,
+      payment_purpose:
+        resolvedReservation.appointment_type === "Clinic"
+        && isProcedureServiceTitle(parseAppointmentContext(resolvedReservation.reason).service)
+          ? "procedure_downpayment"
+          : "online_consultation",
+    },
   });
   await enqueueAppointmentTeamNotifications({
     appointment_id: resolvedReservation.appointment_id ?? resolvedReservation.id,

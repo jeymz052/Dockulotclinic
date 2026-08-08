@@ -217,12 +217,12 @@ export default function PatientPortalPage() {
   }
 
   if (authLoading || appointmentsLoading || notesLoading || isLoading) {
-    return <div className="h-72 animate-pulse rounded-[2rem] border border-gold-100 bg-white shadow-sm" />;
+    return <div className="h-72 animate-pulse rounded-[2rem] border border-neutral-200 bg-white shadow-sm" />;
   }
 
   if (role !== "PATIENT") {
     return (
-      <div className="rounded-[2rem] border border-gold-200 bg-gold-50 p-6 text-sm font-semibold text-gold-700">
+      <div className="rounded-[2rem] border border-neutral-200 bg-neutral-50 p-6 text-sm font-semibold text-neutral-700">
         Patient Portal is only available for patient accounts.
       </div>
     );
@@ -230,10 +230,10 @@ export default function PatientPortalPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-gold-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f7f7f5_0%,#ffffff_58%,#f8efd0_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.12)]">
+      <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.12),transparent_34%),linear-gradient(135deg,#f7f7f5_0%,#ffffff_58%,#f7f7f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.12)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold-700">Patient Portal</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-700">Patient Portal</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl">
               Your secure clinic account
             </h1>
@@ -241,9 +241,9 @@ export default function PatientPortalPage() {
               Hi {name}. Access appointments, released medical notes, prescriptions, billing, files, and follow-up messages from one place.
             </p>
           </div>
-          <div className="rounded-2xl border border-gold-100 bg-white/80 p-4 shadow-sm">
+          <div className="rounded-2xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
             <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
-              <FaShieldHalved className="text-gold-400" />
+              <FaShieldHalved className="text-black" />
               Secure login active
             </p>
             <p className="mt-1 text-xs text-neutral-500">{profile?.email ?? user?.email}</p>
@@ -251,7 +251,7 @@ export default function PatientPortalPage() {
         </div>
       </section>
 
-      {feedback ? <div className="rounded-xl bg-gold-50 px-4 py-3 text-sm font-semibold text-gold-700">{feedback}</div> : null}
+      {feedback ? <div className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">{feedback}</div> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric href="/appointments/my" icon={<FaCalendarCheck />} label="Appointments" value={appointments.length} helper={`${upcoming.length} upcoming`} />
@@ -301,7 +301,7 @@ export default function PatientPortalPage() {
             <div className="space-y-3 text-sm text-neutral-700">
               <p><span className="font-semibold text-black">Diagnosis:</span> {latestNote.diagnosis || "No diagnosis recorded."}</p>
               <p><span className="font-semibold text-black">Doctor note:</span> {latestNote.note || "No note released."}</p>
-              <p className="rounded-xl bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-700">
+              <p className="rounded-xl bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-700">
                 Only notes marked visible by your doctor are shown here.
               </p>
             </div>
@@ -316,8 +316,8 @@ export default function PatientPortalPage() {
                 <p className="mt-1 text-sm text-neutral-500">{latestPrescription.diagnoses?.diagnosis_text ?? "Released prescription"}</p>
               </div>
               {latestPrescription.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl bg-gold-50 px-3 py-2 text-sm text-neutral-700">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">Treatment plan</p>
+                <div className="rounded-xl bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Treatment plan</p>
                   <p className="mt-1">{latestPrescription.diagnoses.treatment_plan}</p>
                 </div>
               ) : null}
@@ -334,7 +334,7 @@ export default function PatientPortalPage() {
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 px-4 py-2 text-xs font-bold text-gold-700">
+                <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
                   <FaDownload /> Download PDF
                 </button>
                 <button onClick={() => printPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
@@ -358,7 +358,7 @@ export default function PatientPortalPage() {
 
         <PortalSection title="Medical Files" actionHref="/profile/files" actionLabel="Open files" icon={<FaFileMedical />}>
           {latestFile ? (
-            <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-neutral-200 p-4 transition hover:bg-gold-50">
+            <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-neutral-200 p-4 transition hover:bg-neutral-50">
               <p className="text-sm font-bold text-black">{latestFile.file_name}</p>
               <p className="mt-1 text-sm text-neutral-500">{latestFile.file_type || "Medical document"} - {dateTime(latestFile.created_at)}</p>
             </a>
@@ -374,7 +374,7 @@ export default function PatientPortalPage() {
           ) : (
             <div>
               <Empty text="No follow-up inquiries yet." />
-              <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-gold-200 px-4 py-2 text-xs font-bold text-gold-700">
+                <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
                 <FaPaperPlane /> Ask a question
               </Link>
             </div>
@@ -384,7 +384,7 @@ export default function PatientPortalPage() {
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
-          <FaLock className="text-gold-400" />
+          <FaLock className="text-black" />
           Medical-note privacy
         </p>
         <p className="mt-2 text-sm leading-6 text-neutral-600">
@@ -397,10 +397,10 @@ export default function PatientPortalPage() {
 
 function Metric({ href, icon, label, value, helper }: { href: string; icon: ReactNode; label: string; value: number; helper: string }) {
   return (
-    <Link href={href} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-gold-200 hover:bg-gold-50">
+    <Link href={href} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-        <span className="text-xl text-gold-400">{icon}</span>
+        <span className="text-xl text-black">{icon}</span>
       </div>
       <p className="mt-3 text-3xl font-black text-black">{value}</p>
       <p className="mt-1 text-sm text-neutral-500">{helper}</p>
@@ -413,10 +413,10 @@ function PortalSection({ title, icon, actionHref, actionLabel, children }: { tit
     <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="inline-flex items-center gap-2 text-base font-bold text-black">
-          <span className="text-gold-400">{icon}</span>
+          <span className="text-black">{icon}</span>
           {title}
         </h2>
-        <Link href={actionHref} className="rounded-full border border-gold-200 px-3 py-1.5 text-xs font-bold text-gold-700">
+        <Link href={actionHref} className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-bold text-neutral-700">
           {actionLabel}
         </Link>
       </div>
@@ -427,7 +427,7 @@ function PortalSection({ title, icon, actionHref, actionLabel, children }: { tit
 
 function Row({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="block rounded-2xl border border-neutral-200 p-4 transition hover:border-gold-200 hover:bg-gold-50">
+    <Link href={href} className="block rounded-2xl border border-neutral-200 p-4 transition hover:border-neutral-300 hover:bg-neutral-50">
       {children}
     </Link>
   );

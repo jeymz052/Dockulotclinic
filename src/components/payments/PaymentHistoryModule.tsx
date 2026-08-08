@@ -167,21 +167,21 @@ export function PaymentHistoryModule() {
   const paginatedRows = currentRows.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
 
   return (
-    <section className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+    <section className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">Payment History</p>
           <h1 className="mt-2 text-2xl font-bold text-neutral-900">History</h1>
         </div>
 
-        <div className="inline-flex rounded-full border border-gold-100 bg-gold-50/70 p-1">
+        <div className="inline-flex rounded-full border border-neutral-100 bg-neutral-50/70 p-1">
           <button
             type="button"
             onClick={() => setActiveTab("online")}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === "online"
                 ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
-                : "text-neutral-600 hover:text-gold-700"
+                : "text-neutral-600 hover:text-neutral-700"
             }`}
           >
             Online Payments
@@ -192,7 +192,7 @@ export function PaymentHistoryModule() {
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               activeTab === "pos"
                 ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
-                : "text-neutral-600 hover:text-gold-700"
+                : "text-neutral-600 hover:text-neutral-700"
             }`}
           >
             Clinic POS
@@ -200,7 +200,7 @@ export function PaymentHistoryModule() {
         </div>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-3xl border border-gold-100">
+      <div className="mt-6 overflow-hidden rounded-3xl border border-neutral-100">
         {activeTab === "online" ? (
           <HistoryTable
             columns={["Patient", "Details", "Amount", "Method", "Status", "Created", "Paid At"]}
@@ -234,7 +234,7 @@ export function PaymentHistoryModule() {
                   {billing.status}
                 </StatusPill>,
                 billing.issued,
-                <Link key={`${billing.id}-receipt`} href={billing.receiptHref} className="font-semibold text-gold-700 hover:text-gold-700">
+                <Link key={`${billing.id}-receipt`} href={billing.receiptHref} className="font-semibold text-neutral-700 hover:text-neutral-700">
                   Open receipt
                 </Link>,
               ];
@@ -262,10 +262,10 @@ function StatusPill({
 }) {
   const classes =
     tone === "Paid"
-      ? "bg-gold-50 text-gold-700"
+      ? "bg-neutral-50 text-neutral-700"
       : tone === "Failed"
-        ? "bg-gold-50 text-gold-700"
-        : "bg-gold-50 text-gold-700";
+        ? "bg-neutral-50 text-neutral-700"
+        : "bg-neutral-50 text-neutral-700";
 
   return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
 }
@@ -287,8 +287,8 @@ function HistoryTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gold-100 text-sm">
-        <thead className="bg-gold-50/70">
+      <table className="min-w-full divide-y divide-neutral-100 text-sm">
+        <thead className="bg-neutral-50/70">
           <tr>
             {columns.map((column) => (
               <th key={column} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
@@ -297,7 +297,7 @@ function HistoryTable({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gold-50 bg-white">
+        <tbody className="divide-y divide-neutral-50 bg-white">
           {rows.length > 0 ? (
             rows.map((row, rowIndex) => (
               <tr key={rowIndex} className="align-top">
@@ -342,7 +342,7 @@ function Pagination({
           type="button"
           onClick={onPrevious}
           disabled={page <= 1}
-          className="rounded-full border border-gold-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
@@ -350,7 +350,7 @@ function Pagination({
           type="button"
           onClick={onNext}
           disabled={page >= totalPages}
-          className="rounded-full border border-gold-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>

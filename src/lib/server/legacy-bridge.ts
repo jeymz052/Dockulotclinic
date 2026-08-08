@@ -152,3 +152,28 @@ export function addOneHour(hhmm: string): string {
   const mm = String(total % 60).padStart(2, "0");
   return `${hh}:${mm}`;
 }
+
+export function normalizeSqlTime(value: string): string {
+  const [hoursText, minutesText = "0", secondsText = "0"] = value.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  const seconds = Number(secondsText);
+  if (
+    !Number.isInteger(hours)
+    || !Number.isInteger(minutes)
+    || !Number.isInteger(seconds)
+    || hours < 0
+    || hours > 23
+    || minutes < 0
+    || minutes > 59
+    || seconds < 0
+    || seconds > 59
+  ) {
+    throw new Error("Invalid time value.");
+  }
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function addOneHourSql(value: string): string {
+  return normalizeSqlTime(addOneHour(value));
+}

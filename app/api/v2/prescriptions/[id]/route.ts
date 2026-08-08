@@ -1,6 +1,11 @@
 import { HttpError, httpError, ok, requireActor } from "@/src/lib/http";
 import { sendEmail } from "@/src/lib/services/notifier";
 import { enqueueNotification } from "@/src/lib/services/notification";
+import {
+  createPrescriptionPdf,
+  getPrescriptionPdfFilename,
+  type PrescriptionPdfRow,
+} from "@/src/lib/services/prescription-pdf";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { DbRole } from "@/src/lib/db/types";
 
@@ -145,14 +150,13 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("prescriptions")
-      .select("prescription_no, released_to_patient, patients(profiles(full_name,email)), doctors(profiles(full_name))")
+      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(profiles(full_name,email)), doctors(profiles(full_name))")
       .eq("id", id)
-      .maybeSingle<{
-        prescription_no: string;
-        released_to_patient: boolean;
-        patients?: { profiles?: { full_name?: string | null; email?: string | null } | null } | null;
-        doctors?: { profiles?: { full_name?: string | null } | null } | null;
-      }>();
+      .maybeSingle<
+        PrescriptionPdfRow & {
+          patients?: { profiles?: { full_name?: string | null; email?: string | null } | null } | null;
+        }
+      >();
     if (error) throw error;
     if (!data) throw new HttpError(404, "Prescription not found.");
 
@@ -163,6 +167,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "";
     const portalUrl = appUrl ? `${appUrl}/prescriptions` : "/prescriptions";
+    const pdf = createPrescriptionPdf(data);
+    const filename = getPrescriptionPdfFilename(data.prescription_no);
     await sendEmail({
       to: patientEmail,
       subject: `Your prescription ${data.prescription_no} is ready`,
@@ -176,6 +182,12 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
           ? "The prescription is already visible in the portal."
           : "The prescription is currently not released to the patient portal.",
       ].join("\n"),
+      attachments: [
+        {
+          filename,
+          content: Buffer.from(pdf).toString("base64"),
+        },
+      ],
     });
 
     return ok({ message: "Prescription email sent." });

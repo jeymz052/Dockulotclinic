@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useMemo, useState, useEffect, useTransition, type ChangeEvent, type ReactNode } from "react";
 import {
-  FaQrcode,
   FaCircleXmark,
   FaBolt,
   FaClipboardList,
@@ -19,22 +18,23 @@ import {
   FaArrowLeft,
   FaArrowRight,
   FaCcVisa,
-  FaCcMastercard,
-  FaCcJcb,
   FaBuildingColumns,
 } from "react-icons/fa6";
 import { createAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { SharedSlotPicker } from "@/src/components/appointments/SharedSlotPicker";
+import { ProcedureConsentModal } from "@/src/components/appointments/ProcedureConsentModal";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useAppointmentAvailability } from "@/src/components/appointments/useAppointmentAvailability";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { QrPhLogo } from "@/src/components/payments/QrPhLogo";
 import {
   encodeAppointmentContext,
   getDefaultServiceForType,
   getServiceOptionsForType,
+  type ClinicConsultKind,
 } from "@/src/lib/appointment-context";
-import { aftercareGuides, clinicServices, consentGuide } from "@/src/lib/healthcare-content";
+import { clinicServices, consentGuide, resolveAftercareGuideForService } from "@/src/lib/healthcare-content";
 import {
   addDays,
   formatDisplayDate,
@@ -44,10 +44,17 @@ import {
   type AppointmentType,
 } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
-import { formatDurationLabel } from "@/src/lib/consultation-pricing";
+import {
+  FOLLOW_UP_CLINIC_CONSULTATION_FEE,
+  NEW_PATIENT_CLINIC_CONSULTATION_FEE,
+  PROCEDURE_DOWNPAYMENT_AMOUNT,
+  formatDurationLabel,
+} from "@/src/lib/consultation-pricing";
 
 type BookingForm = {
+  visitPath: BookingVisitPath;
   patientStatus: BookingPatientStatus;
+  clinicConsultKind: ClinicConsultKind;
   service: string;
   clinicId: string;
   patientName: string;
@@ -64,6 +71,7 @@ type BookingForm = {
 };
 
 type BookingPatientStatus = "Existing" | "New";
+type BookingVisitPath = "Clinic" | "Online" | "Procedure";
 
 type BookingClinicOption = {
   value: string;
@@ -82,19 +90,28 @@ const MAX_CONCERN_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_CONCERN_FILE_SIZE_LABEL = "10 MB";
 
 const BOOKING_VISIT_OPTIONS: Array<{
-  type: AppointmentType;
+  path: BookingVisitPath;
   label: string;
   helper: string;
+  price: string;
 }> = [
   {
-    type: "Online",
+    path: "Online",
     label: "Virtual Consult",
-    helper: "Video call from home. Pay online before the session.",
+    helper: "Video call from home. Includes first consult plus one follow-up.",
+    price: "800 PHP",
   },
   {
-    type: "Clinic",
+    path: "Clinic",
     label: "Clinic Visit",
-    helper: "In-person visit at the clinic. Pay at the front desk.",
+    helper: "In-person consultation at the clinic. Procedures are booked separately.",
+    price: "600 first consult / 300 follow-up",
+  },
+  {
+    path: "Procedure",
+    label: "Medical Procedure",
+    helper: "Reserve an actual clinic procedure schedule for Botox, Mesolipo, fillers, sclerotherapy, wart removal, mole surgery, and similar procedures.",
+    price: "1,000 PHP reservation",
   },
 ];
 
@@ -126,7 +143,9 @@ const today = getClinicToday();
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
 
 const INITIAL_FORM: BookingForm = {
+  visitPath: "Clinic",
   patientStatus: "New",
+  clinicConsultKind: "FirstConsult",
   service: getDefaultServiceForType("Clinic"),
   clinicId: BOOKING_CLINICS[0].value,
   patientName: "",
@@ -142,6 +161,10 @@ const INITIAL_FORM: BookingForm = {
   paymentOption: "paymongo_gcash",
 };
 
+function normalizeConsentName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 type OnlinePaymentOptionConfig = {
   value: OnlinePaymentOption;
   label: string;
@@ -153,6 +176,7 @@ type OnlinePaymentOptionConfig = {
     ring: string;
     selectedBorder: string;
     selectedBg: string;
+    selectedBadge: string;
   };
   brands: Array<{ key: string; node: React.ReactNode }>;
   logo: React.ReactNode;
@@ -179,24 +203,25 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
     label: "QR Ph (GCash, Maya, Banks)",
     detail: "Scan the QR with GCash, Maya, or any InstaPay/Pesonet-enabled wallet or bank app.",
     accent: {
-      tileBg: "bg-linear-to-br from-yellow-300 to-yellow-400",
-      ring: "ring-yellow-300",
-      selectedBorder: "border-yellow-300",
-      selectedBg: "bg-yellow-50/60",
+      tileBg: "bg-[#204884]",
+      ring: "ring-[#204884]/25",
+      selectedBorder: "border-[#204884]",
+      selectedBg: "bg-[#f4f7fc]",
+      selectedBadge: "bg-[#204884] text-white",
     },
-    logo: <GCashLogo />,
+    logo: <QRPhLogoTile />,
     brands: [
       {
         key: "qrph",
         node: (
-          <BrandChip className="bg-yellow-100 text-yellow-700">
-            <FaQrcode className="h-3 w-3" /> QR Ph
+          <BrandChip className="border border-[#204884]/20 bg-white text-[#204884]">
+            <QrPhLogo className="h-auto w-9" />
           </BrandChip>
         ),
       },
-      { key: "gcash", node: <BrandChip className="bg-yellow-100 text-yellow-700">GCash</BrandChip> },
-      { key: "maya", node: <BrandChip className="bg-yellow-100 text-yellow-700">Maya</BrandChip> },
-      { key: "banks", node: <BrandChip className="bg-slate-100 text-slate-700">+ Banks</BrandChip> },
+      { key: "gcash", node: <BrandChip className="bg-[#eaf3ff] text-[#007dfe]">GCash</BrandChip> },
+      { key: "maya", node: <BrandChip className="bg-[#e8fff5] text-[#008f5a]">Maya</BrandChip> },
+      { key: "banks", node: <BrandChip className="bg-[#eef4fb] text-[#204884]">+ Banks</BrandChip> },
     ],
     available: true,
   },
@@ -205,10 +230,11 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
     label: "Credit / Debit Card",
     detail: "Pay with Visa, Mastercard, or JCB through PayMongo's secure checkout.",
     accent: {
-      tileBg: "bg-linear-to-br from-slate-800 to-slate-950",
-      ring: "ring-slate-300",
-      selectedBorder: "border-slate-800",
-      selectedBg: "bg-slate-50",
+      tileBg: "bg-[#1a1f71]",
+      ring: "ring-[#1a1f71]/25",
+      selectedBorder: "border-[#1a1f71]",
+      selectedBg: "bg-[#f4f5ff]",
+      selectedBadge: "bg-[#1a1f71] text-white",
     },
     logo: <CardLogo />,
     brands: [
@@ -216,7 +242,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "visa",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcVisa className="h-5 w-auto text-[#451a03]" />
+            <FaCcVisa className="h-5 w-auto text-[#1a1f71]" />
           </span>
         ),
       },
@@ -224,7 +250,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "mc",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcMastercard className="h-5 w-auto text-[#737373]" />
+            <MastercardMark />
           </span>
         ),
       },
@@ -232,7 +258,7 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
         key: "jcb",
         node: (
           <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcJcb className="h-5 w-auto text-[#78350f]" />
+            <JcbMark />
           </span>
         ),
       },
@@ -245,21 +271,22 @@ const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
     label: "Online Bank Transfer",
     detail: "Pay directly from your online banking — BPI, UnionBank, RCBC, Chinabank and more.",
     accent: {
-      tileBg: "bg-linear-to-br from-yellow-300 to-yellow-400",
-      ring: "ring-yellow-300",
-      selectedBorder: "border-yellow-300",
-      selectedBg: "bg-yellow-50/60",
+      tileBg: "bg-[#0b4a8b]",
+      ring: "ring-[#0b4a8b]/25",
+      selectedBorder: "border-[#0b4a8b]",
+      selectedBg: "bg-[#f3f8fd]",
+      selectedBadge: "bg-[#0b4a8b] text-white",
     },
     logo: <BankLogo />,
     brands: [
-      { key: "bpi", node: <BrandChip className="bg-yellow-100 text-yellow-800">BPI</BrandChip> },
-      { key: "ubp", node: <BrandChip className="bg-yellow-100 text-yellow-700">UnionBank</BrandChip> },
-      { key: "rcbc", node: <BrandChip className="bg-yellow-100 text-yellow-700">RCBC</BrandChip> },
+      { key: "bpi", node: <BrandChip className="bg-[#fff0f0] text-[#b11116]">BPI</BrandChip> },
+      { key: "ubp", node: <BrandChip className="bg-[#fff3ea] text-[#e65300]">UnionBank</BrandChip> },
+      { key: "rcbc", node: <BrandChip className="bg-[#eaf3ff] text-[#005baa]">RCBC</BrandChip> },
       {
         key: "chinabank",
-        node: <BrandChip className="bg-yellow-100 text-yellow-800">Chinabank</BrandChip>,
+        node: <BrandChip className="bg-[#fff0f0] text-[#cf202e]">Chinabank</BrandChip>,
       },
-      { key: "more", node: <BrandChip className="bg-slate-100 text-slate-700">+ more</BrandChip> },
+      { key: "more", node: <BrandChip className="bg-[#eef4fb] text-[#0b4a8b]">+ more</BrandChip> },
     ],
     available: false,
     unavailableNote: "Direct bank transfer is pending PayMongo activation — please use QR Ph (your bank app can scan it).",
@@ -282,14 +309,33 @@ function BrandChip({
   );
 }
 
-function GCashLogo() {
-  // Stylised GCash brand mark — blue gradient tile with a stylised "G".
+function QRPhLogoTile() {
   return (
-    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-300 to-yellow-400 shadow-md">
-      <span className="text-lg font-black tracking-tight text-white">G</span>
-      <span className="absolute -bottom-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-md bg-white shadow-sm ring-1 ring-yellow-200">
-        <FaQrcode className="h-3 w-3 text-yellow-600" />
-      </span>
+    <span className="inline-flex h-12 w-20 items-center justify-center rounded-2xl border border-[#204884]/15 bg-white px-2 shadow-md">
+      <QrPhLogo className="h-auto w-full" />
+    </span>
+  );
+}
+
+function MastercardMark() {
+  return (
+    <span className="relative h-4 w-7" role="img" aria-label="Mastercard">
+      <span className="absolute left-0 top-0 h-4 w-4 rounded-full bg-[#eb001b]" />
+      <span className="absolute right-0 top-0 h-4 w-4 rounded-full bg-[#f79e1b] opacity-90" />
+    </span>
+  );
+}
+
+function JcbMark() {
+  return (
+    <span
+      className="inline-flex overflow-hidden rounded-[3px] bg-white text-[9px] font-black leading-4 shadow-xs"
+      role="img"
+      aria-label="JCB"
+    >
+      <span className="bg-[#0b4ea2] px-1 text-white">J</span>
+      <span className="bg-[#d71920] px-1 text-white">C</span>
+      <span className="bg-[#008c44] px-1 text-white">B</span>
     </span>
   );
 }
@@ -297,7 +343,7 @@ function GCashLogo() {
 function CardLogo() {
   // Generic card-shape logo tile with two stripes evoking a chip card.
   return (
-    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-slate-800 to-slate-950 shadow-md">
+    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#2435a1] to-[#12175e] shadow-md">
       <svg
         viewBox="0 0 32 24"
         fill="none"
@@ -316,31 +362,69 @@ function CardLogo() {
 function BankLogo() {
   // Bank columns icon on blue gradient.
   return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-300 to-yellow-400 shadow-md">
+    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#1464b4] to-[#08396c] shadow-md">
       <FaBuildingColumns className="h-6 w-6 text-white" />
     </span>
   );
 }
 
-function getAppointmentTypeLabel(type: AppointmentType) {
-  return type === "Clinic" ? "Clinic Visit" : "Virtual Consult";
+function getVisitPathLabel(path: BookingVisitPath) {
+  if (path === "Procedure") return "Medical Procedure";
+  return path === "Clinic" ? "Clinic Visit" : "Virtual Consult";
 }
 
-// Inline icon + label used inside summary rows to identify the visit type
-// without resorting to emojis.
-function VisitTypeValue({ type }: { type: AppointmentType }) {
-  if (type === "Clinic") {
-    return (
-      <>
-        <FaHospital className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
-        Clinic Visit
-      </>
-    );
+function VisitPathIcon({ path, className }: { path: BookingVisitPath; className?: string }) {
+  if (path === "Online") return <FaVideo className={className} aria-hidden="true" />;
+  if (path === "Procedure") return <FaClipboardList className={className} aria-hidden="true" />;
+  return <FaHospital className={className} aria-hidden="true" />;
+}
+
+function getServicePriceLabel(serviceTitle: string) {
+  return clinicServices.find((service) => service.title === serviceTitle)?.priceLabel ?? null;
+}
+
+function getClinicConsultKindLabel(kind: ClinicConsultKind) {
+  return kind === "FollowUp" ? "Follow-up clinic consult" : "First clinic consult";
+}
+
+function getClinicConsultKindFee(kind: ClinicConsultKind) {
+  return kind === "FollowUp" ? FOLLOW_UP_CLINIC_CONSULTATION_FEE : NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+}
+
+function getConsultationFeeLabel(type: AppointmentType, clinicConsultKind: ClinicConsultKind = "FirstConsult") {
+  return type === "Online"
+    ? "800 online consult - includes first consult + 1 follow-up"
+    : `${peso(getClinicConsultKindFee(clinicConsultKind))} ${clinicConsultKind === "FollowUp" ? "follow-up" : "first clinic consult"}`;
+}
+
+function getBookingServicePriceLabel(
+  serviceTitle: string,
+  path: BookingVisitPath,
+  type: AppointmentType,
+  clinicConsultKind: ClinicConsultKind,
+) {
+  if (path === "Procedure") {
+    return getServicePriceLabel(serviceTitle);
   }
+
+  return type === "Clinic"
+    ? getConsultationFeeLabel(type, clinicConsultKind)
+    : getServicePriceLabel(serviceTitle) ?? getConsultationFeeLabel(type, clinicConsultKind);
+}
+
+function getServiceDescription(serviceTitle: string) {
+  return clinicServices.find((service) => service.title === serviceTitle)?.description ?? "";
+}
+
+function peso(amount: number) {
+  return `${amount.toLocaleString("en-PH")} PHP`;
+}
+
+function VisitPathValue({ path }: { path: BookingVisitPath }) {
   return (
     <>
-      <FaVideo className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
-      Virtual Consult
+      <VisitPathIcon path={path} className="h-3.5 w-3.5 text-neutral-600" />
+      {getVisitPathLabel(path)}
     </>
   );
 }
@@ -363,25 +447,12 @@ function isPreviewableImage(file: UploadedConcernFile) {
 }
 
 function resolveAftercareGuide(serviceTitle: string) {
-  const normalized = serviceTitle.toLowerCase();
-  if (normalized.includes("glp")) {
-    return aftercareGuides.find((guide) => guide.title.toLowerCase().includes("glp")) ?? null;
-  }
-  if (normalized.includes("botox")) {
-    return aftercareGuides.find((guide) => guide.title.toLowerCase().includes("botox")) ?? null;
-  }
-  if (normalized.includes("sclerotherapy")) {
-    return aftercareGuides.find((guide) => guide.title.toLowerCase().includes("sclerotherapy")) ?? null;
-  }
-  if (normalized.includes("wart") || normalized.includes("cautery") || normalized.includes("skin tag")) {
-    return aftercareGuides.find((guide) => guide.title.toLowerCase().includes("wart")) ?? null;
-  }
-  return null;
+  return resolveAftercareGuideForService(serviceTitle);
 }
 
 export default function BookAppointmentPage() {
   const pathname = usePathname();
-  const requiresAuthForReview = pathname === "/";
+  const authReturnPath = pathname === "/" ? "/#booking" : pathname;
   const { accessToken, role, user, profile } = useRole();
   const { setAppointments, isLoading, error } = useAppointments();
   const { doctors } = useDoctors();
@@ -389,7 +460,9 @@ export default function BookAppointmentPage() {
   const [uploadedConcernFiles, setUploadedConcernFiles] = useState<UploadedConcernFile[]>([]);
   const [procedureConsentAccepted, setProcedureConsentAccepted] = useState(false);
   const [procedureConsentSignature, setProcedureConsentSignature] = useState("");
+  const [procedureConsentSignatureName, setProcedureConsentSignatureName] = useState("");
   const [procedureAftercareAcknowledged, setProcedureAftercareAcknowledged] = useState(false);
+  const [isProcedureConsentModalOpen, setIsProcedureConsentModalOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [visibleWeekStart, setVisibleWeekStart] = useState(today);
@@ -405,8 +478,21 @@ export default function BookAppointmentPage() {
     error: availabilityError,
   } = useAppointmentAvailability(activeDoctorId, formData.date, formData.type);
   const selectedSlot = slotStatuses.find((slot) => slot.start === formData.start) ?? null;
-  const serviceOptions = useMemo(() => getServiceOptionsForType(formData.type), [formData.type]);
-  const isProcedureBooking = PROCEDURE_SERVICE_TITLES.has(formData.service);
+  const procedureServiceOptions = useMemo(
+    () =>
+      clinicServices
+        .filter((service) => service.appointmentOnly && (service.modes ?? ["Clinic", "Online"]).includes("Clinic"))
+        .map((service) => service.title),
+    [],
+  );
+  const consultationServiceOptions = useMemo(
+    () => getServiceOptionsForType(formData.type).filter((service) => !PROCEDURE_SERVICE_TITLES.has(service)),
+    [formData.type],
+  );
+  const serviceOptions = formData.visitPath === "Procedure" ? procedureServiceOptions : consultationServiceOptions;
+  const isProcedureBooking = formData.visitPath === "Procedure" || PROCEDURE_SERVICE_TITLES.has(formData.service);
+  const appointmentClinicConsultKind =
+    formData.visitPath === "Clinic" && !isProcedureBooking ? formData.clinicConsultKind : undefined;
   const requiresPayMongoCheckout = formData.type === "Online" || isProcedureBooking;
   const selectedSlotDuration = selectedSlot
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
@@ -444,19 +530,21 @@ export default function BookAppointmentPage() {
         if (parsed?.formData) {
           setFormData((cur) => {
             const nextType = parsed.formData?.type ?? cur.type;
+            const restoredService = parsed.formData?.service ?? cur.service;
+            const restoredVisitPath =
+              parsed.formData?.visitPath
+              ?? (PROCEDURE_SERVICE_TITLES.has(restoredService) ? "Procedure" : nextType);
             return {
               ...cur,
               ...parsed.formData,
+              visitPath: restoredVisitPath,
+              type: restoredVisitPath === "Procedure" ? "Clinic" : nextType,
               service: parsed.formData?.service ?? getDefaultServiceForType(nextType),
             };
           });
         }
         if (parsed?.activeStep) {
-        if (requiresAuthForReview && parsed.activeStep === 4 && !accessToken) {
-          setActiveStep(3);
-        } else {
-          setActiveStep(parsed.activeStep);
-        }
+          setActiveStep(Math.min(Math.max(parsed.activeStep, 1), 4));
         }
       }
       const reservationId = localStorage.getItem("bookingReservation");
@@ -468,7 +556,7 @@ export default function BookAppointmentPage() {
     } finally {
       setHasRestoredDraft(true);
     }
-  }, [accessToken, requiresAuthForReview]);
+  }, []);
 
   // Persist the draft as the user types so it survives tab switches, hard
   // refreshes, redirects to /login, and the PayMongo round-trip back to the
@@ -525,12 +613,24 @@ export default function BookAppointmentPage() {
       ? formData.phone || patientDefaults.phone
       : formData.phone;
   const selectedClinic = BOOKING_CLINICS.find((clinic) => clinic.value === formData.clinicId) ?? BOOKING_CLINICS[0];
+  const hasProcedureSignatureImage = procedureConsentSignature.startsWith("data:image/png;base64,");
   const consentSignatureMatches =
-    procedureConsentSignature.trim().length > 0
-    && procedureConsentSignature.trim().toLowerCase() === effectivePatientName.trim().toLowerCase();
+    hasProcedureSignatureImage
+    && normalizeConsentName(procedureConsentSignatureName) === normalizeConsentName(effectivePatientName);
+  const hasCompleteProcedureConsent = procedureConsentAccepted && procedureAftercareAcknowledged && consentSignatureMatches;
+  const procedureConsentIssue =
+    !isProcedureBooking || hasCompleteProcedureConsent
+      ? ""
+      : !procedureConsentAccepted
+        ? "Review and accept the consent form before payment."
+        : !procedureAftercareAcknowledged
+          ? "Open the aftercare tab and acknowledge the instructions before payment."
+          : !hasProcedureSignatureImage
+            ? "Draw and save the patient signature before payment."
+            : "The printed signature name must match the booking name.";
   const canConfirmProcedure =
     !isProcedureBooking
-    || (procedureConsentAccepted && procedureAftercareAcknowledged && consentSignatureMatches);
+    || hasCompleteProcedureConsent;
 
   const step1Valid = !!formData.patientStatus;
   const step2Valid =
@@ -538,7 +638,8 @@ export default function BookAppointmentPage() {
     && !!formData.service.trim()
     && !!effectivePatientName.trim()
     && !!effectivePatientEmail.trim()
-    && !!effectivePatientPhone.trim();
+    && !!effectivePatientPhone.trim()
+    && (!isProcedureBooking || !!formData.reason.trim());
   const datePicked = !!formData.date && !blockedReason;
   const step3Valid = datePicked && !!formData.start;
   const step4Done = step1Valid && step2Valid && step3Valid && canConfirmProcedure;
@@ -569,6 +670,14 @@ export default function BookAppointmentPage() {
     if (activeStep > 1) setActiveStep((s) => s - 1);
   }
 
+  function resetProcedureConsent() {
+    setProcedureConsentAccepted(false);
+    setProcedureConsentSignature("");
+    setProcedureConsentSignatureName("");
+    setProcedureAftercareAcknowledged(false);
+    setIsProcedureConsentModalOpen(false);
+  }
+
   function updateForm<K extends keyof BookingForm>(field: K, value: BookingForm[K]) {
     setFormData((current) => {
       const nextState = { ...current, [field]: value };
@@ -576,11 +685,31 @@ export default function BookAppointmentPage() {
         nextState.patientName = value === "Existing" && role === "PATIENT" ? patientDefaults.patientName : current.patientName;
         nextState.email = value === "Existing" && role === "PATIENT" ? patientDefaults.email : current.email;
         nextState.phone = value === "Existing" && role === "PATIENT" ? patientDefaults.phone : current.phone;
+        nextState.clinicConsultKind = value === "Existing" ? "FollowUp" : "FirstConsult";
       }
-      if (field === "doctorId" || field === "date" || field === "type") {
+      if (field === "visitPath") {
+        const nextPath = value as BookingVisitPath;
+        const nextType: AppointmentType = nextPath === "Online" ? "Online" : "Clinic";
+        nextState.type = nextType;
+        nextState.start = "";
+        nextState.service =
+          nextPath === "Procedure"
+            ? procedureServiceOptions[0] ?? "Botox"
+            : getDefaultServiceForType(nextType);
+        if (nextType === "Clinic") {
+          nextState.clinicId = BOOKING_CLINICS[0].value;
+        }
+        if (nextPath !== "Online") {
+          nextState.symptoms = "";
+          setUploadedConcernFiles([]);
+        }
+        resetProcedureConsent();
+      }
+      if (field === "doctorId" || field === "date" || field === "type" || field === "visitPath") {
         nextState.start = "";
       }
       if (field === "type") {
+        nextState.visitPath = value === "Online" ? "Online" : "Clinic";
         nextState.service = getDefaultServiceForType(value as AppointmentType);
         if (value === "Clinic") {
           nextState.clinicId = BOOKING_CLINICS[0].value;
@@ -588,18 +717,14 @@ export default function BookAppointmentPage() {
         if (value !== "Online") {
           nextState.symptoms = "";
         }
-        setProcedureConsentAccepted(false);
-        setProcedureConsentSignature("");
-        setProcedureAftercareAcknowledged(false);
+        resetProcedureConsent();
       }
       if (field === "service") {
-        setProcedureConsentAccepted(false);
-        setProcedureConsentSignature("");
-        setProcedureAftercareAcknowledged(false);
+        resetProcedureConsent();
       }
       return nextState;
     });
-    if (field === "type" && value !== "Online") {
+    if ((field === "type" && value !== "Online") || (field === "visitPath" && value !== "Online")) {
       setUploadedConcernFiles([]);
     }
     setFeedback(null);
@@ -653,30 +778,47 @@ export default function BookAppointmentPage() {
     }
 
     const reservationId = typeof window !== "undefined" ? localStorage.getItem("bookingReservation") : null;
+    const buildCheckoutBody = (nextReservationId: string | null) => ({
+      patientName: effectivePatientName,
+      email: effectivePatientEmail,
+      phone: effectivePatientPhone,
+      doctorId: activeDoctorId,
+      date: formData.date,
+      start: formData.start,
+      reason: encodeAppointmentContext(formData.service, formData.reason, appointmentClinicConsultKind),
+      type: formData.type,
+      patientStatus: formData.patientStatus,
+      service: formData.service,
+      reservation_id: nextReservationId ?? undefined,
+      payment_option: formData.paymentOption,
+      procedure_consent: isProcedureBooking
+        ? {
+          procedureName: formData.service,
+          patientName: effectivePatientName,
+          patientSignature: procedureConsentSignature,
+          patientSignatureName: procedureConsentSignatureName,
+          consentAccepted: procedureConsentAccepted,
+          aftercareAcknowledged: procedureAftercareAcknowledged,
+          consentImageUrl: consentGuide.image,
+          aftercareGuideTitle: selectedAftercareGuide?.title ?? null,
+          aftercareImageUrl: selectedAftercareGuide?.image ?? null,
+        }
+        : undefined,
+    });
 
-    const checkoutRes = await fetch("/api/v2/payments/checkout", {
+    async function requestCheckout(nextReservationId: string | null) {
+      return fetch("/api/v2/payments/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({
-        patientName: effectivePatientName,
-        email: effectivePatientEmail,
-        phone: effectivePatientPhone,
-        doctorId: activeDoctorId,
-        date: formData.date,
-        start: formData.start,
-        reason: encodeAppointmentContext(formData.service, formData.reason),
-        type: formData.type,
-        patientStatus: formData.patientStatus,
-        service: formData.service,
-        reservation_id: reservationId ?? undefined,
-        payment_option: formData.paymentOption,
-      }),
-    });
+        body: JSON.stringify(buildCheckoutBody(nextReservationId)),
+      });
+    }
 
-    const payload = (await checkoutRes.json().catch(() => ({}))) as {
+    let checkoutRes = await requestCheckout(reservationId);
+    let payload = (await checkoutRes.json().catch(() => ({}))) as {
       url?: string | null;
       message?: string;
       reservation_id?: string;
@@ -684,8 +826,19 @@ export default function BookAppointmentPage() {
       instructions?: string;
       payment_reference?: string;
     };
+
+    if (
+      !checkoutRes.ok
+      && reservationId
+      && (checkoutRes.status === 404 || checkoutRes.status === 409 || /reservation/i.test(payload.message ?? ""))
+    ) {
+      localStorage.removeItem("bookingReservation");
+      checkoutRes = await requestCheckout(null);
+      payload = (await checkoutRes.json().catch(() => ({}))) as typeof payload;
+    }
+
     if (!checkoutRes.ok) {
-      throw new Error(payload.message ?? "Unable to start online payment.");
+      throw new Error(payload.message ?? "Unable to start payment.");
     }
 
     if (payload.reservation_id) {
@@ -741,13 +894,9 @@ export default function BookAppointmentPage() {
             setFormData({
               ...INITIAL_FORM,
               doctorId: activeDoctorId,
-              type: formData.type,
-              service: getDefaultServiceForType(formData.type),
             });
             setUploadedConcernFiles([]);
-            setProcedureConsentAccepted(false);
-            setProcedureConsentSignature("");
-            setProcedureAftercareAcknowledged(false);
+            resetProcedureConsent();
             setVisibleWeekStart(today);
             setActiveStep(1);
             return;
@@ -760,7 +909,7 @@ export default function BookAppointmentPage() {
           window.location.href = paymentStart.url;
         } catch (paymentError) {
           setFeedback({
-            message: paymentError instanceof Error ? paymentError.message : "Unable to start online payment.",
+            message: paymentError instanceof Error ? paymentError.message : "Unable to start payment.",
             type: "error",
           });
         }
@@ -775,7 +924,7 @@ export default function BookAppointmentPage() {
         date: formData.date,
         start: formData.start,
         type: formData.type,
-        reason: encodeAppointmentContext(formData.service, formData.reason),
+        reason: encodeAppointmentContext(formData.service, formData.reason, appointmentClinicConsultKind),
         patientStatus: formData.patientStatus,
       });
 
@@ -787,14 +936,10 @@ export default function BookAppointmentPage() {
       }
       setFormData({
         ...INITIAL_FORM,
-        type: formData.type,
-        service: getDefaultServiceForType(formData.type),
         doctorId: activeDoctorId,
       });
       setUploadedConcernFiles([]);
-      setProcedureConsentAccepted(false);
-      setProcedureConsentSignature("");
-      setProcedureAftercareAcknowledged(false);
+      resetProcedureConsent();
       setVisibleWeekStart(today);
       setActiveStep(1);
       try {
@@ -817,12 +962,12 @@ export default function BookAppointmentPage() {
 
   return (
     <div className="space-y-6 overflow-x-hidden pb-8">
-      <div className="rounded-3xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-[0_18px_45px_rgba(17,17,17,0.08)] sm:p-6">
+      <div className="rounded-3xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-[0_18px_45px_rgba(17,17,17,0.08)] sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-yellow-700">Book Appointment</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">Book Appointment</p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">
-              Schedule a {formData.type === "Online" ? "virtual consult" : "clinic visit"} with{" "}
+              Schedule a {getVisitPathLabel(formData.visitPath).toLowerCase()} with{" "}
               {selectedDoctor?.name?.replace(/^Dra\.\s*/, "Dra. ") ?? "your doctor"}
             </h1>
             <p className="mt-1.5 text-sm text-slate-600">
@@ -831,13 +976,8 @@ export default function BookAppointmentPage() {
                 : "Browse services and slots freely — sign in only when you're ready to confirm."}
             </p>
           </div>
-          <div className="inline-flex w-fit items-center gap-2 self-start rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700 lg:self-center">
-            {formData.type === "Clinic" ? (
-              <FaHospital className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            {getAppointmentTypeLabel(formData.type)}
+          <div className="inline-flex w-fit items-center gap-2 self-start rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 lg:self-center">
+            <VisitPathValue path={formData.visitPath} />
           </div>
         </div>
       </div>
@@ -845,44 +985,39 @@ export default function BookAppointmentPage() {
       {feedback ? (
         <div className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
           feedback.type === "success"
-            ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
-            : "border border-yellow-200 bg-yellow-50 text-yellow-800"
+            ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
+            : "border border-neutral-200 bg-neutral-50 text-neutral-800"
         }`}>
           {feedback.type === "success"
-            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />
-            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />}
+            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
+            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />}
           <span>{feedback.message}</span>
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{error}</div>
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div>
       ) : null}
       {availabilityError ? (
-        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{availabilityError}</div>
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{availabilityError}</div>
       ) : null}
 
       <form onSubmit={handleSubmit}>
-        <div className="rounded-4xl border border-yellow-100 bg-white/95 p-4 shadow-[0_18px_45px_rgba(17,17,17,0.06)] backdrop-blur sm:p-5">
+        <div className="rounded-4xl border border-neutral-100 bg-white/95 p-4 shadow-[0_18px_45px_rgba(17,17,17,0.06)] backdrop-blur sm:p-5">
           <HorizontalBookingStepper
             labels={BOOKING_STEP_LABELS}
             activeStep={activeStep}
             onStepClick={goToStep}
           >
               <>
-                {formData.type === "Clinic" ? (
-                  <FaHospital className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
-                ) : (
-                  <FaVideo className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" />
-                )}
-                {getAppointmentTypeLabel(formData.type)}
+                <VisitPathValue path={formData.visitPath} />
               </>
           </HorizontalBookingStepper>
           {activeStep === 1 ? (
             <>
-              <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
+              <section className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 1 of 4</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700">Step 1 of 4</p>
                     <h2 className="mt-2 text-2xl font-bold text-slate-900">Are you an existing patient?</h2>
                     <p className="mt-2 text-sm text-slate-600">
                       To request a virtual or face-to-face appointment, please choose how the clinic should handle your booking.
@@ -901,14 +1036,14 @@ export default function BookAppointmentPage() {
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
-                            ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-yellow-200 ring-offset-1"
-                            : "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
+                            ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-neutral-200 ring-offset-1"
+                            : "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-yellow-700 shadow-sm" : "bg-yellow-50 text-yellow-700 group-hover:bg-yellow-100"
+                              selected ? "bg-white text-neutral-700 shadow-sm" : "bg-neutral-50 text-neutral-700 group-hover:bg-neutral-100"
                             }`}
                             aria-hidden="true"
                           >
@@ -924,7 +1059,7 @@ export default function BookAppointmentPage() {
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
                               ) : (
-                                <span className="inline-flex shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
+                                <span className="inline-flex shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
                                   Choose
                                 </span>
                               )}
@@ -950,44 +1085,43 @@ export default function BookAppointmentPage() {
 
           {activeStep === 2 ? (
             <>
-              <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
+              <section className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 2 of 4</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700">Step 2 of 4</p>
                     <h2 className="mt-2 text-xl font-bold text-slate-900">Visit Selection and Patient Information</h2>
                     <p className="mt-1 text-sm text-slate-600">Choose the appointment type first, then confirm your contact details.</p>
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700">
-                      <span className="h-2 w-2 rounded-full bg-yellow-300" />
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700">
+                      <span className="h-2 w-2 rounded-full bg-neutral-300" />
                       All fields required
                     </div>
                   </div>
                 </div>
-                <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {BOOKING_VISIT_OPTIONS.map((option) => {
-                    const selected = formData.type === option.type;
-                    const Icon = option.type === "Clinic" ? FaHospital : FaVideo;
+                    const selected = formData.visitPath === option.path;
                     return (
                       <button
-                        key={option.type}
+                        key={option.path}
                         type="button"
-                        onClick={() => updateForm("type", option.type)}
+                        onClick={() => updateForm("visitPath", option.path)}
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
-                            ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-yellow-200 ring-offset-1"
-                            : "border-yellow-100 bg-white hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
+                            ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-neutral-200 ring-offset-1"
+                            : "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-yellow-700 shadow-sm" : "bg-yellow-50 text-yellow-700 group-hover:bg-yellow-100"
+                              selected ? "bg-white text-neutral-700 shadow-sm" : "bg-neutral-50 text-neutral-700 group-hover:bg-neutral-100"
                             }`}
                             aria-hidden="true"
                           >
-                            <Icon className="h-6 w-6" />
+                            <VisitPathIcon path={option.path} className="h-6 w-6" />
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-3">
@@ -997,12 +1131,15 @@ export default function BookAppointmentPage() {
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
                               ) : (
-                                <span className="inline-flex shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
+                                <span className="inline-flex shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
                                   Choose
                                 </span>
                               )}
                             </div>
                             <p className="mt-1.5 text-sm text-slate-600 leading-snug">{option.helper}</p>
+                            <p className="mt-3 inline-flex rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                              {option.price}
+                            </p>
                           </div>
                         </div>
                       </button>
@@ -1010,13 +1147,13 @@ export default function BookAppointmentPage() {
                   })}
                 </div>
                 {formData.type === "Clinic" ? (
-                  <div className="mt-8 rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
+                  <div className="mt-8 rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700">Which clinic and schedule is most convenient for you?</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-700">Which clinic and schedule is most convenient for you?</p>
                         <p className="mt-1 text-sm text-slate-600">Select the clinic location that matches your visit.</p>
                       </div>
-                      <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
+                      <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
                         Required
                       </span>
                     </div>
@@ -1029,7 +1166,7 @@ export default function BookAppointmentPage() {
                         id="clinicId"
                         value={formData.clinicId}
                         onChange={(event) => updateForm("clinicId", event.target.value)}
-                        className="w-full cursor-pointer rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200"
+                        className="w-full cursor-pointer rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
                       >
                         {BOOKING_CLINICS.map((clinic) => (
                           <option key={clinic.value} value={clinic.value}>
@@ -1039,21 +1176,64 @@ export default function BookAppointmentPage() {
                       </select>
                     </div>
 
-                    <div className="mt-4 rounded-[1.25rem] border border-yellow-100 bg-yellow-50/60 px-4 py-3 text-sm text-slate-600">
+                    <div className="mt-4 rounded-[1.25rem] border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-sm text-slate-600">
                       <p className="font-semibold text-slate-700">{selectedClinic.label}</p>
                       <p className="mt-2 text-slate-500">{selectedClinic.note}</p>
                     </div>
                   </div>
                 ) : null}
-                <div className="mt-8 rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
+                {formData.visitPath === "Clinic" ? (
+                  <div className="mt-8 rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-700">Clinic Consultation Type</p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          Choose whether this is the first clinic consult or a follow-up visit.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
+                        Required
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {(["FirstConsult", "FollowUp"] as ClinicConsultKind[]).map((kind) => {
+                        const selected = formData.clinicConsultKind === kind;
+                        return (
+                          <button
+                            key={kind}
+                            type="button"
+                            onClick={() => updateForm("clinicConsultKind", kind)}
+                            aria-pressed={selected}
+                            className={`rounded-2xl border px-4 py-3 text-left transition ${
+                              selected
+                                ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_24px_rgba(17,17,17,0.12)] ring-2 ring-neutral-100"
+                                : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
+                            }`}
+                          >
+                            <p className="text-sm font-bold text-slate-900">{getClinicConsultKindLabel(kind)}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">
+                              {kind === "FollowUp"
+                                ? "Returning visit after a prior clinic consultation."
+                                : "First in-clinic consultation before any follow-up rate applies."}
+                            </p>
+                            <p className="mt-2 inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                              {peso(getClinicConsultKindFee(kind))}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mt-8 rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-yellow-700">Type of Service</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-700">Type of Service</p>
                       <p className="mt-1 text-sm text-slate-600">
-                        Choose the main service for this {formData.type === "Online" ? "online consultation" : "clinic visit"}.
+                        Choose the main service for this {getVisitPathLabel(formData.visitPath).toLowerCase()}.
                       </p>
                     </div>
-                    <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-yellow-700">
+                    <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
                       Required
                     </span>
                   </div>
@@ -1061,6 +1241,13 @@ export default function BookAppointmentPage() {
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                     {serviceOptions.map((service) => {
                       const selected = formData.service === service;
+                      const priceLabel = getBookingServicePriceLabel(
+                        service,
+                        formData.visitPath,
+                        formData.type,
+                        formData.clinicConsultKind,
+                      );
+                      const description = getServiceDescription(service);
                       return (
                         <button
                           key={service}
@@ -1069,15 +1256,28 @@ export default function BookAppointmentPage() {
                           aria-pressed={selected}
                           className={`rounded-2xl border px-4 py-3 text-left transition ${
                             selected
-                              ? "border-yellow-300 bg-yellow-50 shadow-[0_12px_24px_rgba(17,17,17,0.12)] ring-2 ring-yellow-100"
-                              : "border-yellow-100 bg-white hover:border-yellow-300 hover:bg-yellow-50/70"
+                              ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_24px_rgba(17,17,17,0.12)] ring-2 ring-neutral-100"
+                              : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
                           }`}
                         >
                           <p className="text-sm font-bold text-slate-900">{service}</p>
+                          {description ? (
+                            <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
+                          ) : null}
+                          {priceLabel ? (
+                            <p className="mt-2 inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                              {priceLabel}
+                            </p>
+                          ) : null}
                         </button>
                       );
                     })}
                   </div>
+                  {isProcedureBooking ? (
+                    <div className="mt-4 rounded-[1.25rem] border border-neutral-200 bg-neutral-50/70 px-4 py-3 text-sm leading-6 text-neutral-800">
+                      Procedure prices depend on the area of concern. A {peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee is required to confirm the schedule and will be deducted from the final bill. Consultation is charged separately.
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="lg:col-span-3 sm:col-span-2">
@@ -1087,7 +1287,7 @@ export default function BookAppointmentPage() {
                       type="text" 
                       value={effectivePatientName} 
                       onChange={(e) => updateForm("patientName", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
+                      className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200" 
                       placeholder="e.g., Juan Dela Cruz" 
                       autoComplete="name" 
                     />
@@ -1099,7 +1299,7 @@ export default function BookAppointmentPage() {
                       type="email" 
                       value={effectivePatientEmail} 
                       onChange={(e) => updateForm("email", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
+                      className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200" 
                       placeholder="juan@email.com" 
                       autoComplete="email" 
                     />
@@ -1111,22 +1311,33 @@ export default function BookAppointmentPage() {
                       type="tel" 
                       value={effectivePatientPhone} 
                       onChange={(e) => updateForm("phone", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
+                      className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200" 
                       placeholder="+63 912 345 6789" 
                       autoComplete="tel" 
                     />
                   </div>
                   <div className="lg:col-span-3 sm:col-span-2">
                     <label htmlFor="reason" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
-                      {formData.type === "Online" ? "Concern / Chief Complaint" : "Reason for Visit"} <span className="font-normal text-slate-500">(Optional)</span>
+                      {isProcedureBooking
+                        ? "Area of Concern / Procedure Notes"
+                        : formData.type === "Online"
+                          ? "Concern / Chief Complaint"
+                          : "Reason for Visit"}{" "}
+                      <span className="font-normal text-slate-500">{isProcedureBooking ? "(Required)" : "(Optional)"}</span>
                     </label>
                     <input 
                       id="reason"
                       type="text" 
                       value={formData.reason} 
                       onChange={(e) => updateForm("reason", e.target.value)} 
-                      className="w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200" 
-                      placeholder={formData.type === "Online" ? "e.g., headache, cough, medication concern" : "e.g., Follow-up checkup, Dental cleaning, Consultation"} 
+                      className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200" 
+                      placeholder={
+                        isProcedureBooking
+                          ? "e.g., Botox forehead lines, wart removal on neck, Mesolipo double chin"
+                          : formData.type === "Online"
+                            ? "e.g., headache, cough, medication concern"
+                            : "e.g., Follow-up checkup, lab result review, consultation"
+                      }
                     />
                   </div>
                   {formData.type === "Online" ? (
@@ -1137,7 +1348,7 @@ export default function BookAppointmentPage() {
                           id="symptoms"
                           value={formData.symptoms}
                           onChange={(e) => updateForm("symptoms", e.target.value)}
-                          className="min-h-28 w-full rounded-[1.2rem] border border-yellow-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-yellow-400 focus:bg-yellow-50/30 focus:ring-4 focus:ring-yellow-200"
+                          className="min-h-28 w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
                           placeholder="Share symptoms, duration, medications taken, temperature, blood pressure, or anything the doctor should review before the session."
                         />
                       </div>
@@ -1151,7 +1362,7 @@ export default function BookAppointmentPage() {
                           accept="image/*,.pdf,.doc,.docx"
                           multiple
                           onChange={handleConcernFilesSelected}
-                          className="w-full rounded-[1.2rem] border border-dashed border-yellow-200 bg-yellow-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-4 focus:ring-yellow-200"
+                          className="w-full rounded-[1.2rem] border border-dashed border-neutral-200 bg-neutral-50/40 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-200"
                         />
                         {uploadedConcernFiles.some((file) => isPreviewableImage(file)) ? (
                           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -1159,9 +1370,9 @@ export default function BookAppointmentPage() {
                               isPreviewableImage(file) ? (
                                 <div
                                   key={`${file.file_name}-preview-${index}`}
-                                  className="overflow-hidden rounded-[1.1rem] border border-yellow-200 bg-white shadow-sm"
+                                  className="overflow-hidden rounded-[1.1rem] border border-neutral-200 bg-white shadow-sm"
                                 >
-                                  <div className="aspect-[4/3] bg-yellow-50">
+                                  <div className="aspect-[4/3] bg-neutral-50">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                       src={file.file_url}
@@ -1176,7 +1387,7 @@ export default function BookAppointmentPage() {
                                     <button
                                       type="button"
                                       onClick={() => removeConcernFile(index)}
-                                      className="shrink-0 rounded-full border border-yellow-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                                      className="shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                                     >
                                       Remove
                                     </button>
@@ -1193,7 +1404,7 @@ export default function BookAppointmentPage() {
                                 key={`${file.file_name}-${index}`}
                                 type="button"
                                 onClick={() => removeConcernFile(index)}
-                                className="rounded-full border border-yellow-200 bg-white px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                                className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                               >
                                 {file.file_name} ×
                               </button>
@@ -1214,10 +1425,10 @@ export default function BookAppointmentPage() {
             <>
               <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_24rem]">
                 <div className="space-y-5">
-                  <div className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
+                  <div className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 3 of 4</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700">Step 3 of 4</p>
                         <h2 className="mt-2 text-xl font-bold text-slate-900">Select Date & Time</h2>
                         <p className="mt-1 text-sm text-slate-600">Choose your preferred appointment date and time slot</p>
                       </div>
@@ -1228,17 +1439,17 @@ export default function BookAppointmentPage() {
                             updateForm("date", nextAvailableSlot.date);
                             updateForm("start", nextAvailableSlot.slot.start);
                           }}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100"
                         >
-                          <FaBolt className="h-3 w-3 text-yellow-400" aria-hidden="true" />
+                          <FaBolt className="h-3 w-3 text-neutral-400" aria-hidden="true" />
                           Next: {formatDisplayDate(nextAvailableSlot.date)} {formatRange(nextAvailableSlot.slot.start, nextAvailableSlot.slot.end)}
                         </button>
                       ) : null}
                     </div>
 
-                    <div className="mt-6 rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#fafafa_0%,#f5f5f5_100%)] p-5">
+                    <div className="mt-6 rounded-[1.75rem] border border-neutral-100 bg-[linear-gradient(180deg,#fafafa_0%,#f5f5f5_100%)] p-5">
                       <div className="flex items-center justify-between mb-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Calendar Selection</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Calendar Selection</p>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -1247,14 +1458,14 @@ export default function BookAppointmentPage() {
                               return candidate < today ? today : candidate;
                             })}
                             disabled={calendarWeekStart <= today}
-                            className="rounded-full border border-yellow-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
+                            className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
                           >
                             ← Previous
                           </button>
                           <button
                             type="button"
                             onClick={() => setVisibleWeekStart(addDays(calendarWeekStart, 7))}
-                            className="rounded-full border border-yellow-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                            className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                           >
                             Next →
                           </button>
@@ -1279,14 +1490,14 @@ export default function BookAppointmentPage() {
                               aria-pressed={isSelected}
                               className={`relative rounded-xl border px-2.5 py-2.5 text-center transition ${
                                   isSelected
-                                    ? "border-yellow-300 bg-black text-white shadow-[0_10px_22px_rgba(17,17,17,0.22)]"
+                                    ? "border-neutral-300 bg-black text-white shadow-[0_10px_22px_rgba(17,17,17,0.22)]"
                                     : isPast
                                     ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400"
-                                    : "border-yellow-100 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50/70"
+                                    : "border-neutral-100 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50/70"
                                 }`}
                             >
                                 {isToday && !isSelected ? (
-                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-yellow-300" aria-hidden="true" />
+                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-neutral-300" aria-hidden="true" />
                                 ) : null}
                               <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-white/90" : "text-slate-500"}`}>
                                 {dayLabel}
@@ -1302,7 +1513,7 @@ export default function BookAppointmentPage() {
                         })}
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-yellow-100">
+                      <div className="mt-4 pt-4 border-t border-neutral-100">
                         <label htmlFor="datepicker" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">Or pick a specific date</label>
                         <input 
                           id="datepicker"
@@ -1310,13 +1521,13 @@ export default function BookAppointmentPage() {
                           value={formData.date}
                           min={today}
                           onChange={(e) => updateForm("date", e.target.value)}
-                          className="w-full cursor-pointer rounded-[1.1rem] border border-yellow-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-4 focus:ring-yellow-200 sm:w-auto"
+                          className="w-full cursor-pointer rounded-[1.1rem] border border-neutral-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-200 sm:w-auto"
                         />
                       </div>
                     </div>
 
                     {blockedReason ? (
-                      <div className="mt-5 rounded-[1.4rem] border border-yellow-200 bg-yellow-50 px-4 py-3.5 text-sm text-yellow-700 shadow-sm font-medium">
+                      <div className="mt-5 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-sm text-neutral-700 shadow-sm font-medium">
                         {blockedReason}
                       </div>
                     ) : null}
@@ -1331,32 +1542,36 @@ export default function BookAppointmentPage() {
                   />
                 </div>
 
-                <div className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] h-fit sm:p-5 lg:sticky lg:top-24">
-                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-yellow-700">
+                <div className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] h-fit sm:p-5 lg:sticky lg:top-24">
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
                     <FaClipboardList className="h-3 w-3" aria-hidden="true" />
                     Booking Summary
                   </p>
                   
-                  <div className="mt-4 rounded-3xl border border-yellow-200 bg-[linear-gradient(180deg,#fafafa_0%,#f5f5f5_100%)] p-4.5 shadow-sm">
+                  <div className="mt-4 rounded-3xl border border-neutral-200 bg-[linear-gradient(180deg,#fafafa_0%,#f5f5f5_100%)] p-4.5 shadow-sm">
                     <div className="space-y-3">
-                      <SummaryRow label="Visit Type" value={<VisitTypeValue type={formData.type} />} done />
+                      <SummaryRow label="Visit Type" value={<VisitPathValue path={formData.visitPath} />} done />
                       <SummaryRow label="Doctor" value={selectedDoctor?.name ?? "-"} done />
-                      <div className="h-px bg-linear-to-r from-yellow-200 to-transparent my-2" />
+                      <div className="h-px bg-linear-to-r from-neutral-200 to-transparent my-2" />
                       <SummaryRow label="Date" value={formatDisplayDate(formData.date)} done={!!formData.date} />
                       <SummaryRow label="Time" value={selectedSlot ? formatRange(selectedSlot.start, selectedSlot.end) : "Choose a slot"} done={!!selectedSlot} />
                       <SummaryRow label="Duration" value={selectedSlot ? selectedSlotDuration : "-"} done={!!selectedSlot} />
-                      <div className="h-px bg-linear-to-r from-yellow-200 to-transparent my-2" />
+                      <div className="h-px bg-linear-to-r from-neutral-200 to-transparent my-2" />
                       <SummaryRow label="Queue #" value={selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "—"} done={!!selectedSlot} />
                     </div>
                   </div>
 
-                  {formData.type === "Online" ? (
-                    <div className="mt-4 rounded-[1.4rem] border border-yellow-200 bg-yellow-50 px-3.5 py-3.5 text-xs">
-                      <p className="inline-flex items-center gap-1.5 font-semibold text-yellow-800">
+                  {formData.type === "Online" || isProcedureBooking ? (
+                    <div className="mt-4 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 px-3.5 py-3.5 text-xs">
+                      <p className="inline-flex items-center gap-1.5 font-semibold text-neutral-800">
                         <FaCreditCard className="h-3 w-3" aria-hidden="true" />
                         Payment Info
                       </p>
-                      <p className="mt-1.5 text-yellow-700">Online consultations require payment first. You&apos;ll choose QR, card, or bank transfer on the review step.</p>
+                      <p className="mt-1.5 text-neutral-700">
+                        {isProcedureBooking
+                          ? `Medical procedures require a ${peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee to confirm the schedule. It is deducted from the final bill.`
+                          : "Online consultations require payment first. You'll choose QR, card, or bank transfer on the review step."}
+                      </p>
                     </div>
                   ) : null}
 
@@ -1368,56 +1583,34 @@ export default function BookAppointmentPage() {
           ) : null}
 
           {activeStep === 4 ? (
-            <section className="rounded-4xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_22px_48px_rgba(17,17,17,0.08)] sm:p-6">
-              {requiresAuthForReview ? (
-                <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-yellow-300 bg-[linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] p-6 shadow-sm sm:p-8">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 4 of 4</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Please sign in to continue</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Sign in or create an account to review and complete your appointment booking.
-                  </p>
-
-                  <div className="mt-6 rounded-[1.4rem] border border-yellow-200 bg-white px-5 py-4 text-sm text-slate-700 shadow-sm">
-                    You can keep your selected service, date, and time. You only need to sign in or sign up before the final confirmation.
-                  </div>
-
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <Link
-                      href={`/login?next=${encodeURIComponent(`${pathname}#booking`)}`}
-                      className="flex-1 rounded-full bg-black px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href={`/register?next=${encodeURIComponent(`${pathname}#booking`)}`}
-                      className="flex-1 rounded-full border border-yellow-300 bg-white px-5 py-3 text-center text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50"
-                    >
-                      Sign Up
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-yellow-700">Step 4 of 4</p>
+            <section className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_22px_48px_rgba(17,17,17,0.08)] sm:p-6">
+              <>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700">Step 4 of 4</p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                    {formData.type === "Online" ? "Review & Proceed to Payment" : "Review & Confirm"}
+                    {requiresPayMongoCheckout ? "Review & Proceed to Payment" : "Review & Confirm"}
                   </h2>
                   <p className="mt-2 text-sm text-slate-600">Please review your appointment details before confirming</p>
 
                   <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-                    <div className="space-y-4 rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] p-5 shadow-sm sm:p-6">
+                    <div className="space-y-4 rounded-[1.75rem] border border-neutral-100 bg-[linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] p-5 shadow-sm sm:p-6">
                       <div>
-                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700 mb-3">
                           <FaClipboardList className="h-3 w-3" aria-hidden="true" />
                           Appointment Details
                         </p>
                         <div className="space-y-3">
                           <SummaryRow label="Patient Type" value={formData.patientStatus} done={step1Valid} />
-                          <SummaryRow label="Visit Type" value={<VisitTypeValue type={formData.type} />} done />
+                          <SummaryRow label="Visit Type" value={<VisitPathValue path={formData.visitPath} />} done />
                           {formData.type === "Clinic" ? <SummaryRow label="Clinic" value={selectedClinic.label} done={!!formData.clinicId} /> : null}
+                          {appointmentClinicConsultKind ? (
+                            <SummaryRow label="Consult Type" value={getClinicConsultKindLabel(appointmentClinicConsultKind)} done />
+                          ) : null}
                           <SummaryRow label="Service" value={formData.service} done={!!formData.service} />
+                          {isProcedureBooking ? (
+                            <SummaryRow label="Starting Price" value={getServicePriceLabel(formData.service) ?? "Consultation required"} done />
+                          ) : null}
                           <SummaryRow label="Doctor" value={selectedDoctor?.name ?? "-"} done />
-                          <div className="h-px bg-linear-to-r from-yellow-200 to-transparent" />
+                          <div className="h-px bg-linear-to-r from-neutral-200 to-transparent" />
                           <SummaryRow label="Date" value={formatDisplayDate(formData.date)} done={datePicked} />
                           <SummaryRow label="Time" value={selectedSlot ? formatRange(selectedSlot.start, selectedSlot.end) : "-"} done={step3Valid} />
                           <SummaryRow label="Duration" value={selectedSlot ? selectedSlotDuration : "-"} done={step3Valid} />
@@ -1425,8 +1618,8 @@ export default function BookAppointmentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-yellow-200">
-                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">
+                      <div className="pt-2 border-t border-neutral-200">
+                        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700 mb-3">
                           <FaUser className="h-3 w-3" aria-hidden="true" />
                           Patient Information
                         </p>
@@ -1436,7 +1629,7 @@ export default function BookAppointmentPage() {
                           <SummaryRow label="Email" value={effectivePatientEmail} done={step2Valid} />
                           <SummaryRow label="Phone" value={effectivePatientPhone} done={step2Valid} />
                           <SummaryRow label="Service" value={formData.service} done={!!formData.service} />
-                          {formData.reason ? <SummaryRow label="Reason" value={formData.reason} done /> : null}
+                          {formData.reason ? <SummaryRow label={isProcedureBooking ? "Area / Notes" : "Reason"} value={formData.reason} done /> : null}
                           {formData.type === "Online" && formData.symptoms ? <SummaryRow label="Symptoms" value={formData.symptoms} done /> : null}
                           {formData.type === "Online" && uploadedConcernFiles.length > 0 ? (
                             <SummaryRow label="Attached Files" value={`${uploadedConcernFiles.length} file${uploadedConcernFiles.length === 1 ? "" : "s"} ready`} done />
@@ -1444,14 +1637,27 @@ export default function BookAppointmentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-yellow-200">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">Payment Info</p>
-                        {formData.type === "Online" ? (
+                      <div className="pt-2 border-t border-neutral-200">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700 mb-3">Payment Info</p>
+                        {!isProcedureBooking ? (
+                          <SummaryRow
+                            label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
+                            value={getConsultationFeeLabel(formData.type, formData.clinicConsultKind)}
+                            done
+                          />
+                        ) : null}
+                        {requiresPayMongoCheckout ? (
                           <SummaryRow
                             label="Payment Method"
                             value={paymentOptionLabel(formData.paymentOption)}
                             done
                           />
+                        ) : null}
+                        {isProcedureBooking ? (
+                          <>
+                            <SummaryRow label="Reservation Fee" value={peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} done />
+                            <SummaryRow label="Billing Note" value="Deductible from final procedure bill; consultation charged separately" done />
+                          </>
                         ) : null}
                         {formData.type === "Online" ? (
                           <SummaryRow
@@ -1463,108 +1669,29 @@ export default function BookAppointmentPage() {
                       </div>
 
                       {isProcedureBooking ? (
-                        <div className="pt-2 border-t border-yellow-200 space-y-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">Procedure Consent</p>
-                            <div className="rounded-[1.4rem] border border-yellow-200 bg-white px-4 py-4 shadow-sm">
-                              <p className="text-sm font-bold text-slate-900">{consentGuide.title}</p>
-                              <p className="mt-1 text-xs leading-6 text-slate-600">{consentGuide.summary}</p>
-                              <ul className="mt-3 space-y-2 text-xs leading-6 text-slate-700">
-                                {consentGuide.bullets.map((bullet) => (
-                                  <li key={bullet} className="flex gap-2">
-                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" aria-hidden="true" />
-                                    <span>{bullet}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                <label className="block">
-                                  <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Patient signature
-                                  </span>
-                                  <input
-                                    type="text"
-                                    value={procedureConsentSignature}
-                                    onChange={(event) => setProcedureConsentSignature(event.target.value)}
-                                    className="w-full rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-4 focus:ring-yellow-100"
-                                    placeholder={effectivePatientName || "Type your full name"}
-                                  />
-                                </label>
-                                <div className="rounded-2xl border border-yellow-100 bg-yellow-50/70 px-4 py-3">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-700">Status</p>
-                                  <p className="mt-1 text-sm font-semibold text-slate-800">
-                                    {consentSignatureMatches ? "Signature matches patient name" : "Signature must match the patient name"}
-                                  </p>
-                                </div>
+                        <div className="border-t border-neutral-200 pt-5">
+                          <div className={`rounded-[1.4rem] border p-4 shadow-sm ${hasCompleteProcedureConsent ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/70"}`}>
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Required before payment</p>
+                                <p className="mt-1 text-sm font-black text-slate-950">Consent & aftercare for {formData.service}</p>
+                                <p className="mt-1 text-xs leading-5 text-slate-600">Review the procedure consent, read the specific aftercare, and sign on screen.</p>
                               </div>
-                              <label className="mt-4 flex items-start gap-3 rounded-2xl border border-yellow-100 bg-yellow-50/70 px-4 py-3 text-sm text-slate-800">
-                                <input
-                                  type="checkbox"
-                                  checked={procedureConsentAccepted}
-                                  onChange={(event) => setProcedureConsentAccepted(event.target.checked)}
-                                  className="mt-1 h-4 w-4 rounded border-yellow-300 text-black focus:ring-black"
-                                />
-                                <span>I confirm that I have filled up and signed the patient consent form for this procedure.</span>
-                              </label>
+                              {hasCompleteProcedureConsent ? <span className="rounded-full bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white">Signed</span> : null}
                             </div>
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700 mb-3">Aftercare Instructions</p>
-                            <div className="rounded-[1.4rem] border border-yellow-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf0_100%)] px-4 py-4 shadow-sm">
-                              {selectedAftercareGuide ? (
-                                <>
-                                  <p className="text-sm font-bold text-slate-900">{selectedAftercareGuide.title}</p>
-                                  <p className="mt-1 text-xs leading-6 text-slate-600">{selectedAftercareGuide.summary}</p>
-                                  <ul className="mt-3 space-y-2 text-xs leading-6 text-slate-700">
-                                    {selectedAftercareGuide.bullets.map((bullet) => (
-                                      <li key={bullet} className="flex gap-2">
-                                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" aria-hidden="true" />
-                                        <span>{bullet}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-sm font-bold text-slate-900">General Procedure Aftercare</p>
-                                  <p className="mt-1 text-xs leading-6 text-slate-600">
-                                    Follow the doctor&apos;s specific instructions after treatment. Keep the area clean, avoid touching it unnecessarily, and contact the clinic if you notice unusual swelling, pain, or bleeding.
-                                  </p>
-                                  <ul className="mt-3 space-y-2 text-xs leading-6 text-slate-700">
-                                    <li className="flex gap-2">
-                                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" aria-hidden="true" />
-                                      <span>Rest, hydrate, and avoid strenuous activity if advised.</span>
-                                    </li>
-                                    <li className="flex gap-2">
-                                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" aria-hidden="true" />
-                                      <span>Do not apply products or take medicines not recommended by the doctor.</span>
-                                    </li>
-                                    <li className="flex gap-2">
-                                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" aria-hidden="true" />
-                                      <span>Return for follow-up if the clinic asks you to come back.</span>
-                                    </li>
-                                  </ul>
-                                </>
-                              )}
-                              <label className="mt-4 flex items-start gap-3 rounded-2xl border border-yellow-100 bg-white px-4 py-3 text-sm text-slate-800">
-                                <input
-                                  type="checkbox"
-                                  checked={procedureAftercareAcknowledged}
-                                  onChange={(event) => setProcedureAftercareAcknowledged(event.target.checked)}
-                                  className="mt-1 h-4 w-4 rounded border-yellow-300 text-black focus:ring-black"
-                                />
-                                <span>I understand the aftercare instructions and will follow them after the procedure.</span>
-                              </label>
-                            </div>
+                            <button type="button" onClick={() => setIsProcedureConsentModalOpen(true)} className="mt-4 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800">
+                              {procedureConsentAccepted ? "Review signed consent" : "Review & sign consent"}
+                            </button>
+                            {procedureConsentIssue ? <p className="mt-3 text-xs font-semibold text-amber-800">{procedureConsentIssue}</p> : null}
+                            {!selectedAftercareGuide ? <p className="mt-3 text-xs font-semibold text-red-700">Procedure-specific aftercare is not available yet. Please choose another service or contact the clinic.</p> : null}
                           </div>
                         </div>
                       ) : null}
                     </div>
 
-                    <div className="rounded-[1.75rem] border-2 border-yellow-300 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
-                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">
-                        {formData.type === "Online" ? (
+                    <div className="rounded-[1.75rem] border-2 border-neutral-300 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
+                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
+                        {requiresPayMongoCheckout ? (
                           <>
                             <FaCreditCard className="h-3 w-3" aria-hidden="true" />
                             Ready for Payment
@@ -1576,24 +1703,28 @@ export default function BookAppointmentPage() {
                           </>
                         )}
                       </p>
-                      <p className="mt-4 text-3xl font-black text-yellow-800">
+                      <p className="mt-4 text-3xl font-black text-neutral-800">
                         {formData.type === "Online"
                           ? "Pay Now"
-                          : `Queue ${selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"}`}
+                          : isProcedureBooking
+                            ? "Pay Reservation"
+                            : `Queue ${selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"}`}
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
                         {formData.type === "Online"
                           ? "You will be redirected to PayMongo's secure checkout to complete the payment."
-                          : selectedSlot
+                          : isProcedureBooking
+                            ? `A ${peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
+                            : selectedSlot
                             ? `Your appointment is confirmed for ${formatRange(selectedSlot.start, selectedSlot.end)}`
                             : "Select a time slot first"}
                       </p>
 
-                      {formData.type === "Online" ? (
-                        <div className="mt-4 space-y-3 rounded-[1.4rem] border border-yellow-200 bg-linear-to-b from-yellow-50 to-white px-4 py-4">
+                      {requiresPayMongoCheckout ? (
+                        <div className="mt-4 space-y-3 rounded-[1.4rem] border border-neutral-200 bg-linear-to-b from-neutral-50 to-white px-4 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm">
-                            <span className="font-semibold text-yellow-800">Choose Payment Method</span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-yellow-700 shadow-sm border border-yellow-200">
+                            <span className="font-semibold text-neutral-800">Choose Payment Method</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-700 shadow-sm border border-neutral-200">
                               <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
                               Secure · PayMongo
                             </span>
@@ -1632,11 +1763,11 @@ export default function BookAppointmentPage() {
                                       <div className="flex flex-wrap items-center gap-2">
                                         <p className="text-sm font-bold text-slate-900">{option.label}</p>
                                         {!isAvailable ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-yellow-700 border border-yellow-200">
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-700 border border-neutral-200">
                                             Not yet available
                                           </span>
                                           ) : isSelected ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-300 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${option.accent.selectedBadge}`}>
                                             <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
                                             Selected
                                           </span>
@@ -1694,38 +1825,37 @@ export default function BookAppointmentPage() {
                     </div>
                   </div>
 
-                  {!requiresAuthForReview && !accessToken && (
-                    <div className="rounded-[1.4rem] border border-yellow-300 bg-yellow-50 px-4 py-4">
-                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-yellow-700 mb-3">
+                  {!accessToken && (
+                    <div className="rounded-[1.4rem] border border-neutral-300 bg-neutral-50 px-4 py-4">
+                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-700 mb-3">
                         <FaLock className="h-3.5 w-3.5" aria-hidden="true" />
                         Sign In Required
                       </p>
-                      <p className="text-sm text-yellow-700 mb-4">You must sign in or create an account to complete your booking.</p>
+                      <p className="text-sm text-neutral-700 mb-4">You must sign in or create an account to complete your booking.</p>
                       <div className="flex gap-3 flex-col sm:flex-row">
-                        <Link href={`/login?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full bg-black text-white px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-black">
+                        <Link href={`/login?next=${encodeURIComponent(authReturnPath)}`} className="flex-1 rounded-full bg-black text-white px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-black">
                           Sign In
                         </Link>
-                        <Link href={`/register?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "") }#booking`} className="flex-1 rounded-full border border-yellow-300 bg-white text-yellow-700 px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-yellow-50">
+                        <Link href={`/register?next=${encodeURIComponent(authReturnPath)}`} className="flex-1 rounded-full border border-neutral-300 bg-white text-neutral-700 px-4 py-2.5 text-sm font-semibold text-center transition hover:bg-neutral-50">
                           Create Account
                         </Link>
                       </div>
                     </div>
                   )}
                 </>
-              )}
 
-              <div className="mt-6 flex flex-col gap-3 border-t border-yellow-100 pt-5 sm:flex-row sm:items-center">
-                <button type="button" onClick={goBack} className="order-2 inline-flex items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 sm:order-1">
+              <div className="mt-6 flex flex-col gap-3 border-t border-neutral-100 pt-5 sm:flex-row sm:items-center">
+                <button type="button" onClick={goBack} className="order-2 inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 sm:order-1">
                   <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
                   Back
                 </button>
                 <div className="order-1 flex flex-1 flex-col gap-3 sm:order-2 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => { setFormData({ ...INITIAL_FORM, doctorId: formData.doctorId, type: formData.type }); setFeedback(null); setActiveStep(1); setVisibleWeekStart(today); }} className="inline-flex items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50">
+                  <button type="button" onClick={() => { setFormData({ ...INITIAL_FORM, doctorId: formData.doctorId }); setFeedback(null); setActiveStep(1); setVisibleWeekStart(today); }} className="inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50">
                     <FaArrowRotateLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     Start Over
                   </button>
                   <button type="submit" disabled={isLoading || isSubmitting || !step4Done || !accessToken} className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(17,17,17,0.28)] disabled:cursor-not-allowed disabled:opacity-60">
-                    {isSubmitting ? "Processing..." : formData.type === "Online" ? "Proceed to Payment" : "Confirm Appointment"}
+                    {isSubmitting ? "Processing..." : requiresPayMongoCheckout ? "Proceed to Payment" : "Confirm Appointment"}
                   </button>
                 </div>
               </div>
@@ -1733,6 +1863,25 @@ export default function BookAppointmentPage() {
           ) : null}
         </div>
       </form>
+      {isProcedureConsentModalOpen && isProcedureBooking ? (
+        <ProcedureConsentModal
+          procedureName={formData.service}
+          patientName={effectivePatientName}
+          aftercareGuide={selectedAftercareGuide}
+          initialSignatureDataUrl={procedureConsentSignature}
+          initialSignatureName={procedureConsentSignatureName}
+          initialConsentAccepted={procedureConsentAccepted}
+          initialAftercareAcknowledged={procedureAftercareAcknowledged}
+          onClose={() => setIsProcedureConsentModalOpen(false)}
+          onComplete={({ signatureDataUrl, signatureName, consentAccepted, aftercareAcknowledged }) => {
+            setProcedureConsentSignature(signatureDataUrl);
+            setProcedureConsentSignatureName(signatureName);
+            setProcedureConsentAccepted(consentAccepted);
+            setProcedureAftercareAcknowledged(aftercareAcknowledged);
+            setIsProcedureConsentModalOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1766,7 +1915,7 @@ function HorizontalBookingStepper({
               <Fragment key={label}>
                 {i > 0 ? (
                   <div
-                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? "bg-black" : "bg-yellow-100"} sm:block`}
+                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? "bg-black" : "bg-neutral-100"} sm:block`}
                     aria-hidden
                   />
                 ) : null}
@@ -1775,12 +1924,12 @@ function HorizontalBookingStepper({
                     type="button"
                     onClick={() => onStepClick(step)}
                     title={`Step ${step}: ${label}`}
-                    className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 ${
+                    className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                       isCurrent
                         ? "bg-[linear-gradient(135deg,#111111,#111111)] text-white shadow-[0_12px_24px_rgba(17,17,17,0.24)]"
                         : isComplete
-                        ? "bg-yellow-300 text-white shadow-sm"
-                        : "bg-yellow-50 text-yellow-700 ring-2 ring-yellow-200"
+                        ? "bg-neutral-300 text-white shadow-sm"
+                        : "bg-neutral-50 text-neutral-700 ring-2 ring-neutral-200"
                     }`}
                   >
                     {isComplete ? (
@@ -1820,7 +1969,7 @@ function WizardNav({
   return (
     <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${showBack ? "sm:justify-between" : "sm:justify-end"}`}>
       {showBack ? (
-        <button type="button" onClick={onBack} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-yellow-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 sm:w-auto">
+        <button type="button" onClick={onBack} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 sm:w-auto">
           <FaArrowLeft className="h-3 w-3" aria-hidden="true" />
           Back
         </button>

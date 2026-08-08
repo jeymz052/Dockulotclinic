@@ -61,6 +61,7 @@ export default function PatientDashboard() {
         title={`Welcome, ${name}`}
         description="See upcoming visits, open your meeting link, and reach your records from one calm dashboard."
         summary={heroSummary}
+        accent="gold"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -72,26 +73,26 @@ export default function PatientDashboard() {
         <MetricCard href="/profile/files" label="Medical Files" value="Files" helper="Lab results and documents" tone="indigo" icon={<FaFileLines className="text-2xl" />} />
         <MetricCard href="/prescriptions" label="Prescriptions" value="Rx" helper="Medicine instructions" tone="sky" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
         <MetricCard href="/payments/history" label="Receipts" value="Paid" helper="Billing history and receipts" tone="cyan" icon={<FaCreditCard className="text-2xl" />} />
-        <MetricCard href="/profile/inquiries" label="Follow-ups" value="Ask" helper="Questions after your visit" tone="amber" icon={<FaInbox className="text-2xl" />} />
+        <MetricCard href="/profile/inquiries" label="Follow-ups" value="Ask" helper="Questions after your visit" tone="gold" icon={<FaInbox className="text-2xl" />} />
       </div>
 
       {next ? (
-          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-gold-200 bg-linear-to-br from-gold-50/80 via-gold-50/40 to-gold-50/20 p-8 shadow-[0_28px_54px_rgba(17,17,17,0.16)] animate-pop-in transition hover:-translate-y-1">
-            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-gold-300/20 to-gold-200/10 blur-3xl" />
-            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-gold-200/20 to-gold-100/10 blur-3xl" />
+          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-neutral-200 bg-linear-to-br from-neutral-50/80 via-neutral-50/40 to-neutral-50/20 p-8 shadow-[0_28px_54px_rgba(17,17,17,0.16)] animate-pop-in transition hover:-translate-y-1">
+            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-neutral-300/20 to-neutral-200/10 blur-3xl" />
+            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-neutral-200/20 to-neutral-100/10 blur-3xl" />
           <div className="relative">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-gold-100 px-4 py-2 mb-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-4 py-2 mb-4">
                   <span className="h-2 w-2 rounded-full bg-black animate-pulse" />
-                  <span className="text-xs font-bold text-gold-700">YOUR NEXT APPOINTMENT</span>
+                  <span className="text-xs font-bold text-neutral-700">YOUR NEXT APPOINTMENT</span>
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-neutral-900 mt-3">
-                  {formatDate(next.date)} <span className="text-gold-400">·</span> {next.start}
+                  {formatDate(next.date)} <span className="text-neutral-400">·</span> {next.start}
                 </h2>
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-100">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
                       <span className="text-lg">#{next.queueNumber}</span>
                     </div>
                     <div>
@@ -100,8 +101,8 @@ export default function PatientDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-100">
-                      {next.type === "Online" ? <FaVideo className="text-sm text-gold-700" /> : <FaHospital className="text-sm text-gold-700" />}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
+                      {next.type === "Online" ? <FaVideo className="text-sm text-neutral-700" /> : <FaHospital className="text-sm text-neutral-700" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-neutral-900">{getAppointmentPrimaryLabel(next.reason, next.type)}</p>
@@ -119,7 +120,7 @@ export default function PatientDashboard() {
                     href={next.meetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-gold-400 to-gold-300 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(17,17,17,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(17,17,17,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-neutral-400 to-neutral-300 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(17,17,17,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(17,17,17,0.4)]"
                   >
                     <FaVideo />
                     Join consultation
@@ -144,15 +145,15 @@ export default function PatientDashboard() {
             ))}
           </div>
         ) : upcoming.length === 0 ? (
-          <div className="rounded-[1.75rem] border-2 border-dashed border-gold-200 px-8 py-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100">
-              <FaCalendarDays className="text-2xl text-gold-700" />
+          <div className="rounded-[1.75rem] border-2 border-dashed border-neutral-200 px-8 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+              <FaCalendarDays className="text-2xl text-neutral-700" />
             </div>
             <p className="text-base font-semibold text-neutral-900">No upcoming appointments</p>
             <p className="mt-2 text-sm text-neutral-500">You&apos;re all caught up! Book your next appointment when you need one.</p>
             <Link
               href="/appointments"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-gold-400 to-gold-300 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(17,17,17,0.25)] transition hover:-translate-y-1"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-neutral-400 to-neutral-300 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(17,17,17,0.25)] transition hover:-translate-y-1"
             >
               <FaCalendarDays />
               Book appointment
@@ -164,10 +165,10 @@ export default function PatientDashboard() {
               <Link
                 key={appt.id}
                 href={`/appointments/my`}
-                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-gold-200 hover:bg-gold-50/60 hover:shadow-[0_8px_20px_rgba(17,17,17,0.10)] animate-slide-in-left stagger-${Math.min(i + 1, 5)}`}
+                className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-neutral-200 hover:bg-neutral-50/60 hover:shadow-[0_8px_20px_rgba(17,17,17,0.10)] animate-slide-in-left stagger-${Math.min(i + 1, 5)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-gold-300 to-gold-400" : "bg-linear-to-br from-gold-300 to-gold-400"}`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-neutral-300 to-neutral-400" : "bg-linear-to-br from-neutral-300 to-neutral-400"}`}>
                     {appt.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                   </div>
                   <div className="min-w-0">

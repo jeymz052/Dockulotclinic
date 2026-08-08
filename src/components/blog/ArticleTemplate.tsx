@@ -27,7 +27,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
         <div className="mb-8 border-b border-neutral-200 pb-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm font-semibold text-neutral-500">
-              <Link href="/blog" className="transition hover:text-gold-700">
+              <Link href="/blog" className="transition hover:text-neutral-700">
                 Blog
               </Link>
               <span className="px-2 text-neutral-400">/</span>
@@ -36,7 +36,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
 
             <Link
               href="/#blog"
-              className="inline-flex items-center gap-2 self-start rounded-full border border-gold-200 bg-white px-4 py-2 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
             >
               <FaArrowLeft />
               Back to blog preview
@@ -54,17 +54,17 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
 
             <div className="flex gap-8">
               <div className="hidden shrink-0 lg:block">
-                <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-black px-3 py-4 text-white shadow-lg shadow-gold-800/15">
+                <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-black px-3 py-4 text-white shadow-lg shadow-neutral-800/15">
                   <div className="text-3xl font-extrabold leading-none">{publishedDay}</div>
                   <div className="mt-1 text-xs font-semibold tracking-wider">{publishedMonthShort}</div>
                 </div>
               </div>
 
               <div className="flex-1">
-                <div className="inline-flex rounded-full bg-gold-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-700">
+                <div className="inline-flex rounded-full bg-neutral-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">
                   {post.category}
                 </div>
-                <h1 className="mt-5 text-4xl font-black tracking-tight text-gold-800 sm:text-5xl">{post.title}</h1>
+                <h1 className="mt-5 text-4xl font-black tracking-tight text-neutral-800 sm:text-5xl">{post.title}</h1>
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-neutral-500">
                   <span>By Doc Kulot</span>
                   <span>{post.category}</span>
@@ -102,7 +102,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
                   )}
                 </div>
 
-                <div className="mt-10 rounded-[1.75rem] border border-gold-100 bg-gold-50 px-6 py-5 text-sm leading-6 text-gold-800">
+                <div className="mt-10 rounded-[1.75rem] border border-neutral-100 bg-neutral-50 px-6 py-5 text-sm leading-6 text-neutral-800">
                   Health content is for education only. If symptoms are urgent, seek care immediately.
                 </div>
               </div>
@@ -110,11 +110,11 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
           </main>
 
           <aside className="space-y-6">
-            <div className="rounded-[2rem] border border-gold-100 bg-gold-50 p-6 shadow-sm">
-              <h3 className="text-lg font-black tracking-tight text-gold-700">Categories</h3>
+            <div className="rounded-[2rem] border border-neutral-100 bg-neutral-50 p-6 shadow-sm">
+              <h3 className="text-lg font-black tracking-tight text-neutral-700">Categories</h3>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-700">
                 {contentCategories.map((c) => (
-                  <li key={c} className="border-b border-gold-100 py-3 hover:text-gold-700">
+                  <li key={c} className="border-b border-neutral-100 py-3 hover:text-neutral-700">
                     {c}
                   </li>
                 ))}
@@ -122,7 +122,7 @@ export default async function ArticleTemplate({ post }: { post: PublicContentPos
             </div>
 
             <div className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-black tracking-tight text-gold-700">Recent</h3>
+              <h3 className="text-lg font-black tracking-tight text-neutral-700">Recent</h3>
               <div className="mt-4 space-y-4">
                 {recent.slice(0, 4).map((r) => (
                   <Link key={r.id} href={`/blog/${r.slug}`} className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-neutral-50">

@@ -1,5 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import InquiryForm from "@/src/components/marketing/InquiryForm";
+
+export const metadata: Metadata = {
+  title: "Contact",
+  description:
+    "Send an inquiry to the Doc Kulot team about appointments, clinic services, consultation concerns, collaborations, or general questions.",
+  alternates: {
+    canonical: "/contact",
+  },
+};
 
 export default function ContactPage() {
   return (

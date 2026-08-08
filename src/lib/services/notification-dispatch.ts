@@ -44,7 +44,7 @@ export async function processDueNotifications(limit = 100) {
         const profile = row.user_id ? profilesById.get(row.user_id) : null;
         if (!profile) throw new Error("Recipient profile missing");
 
-        const rendered = renderTemplate(row.template ?? "welcome", row.payload ?? {});
+        const rendered = renderTemplate(row.template ?? "welcome", row.payload ?? {}, row.channel);
         const subject = rendered.subject;
         const body = rendered.body;
 

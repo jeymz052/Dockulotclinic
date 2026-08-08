@@ -51,6 +51,7 @@ import {
   getDefaultServiceForType,
   getServiceOptionsForType,
   parseAppointmentContext,
+  type ClinicConsultKind,
 } from "@/src/lib/appointment-context";
 import {
   formatDisplayDate,
@@ -69,7 +70,11 @@ const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
 type Timeframe = "today" | "upcoming" | "past" | "all";
 type StatusFilter = "all" | AppointmentStatus;
 type TypeFilter = "all" | AppointmentType;
-type AppointmentDraft = AppointmentRecord & { service: string };
+type AppointmentDraft = AppointmentRecord & { service: string; consultKind?: ClinicConsultKind };
+
+function clinicConsultKindLabel(kind: ClinicConsultKind) {
+  return kind === "FollowUp" ? "Follow-up clinic consult" : "First clinic consult";
+}
 
 export default function AppointmentListPage() {
   const { accessToken, role } = useRole();
@@ -183,6 +188,7 @@ export default function AppointmentListPage() {
       ...appointment,
       service: parsed.service || getDefaultServiceForType(appointment.type),
       reason: parsed.reason,
+      consultKind: parsed.consultKind ?? (appointment.type === "Clinic" ? "FirstConsult" : undefined),
       doctorId: primaryDoctor?.slug ?? appointment.doctorId ?? DEFAULT_DOCTOR_ID,
     });
     setFeedback(null);
@@ -199,6 +205,7 @@ export default function AppointmentListPage() {
       }
       if (field === "type") {
         next.service = getDefaultServiceForType(value as AppointmentType);
+        next.consultKind = value === "Clinic" ? "FirstConsult" : undefined;
       }
       return next;
     });
@@ -220,7 +227,7 @@ export default function AppointmentListPage() {
         date: draft.date,
         start: draft.start,
         type: draft.type,
-        reason: encodeAppointmentContext(draft.service, draft.reason),
+        reason: encodeAppointmentContext(draft.service, draft.reason, draft.type === "Clinic" ? draft.consultKind : undefined),
         // Only send the override for Online appointments — server ignores it
         // for Clinic visits, but skipping it here keeps the wire payload tidy.
         meetingLink: draft.type === "Online" ? draft.meetingLink ?? "" : undefined,
@@ -360,10 +367,10 @@ export default function AppointmentListPage() {
   return (
     <div className="space-y-6 pb-10">
       {/* Hero header */}
-      <section className="overflow-hidden rounded-[2.25rem] border border-yellow-100 bg-[radial-gradient(circle_at_top_right,rgba(17,17,17,0.18),transparent_38%),linear-gradient(135deg,#fafafa_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_right,rgba(17,17,17,0.18),transparent_38%),linear-gradient(135deg,#fafafa_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">
               Manage Appointments
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -386,7 +393,7 @@ export default function AppointmentListPage() {
               </Link>
               <Link
                 href="/appointments/calendar"
-                className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:border-yellow-300 hover:bg-yellow-50"
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50"
               >
                 <FaCalendarDays className="h-3 w-3" aria-hidden="true" />
                 Calendar View
@@ -441,7 +448,7 @@ export default function AppointmentListPage() {
       ) : null}
 
       {/* Filter / search bar */}
-      <div className="rounded-[1.75rem] border border-yellow-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-[1.75rem] border border-neutral-100 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-4">
           {/* Search */}
           <div className="relative">
@@ -454,7 +461,7 @@ export default function AppointmentListPage() {
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search by patient name, email, phone, doctor, or reason…"
-              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:ring-2 focus:ring-yellow-200"
+              className="w-full rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-neutral-400 focus:bg-white focus:ring-2 focus:ring-neutral-200"
             />
             {searchQuery ? (
               <button
@@ -488,7 +495,7 @@ export default function AppointmentListPage() {
                     aria-pressed={isActive}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                       isActive
-                        ? "bg-white text-yellow-700 shadow-sm ring-1 ring-yellow-200"
+                        ? "bg-white text-neutral-700 shadow-sm ring-1 ring-neutral-200"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
@@ -621,7 +628,7 @@ export default function AppointmentListPage() {
             <section key={date} className="space-y-3">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
                     {dateBucketLabel(date)}
                   </p>
                   <h2 className="mt-1 text-base font-bold text-slate-900">
@@ -647,10 +654,10 @@ export default function AppointmentListPage() {
                       ref={isHighlighted ? highlightedRef : null}
                       className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 ${
                         isHighlighted
-                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-yellow-300"
+                          ? "border-neutral-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-neutral-300"
                           : isEditing
-                          ? "border-yellow-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-yellow-200"
-                          : "border-slate-200 hover:border-yellow-200 hover:shadow-md"
+                          ? "border-neutral-400 shadow-[0_18px_36px_rgba(17,17,17,0.16)] ring-2 ring-neutral-200"
+                          : "border-slate-200 hover:border-neutral-200 hover:shadow-md"
                       }`}
                     >
                       {/* Card head */}
@@ -758,7 +765,7 @@ export default function AppointmentListPage() {
                                 <button
                                   type="button"
                                   onClick={() => setVitalsApptId(appointment.id)}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                                 >
                                   <FaHeartPulse className="h-3 w-3" aria-hidden="true" />
                                   Vitals & History
@@ -792,7 +799,7 @@ export default function AppointmentListPage() {
                               <button
                                 type="button"
                                 onClick={() => beginEdit(appointment)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                               >
                                 <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
                                 Edit
@@ -800,7 +807,7 @@ export default function AppointmentListPage() {
                               <button
                                 type="button"
                                 onClick={() => setConfirmingDeleteId(appointment.id)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                               >
                                 <FaXmark className="h-3 w-3" aria-hidden="true" />
                                 Cancel
@@ -824,10 +831,10 @@ export default function AppointmentListPage() {
 
                       {/* Inline edit form */}
                       {isEditing ? (
-                        <div className="space-y-5 border-t border-yellow-100 bg-linear-to-b from-yellow-50/30 to-white px-4 py-5 sm:px-6">
+                        <div className="space-y-5 border-t border-neutral-100 bg-linear-to-b from-neutral-50/30 to-white px-4 py-5 sm:px-6">
                           <div className="grid gap-4 lg:grid-cols-2">
-                            <div className="rounded-2xl border border-yellow-200 bg-white p-4 shadow-sm">
-                              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">
+                            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-700">
                                 <FaUser className="h-3 w-3" aria-hidden="true" />
                                 Patient Details
                               </p>
@@ -865,6 +872,21 @@ export default function AppointmentListPage() {
                                     placeholder="Consultation reason"
                                   />
                                 </FormField>
+                                {draft.type === "Clinic" ? (
+                                  <FormField label="Clinic Consult Type">
+                                    <select
+                                      value={draft.consultKind ?? "FirstConsult"}
+                                      onChange={(event) => updateDraft("consultKind", event.target.value as ClinicConsultKind)}
+                                      className={`${INPUT_CLASS} bg-white`}
+                                    >
+                                      {(["FirstConsult", "FollowUp"] as ClinicConsultKind[]).map((kind) => (
+                                        <option key={kind} value={kind}>
+                                          {clinicConsultKindLabel(kind)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </FormField>
+                                ) : null}
                                 <FormField label="Service">
                                   <select
                                     value={draft.service}
@@ -881,14 +903,14 @@ export default function AppointmentListPage() {
                               </div>
                             </div>
 
-                            <div className="rounded-2xl border border-yellow-200 bg-white p-4 shadow-sm">
-                              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">
+                            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                              <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-700">
                                 <FaCalendarDays className="h-3 w-3" aria-hidden="true" />
                                 Schedule Details
                               </p>
                               <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                                 <FormField label="Doctor">
-                                  <div className={`${INPUT_CLASS} bg-yellow-50/60 font-semibold`}>
+                                  <div className={`${INPUT_CLASS} bg-neutral-50/60 font-semibold`}>
                                     {primaryDoctor?.name ?? getDoctorById(DEFAULT_DOCTOR_ID)?.name ?? "Assigned doctor"}
                                   </div>
                                 </FormField>
@@ -920,7 +942,7 @@ export default function AppointmentListPage() {
                                         updateDraft("start", nextAvailableSlot.slot.start);
                                         updateDraft("end", nextAvailableSlot.slot.end);
                                       }}
-                                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-yellow-400 bg-yellow-50/60 px-3 py-2 text-xs font-bold text-yellow-700 transition hover:bg-yellow-50"
+                                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-neutral-400 bg-neutral-50/60 px-3 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50"
                                     >
                                       <FaCalendarCheck className="h-3 w-3" aria-hidden="true" />
                                       Use next available
@@ -933,7 +955,7 @@ export default function AppointmentListPage() {
                                 </FormField>
                               </div>
                               {blockedReason ? (
-                                <div className="mt-3 inline-flex items-start gap-2 rounded-lg border-l-4 border-yellow-300 bg-yellow-50 px-3 py-2 text-xs font-medium text-yellow-700">
+                                <div className="mt-3 inline-flex items-start gap-2 rounded-lg border-l-4 border-neutral-300 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-700">
                                   <FaTriangleExclamation className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                                   <span>{blockedReason}</span>
                                 </div>
@@ -970,7 +992,7 @@ export default function AppointmentListPage() {
                             loading={isLoadingAvailability}
                           />
 
-                          <div className="flex flex-col gap-2 border-t border-yellow-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
+                          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-4 sm:flex-row sm:items-center sm:justify-end">
                             <button
                               type="button"
                               onClick={() => { setEditingId(null); setDraft(null); }}
@@ -1048,12 +1070,12 @@ function VitalsModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-yellow-100 bg-white shadow-2xl"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-neutral-100 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-yellow-100 bg-yellow-50/60 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-neutral-100 bg-neutral-50/60 px-5 py-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-yellow-700">Clinic Intake</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">Clinic Intake</p>
             <h3 className="text-base font-bold text-slate-900">{patientName || "Vitals & History"}</h3>
           </div>
           <button
@@ -1158,7 +1180,7 @@ function PatientRecordEditor({
     || patientRecordDraft.emergencyContactPhone !== (patientRecord?.emergencyContactPhone ?? "");
 
   return (
-    <section className="rounded-xl border border-yellow-100 bg-white p-4">
+    <section className="rounded-xl border border-neutral-100 bg-white p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h4 className="text-sm font-bold text-slate-900">Patient Record</h4>
@@ -1168,7 +1190,7 @@ function PatientRecordEditor({
           type="button"
           onClick={savePatientRecord}
           disabled={isSavingPatientRecord || !patientRecord || !patientRecordDirty}
-          className="rounded-full border border-yellow-200 bg-white px-4 py-1.5 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSavingPatientRecord ? "Saving..." : "Save Patient Record"}
         </button>
@@ -1182,7 +1204,7 @@ function PatientRecordEditor({
               setPatientRecordDraft((current) => ({ ...current, emergencyContactName: event.target.value }));
               setRecordFeedback(null);
             }}
-            className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+            className="mt-2 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
             placeholder="Parent, spouse, sibling, or guardian"
           />
         </label>
@@ -1194,7 +1216,7 @@ function PatientRecordEditor({
               setPatientRecordDraft((current) => ({ ...current, emergencyContactPhone: event.target.value }));
               setRecordFeedback(null);
             }}
-            className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+            className="mt-2 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
             placeholder="+63 9XX XXX XXXX"
           />
         </label>
@@ -1209,7 +1231,7 @@ function PatientRecordEditor({
           }}
           rows={4}
           placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant background"
-          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+          className="mt-2 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
         />
       </label>
       <label className="mt-3 block text-sm font-medium text-slate-700">
@@ -1222,7 +1244,7 @@ function PatientRecordEditor({
           }}
           rows={3}
           placeholder="Drug allergies, food allergies, latex, or no known allergies"
-          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+          className="mt-2 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
         />
       </label>
       <label className="mt-3 block text-sm font-medium text-slate-700">
@@ -1235,12 +1257,12 @@ function PatientRecordEditor({
           }}
           rows={4}
           placeholder="Hypertension, diabetes, stroke, asthma, cancer, or other conditions reported in the family"
-          className="mt-2 w-full rounded-xl border border-yellow-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+          className="mt-2 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
         />
       </label>
-      {recordFeedback ? <p className="mt-2 text-xs font-semibold text-yellow-700">{recordFeedback}</p> : null}
+      {recordFeedback ? <p className="mt-2 text-xs font-semibold text-neutral-700">{recordFeedback}</p> : null}
       {!patientRecord ? (
-        <p className="mt-2 text-xs text-yellow-700">
+        <p className="mt-2 text-xs text-neutral-700">
           This appointment did not match a patient record, so shared patient information cannot be saved here yet.
         </p>
       ) : null}
@@ -1261,7 +1283,7 @@ function useEffectEsc(handler: () => void) {
 }
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-yellow-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200";
+  "w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -1280,25 +1302,25 @@ function StatCard({
 }) {
   const toneMap = {
     emerald: {
-      iconBg: "bg-yellow-100 text-yellow-700",
-      number: "text-yellow-700",
+      iconBg: "bg-neutral-100 text-neutral-700",
+      number: "text-neutral-700",
     },
     sky: {
-      iconBg: "bg-yellow-100 text-yellow-700",
-      number: "text-yellow-700",
+      iconBg: "bg-neutral-100 text-neutral-700",
+      number: "text-neutral-700",
     },
     teal: {
-      iconBg: "bg-yellow-100 text-yellow-700",
-      number: "text-yellow-700",
+      iconBg: "bg-neutral-100 text-neutral-700",
+      number: "text-neutral-700",
     },
     amber: {
-      iconBg: "bg-yellow-100 text-yellow-700",
-      number: "text-yellow-700",
+      iconBg: "bg-neutral-100 text-neutral-700",
+      number: "text-neutral-700",
     },
   } as const;
   const t = toneMap[tone];
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-yellow-200 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-200 hover:shadow-md">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
         <span
@@ -1329,10 +1351,10 @@ function FilterChip({
 }) {
   const activeMap = {
     slate: "bg-slate-900 text-white border-slate-900",
-    emerald: "bg-black text-white border-yellow-400",
-    sky: "bg-black text-white border-yellow-400",
-    amber: "bg-yellow-300 text-white border-yellow-300",
-    teal: "bg-black text-white border-yellow-400",
+    emerald: "bg-black text-white border-neutral-400",
+    sky: "bg-black text-white border-neutral-400",
+    amber: "bg-neutral-300 text-white border-neutral-300",
+    teal: "bg-black text-white border-neutral-400",
   } as const;
   return (
     <button
@@ -1362,8 +1384,8 @@ function TimeAnchor({
 }) {
   const accent =
     type === "Online"
-      ? "from-yellow-300 to-yellow-400 text-white"
-      : "from-yellow-300 to-yellow-400 text-white";
+      ? "from-neutral-300 to-neutral-400 text-white"
+      : "from-neutral-300 to-neutral-400 text-white";
   return (
     <div className={`shrink-0 rounded-xl bg-linear-to-br ${accent} px-3 py-2 sm:w-32 sm:px-4`}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">
@@ -1379,8 +1401,8 @@ function TimeAnchor({
 }
 
 function Avatar({ name, type }: { name: string; type: AppointmentType }) {
-  const ring = "ring-yellow-200";
-  const bg = type === "Online" ? "bg-yellow-100 text-yellow-700" : "bg-yellow-100 text-yellow-700";
+  const ring = "ring-neutral-200";
+  const bg = type === "Online" ? "bg-neutral-100 text-neutral-700" : "bg-neutral-100 text-neutral-700";
   return (
     <span
       className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-2 ${ring} ${bg}`}
@@ -1394,14 +1416,14 @@ function Avatar({ name, type }: { name: string; type: AppointmentType }) {
 function TypeBadge({ type }: { type: AppointmentType }) {
   if (type === "Online") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
         <FaVideo className="h-2.5 w-2.5" aria-hidden="true" />
         Online
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
       <FaHospital className="h-2.5 w-2.5" aria-hidden="true" />
       Clinic
     </span>
@@ -1411,7 +1433,7 @@ function TypeBadge({ type }: { type: AppointmentType }) {
 function StatusBadge({ status }: { status: AppointmentStatus }) {
   if (status === "Pending") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
         <FaClock className="h-2.5 w-2.5" aria-hidden="true" />
         Pending
       </span>
@@ -1419,7 +1441,7 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "Checked In") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
         <FaUserCheck className="h-2.5 w-2.5" aria-hidden="true" />
         Checked In
       </span>
@@ -1427,7 +1449,7 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "In Progress") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
         <FaClock className="h-2.5 w-2.5" aria-hidden="true" />
         In Progress
       </span>
@@ -1435,14 +1457,14 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "Completed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
         <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" />
         Completed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-yellow-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
       <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" />
       Confirmed
     </span>
@@ -1467,8 +1489,8 @@ function ConfirmCancelInline({
   onConfirm: () => void;
 }) {
   return (
-    <div className="inline-flex flex-col gap-1.5 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2">
-      <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-yellow-800">
+    <div className="inline-flex flex-col gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
+      <p className="inline-flex items-center gap-1.5 text-[11px] font-bold text-neutral-800">
         <FaTriangleExclamation className="h-2.5 w-2.5" aria-hidden="true" />
         Cancel this appointment?
       </p>
@@ -1476,7 +1498,7 @@ function ConfirmCancelInline({
         <button
           type="button"
           onClick={onAbort}
-          className="rounded-md border border-yellow-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+          className="rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
         >
           Keep
         </button>
@@ -1506,17 +1528,17 @@ function FormField({ label, children }: { label: string; children: ReactNode }) 
 
 function MissingMeetingLinkBanner({ canManage }: { canManage: boolean }) {
   return (
-    <div className="flex items-start gap-2.5 border-t border-yellow-200 bg-yellow-50 px-4 py-2.5 sm:px-5">
+    <div className="flex items-start gap-2.5 border-t border-neutral-200 bg-neutral-50 px-4 py-2.5 sm:px-5">
       <FaTriangleExclamation
-        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-yellow-500"
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500"
         aria-hidden="true"
       />
-      <div className="text-xs text-yellow-800">
+      <div className="text-xs text-neutral-800">
         <p className="font-semibold">No meeting link yet for this online consultation.</p>
         {canManage ? (
           <p className="mt-0.5">
             Set a clinic-wide default in{" "}
-            <Link href="/settings" className="font-semibold underline underline-offset-2 hover:text-yellow-900">
+            <Link href="/settings" className="font-semibold underline underline-offset-2 hover:text-neutral-900">
               Settings → Online Consultation
             </Link>
             , or click <span className="font-semibold">Edit</span> on this card to set a unique link for this patient.
@@ -1539,9 +1561,9 @@ function Banner({
   children: ReactNode;
 }) {
   const map = {
-    success: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    error: "border-yellow-200 bg-yellow-50 text-yellow-800",
-    info: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    success: "border-neutral-200 bg-neutral-50 text-neutral-700",
+    error: "border-neutral-200 bg-neutral-50 text-neutral-800",
+    info: "border-neutral-200 bg-neutral-50 text-neutral-700",
   } as const;
   return (
     <div className={`flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium ${map[tone]}`}>
@@ -1559,8 +1581,8 @@ function EmptyState({
   onClearFilters?: () => void;
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-dashed border-yellow-200 bg-white p-10 text-center shadow-sm">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-500">
+    <div className="rounded-[1.75rem] border border-dashed border-neutral-200 bg-white p-10 text-center shadow-sm">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-500">
         <FaInbox className="h-6 w-6" aria-hidden="true" />
       </span>
       <h3 className="mt-4 text-lg font-bold text-slate-900">

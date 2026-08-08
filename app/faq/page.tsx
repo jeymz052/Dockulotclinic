@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import { getPublishedFaqs } from "@/src/lib/services/faqs";
 import type { PublicFaq } from "@/src/lib/services/faqs";
+
+export const metadata: Metadata = {
+  title: "Frequently Asked Questions",
+  description:
+    "Find answers to common Doc Kulot questions about appointments, clinic services, online consultation, payments, prescriptions, patient portal, videos, and inquiries.",
+  alternates: {
+    canonical: "/faq",
+  },
+};
 
 export default async function FaqPage() {
   const faqs = await getPublishedFaqs();

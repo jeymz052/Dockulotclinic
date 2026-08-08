@@ -79,11 +79,11 @@ function inRangeBadge(value: string, ref: { min: number; max: number; unit: stri
   if (Number.isNaN(n)) return null;
   const ok = n >= ref.min && n <= ref.max;
   return ok ? (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gold-700">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-700">
       <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" /> in range
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gold-700">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-700">
       <FaCircleXmark className="h-2.5 w-2.5" aria-hidden="true" /> out of range
     </span>
   );
@@ -214,14 +214,14 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
 
   const cellClass = compact ? "p-2.5" : "p-3";
   const inputClass =
-    "w-full rounded-lg border border-gold-100 bg-white px-2.5 py-1.5 text-sm font-semibold text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500";
+    "w-full rounded-lg border border-neutral-100 bg-white px-2.5 py-1.5 text-sm font-semibold text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500";
 
   if (loading) {
-    return <div className={`rounded-xl border border-gold-100 bg-white ${cellClass} text-sm text-neutral-500`}>Loading vitals…</div>;
+    return <div className={`rounded-xl border border-neutral-100 bg-white ${cellClass} text-sm text-neutral-500`}>Loading vitals…</div>;
   }
 
   return (
-    <div className={`rounded-xl border border-gold-100 bg-white ${compact ? "p-3" : "p-4"} space-y-3`}>
+    <div className={`rounded-xl border border-neutral-100 bg-white ${compact ? "p-3" : "p-4"} space-y-3`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-bold text-neutral-900">Vital Signs</h3>
         {recordedAt ? (
@@ -236,9 +236,9 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {/* Blood Pressure: two inputs in one cell since systolic/diastolic
             are always recorded together (e.g. 120/80). */}
-        <div className={`rounded-lg border border-gold-100 bg-gold-50/40 ${cellClass}`}>
+        <div className={`rounded-lg border border-neutral-100 bg-neutral-50/40 ${cellClass}`}>
           <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
-            <FaDroplet className="h-3 w-3 text-gold-500" aria-hidden="true" />
+            <FaDroplet className="h-3 w-3 text-neutral-500" aria-hidden="true" />
             Blood Pressure (mmHg)
           </label>
           <div className="mt-1.5 flex items-center gap-1.5">
@@ -275,7 +275,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         </div>
 
         <Field
-          icon={<FaTemperatureHalf className="h-3 w-3 text-gold-300" aria-hidden="true" />}
+          icon={<FaTemperatureHalf className="h-3 w-3 text-neutral-300" aria-hidden="true" />}
           label="Temperature"
           unit="°C"
           step="0.1"
@@ -291,7 +291,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         <Field
-          icon={<FaHeartPulse className="h-3 w-3 text-gold-500" aria-hidden="true" />}
+          icon={<FaHeartPulse className="h-3 w-3 text-neutral-500" aria-hidden="true" />}
           label="Pulse Rate"
           unit="bpm"
           min={0}
@@ -306,7 +306,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         <Field
-          icon={<FaLungs className="h-3 w-3 text-gold-300" aria-hidden="true" />}
+          icon={<FaLungs className="h-3 w-3 text-neutral-300" aria-hidden="true" />}
           label="Oxygen (SpO2)"
           unit="%"
           min={0}
@@ -321,7 +321,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         <Field
-          icon={<FaWind className="h-3 w-3 text-gold-300" aria-hidden="true" />}
+          icon={<FaWind className="h-3 w-3 text-neutral-300" aria-hidden="true" />}
           label="Respiratory Rate"
           unit="/min"
           min={0}
@@ -336,7 +336,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         <Field
-          icon={<FaWeightScale className="h-3 w-3 text-gold-400" aria-hidden="true" />}
+          icon={<FaWeightScale className="h-3 w-3 text-neutral-400" aria-hidden="true" />}
           label="Weight"
           unit="kg"
           step="0.1"
@@ -351,7 +351,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         <Field
-          icon={<FaRulerVertical className="h-3 w-3 text-gold-400" aria-hidden="true" />}
+          icon={<FaRulerVertical className="h-3 w-3 text-neutral-400" aria-hidden="true" />}
           label="Height"
           unit="cm"
           step="0.1"
@@ -366,7 +366,7 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
         />
 
         {/* BMI is derived; show as a non-editable stat tile. */}
-        <div className={`rounded-lg border border-gold-100 bg-gold-50/40 ${cellClass}`}>
+        <div className={`rounded-lg border border-neutral-100 bg-neutral-50/40 ${cellClass}`}>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-600">BMI (auto)</p>
           {bmi != null ? (
             <>
@@ -378,10 +378,10 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
                 <span
                   className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
                     bmiLabel.tone === "emerald"
-                      ? "bg-gold-100 text-gold-700"
+                      ? "bg-neutral-100 text-neutral-700"
                       : bmiLabel.tone === "amber"
-                      ? "bg-gold-100 text-gold-700"
-                      : "bg-gold-100 text-gold-800"
+                      ? "bg-neutral-100 text-neutral-700"
+                      : "bg-neutral-100 text-neutral-800"
                   }`}
                 >
                   {bmiLabel.label}
@@ -404,20 +404,20 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
           onChange={(e) => set("notes", e.target.value)}
           rows={2}
           placeholder="e.g., patient looks pale, edema on lower legs"
-          className="mt-1.5 w-full rounded-lg border border-gold-100 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
+          className="mt-1.5 w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
         />
       </div>
 
       {feedback ? (
-        <p className={`text-xs font-semibold ${feedback.kind === "ok" ? "text-gold-700" : "text-gold-700"}`}>
+        <p className={`text-xs font-semibold ${feedback.kind === "ok" ? "text-neutral-700" : "text-neutral-700"}`}>
           {feedback.msg}
         </p>
       ) : null}
 
       {!readOnly ? (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gold-100 pt-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-neutral-100 pt-2">
           {dirty ? (
-            <span className="text-[11px] font-semibold text-gold-700">Unsaved changes</span>
+            <span className="text-[11px] font-semibold text-neutral-700">Unsaved changes</span>
           ) : recordedAt ? (
             <span className="text-[11px] text-neutral-500">All changes saved</span>
           ) : null}
@@ -468,7 +468,7 @@ function Field({
   inputClass: string;
 }) {
   return (
-    <div className={`rounded-lg border border-gold-100 bg-gold-50/40 ${cellClass}`}>
+    <div className={`rounded-lg border border-neutral-100 bg-neutral-50/40 ${cellClass}`}>
       <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
         {icon}
         {label} <span className="font-normal text-neutral-400">({unit})</span>

@@ -314,6 +314,52 @@ create table public.patient_files (
   created_at timestamptz not null default now()
 );
 
+create unique index online_booking_reservations_payment_ref_unique
+  on public.online_booking_reservations(payment_ref)
+  where payment_ref is not null;
+
+create table public.patient_procedure_consents (
+  id uuid primary key default gen_random_uuid(),
+  patient_id uuid not null references public.patients(id) on delete cascade,
+  appointment_id uuid references public.appointments(id) on delete set null,
+  reservation_id uuid references public.online_booking_reservations(id) on delete set null,
+  procedure_name text not null,
+  patient_name text not null,
+  patient_signature text not null,
+  witness_name text,
+  witness_signature text,
+  witness_signed_at timestamptz,
+  physician_name text,
+  physician_signature text,
+  physician_signed_at timestamptz,
+  consent_form_url text not null default '/images/patient consent.jpg',
+  consent_version text not null default 'doc-kulot-procedure-consent-2026-08-01',
+  consent_snapshot jsonb not null default '{}'::jsonb,
+  procedure_explained boolean not null default true,
+  outcomes_vary_acknowledged boolean not null default true,
+  risk_acknowledged boolean not null default true,
+  liability_acknowledged boolean not null default true,
+  withdrawal_acknowledged boolean not null default true,
+  voluntary_acknowledged boolean not null default true,
+  aftercare_acknowledged boolean not null default true,
+  aftercare_guide_title text,
+  aftercare_image_url text,
+  signed_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (btrim(procedure_name) <> ''),
+  check (btrim(patient_name) <> ''),
+  check (btrim(patient_signature) <> '')
+);
+
+create unique index patient_procedure_consents_reservation_unique
+  on public.patient_procedure_consents(reservation_id)
+  where reservation_id is not null;
+create index patient_procedure_consents_patient_idx on public.patient_procedure_consents(patient_id, signed_at desc);
+create index patient_procedure_consents_appointment_idx
+  on public.patient_procedure_consents(appointment_id)
+  where appointment_id is not null;
+
 create table public.follow_up_inquiries (
   id uuid primary key default gen_random_uuid(),
   patient_id uuid not null references public.patients(id) on delete cascade,
@@ -373,6 +419,10 @@ create table public.payments (
   paid_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+create unique index payments_provider_ref_unique
+  on public.payments(provider_ref)
+  where provider_ref is not null;
 
 -- =========================================================
 -- Inventory
@@ -609,6 +659,7 @@ create trigger vital_signs_updated_at before update on public.vital_signs for ea
 create trigger consultation_notes_updated_at before update on public.consultation_notes for each row execute function public.set_updated_at();
 create trigger diagnoses_updated_at before update on public.diagnoses for each row execute function public.set_updated_at();
 create trigger prescriptions_updated_at before update on public.prescriptions for each row execute function public.set_updated_at();
+create trigger patient_procedure_consents_updated_at before update on public.patient_procedure_consents for each row execute function public.set_updated_at();
 create trigger follow_up_inquiries_updated_at before update on public.follow_up_inquiries for each row execute function public.set_updated_at();
 create trigger billings_updated_at before update on public.billings for each row execute function public.set_updated_at();
 create trigger suppliers_updated_at before update on public.suppliers for each row execute function public.set_updated_at();
@@ -641,6 +692,7 @@ alter table public.diagnoses enable row level security;
 alter table public.prescriptions enable row level security;
 alter table public.prescription_items enable row level security;
 alter table public.patient_files enable row level security;
+alter table public.patient_procedure_consents enable row level security;
 alter table public.follow_up_inquiries enable row level security;
 alter table public.billings enable row level security;
 alter table public.billing_items enable row level security;
@@ -714,6 +766,12 @@ create policy "staff_prescription_items_write" on public.prescription_items for 
 
 create policy "patient_files_visible" on public.patient_files for select using (public.is_clinic_staff() or (patient_id = auth.uid() and visible_to_patient));
 create policy "staff_patient_files_write" on public.patient_files for all using (public.is_clinic_staff()) with check (public.is_clinic_staff());
+create policy "patient_procedure_consents_read" on public.patient_procedure_consents
+  for select using (public.is_clinic_staff() or patient_id = auth.uid());
+create policy "patient_procedure_consents_patient_insert" on public.patient_procedure_consents
+  for insert with check (public.is_clinic_staff() or patient_id = auth.uid());
+create policy "staff_patient_procedure_consents_write" on public.patient_procedure_consents
+  for all using (public.is_clinic_staff()) with check (public.is_clinic_staff());
 
 create policy "billing_patient_or_staff" on public.billings for select using (patient_id = auth.uid() or public.is_clinic_staff());
 create policy "staff_billing_write" on public.billings for all using (public.is_clinic_staff()) with check (public.is_clinic_staff());

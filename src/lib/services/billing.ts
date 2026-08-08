@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { HttpError, type Actor, isStaff } from "@/src/lib/http";
+import { getAppointmentConsultKind } from "@/src/lib/appointment-context";
 import type {
   Billing,
   BillingStatus,
@@ -296,13 +297,14 @@ export async function issueBilling(input: {
   );
   const consultationFee = resolveClinicConsultationFee({
     patientCategory: patientProfile?.patient_category ?? "New",
+    consultKind: getAppointmentConsultKind(appt.reason),
     hasPriorClinicConsultation: (priorClinicAppointments?.length ?? 0) > 0,
   }) === NEW_PATIENT_CLINIC_CONSULTATION_FEE
     ? newPatientClinicRate
     : FOLLOW_UP_CLINIC_CONSULTATION_FEE;
   const consultationLabel = consultationFee === FOLLOW_UP_CLINIC_CONSULTATION_FEE
-    ? "Clinic consultation - Follow-up for returning new patient"
-    : "Clinic consultation - First-time / new patient";
+    ? "Clinic consultation - Follow-up"
+    : "Clinic consultation - First-time";
   const consultationLine = {
     pricing_id: null,
     product_id: null,

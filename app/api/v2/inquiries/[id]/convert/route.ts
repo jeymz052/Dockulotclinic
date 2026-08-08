@@ -11,6 +11,19 @@ type ConvertPayload = {
   reason?: string;
 };
 
+type Ctx = { params: Promise<{ id: string }> };
+
+type InquiryRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  inquiry_type: string | null;
+  message: string;
+  status: string;
+  converted_appointment_id: string | null;
+};
+
 function normalizeTime(value: string) {
   return value.length === 5 ? `${value}:00` : value;
 }
@@ -27,7 +40,7 @@ function addOneHour(value: string) {
   return `${String(nextHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export async function POST(req: Request, ctx: RouteContext<"/api/v2/inquiries/[id]/convert">) {
+export async function POST(req: Request, ctx: Ctx) {
   try {
     const actor = await requireActor(req);
     if (!isClinicStaff(actor.profile.role)) throw new HttpError(403, "Forbidden");
@@ -43,7 +56,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/inquiries/[i
       .from("inquiries")
       .select("*")
       .eq("id", id)
-      .single();
+      .single<InquiryRow>();
     if (inquiryError) throw inquiryError;
 
     if (inquiry.converted_appointment_id) {
@@ -131,6 +144,9 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/inquiries/[i
         payload: {
           appointment_id: appointment.id,
           appointment_type: body.appointmentType,
+          appointment_date: body.date,
+          start_time,
+          meeting_link: meetingLink,
         },
       });
 

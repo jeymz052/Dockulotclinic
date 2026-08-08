@@ -10,6 +10,10 @@ export type EmailInput = {
   to: string;
   subject: string;
   body: string;
+  attachments?: Array<{
+    filename: string;
+    content: string;
+  }>;
 };
 
 export type SmsInput = {
@@ -20,7 +24,10 @@ export type SmsInput = {
 export async function sendEmail(input: EmailInput): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.log(`[email:stub] to=${input.to} subject="${input.subject}"`);
+    const attachmentCount = input.attachments?.length ?? 0;
+    console.log(
+      `[email:stub] to=${input.to} subject="${input.subject}" attachments=${attachmentCount}`,
+    );
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {
@@ -34,6 +41,7 @@ export async function sendEmail(input: EmailInput): Promise<void> {
       to: input.to,
       subject: input.subject,
       text: input.body,
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
     }),
   });
   if (!res.ok) {
@@ -72,17 +80,56 @@ export async function sendSms(input: SmsInput): Promise<void> {
 
 type TemplatePayload = Record<string, unknown>;
 
-export function renderTemplate(template: string, payload: TemplatePayload): { subject: string; body: string } {
-  const appt = (payload.appointment_id as string)?.slice(0, 8) ?? "";
-  const link = payload.meeting_link as string | undefined;
-  const type = payload.appointment_type as string | undefined;
-  const verifyUrl = payload.verification_link as string | undefined;
-  const patientName = payload.patient_name as string | undefined;
-  const appointmentDate = payload.appointment_date as string | undefined;
-  const startTime = payload.start_time as string | undefined;
-  const prescriptionNo = payload.prescription_no as string | undefined;
+type RenderChannel = "email" | "sms";
+
+function asText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
+}
+
+function asNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function ref(value: unknown) {
+  const text = asText(value);
+  return text ? text.slice(0, 8).toUpperCase() : "";
+}
+
+function formatPeso(value: unknown) {
+  const amount = asNumber(value);
+  if (amount == null) return "";
+  return `PHP ${amount.toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
+}
+
+function appointmentLabel(type: string, service: string, purpose: string) {
+  if (purpose === "procedure_downpayment") return `${service || "medical procedure"} reservation`;
+  if (type === "Online") return "teleconsultation";
+  if (service) return service;
+  return type === "Clinic" ? "clinic consultation" : "appointment";
+}
+
+export function renderTemplate(
+  template: string,
+  payload: TemplatePayload,
+  channel: RenderChannel = "email",
+): { subject: string; body: string } {
+  const appt = ref(payload.appointment_id);
+  const reservationRef = ref(payload.reservation_id);
+  const link = asText(payload.meeting_link);
+  const type = asText(payload.appointment_type);
+  const service = asText(payload.service);
+  const purpose = asText(payload.payment_purpose);
+  const verifyUrl = asText(payload.verification_link);
+  const patientName = asText(payload.patient_name);
+  const appointmentDate = asText(payload.appointment_date);
+  const startTime = asText(payload.start_time);
+  const prescriptionNo = asText(payload.prescription_no);
+  const status = asText(payload.status);
+  const amount = formatPeso(payload.amount);
   const scheduleLine = [appointmentDate, startTime].filter(Boolean).join(" at ");
   const patientLine = patientName ? ` for ${patientName}` : "";
+  const label = appointmentLabel(type, service, purpose);
+  const shortLabel = label.charAt(0).toUpperCase() + label.slice(1);
 
   switch (template) {
     case "verify_email":
@@ -95,12 +142,28 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
     case "welcome":
       return {
         subject: "Welcome to Doc Kulot",
-        body: "Welcome! Your account is now active. You can book clinic visits and online consultations at any time.",
+        body: "Welcome to Doc Kulot. Your account is active. You can book a teleconsultation, clinic consultation, or medical procedure reservation from the website.",
       };
     case "appointment_booked":
       return {
-        subject: "Your appointment booking was received",
-        body: `Your ${type?.toLowerCase() ?? "clinic"} appointment request (ref ${appt}) has been recorded.`,
+        subject: status === "Confirmed" ? "Your booking is confirmed" : "Your booking was received",
+        body: status === "Confirmed"
+          ? channel === "sms"
+            ? `Doc Kulot: Your ${label} booking is confirmed${scheduleLine ? ` for ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""}.`
+            : [
+              `Your ${label} booking is confirmed${appt ? ` (ref ${appt})` : ""}.`,
+              scheduleLine ? `Schedule: ${scheduleLine}` : "",
+              "Please check your email or patient portal for full details.",
+            ].filter(Boolean).join("\n")
+          : channel === "sms"
+            ? `Doc Kulot: Your ${label} booking${scheduleLine ? ` for ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} was received.`
+            : [
+              `Your ${label} booking has been received${appt ? ` (ref ${appt})` : ""}.`,
+              scheduleLine ? `Schedule: ${scheduleLine}` : "",
+              type === "Clinic"
+                ? "Clinic bookings may be reviewed by the team. Please wait for any follow-up from the clinic."
+                : "Please check your dashboard for updates.",
+            ].filter(Boolean).join("\n"),
       };
     case "appointment_staff_booked":
       return {
@@ -155,12 +218,18 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
     case "appointment_confirmed":
       return {
         subject: "Your appointment is confirmed",
-        body: `Your appointment (ref ${appt}) is confirmed.${link ? ` Meeting link: ${link}` : ""}`,
+        body: channel === "sms"
+          ? `Doc Kulot: Your ${label}${appt ? ` (ref ${appt})` : ""} is confirmed.${link ? ` Link: ${link}` : ""}`
+          : [
+            `Your ${label}${appt ? ` (ref ${appt})` : ""} is confirmed.`,
+            scheduleLine ? `Schedule: ${scheduleLine}` : "",
+            link ? `Meeting link: ${link}` : "",
+          ].filter(Boolean).join("\n"),
       };
     case "appointment_payment_success":
       return {
         subject: "Payment successful",
-        body: `We received your payment for appointment ${appt}. Your online consultation is now secured.`,
+        body: `We received your payment${amount ? ` of ${amount}` : ""}${appt ? ` for appointment ${appt}` : ""}. Your booking is secured.`,
       };
     case "online_meeting_link":
       return {
@@ -170,16 +239,41 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
           : `Your meeting link for appointment ${appt} is ready in your dashboard.`,
       };
     case "appointment_paid_and_confirmed":
+      if (purpose === "procedure_downpayment") {
+        return {
+          subject: "Procedure reservation confirmed",
+          body: channel === "sms"
+            ? `Doc Kulot: ${amount || "PHP 1,000"} downpayment received for ${service || "your procedure"}. Schedule${scheduleLine ? `: ${scheduleLine}` : " confirmed"}.${appt ? ` Ref ${appt}.` : ""}`
+            : [
+              `Your ${service || "medical procedure"} reservation is confirmed${appt ? ` (ref ${appt})` : ""}.`,
+              scheduleLine ? `Schedule: ${scheduleLine}` : "",
+              `Payment received: ${amount || "PHP 1,000"} reservation/downpayment via PayMongo QR Ph.`,
+              "This amount will be deducted from your final procedure bill. Consultation and remaining procedure charges are settled separately at the clinic.",
+              "Please arrive on time and wait for the clinic team if they need additional details before your visit.",
+            ].filter(Boolean).join("\n"),
+        };
+      }
       return {
-        subject: "Online consultation confirmed",
-        body: `Payment received. Your online consultation (ref ${appt}) is confirmed.${
-          link ? ` Meeting link: ${link}` : ""
-        }`,
+        subject: "Teleconsultation confirmed",
+        body: channel === "sms"
+          ? `Doc Kulot: ${amount || "PHP 800"} received. Your teleconsultation${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} is confirmed.${link ? ` Link: ${link}` : ""}`
+          : [
+            `Payment received: ${amount || "PHP 800"} for your teleconsultation${appt ? ` (ref ${appt})` : ""}.`,
+            scheduleLine ? `Schedule: ${scheduleLine}` : "",
+            "This includes the first online consult plus one follow-up.",
+            link ? `Meeting link: ${link}` : "The meeting link will appear in your dashboard or be sent by the clinic once ready.",
+          ].filter(Boolean).join("\n"),
       };
     case "appointment_payment_failed":
       return {
         subject: "Payment could not be completed",
-        body: `We couldn't process your payment for appointment ${appt}. Please try again to confirm your slot.`,
+        body: channel === "sms"
+          ? `Doc Kulot: Payment failed for your ${label}${appt || reservationRef ? ` (ref ${appt || reservationRef})` : ""}. Please retry or contact the clinic.`
+          : [
+            `We could not complete the payment for your ${label}${appt || reservationRef ? ` (ref ${appt || reservationRef})` : ""}.`,
+            amount ? `Expected amount: ${amount}` : "",
+            "Please retry checkout or contact the clinic so the schedule can be assisted.",
+          ].filter(Boolean).join("\n"),
       };
     case "appointment_reminder_24h":
       return {
@@ -187,10 +281,8 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
           ? "Reminder: clinic appointment tomorrow"
           : "Reminder: online consultation tomorrow",
         body: type === "Clinic"
-          ? `This is a 24-hour reminder for your clinic appointment (ref ${appt}) tomorrow.`
-          : `This is a 24-hour reminder for your online consultation (ref ${appt}) tomorrow.${
-            link ? ` Meeting link: ${link}` : ""
-          }`,
+          ? `Doc Kulot reminder: your ${label}${appt ? ` (ref ${appt})` : ""} is tomorrow. Please arrive on time and bring any needed records.`
+          : `Doc Kulot reminder: your teleconsultation${appt ? ` (ref ${appt})` : ""} is tomorrow.${link ? ` Meeting link: ${link}` : " Check your dashboard for the meeting link."}`,
       };
     case "appointment_reminder_6h":
       return {
@@ -198,23 +290,23 @@ export function renderTemplate(template: string, payload: TemplatePayload): { su
           ? "Reminder: clinic appointment in a few hours"
           : "Reminder: appointment in a few hours",
         body: type === "Clinic"
-          ? `Your clinic appointment (ref ${appt}) is coming up soon.`
-          : `Your appointment (ref ${appt}) is coming up soon.${link ? ` Meeting link: ${link}` : ""}`,
+          ? `Doc Kulot reminder: your ${label}${appt ? ` (ref ${appt})` : ""} is coming up soon.`
+          : `Doc Kulot reminder: your teleconsultation${appt ? ` (ref ${appt})` : ""} is coming up soon.${link ? ` Link: ${link}` : ""}`,
       };
     case "appointment_cancelled":
       return {
         subject: "Appointment cancelled",
-        body: `Your appointment (ref ${appt}) has been cancelled.`,
+        body: `Your ${label}${appt ? ` (ref ${appt})` : ""} has been cancelled. Contact the clinic if you need help booking another schedule.`,
       };
     case "billing_issued":
       return {
-        subject: "Your receipt is ready",
-        body: `Your bill (ref ${appt}) has been issued. You can review it on your dashboard.`,
+        subject: "Your clinic bill is ready",
+        body: `Your clinic bill${appt ? ` for appointment ${appt}` : ""} is ready. You can review it on your dashboard or ask the front desk for assistance.`,
       };
     case "prescription_released":
       return {
         subject: "Your prescription is ready",
-        body: `Your prescription${prescriptionNo ? ` (${prescriptionNo})` : ""} is ready in the patient portal. You can view, download, or print it from Prescriptions.`,
+        body: `Your prescription${prescriptionNo ? ` (${prescriptionNo})` : ""} is ready. You can view, download, or print the PDF from your patient portal under Prescriptions.`,
       };
     default:
       return { subject: "Notification from Doc Kulot", body: "You have a new notification." };

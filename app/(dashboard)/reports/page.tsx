@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import type { IconType } from "react-icons";
@@ -73,14 +73,14 @@ type ReportsPayload = {
 };
 
 const KPI_ACCENTS = [
-  "from-amber-100 via-white to-amber-50 border-yellow-200",
-  "from-amber-100 via-white to-amber-50 border-yellow-200",
-  "from-amber-100 via-white to-slate-50 border-yellow-200",
-  "from-amber-100 via-white to-amber-50 border-yellow-200",
-  "from-amber-50 via-white to-amber-100 border-yellow-200",
-  "from-amber-50 via-white to-amber-100 border-yellow-200",
-  "from-amber-50 via-white to-amber-100 border-yellow-200",
-  "from-slate-50 via-white to-amber-100 border-slate-200",
+  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
+  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
+  "from-neutral-100 via-white to-slate-50 border-neutral-200",
+  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
+  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
+  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
+  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
+  "from-slate-50 via-white to-neutral-100 border-slate-200",
 ] as const;
 
 const BAR_COLORS = ["#0369a1", "#854D0E", "#A16207", "#CA8A04", "#2563eb", "#0891b2"];
@@ -607,14 +607,14 @@ export default function ReportsPage() {
   return (
     <div className="rounded-[2rem] bg-[linear-gradient(180deg,#eff8ff_0%,#fffbeb_42%,#ffffff_100%)] p-4 text-black shadow-inner sm:p-6">
       <div className="space-y-6 pb-8">
-        <section className="overflow-hidden rounded-[1.75rem] border border-yellow-100 bg-white shadow-[0_24px_70px_rgba(14,116,144,0.12)]">
+        <section className="overflow-hidden rounded-[1.75rem] border border-neutral-100 bg-white shadow-[0_24px_70px_rgba(14,116,144,0.12)]">
           <div className="grid gap-0 xl:grid-cols-[1.25fr_0.75fr]">
             <div className="bg-[linear-gradient(135deg,#075985_0%,#854D0E_52%,#fde68a_100%)] px-6 py-7 text-white sm:px-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-amber-100">Reports & Analytics</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-neutral-100">Reports & Analytics</p>
               <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight md:text-4xl">
                 Clinic performance, content reach, and service demand
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-50/95">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-50/95">
                 A calm reporting workspace for appointments, sales, POS, patient count, content views, website traffic, and booking intent.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -623,7 +623,7 @@ export default function ReportsPage() {
                 <QuickLink href="/contents" label="Content" />
               </div>
             </div>
-            <div className="grid gap-3 bg-yellow-50/70 p-5 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="grid gap-3 bg-neutral-50/70 p-5 sm:grid-cols-3 xl:grid-cols-1">
               <HeroStat label="Report Window" value={`${formatDateLabel(from)} - ${formatDateLabel(to)}`} />
               <HeroStat label="Monthly Sales" value={loading ? "..." : formatMoney(data?.sales_summary.monthly ?? 0)} />
               <HeroStat label="Content Clicks" value={loading ? "..." : String(data?.content_clicks_total ?? 0)} />
@@ -631,10 +631,10 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-yellow-100 bg-white/95 p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
+        <section className="rounded-[1.5rem] border border-neutral-100 bg-white/95 p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
           <div className="grid gap-5 xl:grid-cols-[1.15fr_1.05fr_1.05fr_0.85fr] xl:items-end">
             <div className="self-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-400">Report Window</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-400">Report Window</p>
               <p className="mt-1 text-sm text-slate-600">Filter the dashboard by date range, then export the same view for records.</p>
             </div>
 
@@ -674,7 +674,7 @@ export default function ReportsPage() {
         </section>
 
       {error ? (
-        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">{error}</div>
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div>
       ) : null}
 
       <ReportGroup
@@ -843,9 +843,9 @@ export default function ReportsPage() {
           {loading ? (
             <LoadingBlock className="h-[320px]" />
           ) : (
-            <div className="flex h-[320px] flex-col justify-between rounded-[1.75rem] border border-yellow-100 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-6">
+            <div className="flex h-[320px] flex-col justify-between rounded-[1.75rem] border border-neutral-100 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-6">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-yellow-700">Content conversion signal</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Content conversion signal</p>
                 <p className="mt-4 text-6xl font-black tracking-tight text-black">{data?.content_clicks_total ?? 0}</p>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   This counts booking-intent clicks from the content pages and helps connect educational content to appointment demand.
@@ -914,11 +914,11 @@ export default function ReportsPage() {
                 <div key={row.service} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">{row.service}</p>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-yellow-700">{row.count}</span>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-700">{row.count}</span>
                   </div>
                   <div className="mt-3 h-2.5 rounded-full bg-slate-200">
                     <div
-                      className="h-2.5 rounded-full bg-linear-to-r from-yellow-300 to-yellow-400"
+                      className="h-2.5 rounded-full bg-linear-to-r from-neutral-300 to-neutral-400"
                       style={{ width: `${Math.max((row.count / maxRequestedServiceCount) * 100, 10)}%` }}
                     />
                   </div>
@@ -966,8 +966,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
-      <div className="mb-5 border-b border-amber-50 pb-4">
+    <section className="rounded-[1.5rem] border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
+      <div className="mb-5 border-b border-neutral-50 pb-4">
         <h2 className="text-lg font-bold text-slate-900">{title}</h2>
         <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       </div>
@@ -978,8 +978,8 @@ function Panel({
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-yellow-100 bg-white px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-400">{label}</p>
+    <div className="rounded-[1.25rem] border border-neutral-100 bg-white px-4 py-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{label}</p>
       <p className="mt-2 break-words text-xl font-black tracking-tight text-black">{value}</p>
     </div>
   );
@@ -995,9 +995,9 @@ function ChartShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-yellow-100 bg-[linear-gradient(180deg,#f8fcff_0%,#ffffff_100%)] p-4 shadow-sm">
+    <div className="rounded-[1.25rem] border border-neutral-100 bg-[linear-gradient(180deg,#f8fcff_0%,#ffffff_100%)] p-4 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-sm font-black uppercase tracking-[0.14em] text-yellow-700">{title}</h3>
+        <h3 className="text-sm font-black uppercase tracking-[0.14em] text-neutral-700">{title}</h3>
         <p className="mt-1 text-sm text-slate-500">{caption}</p>
       </div>
       {children}
@@ -1007,7 +1007,7 @@ function ChartShell({
 
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-yellow-100 bg-white px-4 py-3 shadow-sm">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-100 bg-white px-4 py-3 shadow-sm">
       <div className="flex min-w-0 items-center gap-3">
         <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: color }} />
         <span className="truncate text-sm font-semibold text-slate-700">{label}</span>
@@ -1029,9 +1029,9 @@ function ReportGroup({
   items: KpiItem[];
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
-      <div className="mb-5 flex flex-col gap-1 border-b border-amber-50 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">{eyebrow}</p>
+    <section className="rounded-[1.5rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
+      <div className="mb-5 flex flex-col gap-1 border-b border-neutral-50 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">{eyebrow}</p>
         <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
         <p className="text-sm leading-6 text-slate-500">{description}</p>
       </div>
@@ -1060,12 +1060,12 @@ function KpiCard({
   return (
     <div className={`min-h-36 rounded-[1.25rem] border bg-linear-to-br ${accent} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(14,116,144,0.14)]`}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="h-1.5 w-12 rounded-full bg-yellow-300/80" />
-        <div className="flex size-10 items-center justify-center rounded-2xl border border-yellow-100 bg-white/80 text-yellow-700 shadow-sm">
+        <div className="h-1.5 w-12 rounded-full bg-neutral-300/80" />
+        <div className="flex size-10 items-center justify-center rounded-2xl border border-neutral-100 bg-white/80 text-neutral-700 shadow-sm">
           <Icon className="text-lg" aria-hidden="true" />
         </div>
       </div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">{label}</p>
       <p className="mt-3 break-words text-2xl font-black tracking-tight text-black sm:text-3xl">{value}</p>
       <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-600">{hint}</p>
     </div>
@@ -1074,8 +1074,8 @@ function KpiCard({
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-yellow-100 bg-yellow-50/60 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">{label}</p>
+    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">{label}</p>
       <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
     </div>
   );
@@ -1083,8 +1083,8 @@ function InfoTile({ label, value }: { label: string; value: string }) {
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-yellow-100 bg-white px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-yellow-700">{label}</p>
+    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700">{label}</p>
       <p className="mt-1 text-xl font-black text-slate-900">{value}</p>
     </div>
   );
@@ -1104,7 +1104,7 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-yellow-700">{label}</p>
+      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-700">{label}</p>
       {children}
     </div>
   );
@@ -1126,7 +1126,7 @@ function DateField({
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-yellow-100 bg-yellow-50/70 px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-amber-400 focus:bg-white focus:ring-4 focus:ring-amber-100"
+        className="h-11 w-full rounded-2xl border border-neutral-100 bg-neutral-50/70 px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-4 focus:ring-neutral-100"
       />
     </label>
   );
@@ -1148,7 +1148,7 @@ function ExportButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-4 text-sm font-black text-white shadow-sm transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:bg-slate-300"
+      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-neutral-400 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-400 disabled:cursor-not-allowed disabled:bg-slate-300"
     >
       <Icon className="text-base" aria-hidden="true" />
       {label}
@@ -1161,7 +1161,7 @@ function PresetButton({ label, onClick }: { label: string; onClick: () => void }
     <button
       type="button"
       onClick={onClick}
-      className="h-11 rounded-2xl border border-yellow-100 bg-yellow-50 px-3 text-sm font-semibold text-yellow-700 transition hover:border-yellow-200 hover:bg-yellow-100 hover:text-yellow-800"
+      className="h-11 rounded-2xl border border-neutral-100 bg-neutral-50 px-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-200 hover:bg-neutral-100 hover:text-neutral-800"
     >
       {label}
     </button>
@@ -1169,13 +1169,14 @@ function PresetButton({ label, onClick }: { label: string; onClick: () => void }
 }
 
 function LoadingBlock({ className }: { className: string }) {
-  return <div className={`rounded-3xl bg-yellow-100/70 shimmer ${className}`} />;
+  return <div className={`rounded-3xl bg-neutral-100/70 shimmer ${className}`} />;
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex h-[220px] items-center justify-center rounded-3xl border border-dashed border-yellow-200 bg-yellow-50/70 px-6 text-center text-sm text-slate-500">
+    <div className="flex h-[220px] items-center justify-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/70 px-6 text-center text-sm text-slate-500">
       {text}
     </div>
   );
 }
+

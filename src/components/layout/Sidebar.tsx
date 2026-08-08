@@ -77,6 +77,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
+    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
     {
       label: "Consultations",
       href: "/consultations",
@@ -134,6 +135,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
+    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
     { label: "FAQ Content", href: "/faq-content", icon: FaCircleQuestion },
@@ -183,6 +185,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
+    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
     { label: "Pricing", href: "/pricing", icon: FaCreditCard },
     { label: "Reports", href: "/reports", icon: FaChartLine },
     { label: "Security", href: "/security", icon: FaShieldHalved },
@@ -306,25 +309,25 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
 
               return (
                 <div key={item.label} className="min-h-0">
-                  <div
-                    className={`group flex items-center rounded-xl px-2 py-2 transition-colors duration-150 ${
-                      itemActive ? "bg-white" : "hover:bg-black/5"
-                    }`}
-                  >
-                    <Link href={item.href} className="flex min-w-0 flex-1 items-center gap-2">
-                      <item.icon
-                        className={`h-4 w-4 shrink-0 ${
-                          itemActive ? "text-black" : "text-black/60 group-hover:text-black"
-                        }`}
-                        aria-hidden="true"
-                      />
-                      <span
-                        className={`truncate text-[15px] leading-4 ${
-                          itemActive
-                            ? "font-semibold text-black"
-                            : "font-medium text-black/75 group-hover:text-black"
-                        }`}
-                      >
+                   <div
+                     className={`group flex items-center rounded-xl px-2 py-2 transition-colors duration-150 ${
+                       itemActive ? "bg-white border-l-2 border-gold-400" : "hover:bg-black/5"
+                     }`}
+                   >
+                     <Link href={item.href} className="flex min-w-0 flex-1 items-center gap-2">
+                       <item.icon
+                         className={`h-4 w-4 shrink-0 ${
+                           itemActive ? "text-gold-600" : "text-black/60 group-hover:text-black"
+                         }`}
+                         aria-hidden="true"
+                       />
+                       <span
+                         className={`truncate text-[15px] leading-4 ${
+                           itemActive
+                             ? "font-semibold text-gold-700"
+                             : "font-medium text-black/75 group-hover:text-black"
+                         }`}
+                       >
                         {item.label}
                       </span>
                     </Link>
@@ -356,17 +359,17 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
                             key={subItem.label}
                             href={subItem.href}
                             className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] font-medium leading-4 transition ${
-                              subItemActive
-                                ? "bg-white text-black"
-                                : "text-black/65 hover:bg-black/5 hover:text-black"
+                           subItemActive
+                                 ? "bg-white text-gold-700"
+                                 : "text-black/65 hover:bg-black/5 hover:text-black"
                             }`}
                           >
-                            <subItem.icon
-                              className={`h-3.5 w-3.5 shrink-0 ${
-                                subItemActive ? "text-black" : "text-black/60"
-                              }`}
-                              aria-hidden="true"
-                            />
+                                 <subItem.icon
+                                   className={`h-3.5 w-3.5 shrink-0 ${
+                                     subItemActive ? "text-gold-600" : "text-black/60"
+                                   }`}
+                                   aria-hidden="true"
+                                 />
                             <span className="truncate">{subItem.label}</span>
                           </Link>
                         );

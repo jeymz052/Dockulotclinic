@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, type EmailOtpType } from "@supabase/supabase-js";
+import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { enqueueNotification } from "@/src/lib/services/notification";
 
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type");
   const verified = requestUrl.searchParams.get("verified");
-  const next = requestUrl.searchParams.get("next") ?? "/login";
+  const next = getSafeAuthRedirect(requestUrl.searchParams.get("next"), "/login");
   const redirectUrl = new URL(next, requestUrl.origin);
   const recoveryRedirectUrl = new URL("/auth/reset", requestUrl.origin);
 
@@ -76,6 +77,7 @@ export async function GET(request: Request) {
   }
 
   if (verifiedUserId) {
+    let profileSetupFailed = false;
     try {
       const admin = getSupabaseAdmin();
       const { data: authUser, error: authUserError } = await admin.auth.admin.getUserById(verifiedUserId);
@@ -137,11 +139,20 @@ export async function GET(request: Request) {
       await enqueueNotification({
         user_id: verifiedUserId,
         template: "welcome",
-        channels: ["email", "sms"],
+        channels: ["email"],
         payload: { full_name: fullName },
       });
     } catch (notificationError) {
+      profileSetupFailed = true;
       console.error("[auth-confirm] failed to queue welcome notification", notificationError);
+    }
+
+    if (profileSetupFailed) {
+      redirectUrl.searchParams.set(
+        "message",
+        "Email verified, but your patient profile setup did not finish. Try signing in once, or contact the clinic administrator if this message appears again.",
+      );
+      return NextResponse.redirect(redirectUrl);
     }
   }
 

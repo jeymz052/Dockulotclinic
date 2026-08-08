@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   FaArrowRight,
   FaFacebookF,
@@ -26,6 +27,35 @@ import type { LandingContent, LandingTestimonial } from "@/src/lib/db/types";
 import { getPublishedFaqs, type PublicFaq } from "@/src/lib/services/faqs";
 import { getLandingContent } from "@/src/lib/services/landing-content";
 import { getPublicLiveEvents } from "@/src/lib/services/live-events";
+import {
+  absoluteUrl,
+  SITE_DESCRIPTION,
+  SITE_IMAGE,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/src/lib/site-metadata";
+
+export const metadata: Metadata = {
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [
+      {
+        url: SITE_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Doc Kulot official clinic website",
+      },
+    ],
+  },
+};
 
 const FALLBACK_TESTIMONIALS: LandingTestimonial[] = [
   {
@@ -142,9 +172,60 @@ export default async function HomePage() {
     = landingContent.blog_subtitle?.trim() || "Articles written by Doc Kulot.";
   const blogCategories = landingContent.blog_categories?.length ? landingContent.blog_categories : contentCategories;
   const testimonials = getTestimonials(landingContent.testimonials);
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: SITE_NAME,
+        alternateName: ["dockulot.com", "Dr. Fatimah Al-Zahra T. Ditti"],
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en-PH",
+      },
+      {
+        "@type": "Physician",
+        "@id": `${SITE_URL}/#physician`,
+        name: aboutProfile.name,
+        alternateName: "Doc Kulot",
+        description: aboutProfile.subtitle,
+        image: absoluteUrl(aboutProfile.photo),
+        medicalSpecialty: ["FamilyMedicine", "PrimaryCare", "WomensHealth"],
+        url: SITE_URL,
+        sameAs: [
+          landingContent.contact_facebook_url,
+          landingContent.contact_youtube_url,
+        ].filter(Boolean),
+      },
+      {
+        "@type": "MedicalClinic",
+        "@id": `${SITE_URL}/#clinic`,
+        name: SITE_NAME,
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        image: absoluteUrl(SITE_IMAGE),
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Zamboanga City",
+          addressRegion: "Zamboanga Peninsula",
+          addressCountry: "PH",
+        },
+        founder: {
+          "@id": `${SITE_URL}/#physician`,
+        },
+        areaServed: "Zamboanga City",
+        medicalSpecialty: ["FamilyMedicine", "PrimaryCare", "AestheticMedicine"],
+      },
+    ],
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <PublicHeader />
       <LandingBookingModal />
 

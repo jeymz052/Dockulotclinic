@@ -123,10 +123,10 @@ export default function SecurityPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-3xl border border-yellow-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <section className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">Security</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Security</p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Access control and audit center</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Monitor protected activity, export operational backups, and review the controls used for patient data privacy.
@@ -148,8 +148,8 @@ export default function SecurityPage() {
         <div
           className={`rounded-xl px-4 py-3 text-sm font-medium ${
             feedback.type === "success"
-              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
-              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
+              ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
+              : "border border-neutral-200 bg-neutral-50 text-neutral-800"
           }`}
         >
           {feedback.message}
@@ -166,7 +166,7 @@ export default function SecurityPage() {
       <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 text-yellow-700">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-50 text-neutral-700">
               <FaShieldHalved className="h-4 w-4" aria-hidden="true" />
             </span>
             <div>
@@ -253,7 +253,7 @@ function ControlCard({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-yellow-700">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-50 text-neutral-700">
           {icon}
         </span>
       </div>
@@ -263,3 +263,4 @@ function ControlCard({
     </div>
   );
 }
+

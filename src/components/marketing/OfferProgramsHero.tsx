@@ -89,8 +89,8 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
   return (
     <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#111111] pt-0 text-white">
       <div className="mx-auto min-h-[calc(100svh-4rem)] w-full max-w-[1800px]">
-        <div className="grid min-h-[calc(100svh-4rem)] lg:h-[calc(100svh-4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-          <div className="relative min-h-[38rem] overflow-hidden bg-black lg:h-full lg:min-h-0">
+        <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <div className="relative min-h-[38rem] overflow-hidden bg-black lg:min-h-[calc(100svh-4rem)]">
             <Image
               src="/images/SEF_0450.jpeg"
               alt="Doc Kulot portrait"
@@ -103,10 +103,10 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
             />
           </div>
 
-          <div className="relative min-h-[calc(100svh-4rem)] overflow-hidden bg-[#1f1f1f] lg:h-full lg:min-h-0">
+          <div className="relative min-h-[calc(100svh-4rem)] overflow-hidden bg-[#1f1f1f]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_26%),linear-gradient(180deg,#111111_0%,#050505_100%)]" />
 
-            <div className="relative flex h-full min-h-[calc(100svh-4rem)] flex-col justify-start px-8 pb-8 pt-10 sm:px-12 sm:pb-10 sm:pt-12 lg:px-16 lg:pb-10 lg:pt-10">
+            <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-start px-8 pb-14 pt-10 sm:px-12 sm:pb-16 sm:pt-12 lg:px-16 lg:pb-16 lg:pt-10">
               <div
                 className={`text-[1.8rem] font-black uppercase leading-none tracking-[0.18em] sm:text-[2.3rem] lg:text-[3.4rem] ${
                   isMetabolic
@@ -131,7 +131,7 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
                 </div>
               </div>
 
-              <div className="mt-auto flex items-center gap-3 pt-6 lg:pt-4">
+              <div className="mt-8 flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setActiveIndex((current) => (current - 1 + PROGRAM_SLIDES.length) % PROGRAM_SLIDES.length)}

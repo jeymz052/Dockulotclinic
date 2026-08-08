@@ -9,7 +9,6 @@ import {
   FaCircleExclamation,
   FaEnvelope,
   FaLock,
-  FaQrcode,
   FaPhone,
   FaReceipt,
   FaCreditCard,
@@ -19,8 +18,14 @@ import {
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctorFees } from "@/src/components/clinic/useDoctorFees";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { QrPhLogo } from "@/src/components/payments/QrPhLogo";
 import { formatDisplayDate, formatRange, type AppointmentRecord } from "@/src/lib/appointments";
-import { calculateConsultationCharge, formatDurationLabel } from "@/src/lib/consultation-pricing";
+import { getAppointmentConsultKind } from "@/src/lib/appointment-context";
+import {
+  FOLLOW_UP_CLINIC_CONSULTATION_FEE,
+  calculateConsultationCharge,
+  formatDurationLabel,
+} from "@/src/lib/consultation-pricing";
 
 type PricingItem = {
   id: string;
@@ -61,6 +66,9 @@ type PaymentOptionConfig = {
   label: string;
   detail: string;
   icon: React.ReactNode;
+  selectedClass: string;
+  hoverClass: string;
+  iconClass: string;
   available: boolean;
   unavailableNote?: string;
 };
@@ -132,20 +140,29 @@ const POS_PAYMENT_OPTIONS: PaymentOptionConfig[] = [
     label: "Cash",
     detail: "Accept cash at the cashier and compute change here in the POS.",
     icon: <span className="text-[11px] font-black">PHP</span>,
+    selectedClass: "border-emerald-500 bg-emerald-700 text-white",
+    hoverClass: "hover:border-emerald-400",
+    iconClass: "h-8 w-8 bg-emerald-50 text-emerald-700",
     available: true,
   },
   {
     value: "QR",
     label: "QR Ph",
     detail: "Open PayMongo checkout so the patient can scan with GCash, Maya, or any supported banking app.",
-    icon: <FaQrcode className="h-4 w-4" aria-hidden="true" />,
+    icon: <QrPhLogo className="h-auto w-full" />,
+    selectedClass: "border-[#204884] bg-[#204884] text-white",
+    hoverClass: "hover:border-[#204884]",
+    iconClass: "h-8 w-16 border border-[#204884]/15 bg-white px-1.5",
     available: true,
   },
   {
     value: "BankTransfer",
     label: "Transfer",
     detail: "Direct online banking is already wired to PayMongo, but the merchant account is still pending activation.",
-    icon: <FaBuildingColumns className="h-4 w-4" aria-hidden="true" />,
+    icon: <FaBuildingColumns className="h-4 w-4 text-[#005baa]" aria-hidden="true" />,
+    selectedClass: "border-[#005baa] bg-[#005baa] text-white",
+    hoverClass: "hover:border-[#005baa]",
+    iconClass: "h-8 w-8 bg-[#eaf3ff] text-[#005baa]",
     available: false,
     unavailableNote: "Not yet activated on PayMongo. Please use QR Ph for now.",
   },
@@ -153,7 +170,10 @@ const POS_PAYMENT_OPTIONS: PaymentOptionConfig[] = [
     value: "Card",
     label: "Card",
     detail: "Card checkout is already wired to PayMongo, but card processing is still pending activation on the merchant account.",
-    icon: <FaCreditCard className="h-4 w-4" aria-hidden="true" />,
+    icon: <FaCreditCard className="h-4 w-4 text-[#1a1f71]" aria-hidden="true" />,
+    selectedClass: "border-[#1a1f71] bg-[#1a1f71] text-white",
+    hoverClass: "hover:border-[#1a1f71]",
+    iconClass: "h-8 w-8 bg-[#eef0ff] text-[#1a1f71]",
     available: false,
     unavailableNote: "Not yet activated on PayMongo. Please use QR Ph for now.",
   },
@@ -411,8 +431,20 @@ export default function POSBillingPage() {
   }, [catalogQuery, productCatalogByCategory]);
 
   const validItems = lines.filter((line) => (line.pricing_id || line.product_id) && line.quantity > 0 && line.unit_price > 0);
+  const selectedConsultKind = selectedAppt ? getAppointmentConsultKind(selectedAppt.reason) : undefined;
+  const hasPriorClinicConsultation = selectedAppt
+    ? appointments.some((appointment) =>
+      appointment.id !== selectedAppt.id
+      && appointment.type === "Clinic"
+      && appointment.email.trim().toLowerCase() === selectedAppt.email.trim().toLowerCase()
+      && `${appointment.date} ${appointment.start}` < `${selectedAppt.date} ${selectedAppt.start}`,
+    )
+    : false;
+  const consultationRate = selectedConsultKind === "FollowUp" || (!selectedConsultKind && hasPriorClinicConsultation)
+    ? FOLLOW_UP_CLINIC_CONSULTATION_FEE
+    : selectedDoctorFees.clinic;
   const consultationBaseFee = selectedAppt
-    ? calculateConsultationCharge(selectedDoctorFees.clinic, selectedAppt.start, selectedAppt.end)
+    ? calculateConsultationCharge(consultationRate, selectedAppt.start, selectedAppt.end)
     : 0;
   const subtotal = consultationBaseFee + validItems.reduce((sum, line) => sum + line.quantity * line.unit_price, 0);
 
@@ -825,7 +857,7 @@ export default function POSBillingPage() {
           ) : null}
           <Link
             href="/payments/history"
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-yellow-300 hover:text-yellow-700"
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-neutral-300 hover:text-neutral-700"
           >
             History
           </Link>
@@ -836,8 +868,8 @@ export default function POSBillingPage() {
         <div
           className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
             feedback.tone === "success"
-              ? "border border-yellow-200 bg-yellow-50 text-yellow-700"
-              : "border border-yellow-200 bg-yellow-50 text-yellow-800"
+              ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
+              : "border border-neutral-200 bg-neutral-50 text-neutral-800"
           }`}
         >
           {feedback.tone === "success" ? (
@@ -850,12 +882,12 @@ export default function POSBillingPage() {
       ) : null}
 
       {recentBillings.length > 0 ? (
-        <section className="rounded-3xl border border-yellow-100 bg-white p-4 shadow-sm">
+        <section className="rounded-3xl border border-neutral-100 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Recent Transactions</p>
             <Link
               href="/payments/history"
-              className="text-xs font-semibold text-yellow-700 hover:underline"
+              className="text-xs font-semibold text-neutral-700 hover:underline"
             >
               View all →
             </Link>
@@ -865,7 +897,7 @@ export default function POSBillingPage() {
               <Link
                 key={bill.id}
                 href={`/payments/receipt/${bill.id}`}
-                className="shrink-0 rounded-2xl border border-yellow-100 bg-yellow-50/40 px-3 py-2 text-xs transition hover:border-yellow-300 hover:bg-yellow-50"
+                className="shrink-0 rounded-2xl border border-neutral-100 bg-neutral-50/40 px-3 py-2 text-xs transition hover:border-neutral-300 hover:bg-neutral-50"
               >
                 <span className="block font-mono font-bold text-slate-900">
                   #{bill.id.slice(0, 8).toUpperCase()}
@@ -874,9 +906,9 @@ export default function POSBillingPage() {
                 <span
                   className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                     bill.status === "Paid"
-                      ? "bg-yellow-100 text-yellow-700"
+                      ? "bg-neutral-100 text-neutral-700"
                       : bill.status === "Issued"
-                        ? "bg-yellow-100 text-yellow-700"
+                        ? "bg-neutral-100 text-neutral-700"
                         : bill.status === "Void"
                           ? "bg-slate-200 text-slate-700 line-through"
                           : "bg-slate-100 text-slate-600"
@@ -896,7 +928,7 @@ export default function POSBillingPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">POS Flow</p>
             <h2 className="mt-1 text-sm font-bold text-slate-900">Build Bill, accept payment, then print the receipt.</h2>
           </div>
-          <span className="rounded-full bg-yellow-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-yellow-700">
+          <span className="rounded-full bg-neutral-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-700">
             {issuedBillingId ? "Step 2 of 3" : "Step 1 of 3"}
           </span>
         </div>
@@ -928,7 +960,7 @@ export default function POSBillingPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">Patient</h2>
-              <span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-[11px] font-bold text-yellow-700">
+              <span className="rounded-full bg-neutral-50 px-2.5 py-0.5 text-[11px] font-bold text-neutral-700">
                 {billableAppointments.length} billable
               </span>
             </div>
@@ -940,7 +972,7 @@ export default function POSBillingPage() {
                   value={selectedApptId}
                   onChange={(event) => setSelectedApptId(event.target.value)}
                   disabled={!canUse || !!issuedBillingId}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-yellow-200 disabled:bg-slate-50"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-2 focus:ring-neutral-200 disabled:bg-slate-50"
                 >
                   <option value="">
                     {billableAppointments.length === 0
@@ -977,7 +1009,7 @@ export default function POSBillingPage() {
                         </span>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-2 text-yellow-700">
+                    <div className="flex items-center gap-2 text-neutral-700">
                       <span className="font-semibold">Base:</span>
                       <span className="font-mono">{peso(consultationBaseFee)}</span>
                       <span className="text-slate-400">({formatDurationLabel(selectedAppt.start, selectedAppt.end)} @ {peso(selectedDoctorFees.clinic)}/hr)</span>
@@ -1008,7 +1040,7 @@ export default function POSBillingPage() {
                   onKeyDown={handleCatalogKeyDown}
                   placeholder='Code, SKU, or name (try "/" to focus, Enter to add first match)'
                   disabled={!canUse || !!issuedBillingId}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pl-8 text-sm text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-yellow-200 disabled:bg-slate-50"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 pl-8 text-sm text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-2 focus:ring-neutral-200 disabled:bg-slate-50"
                 />
                 <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-slate-400">⌕</span>
                 {catalogQuery ? (
@@ -1041,13 +1073,13 @@ export default function POSBillingPage() {
                           onClick={() => addCatalogItem(item)}
                           disabled={!canUse || !!issuedBillingId}
                           title={`${item.code} · ${item.name}`}
-                          className="flex w-full items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left transition hover:border-amber-400 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+                          className="flex w-full items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
                         >
                           <span className="min-w-0 pr-2">
                             <span className="block truncate text-xs font-semibold text-slate-900">{item.name}</span>
                             <span className="block font-mono text-[10px] text-slate-500">{item.code}</span>
                           </span>
-                          <span className="shrink-0 font-mono text-xs font-bold text-yellow-700">{peso(Number(item.price))}</span>
+                          <span className="shrink-0 font-mono text-xs font-bold text-neutral-700">{peso(Number(item.price))}</span>
                         </button>
                       ))
                     ) : (
@@ -1060,10 +1092,10 @@ export default function POSBillingPage() {
               ))}
 
               {filteredProductCatalog.map((group) => (
-                <div key={`product-${group.category}`} className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-2">
+                <div key={`product-${group.category}`} className="rounded-lg border border-neutral-200 bg-neutral-50/40 p-2">
                   <div className="flex items-center justify-between px-1 pb-1.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-yellow-700">{group.category}</p>
-                    <span className="font-mono text-[10px] text-yellow-700">{group.items.length}</span>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-700">{group.category}</p>
+                    <span className="font-mono text-[10px] text-neutral-700">{group.items.length}</span>
                   </div>
 
                   <div className="space-y-1">
@@ -1075,7 +1107,7 @@ export default function POSBillingPage() {
                           onClick={() => addProductItem(item)}
                           disabled={!canUse || !!issuedBillingId}
                           title={`${item.sku} · ${productDisplayName(item)}`}
-                          className="flex w-full items-center justify-between gap-2 rounded-md border border-yellow-200 bg-white px-2.5 py-1.5 text-left transition hover:border-amber-400 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+                          className="flex w-full items-center justify-between gap-2 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-left transition hover:border-neutral-400 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
                         >
                           <span className="min-w-0 pr-2">
                             <span className="block truncate text-xs font-semibold text-slate-900">{productDisplayName(item)}</span>
@@ -1083,11 +1115,11 @@ export default function POSBillingPage() {
                               {item.sku} · {Number(item.stock_qty).toLocaleString()} {item.unit}
                             </span>
                           </span>
-                          <span className="shrink-0 font-mono text-xs font-bold text-yellow-700">{peso(Number(item.selling_price))}</span>
+                          <span className="shrink-0 font-mono text-xs font-bold text-neutral-700">{peso(Number(item.selling_price))}</span>
                         </button>
                       ))
                     ) : (
-                      <div className="rounded-md border border-dashed border-yellow-200 bg-white px-2 py-3 text-center text-[11px] text-yellow-700/70">
+                      <div className="rounded-md border border-dashed border-neutral-200 bg-white px-2 py-3 text-center text-[11px] text-neutral-700/70">
                         No {group.category.toLowerCase()} products in stock.
                       </div>
                     )}
@@ -1116,7 +1148,7 @@ export default function POSBillingPage() {
                           else updateLine(line.tempId, { pricing_id: null, product_id: null, description: "", unit_price: 0 });
                         }}
                         disabled={!canUse || !!issuedBillingId}
-                        className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200 disabled:bg-slate-50"
+                        className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200 disabled:bg-slate-50"
                       >
                         <option value="">— pick service or product —</option>
                         <optgroup label="Services">
@@ -1183,7 +1215,7 @@ export default function POSBillingPage() {
                         <button
                           type="button"
                           onClick={() => removeLine(line.tempId)}
-                          className="rounded p-1 text-slate-400 transition hover:bg-yellow-50 hover:text-yellow-600"
+                          className="rounded p-1 text-slate-400 transition hover:bg-neutral-50 hover:text-neutral-600"
                           aria-label="Remove line"
                         >
                           <FaXmark className="h-3 w-3" aria-hidden="true" />
@@ -1217,8 +1249,8 @@ export default function POSBillingPage() {
                     }}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
                       discountKind === option.value
-                        ? "border-amber-400 bg-black text-white"
-                        : "border-slate-300 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50"
+                        ? "border-neutral-400 bg-black text-white"
+                        : "border-slate-300 bg-white text-slate-700 hover:border-neutral-300 hover:bg-neutral-50"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     {option.label}
@@ -1236,10 +1268,10 @@ export default function POSBillingPage() {
                       onChange={(event) => setDiscountIdNumber(event.target.value)}
                       disabled={!canUse || !!issuedBillingId}
                       placeholder="ID number"
-                      className="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+                      className="w-44 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
                     />
                   </label>
-                  <span className="rounded bg-yellow-50 px-2 py-1 font-mono text-xs font-bold text-yellow-700">
+                  <span className="rounded bg-neutral-50 px-2 py-1 font-mono text-xs font-bold text-neutral-700">
                     −{peso(effectiveDiscount)}
                   </span>
                   <span className="text-[11px] text-slate-500">VAT exempt · RA 9994 / RA 10754</span>
@@ -1255,7 +1287,7 @@ export default function POSBillingPage() {
                       value={discount}
                       onChange={(event) => setDiscount(Math.max(0, Number(event.target.value) || 0))}
                       disabled={!canUse || !!issuedBillingId || discountKind === "None"}
-                      className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs outline-none focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200 disabled:bg-slate-100"
+                      className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs outline-none focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200 disabled:bg-slate-100"
                     />
                   </label>
                   <label className="flex items-center gap-1.5 text-xs">
@@ -1267,14 +1299,14 @@ export default function POSBillingPage() {
                       value={tax}
                       onChange={(event) => setTax(Math.max(0, Number(event.target.value) || 0))}
                       disabled={!canUse || !!issuedBillingId}
-                      className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs outline-none focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+                      className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs outline-none focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
                     />
                   </label>
                 </div>
               )}
 
               {discountExceedsSubtotal ? (
-                <div className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-yellow-700">
+                <div className="mt-2 flex items-start gap-1.5 text-[11px] font-semibold text-neutral-700">
                   <FaTriangleExclamation className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
                   Discount exceeds subtotal ({peso(subtotal)}).
                 </div>
@@ -1291,7 +1323,7 @@ export default function POSBillingPage() {
                 className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
                   !issuedBillingId
                     ? "bg-slate-200 text-slate-700"
-                    : "bg-yellow-100 text-yellow-700"
+                    : "bg-neutral-100 text-neutral-700"
                 }`}
               >
                 {!issuedBillingId ? "Building" : "Awaiting Payment"}
@@ -1348,7 +1380,7 @@ export default function POSBillingPage() {
 
             {/* Big total panel — POS-classic dark tile so the eye lands here. */}
             <div className="flex items-baseline justify-between bg-slate-900 px-4 py-3 text-white">
-              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">Total Due</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-300">Total Due</span>
               <span className="font-mono text-3xl font-black tabular-nums">{peso(total)}</span>
             </div>
 
@@ -1367,19 +1399,19 @@ export default function POSBillingPage() {
                     }}
                     className={`rounded-xl border px-3 py-2.5 text-left text-xs transition ${
                       paymentMethod === method.value
-                        ? "border-amber-400 bg-black text-white"
+                        ? method.selectedClass
                         : method.available
-                          ? "border-slate-300 bg-white text-slate-700 hover:border-amber-400"
+                          ? `border-slate-300 bg-white text-slate-700 ${method.hoverClass}`
                           : "border-slate-200 bg-slate-100 text-slate-400"
                     } disabled:cursor-not-allowed disabled:opacity-70`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-slate-900">
+                      <span className={`inline-flex items-center justify-center rounded-lg ${method.iconClass}`}>
                         {method.icon}
                       </span>
                       {!method.available ? (
                         <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
-                          paymentMethod === method.value ? "bg-white/20 text-white" : "bg-white text-yellow-700"
+                          paymentMethod === method.value ? "bg-white/20 text-white" : "bg-white text-neutral-700"
                         }`}>
                           Soon
                         </span>
@@ -1416,7 +1448,7 @@ export default function POSBillingPage() {
                           value={tenderedInput}
                           onChange={(event) => setTenderedInput(event.target.value)}
                           placeholder={total.toFixed(2)}
-                          className="w-32 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-base font-bold outline-none focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+                          className="w-32 rounded-md border border-slate-300 bg-white px-2 py-1 text-right font-mono text-base font-bold outline-none focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
                         />
                       </div>
                       <div className="mt-2 grid grid-cols-3 gap-1.5">
@@ -1427,8 +1459,8 @@ export default function POSBillingPage() {
                             onClick={() => setTenderedInput(amount.toFixed(2))}
                             className={`rounded border px-1 py-1 text-[10px] font-bold ${
                               index === 0
-                                ? "border-amber-400 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                                : "border-slate-300 bg-white font-mono text-slate-700 hover:bg-yellow-50"
+                                ? "border-neutral-400 bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
+                                : "border-slate-300 bg-white font-mono text-slate-700 hover:bg-neutral-50"
                             }`}
                           >
                             {index === 0 ? `Exact ${amount.toFixed(2)}` : amount.toFixed(2)}
@@ -1441,7 +1473,7 @@ export default function POSBillingPage() {
                           <p className="mt-1 font-mono text-lg font-black text-slate-900">{peso(total)}</p>
                         </div>
                         <div className="rounded-md bg-slate-900 px-3 py-2 text-white">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-300">
                             {tenderShortfall > 0 ? "Short" : "Change"}
                           </p>
                           <p className="mt-1 font-mono text-lg font-black tabular-nums">
@@ -1452,12 +1484,14 @@ export default function POSBillingPage() {
                     </>
                   ) : isQR ? (
                     <div className="space-y-2">
-                      <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-3 text-sm text-yellow-800">
+                      <div className="rounded-lg border border-[#204884]/20 bg-[#f4f7fc] px-3 py-3 text-sm text-[#204884]">
                         <div className="flex items-start gap-2">
-                          <FaQrcode className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span className="mt-0.5 inline-flex h-7 w-14 shrink-0 items-center rounded-md bg-white px-1.5 shadow-xs">
+                            <QrPhLogo className="h-auto w-full" />
+                          </span>
                           <div>
                             <p className="font-bold">QR Ph via PayMongo</p>
-                            <p className="mt-1 text-xs leading-5 text-yellow-700">
+                            <p className="mt-1 text-xs leading-5 text-[#204884]/80">
                               This opens a PayMongo QR Ph checkout that works today for GCash, Maya, and banking apps while direct Card and Transfer activation is still pending.
                             </p>
                           </div>
@@ -1488,7 +1522,7 @@ export default function POSBillingPage() {
                           value={paymentReference}
                           onChange={(event) => setPaymentReference(event.target.value)}
                           placeholder={getReferencePlaceholder(paymentMethod)}
-                          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+                          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
                         />
                       </label>
                       <div className="grid grid-cols-2 gap-2">
@@ -1515,7 +1549,7 @@ export default function POSBillingPage() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-md bg-black px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                   >
                     Generate Bill
-                    <kbd className="rounded border border-amber-400 bg-black px-1 font-mono text-[9px] text-amber-100">F2</kbd>
+                    <kbd className="rounded border border-neutral-400 bg-black px-1 font-mono text-[9px] text-neutral-100">F2</kbd>
                   </button>
                   <button
                     type="button"
@@ -1534,11 +1568,11 @@ export default function POSBillingPage() {
                     className="flex w-full items-center justify-center gap-1.5 rounded-md bg-black px-3 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
                   >
                     {isWorking ? "Processing…" : isQR ? "Open QR Ph Checkout" : `Accept ${paymentMethodLabel}`}
-                    <kbd className="rounded border border-amber-400 bg-black px-1 font-mono text-[9px] text-amber-100">F2</kbd>
+                    <kbd className="rounded border border-neutral-400 bg-black px-1 font-mono text-[9px] text-neutral-100">F2</kbd>
                   </button>
                   <Link
                     href={`/payments/receipt/${issuedBillingId}`}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-amber-400 hover:bg-yellow-50"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-400 hover:bg-neutral-50"
                   >
                     <FaReceipt className="h-3 w-3" aria-hidden="true" />
                     View Receipt
@@ -1558,11 +1592,11 @@ export default function POSBillingPage() {
                           setVoidReason("");
                           setConfirmingVoid(true);
                         }}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-yellow-300 bg-white px-2 py-2 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
                       >
                         <FaBan className="h-3 w-3" aria-hidden="true" />
                         Void
-                        <kbd className="rounded border border-yellow-300 bg-yellow-50 px-1 font-mono text-[9px] text-yellow-700">F9</kbd>
+                        <kbd className="rounded border border-neutral-300 bg-neutral-50 px-1 font-mono text-[9px] text-neutral-700">F9</kbd>
                       </button>
                     ) : null}
                     <button
@@ -1591,7 +1625,7 @@ export default function POSBillingPage() {
             <p className="text-slate-700">
               Issue a clinic bill for <span className="font-bold">{selectedAppt.patientName}</span>?
             </p>
-            <div className="rounded-xl border border-yellow-200 bg-yellow-50/50 p-3 text-xs text-slate-700">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-slate-700">
               <div className="flex justify-between"><span>Subtotal</span><span>{peso(subtotal)}</span></div>
               <div className="flex justify-between">
                 <span>
@@ -1602,7 +1636,7 @@ export default function POSBillingPage() {
                 <span>- {peso(effectiveDiscount)}</span>
               </div>
               <div className="flex justify-between"><span>Tax</span><span>{peso(effectiveTax)}</span></div>
-              <div className="mt-2 flex justify-between border-t border-yellow-200 pt-2 text-sm font-bold text-slate-900">
+              <div className="mt-2 flex justify-between border-t border-neutral-200 pt-2 text-sm font-bold text-slate-900">
                 <span>Total</span><span>{peso(total)}</span>
               </div>
             </div>
@@ -1649,7 +1683,7 @@ export default function POSBillingPage() {
                 onChange={(e) => setVoidReason(e.target.value)}
                 placeholder="e.g. Wrong patient, billed in error"
                 rows={2}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
               />
             </label>
           </div>
@@ -1699,8 +1733,8 @@ function ConfirmModal({
 
   const headerClass =
     tone === "red"
-      ? "border-yellow-100 bg-yellow-50 text-yellow-800"
-      : "border-yellow-100 bg-yellow-50 text-yellow-700";
+      ? "border-neutral-100 bg-neutral-50 text-neutral-800"
+      : "border-neutral-100 bg-neutral-50 text-neutral-700";
 
   return (
     <div
@@ -1755,10 +1789,10 @@ function POSStepCard({
 }) {
   const styles = {
     complete: {
-      shell: "border-yellow-200 bg-yellow-50/70",
+      shell: "border-neutral-200 bg-neutral-50/70",
       badge: "bg-black text-white",
-      title: "text-yellow-800",
-      body: "text-yellow-700/80",
+      title: "text-neutral-800",
+      body: "text-neutral-700/80",
     },
     current: {
       shell: "border-slate-900 bg-slate-900",
@@ -1786,5 +1820,6 @@ function POSStepCard({
     </div>
   );
 }
+
 
 

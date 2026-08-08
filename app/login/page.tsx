@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
 
 const MAX_SIGNIN_ATTEMPTS = 5;
@@ -38,9 +39,16 @@ export default function LoginPage() {
   const [resetCooldownUntil, setResetCooldownUntil] = useState<number | null>(null);
   const [verifyCooldownUntil, setVerifyCooldownUntil] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const [nextPath] = useState(() => {
+    if (typeof window === "undefined") {
+      return "/dashboard";
+    }
+    return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
+  });
 
   useEffect(() => {
-    const message = new URLSearchParams(window.location.search).get("message");
+    const params = new URLSearchParams(window.location.search);
+    const message = params.get("message");
     if (!message) return;
     const timer = window.setTimeout(() => {
       setFeedback(message);
@@ -90,7 +98,9 @@ export default function LoginPage() {
         type: "signup",
         email: normalizedEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/login&verified=1`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(
+            `/login?next=${encodeURIComponent(nextPath)}`,
+          )}&verified=1`,
         },
       });
 
@@ -227,7 +237,7 @@ export default function LoginPage() {
 
       setSignInAttempts(0);
       setLockUntil(null);
-      router.replace("/dashboard");
+      router.replace(nextPath);
       router.refresh();
     });
   }
@@ -336,10 +346,10 @@ export default function LoginPage() {
 
             {feedback ? (
               <div
-                  className={`rounded-xl px-4 py-3 text-sm ${
+                className={`rounded-xl px-4 py-3 text-sm ${
                   isSuccessFeedback(feedback)
                     ? "border border-gold-200 bg-gold-50 text-gold-800"
-                    : "border border-black/10 bg-white text-black"
+                    : "border border-red-200 bg-red-50 text-red-700"
                 }`}
               >
                 {feedback}
@@ -373,7 +383,7 @@ export default function LoginPage() {
           <div className="mt-2 text-center">
             <p className="text-[11px] text-slate-600">
               Don&apos;t have an account?{" "}
-              <Link href="/register" className="font-semibold text-black/80 hover:text-black hover:underline">
+              <Link href={`/register?next=${encodeURIComponent(nextPath)}`} className="font-semibold text-black/80 hover:text-black hover:underline">
                 Sign Up
               </Link>
             </p>
@@ -428,7 +438,7 @@ export default function LoginPage() {
                   className={`rounded-xl px-4 py-3 text-xs ${
                     isSuccessFeedback(resetFeedback)
                       ? "border border-white/20 bg-white/10 text-white/90"
-                      : "border border-white/15 bg-white/10 text-white/90"
+                      : "border border-red-400/40 bg-red-500/10 text-red-200"
                   }`}
                 >
                   {resetFeedback}
@@ -456,7 +466,7 @@ export default function LoginPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] font-semibold text-white/95 mb-0.5 tracking-wide">
+    <label className="block text-[11px] font-semibold text-black/70 mb-0.5 tracking-wide">
       {label}
       {children}
     </label>

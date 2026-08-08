@@ -1,6 +1,16 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import PublicHeader from "@/src/components/layout/PublicHeader";
 import { getPublicLiveEvents } from "@/src/lib/services/live-events";
+
+export const metadata: Metadata = {
+  title: "Live Sessions",
+  description:
+    "Follow Doc Kulot live health talks, webinars, upcoming sessions, stream links, registrations, and replays.",
+  alternates: {
+    canonical: "/live",
+  },
+};
 
 export default async function LivePage() {
   const events = await getPublicLiveEvents(24);

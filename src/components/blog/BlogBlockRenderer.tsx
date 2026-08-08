@@ -14,7 +14,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
 
         if (block.type === "h2") {
           return (
-            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-gold-800 sm:text-3xl">
+            <h2 key={`${block.type}-${index}`} className="pt-4 text-2xl font-black tracking-tight text-neutral-800 sm:text-3xl">
               {block.text}
             </h2>
           );
@@ -32,7 +32,7 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
           return (
             <blockquote
               key={`${block.type}-${index}`}
-              className="rounded-[1.5rem] border-l-4 border-gold-400 bg-gold-50 px-6 py-5 text-lg italic leading-8 text-neutral-700"
+              className="rounded-[1.5rem] border-l-4 border-neutral-400 bg-neutral-50 px-6 py-5 text-lg italic leading-8 text-neutral-700"
             >
               {block.text}
             </blockquote>
@@ -81,10 +81,10 @@ export default function BlogBlockRenderer({ blocks, title }: { blocks: BlogBlock
         if (block.type === "cta") {
           return (
             <div key={`${block.type}-${index}`} className="rounded-[1.75rem] bg-black px-6 py-8 text-center text-white">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-gold-100">Take the next step</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-neutral-100">Take the next step</p>
               <a
                 href={block.buttonLink}
-                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
+                className="mt-4 inline-flex rounded-full bg-white px-6 py-3 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
               >
                 {block.buttonText}
               </a>

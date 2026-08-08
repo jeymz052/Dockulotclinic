@@ -3,42 +3,45 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type Tone = "emerald" | "teal" | "sky" | "amber" | "slate" | "rose" | "indigo" | "violet" | "cyan";
+type Tone = "emerald" | "teal" | "sky" | "amber" | "slate" | "rose" | "indigo" | "violet" | "cyan" | "gold";
 
 const panelToneClasses: Record<Tone, string> = {
-  emerald: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  teal: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  sky: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  amber: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  emerald: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  teal: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  sky: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  amber: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
   slate: "border-neutral-200 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(15,23,42,0.08)]",
-  rose: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  indigo: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  violet: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
-  cyan: "border-gold-100 bg-linear-to-br from-gold-50 to-gold-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  rose: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  indigo: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  violet: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  cyan: "border-neutral-100 bg-linear-to-br from-neutral-50 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
+  gold: "border-gold-200 bg-linear-to-br from-gold-50/40 to-neutral-50/30 shadow-[0_16px_34px_rgba(17,17,17,0.12)]",
 };
 
 const accentClasses: Record<Tone, string> = {
-  emerald: "from-gold-300 to-gold-400",
-  teal: "from-gold-300 to-gold-400",
-  sky: "from-gold-300 to-gold-400",
-  amber: "from-gold-300 to-gold-400",
+  emerald: "from-neutral-300 to-neutral-400",
+  teal: "from-neutral-300 to-neutral-400",
+  sky: "from-neutral-300 to-neutral-400",
+  amber: "from-neutral-300 to-neutral-400",
   slate: "from-neutral-400 to-neutral-500",
-  rose: "from-gold-500 to-gold-600",
-  indigo: "from-gold-300 to-gold-400",
-  violet: "from-gold-300 to-gold-400",
-  cyan: "from-gold-300 to-gold-400",
+  rose: "from-neutral-500 to-neutral-600",
+  indigo: "from-neutral-300 to-neutral-400",
+  violet: "from-neutral-300 to-neutral-400",
+  cyan: "from-neutral-300 to-neutral-400",
+  gold: "from-gold-300 to-gold-400",
 };
 
 const textColorClasses: Record<Tone, string> = {
-  emerald: "text-gold-700",
-  teal: "text-gold-700",
-  sky: "text-gold-700",
-  amber: "text-gold-700",
+  emerald: "text-neutral-700",
+  teal: "text-neutral-700",
+  sky: "text-neutral-700",
+  amber: "text-neutral-700",
   slate: "text-neutral-700",
-  rose: "text-gold-700",
-  indigo: "text-gold-700",
-  violet: "text-gold-700",
-  cyan: "text-gold-700",
+  rose: "text-neutral-700",
+  indigo: "text-neutral-700",
+  violet: "text-neutral-700",
+  cyan: "text-neutral-700",
+  gold: "text-gold-700",
 };
 
 export function DashboardHero({
@@ -55,21 +58,22 @@ export function DashboardHero({
   accent?: Tone;
 }) {
   const gradients: Record<Tone, string> = {
-    emerald: "from-gold-300/20 via-gold-400/10 to-gold-300/5",
-    teal: "from-gold-300/20 via-gold-300/10 to-gold-300/5",
-    sky: "from-gold-300/20 via-gold-300/10 to-gold-300/5",
-    amber: "from-gold-300/20 via-gold-300/10 to-gold-500/5",
+    emerald: "from-neutral-300/20 via-neutral-400/10 to-neutral-300/5",
+    teal: "from-neutral-300/20 via-neutral-300/10 to-neutral-300/5",
+    sky: "from-neutral-300/20 via-neutral-300/10 to-neutral-300/5",
+    amber: "from-neutral-300/20 via-neutral-300/10 to-neutral-500/5",
     slate: "from-neutral-500/20 via-neutral-500/10 to-neutral-500/5",
-    rose: "from-gold-500/20 via-gold-300/10 to-gold-300/5",
-    indigo: "from-gold-300/20 via-gold-300/10 to-gold-300/5",
-    violet: "from-gold-300/20 via-gold-300/10 to-gold-300/5",
-    cyan: "from-gold-300/20 via-gold-300/10 to-gold-300/5",
+    rose: "from-neutral-500/20 via-neutral-300/10 to-neutral-300/5",
+    indigo: "from-neutral-300/20 via-neutral-300/10 to-neutral-300/5",
+    violet: "from-neutral-300/20 via-neutral-300/10 to-neutral-300/5",
+    cyan: "from-neutral-300/20 via-neutral-300/10 to-neutral-300/5",
+    gold: "from-gold-300/20 via-gold-400/10 to-gold-300/5",
   };
 
   return (
     <section className={`relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-linear-to-br p-8 shadow-[0_32px_64px_rgba(17,17,17,0.15)] animate-fade-in-down ${gradients[accent]} backdrop-blur-sm`}>
-      <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-linear-to-r from-gold-300/20 to-gold-200/10 blur-3xl" />
-      <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-linear-to-r from-gold-200/20 to-gold-200/10 blur-3xl" />
+      <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-linear-to-r from-neutral-300/20 to-neutral-200/10 blur-3xl" />
+      <div className="absolute -left-32 bottom-0 h-64 w-64 rounded-full bg-linear-to-r from-neutral-200/20 to-neutral-200/10 blur-3xl" />
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl flex-1">
           <p className={`text-xs font-bold uppercase tracking-[0.35em] ${textColorClasses[accent]} opacity-80`}>{eyebrow}</p>
@@ -148,7 +152,7 @@ export function SectionCard({
           {description ? <p className="mt-2 text-sm leading-6 text-neutral-500">{description}</p> : null}
         </div>
         {actionLabel && actionHref ? (
-          <Link href={actionHref} className="text-xs font-bold text-gold-700 transition-all hover:text-gold-700 hover:gap-2 inline-flex items-center gap-1 whitespace-nowrap">
+          <Link href={actionHref} className="text-xs font-bold text-neutral-700 transition-all hover:text-neutral-700 hover:gap-2 inline-flex items-center gap-1 whitespace-nowrap">
             {actionLabel} <span className="transition-transform group-hover:translate-x-1">→</span>
           </Link>
         ) : null}
@@ -196,15 +200,16 @@ export function ActionCard({
 export function StatusPill({ tone, children, variant = "filled" }: { tone: Tone; children: ReactNode; variant?: "filled" | "outline" }) {
   if (variant === "outline") {
     const borderClasses: Record<Tone, string> = {
-      emerald: "border-gold-300 text-gold-700 bg-gold-50",
-      teal: "border-gold-300 text-gold-700 bg-gold-50",
-      sky: "border-gold-300 text-gold-700 bg-gold-50",
-      amber: "border-gold-300 text-gold-700 bg-gold-50",
+      emerald: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      teal: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      sky: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      amber: "border-neutral-300 text-neutral-700 bg-neutral-50",
       slate: "border-neutral-300 text-neutral-700 bg-neutral-50",
-      rose: "border-gold-300 text-gold-700 bg-gold-50",
-      indigo: "border-gold-300 text-gold-700 bg-gold-50",
-      violet: "border-gold-300 text-gold-700 bg-gold-50",
-      cyan: "border-gold-300 text-gold-700 bg-gold-50",
+      rose: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      indigo: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      violet: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      cyan: "border-neutral-300 text-neutral-700 bg-neutral-50",
+      gold: "border-gold-300 text-gold-700 bg-gold-50",
     };
     return (
       <span className={`inline-flex items-center gap-2 rounded-full border-2 px-4 py-2 text-xs font-bold ${borderClasses[tone]}`}>
@@ -232,8 +237,8 @@ export function StatBadge({
   trend?: "up" | "down" | "neutral";
 }) {
   const trendColors: Record<string, string> = {
-    up: "text-gold-400",
-    down: "text-gold-600",
+    up: "text-neutral-400",
+    down: "text-neutral-600",
     neutral: "text-neutral-600",
   };
 

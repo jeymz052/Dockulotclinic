@@ -3,10 +3,14 @@ import type { AppointmentType } from "@/src/lib/appointments";
 
 const SERVICE_PREFIX = "Service:";
 const REASON_PREFIX = "Reason:";
+const CONSULT_PREFIX = "Consult:";
+
+export type ClinicConsultKind = "FirstConsult" | "FollowUp";
 
 export type AppointmentContext = {
   service: string;
   reason: string;
+  consultKind?: ClinicConsultKind;
 };
 
 export function getServiceOptionsForType(type: AppointmentType) {
@@ -31,19 +35,33 @@ export function getDefaultServiceForType(type: AppointmentType) {
   return getServiceOptionsForType(type)[0] ?? "General Consultation";
 }
 
-export function encodeAppointmentContext(service: string, reason: string) {
+function formatConsultKind(kind: ClinicConsultKind) {
+  return kind === "FollowUp" ? "Follow-up clinic consult" : "First clinic consult";
+}
+
+function parseConsultKind(value: string): ClinicConsultKind | undefined {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes("follow")) return "FollowUp";
+  if (normalized.includes("first")) return "FirstConsult";
+  return undefined;
+}
+
+export function encodeAppointmentContext(service: string, reason: string, consultKind?: ClinicConsultKind) {
   const normalizedService = service.trim();
   const normalizedReason = reason.trim();
+  const lines: string[] = [];
 
-  if (!normalizedService) {
-    return normalizedReason;
+  if (normalizedService) {
+    lines.push(`${SERVICE_PREFIX} ${normalizedService}`);
+  }
+  if (consultKind) {
+    lines.push(`${CONSULT_PREFIX} ${formatConsultKind(consultKind)}`);
+  }
+  if (normalizedReason) {
+    lines.push(`${REASON_PREFIX} ${normalizedReason}`);
   }
 
-  if (!normalizedReason) {
-    return `${SERVICE_PREFIX} ${normalizedService}`;
-  }
-
-  return `${SERVICE_PREFIX} ${normalizedService}\n${REASON_PREFIX} ${normalizedReason}`;
+  return lines.join("\n");
 }
 
 export function parseAppointmentContext(rawReason: string | null | undefined): AppointmentContext {
@@ -55,15 +73,17 @@ export function parseAppointmentContext(rawReason: string | null | undefined): A
   const lines = fallback.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const serviceLine = lines.find((line) => line.startsWith(SERVICE_PREFIX));
   const reasonLine = lines.find((line) => line.startsWith(REASON_PREFIX));
+  const consultLine = lines.find((line) => line.startsWith(CONSULT_PREFIX));
 
-  if (!serviceLine && !reasonLine) {
+  if (!serviceLine && !reasonLine && !consultLine) {
     return { service: "", reason: fallback };
   }
 
   const service = serviceLine ? serviceLine.slice(SERVICE_PREFIX.length).trim() : "";
   const reason = reasonLine ? reasonLine.slice(REASON_PREFIX.length).trim() : "";
+  const consultKind = consultLine ? parseConsultKind(consultLine.slice(CONSULT_PREFIX.length)) : undefined;
 
-  return { service, reason };
+  return { service, reason, consultKind };
 }
 
 export function getAppointmentPrimaryLabel(rawReason: string | null | undefined, fallbackType?: AppointmentType) {
@@ -77,4 +97,8 @@ export function getAppointmentPrimaryLabel(rawReason: string | null | undefined,
 
 export function getAppointmentSecondaryReason(rawReason: string | null | undefined) {
   return parseAppointmentContext(rawReason).reason;
+}
+
+export function getAppointmentConsultKind(rawReason: string | null | undefined) {
+  return parseAppointmentContext(rawReason).consultKind;
 }

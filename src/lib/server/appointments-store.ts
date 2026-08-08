@@ -6,11 +6,12 @@ import type {
   AppointmentType,
 } from "@/src/lib/appointments";
 import {
-  addOneHour,
+  addOneHourSql,
   findOrCreatePatientByEmail,
   getDoctorSlugById,
   legacyStatusMatchesLiving,
   mapV2RowToLegacy,
+  normalizeSqlTime,
 } from "@/src/lib/server/legacy-bridge";
 import { resolveDoctorUuid } from "@/src/lib/server/doctor-identity";
 import { getClinicToday, isPastInClinicTime } from "@/src/lib/timezone";
@@ -380,8 +381,8 @@ export async function createPersistedAppointmentWithContext(
       actorUserId: context.actor?.user.id,
     });
 
-    const start_time = `${payload.start}:00`;
-    const end_time = `${addOneHour(payload.start)}:00`;
+    const start_time = normalizeSqlTime(payload.start);
+    const end_time = addOneHourSql(payload.start);
     const { queueNumber } = await validateSharedSlotOrThrow({
       doctorUuid,
       date: payload.date,
@@ -412,8 +413,14 @@ export async function createPersistedAppointmentWithContext(
       await enqueueNotification({
         user_id: patientUuid,
         template: "appointment_booked",
-        channels: ["email", "sms"],
-        payload: { appointment_id: inserted.id, appointment_type: payload.type },
+        channels: inserted.status === "Confirmed" ? ["email", "sms"] : ["email"],
+        payload: {
+          appointment_id: inserted.id,
+          appointment_type: payload.type,
+          appointment_date: payload.date,
+          start_time,
+          status: inserted.status,
+        },
       });
 
       await enqueueAppointmentTeamNotifications({
@@ -482,8 +489,8 @@ export async function updatePersistedAppointment(payload: AppointmentUpdatePaylo
     }
 
     const doctorUuid = await resolveAssignedDoctorUuid(payload.doctorId);
-    const start_time = `${payload.start}:00`;
-    const end_time = `${addOneHour(payload.start)}:00`;
+    const start_time = normalizeSqlTime(payload.start);
+    const end_time = addOneHourSql(payload.start);
     if (payload.type === "Online" && existing.appointment_type !== "Online") {
       return {
         ok: false as const,
@@ -623,7 +630,7 @@ export async function deletePersistedAppointment(appointmentId: string) {
     await enqueueNotification({
       user_id: appt.patient_id,
       template: "appointment_cancelled",
-      channels: ["email", "sms"],
+      channels: ["email"],
       payload: { appointment_id: appointmentId },
     });
 
@@ -681,7 +688,13 @@ export async function approvePersistedAppointment(appointmentId: string, actor?:
         user_id: existing.patient_id,
         template: "appointment_confirmed",
         channels: ["email", "sms"],
-        payload: { appointment_id: existing.id, meeting_link: existing.meeting_link },
+        payload: {
+          appointment_id: existing.id,
+          appointment_type: existing.appointment_type,
+          appointment_date: existing.appointment_date,
+          start_time: existing.start_time,
+          meeting_link: existing.meeting_link,
+        },
       });
 
       await enqueueAppointmentTeamNotifications({

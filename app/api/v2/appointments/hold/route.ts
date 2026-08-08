@@ -2,7 +2,7 @@ import { httpError, ok, getActor } from "@/src/lib/http";
 import { assertTrustedOrigin, enforceRateLimit } from "@/src/lib/security";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { resolveBookingPatientId, validateSharedSlotOrThrow, resolveAssignedDoctorUuid } from "@/src/lib/server/appointments-store";
-import { addOneHour } from "@/src/lib/server/legacy-bridge";
+import { addOneHourSql, normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
 import {
   ONLINE_CONSULTATION_FEE,
   resolveClinicConsultationFee,
@@ -40,8 +40,8 @@ export async function POST(req: Request) {
     };
 
     const doctorUuid = await resolveAssignedDoctorUuid(doctorId);
-    const start_time = `${start}:00`;
-    const end_time = `${addOneHour(start)}:00`;
+    const start_time = normalizeSqlTime(start);
+    const end_time = addOneHourSql(start);
 
     const patientId = await resolveBookingPatientId({ email, patientName, phone, patientStatus }, {
       actorRole: actor?.profile.role === "patient" ? "PATIENT" : undefined,
@@ -86,6 +86,7 @@ export async function POST(req: Request) {
       .insert({
         patient_id: patientId,
         doctor_id: doctorUuid,
+        appointment_type: type,
         appointment_date: date,
         start_time,
         end_time,
@@ -98,12 +99,12 @@ export async function POST(req: Request) {
       .single();
     if (error) throw error;
 
-    // Notify patient via email and SMS (profile was created if it didn't exist)
+    // Notify patient by email; SMS is reserved for paid confirmations and 24h reminders.
     try {
       await enqueueNotification({
         user_id: patientId,
         template: "appointment_booked",
-        channels: ["email", "sms"],
+        channels: ["email"],
         payload: {
           reservation_id: reservation.id,
           appointment_date: reservation.appointment_date,

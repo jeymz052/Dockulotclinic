@@ -1,8 +1,18 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { FaArrowRight } from "react-icons/fa";
 import PublicHeader from "@/src/components/layout/PublicHeader";
 import PublicVideoGallery from "@/src/components/videos/PublicVideoGallery";
 import { getPublishedMediaPosts } from "@/src/lib/services/content-posts";
+
+export const metadata: Metadata = {
+  title: "Videos and Vlogs",
+  description:
+    "Watch Doc Kulot public videos, vlogs, health education content, live replays, and clinic announcements.",
+  alternates: {
+    canonical: "/videos",
+  },
+};
 
 export default async function VideosPage() {
   const videos = await getPublishedMediaPosts(24);

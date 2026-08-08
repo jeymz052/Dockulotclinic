@@ -5,6 +5,7 @@ function parseClockToMinutes(value: string) {
 
 export type ClinicPatientCategory = "New" | "Regular" | "OldRecord";
 export type BookingPatientStatus = "New" | "Existing";
+export type ClinicConsultKind = "FirstConsult" | "FollowUp";
 
 export const NEW_PATIENT_CLINIC_CONSULTATION_FEE = 600;
 export const FOLLOW_UP_CLINIC_CONSULTATION_FEE = 300;
@@ -29,10 +30,16 @@ export function normalizeConfiguredOnlineConsultationRate(value: number) {
 export function resolveClinicConsultationFee(input: {
   patientCategory?: ClinicPatientCategory | null;
   patientStatus?: BookingPatientStatus | null;
+  consultKind?: ClinicConsultKind | null;
   hasPriorClinicConsultation?: boolean;
 }) {
-  const isNewPatient = input.patientStatus === "New" || input.patientCategory === "New";
-  if (isNewPatient && input.hasPriorClinicConsultation) {
+  if (input.consultKind === "FollowUp") {
+    return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  }
+  if (input.consultKind === "FirstConsult") {
+    return NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+  }
+  if (input.hasPriorClinicConsultation) {
     return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
   }
   return NEW_PATIENT_CLINIC_CONSULTATION_FEE;

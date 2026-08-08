@@ -32,7 +32,7 @@ function RecentPosts({
 }) {
   return (
     <div className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gold-700">{title}</p>
+      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-700">{title}</p>
       <div className="mt-5 space-y-4">
         {posts.slice(0, 4).map((post) => (
           <Link key={post.id} href={`/blog/${post.slug}`} className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-neutral-50">
@@ -158,33 +158,33 @@ export default function BlogIndex({ posts, categories, mode = "page", labels }: 
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
                     <span className="inline-flex items-center gap-2">
-                      <FaCalendarDays className="text-gold-700" />
+                      <FaCalendarDays className="text-neutral-700" />
                       {formatPostDate(post.published_at ?? post.created_at)}
                     </span>
                     <span className="inline-flex items-center gap-2">
-                      <FaUserDoctor className="text-gold-700" />
+                      <FaUserDoctor className="text-neutral-700" />
                       Doc Kulot
                     </span>
                     <span className="inline-flex items-center gap-2">
-                      <FaFolderOpen className="text-gold-700" />
+                      <FaFolderOpen className="text-neutral-700" />
                       {post.category}
                     </span>
                   </div>
 
-                  <Link href={`/blog/${post.slug}`} className="mt-4 block text-2xl font-black tracking-tight text-gold-800 transition hover:text-gold-700 sm:text-3xl">
+                  <Link href={`/blog/${post.slug}`} className="mt-4 block text-2xl font-black tracking-tight text-neutral-800 transition hover:text-neutral-700 sm:text-3xl">
                     {post.title}
                   </Link>
 
                   <div className="flex flex-wrap items-center gap-3">
                     <Link
                       href={`/blog/${post.slug}`}
-                      className="inline-flex items-center gap-2 rounded-full border border-gold-200 px-5 py-2.5 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
+                      className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-5 py-2.5 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
                     >
                       Read More
                       <FaArrowRight />
                     </Link>
                     {post.is_featured ? (
-                      <span className="rounded-full bg-gold-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-gold-700">
+                      <span className="rounded-full bg-neutral-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">
                         Featured
                       </span>
                     ) : null}
@@ -197,7 +197,7 @@ export default function BlogIndex({ posts, categories, mode = "page", labels }: 
 
         {isLanding ? (
           <div className="flex justify-end">
-            <Link href="/#blog" className="inline-flex items-center gap-2 text-sm font-bold text-gold-700 transition hover:text-gold-700">
+            <Link href="/#blog" className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700 transition hover:text-neutral-700">
               {labels?.browseAllLabel ?? "Browse all blog posts"}
               <FaArrowRight />
             </Link>
@@ -206,13 +206,13 @@ export default function BlogIndex({ posts, categories, mode = "page", labels }: 
       </div>
 
       <aside className="space-y-6">
-        <div className="rounded-[2rem] border border-gold-100 bg-gold-50 p-6 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gold-700">
+        <div className="rounded-[2rem] border border-neutral-100 bg-neutral-50 p-6 shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-neutral-700">
             {labels?.categoriesTitle ?? "Categories"}
           </p>
           <ul className="mt-5 space-y-3">
             {categories.map((category) => (
-              <li key={category} className="border-b border-gold-100 pb-3 text-sm font-semibold text-neutral-700 last:border-b-0 last:pb-0">
+              <li key={category} className="border-b border-neutral-100 pb-3 text-sm font-semibold text-neutral-700 last:border-b-0 last:pb-0">
                 {category}
               </li>
             ))}

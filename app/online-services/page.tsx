@@ -1,5 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { onlineConsultationSteps } from "@/src/lib/healthcare-content";
+
+export const metadata: Metadata = {
+  title: "Online Consultation",
+  description:
+    "Learn how Doc Kulot telemedicine works for online consultation, uploads, payment, meeting links, diagnosis, prescriptions, and follow-up care.",
+  alternates: {
+    canonical: "/online-services",
+  },
+};
 
 export default function OnlineServicesPage() {
   return (

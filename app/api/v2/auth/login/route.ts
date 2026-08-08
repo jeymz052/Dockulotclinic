@@ -44,6 +44,27 @@ function getSupabaseAnonClient() {
   });
 }
 
+function readPatientSignupMetadata(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}) {
+  const metadata = user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+  const email = user.email?.trim().toLowerCase() ?? "";
+  const fullName =
+    typeof metadata.full_name === "string" && metadata.full_name.trim()
+      ? metadata.full_name.trim()
+      : email.split("@")[0] || "Patient";
+
+  return {
+    email,
+    fullName,
+    phone: typeof metadata.phone === "string" && metadata.phone.trim() ? metadata.phone.trim() : null,
+    dob: typeof metadata.dob === "string" && metadata.dob.trim() ? metadata.dob.trim() : null,
+    gender: typeof metadata.gender === "string" && metadata.gender.trim() ? metadata.gender.trim() : null,
+    address: typeof metadata.address === "string" && metadata.address.trim() ? metadata.address.trim() : null,
+  };
+}
+
 export async function POST(req: Request) {
   try {
     assertTrustedOrigin(req);
@@ -75,7 +96,41 @@ export async function POST(req: Request) {
       .maybeSingle<{ id: string; is_active: boolean; role: string; email: string }>();
 
     if (profileError) throw profileError;
-    if (!profile?.is_active) {
+
+    if (!profile) {
+      const registration = readPatientSignupMetadata(data.user);
+      if (!registration.email) {
+        await authClient.auth.signOut();
+        throw new HttpError(403, "Your email is verified, but your patient profile is not ready yet. Contact the clinic administrator.");
+      }
+
+      const { error: profileSetupError } = await admin.from("profiles").upsert({
+        id: data.user.id,
+        email: registration.email,
+        full_name: registration.fullName,
+        phone: registration.phone,
+        role: "patient",
+        is_active: true,
+      });
+      if (profileSetupError) throw profileSetupError;
+
+      const { error: patientSetupError } = await admin.from("patients").upsert({
+        id: data.user.id,
+        dob: registration.dob,
+        gender: registration.gender,
+        address: registration.address,
+      });
+      if (patientSetupError) throw patientSetupError;
+    }
+
+    const { data: activeProfile, error: activeProfileError } = await admin
+      .from("profiles")
+      .select("id, is_active, role, email")
+      .eq("id", data.user.id)
+      .maybeSingle<{ id: string; is_active: boolean; role: string; email: string }>();
+
+    if (activeProfileError) throw activeProfileError;
+    if (!activeProfile?.is_active) {
       await authClient.auth.signOut();
       throw new HttpError(403, "This account is inactive. Contact the clinic administrator.");
     }

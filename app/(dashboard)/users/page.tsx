@@ -704,7 +704,7 @@ export default function UsersPage() {
 
   if (!canManage) {
     return (
-      <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
         Forbidden. Only Admin and Doctor can manage users.
       </div>
     );
@@ -734,7 +734,7 @@ export default function UsersPage() {
               onClick={() => setActiveTab("accounts")}
               className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                   activeTab === "accounts"
-                    ? "bg-white text-yellow-700 shadow-sm"
+                    ? "bg-white text-neutral-700 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
             >
@@ -745,7 +745,7 @@ export default function UsersPage() {
               onClick={() => setActiveTab("roles")}
               className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                   activeTab === "roles"
-                    ? "bg-white text-yellow-700 shadow-sm"
+                    ? "bg-white text-neutral-700 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
             >
@@ -773,8 +773,8 @@ export default function UsersPage() {
         <div
           className={`flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm ${
             feedback.type === "success"
-              ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-              : "border-yellow-200 bg-yellow-50 text-yellow-800"
+              ? "border-neutral-200 bg-neutral-50 text-neutral-700"
+              : "border-neutral-200 bg-neutral-50 text-neutral-800"
           }`}
         >
           {feedback.type === "success" ? (
@@ -806,7 +806,7 @@ export default function UsersPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Email or name…"
-              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
             />
           </label>
           <label className="flex w-full flex-col gap-1 sm:w-40">
@@ -814,7 +814,7 @@ export default function UsersPage() {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as DbRole | "all")}
-              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
             >
               <option value="all">All roles</option>
               <option value="super_admin">Admin</option>
@@ -829,7 +829,7 @@ export default function UsersPage() {
             <select
               value={filterActive}
               onChange={(e) => setFilterActive(e.target.value as typeof filterActive)}
-              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
             >
               <option value="all">All</option>
               <option value="active">Active</option>
@@ -843,7 +843,7 @@ export default function UsersPage() {
               onChange={(e) =>
                 setPageSize(Number(e.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])
               }
-              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200"
+              className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200"
             >
               {PAGE_SIZE_OPTIONS.map((size) => (
                 <option key={size} value={size}>
@@ -867,8 +867,8 @@ export default function UsersPage() {
 
         {/* Bulk action strip — only visible when one or more rows are selected. */}
         {selectedUserIds.length > 0 ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50/60 px-3 py-2">
-            <span className="text-xs font-bold text-yellow-700">
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50/60 px-3 py-2">
+            <span className="text-xs font-bold text-neutral-700">
               {selectedUserIds.length} selected
             </span>
             <span className="text-slate-300">·</span>
@@ -876,7 +876,7 @@ export default function UsersPage() {
               type="button"
               disabled={isMutating}
               onClick={() => bulkSetActive(true)}
-              className="rounded-md border border-yellow-300 bg-white px-2.5 py-1 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-50"
+              className="rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:opacity-50"
             >
               Activate
             </button>
@@ -884,7 +884,7 @@ export default function UsersPage() {
               type="button"
               disabled={isMutating}
               onClick={() => bulkSetActive(false)}
-              className="rounded-md border border-yellow-300 bg-white px-2.5 py-1 text-xs font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:opacity-50"
+              className="rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
             >
               Deactivate
             </button>
@@ -925,7 +925,7 @@ export default function UsersPage() {
                   type="checkbox"
                   checked={selectedUserIds.includes(u.id)}
                   onChange={() => toggleUserSelection(u.id)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-neutral-400 focus:ring-neutral-300"
                   aria-label={`Select ${u.full_name}`}
                 />
               </label>
@@ -936,7 +936,7 @@ export default function UsersPage() {
                   <RolePill role={u.role} />
                   <span
                     className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      u.is_active ? "bg-yellow-100 text-yellow-700" : "bg-slate-200 text-slate-600"
+                      u.is_active ? "bg-neutral-100 text-neutral-700" : "bg-slate-200 text-slate-600"
                     }`}
                   >
                     {u.is_active ? "Active" : "Inactive"}
@@ -951,7 +951,7 @@ export default function UsersPage() {
                   type="button"
                   disabled={isMutating}
                   onClick={() => openEditModal(u)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label={`Edit ${u.full_name}`}
                   title="Edit"
                 >
@@ -963,8 +963,8 @@ export default function UsersPage() {
                   onClick={() => toggleActive(u)}
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-60 ${
                     u.is_active
-                      ? "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
-                      : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
+                      ? "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                      : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
                   }`}
                   aria-label={`${u.is_active ? "Deactivate" : "Activate"} ${u.full_name}`}
                   title={u.is_active ? "Deactivate" : "Activate"}
@@ -987,7 +987,7 @@ export default function UsersPage() {
                   type="checkbox"
                   checked={allVisibleSelected}
                   onChange={toggleSelectAllVisible}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-neutral-400 focus:ring-neutral-300"
                   aria-label="Select all visible users"
                 />
               </th>
@@ -1011,14 +1011,14 @@ export default function UsersPage() {
             {paginatedUsers.map((u) => (
               <tr
                 key={u.id}
-                className="border-t border-slate-100 text-xs text-slate-700 transition hover:bg-yellow-50/40"
+                className="border-t border-slate-100 text-xs text-slate-700 transition hover:bg-neutral-50/40"
               >
                 <td className="px-3 py-2 align-middle">
                   <input
                     type="checkbox"
                     checked={selectedUserIds.includes(u.id)}
                     onChange={() => toggleUserSelection(u.id)}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-neutral-400 focus:ring-neutral-300"
                     aria-label={`Select ${u.full_name}`}
                   />
                 </td>
@@ -1047,7 +1047,7 @@ export default function UsersPage() {
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                       u.is_active
-                        ? "bg-yellow-100 text-yellow-700"
+                        ? "bg-neutral-100 text-neutral-700"
                         : "bg-slate-200 text-slate-600"
                     }`}
                   >
@@ -1067,7 +1067,7 @@ export default function UsersPage() {
                       type="button"
                       disabled={isMutating}
                       onClick={() => openEditModal(u)}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
                       aria-label={`Edit ${u.full_name}`}
                       title="Edit"
                     >
@@ -1079,8 +1079,8 @@ export default function UsersPage() {
                       onClick={() => toggleActive(u)}
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-60 ${
                         u.is_active
-                          ? "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
-                          : "border-yellow-200 text-yellow-700 hover:bg-yellow-50"
+                          ? "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                          : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
                       }`}
                       aria-label={`${u.is_active ? "Deactivate" : "Activate"} ${u.full_name}`}
                       title={u.is_active ? "Deactivate" : "Activate"}
@@ -1134,7 +1134,7 @@ export default function UsersPage() {
           {/* Save bar — sticky at the top of the tab so the cashier never loses sight of "your changes haven't been saved yet". */}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <div className="flex items-center gap-2">
-              <FaShieldHalved className="h-4 w-4 text-yellow-700" aria-hidden="true" />
+              <FaShieldHalved className="h-4 w-4 text-neutral-700" aria-hidden="true" />
               <div>
                 <p className="text-xs font-bold text-slate-900">Roles &amp; Permissions Matrix</p>
                 <p className="text-[11px] text-slate-500">
@@ -1171,8 +1171,8 @@ export default function UsersPage() {
                   title: "Doctor",
                   icon: FaUserDoctor,
                   count: doctorUsers,
-                  accent: "border-yellow-200 bg-yellow-50/40",
-                  badge: "bg-yellow-100 text-yellow-700",
+                  accent: "border-neutral-200 bg-neutral-50/40",
+                  badge: "bg-neutral-100 text-neutral-700",
                   iconBg: "bg-black",
                 },
                 {
@@ -1180,8 +1180,8 @@ export default function UsersPage() {
                   title: "Staff",
                   icon: FaUserTie,
                   count: secretaryUsers,
-                  accent: "border-yellow-200 bg-yellow-50/40",
-                  badge: "bg-yellow-100 text-yellow-700",
+                  accent: "border-neutral-200 bg-neutral-50/40",
+                  badge: "bg-neutral-100 text-neutral-700",
                   iconBg: "bg-black",
                 },
                 {
@@ -1189,17 +1189,17 @@ export default function UsersPage() {
                   title: "Patient",
                   icon: FaUserGear,
                   count: patientUsers,
-                  accent: "border-yellow-200 bg-yellow-50/40",
-                  badge: "bg-yellow-100 text-yellow-700",
-                  iconBg: "bg-yellow-300",
+                  accent: "border-neutral-200 bg-neutral-50/40",
+                  badge: "bg-neutral-100 text-neutral-700",
+                  iconBg: "bg-neutral-300",
                 },
                 {
                   key: "super_admin",
                   title: "Admin",
                   icon: FaUserShield,
                   count: superAdminUsers,
-                  accent: "border-yellow-200 bg-yellow-50/40",
-                  badge: "bg-yellow-100 text-yellow-700",
+                  accent: "border-neutral-200 bg-neutral-50/40",
+                  badge: "bg-neutral-100 text-neutral-700",
                   iconBg: "bg-black",
                 },
               ] as const
@@ -1240,11 +1240,11 @@ export default function UsersPage() {
                             type="checkbox"
                             checked={enabled}
                             onChange={(e) => setPermission(cfg.key, permission.key, e.target.checked)}
-                            className="h-3.5 w-3.5 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-neutral-400 focus:ring-neutral-300"
                           />
                           <span className={enabled ? "font-semibold" : ""}>{permission.label}</span>
                           {enabled ? (
-                            <FaCircleCheck className="ml-auto h-3 w-3 shrink-0 text-amber-400" aria-hidden="true" />
+                            <FaCircleCheck className="ml-auto h-3 w-3 shrink-0 text-neutral-400" aria-hidden="true" />
                           ) : null}
                         </label>
                       );
@@ -1339,7 +1339,7 @@ export default function UsersPage() {
             </div>
 
             {doctorUsers > 0 ? (
-              <p className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-[11px] text-yellow-700">
+              <p className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-700">
                 This clinic is configured for one doctor only: Dr. Fatimah Al-Zahra T. Ditti.
               </p>
             ) : null}
@@ -1416,12 +1416,12 @@ export default function UsersPage() {
                 type="checkbox"
                 checked={editUser.is_active}
                 onChange={(e) => setEditUser((p) => ({ ...p, is_active: e.target.checked }))}
-                className="h-3.5 w-3.5 rounded border-slate-300 text-amber-400 focus:ring-amber-300"
+                className="h-3.5 w-3.5 rounded border-slate-300 text-neutral-400 focus:ring-neutral-300"
               />
               Account active
             </label>
             {currentUserId === editingUser.id && !editUser.is_active ? (
-              <p className="text-[11px] font-semibold text-yellow-700">
+              <p className="text-[11px] font-semibold text-neutral-700">
                 You can&apos;t deactivate your own account. The toggle is ignored on save.
               </p>
             ) : null}
@@ -1455,9 +1455,9 @@ export default function UsersPage() {
         >
           <p className="text-xs text-slate-600">{resultDialog.message}</p>
           {resultDialog.tempPassword ? (
-            <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-800">Temporary password</p>
-              <p className="mt-1 break-all font-mono text-sm font-bold text-amber-950">
+            <div className="mt-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-800">Temporary password</p>
+              <p className="mt-1 break-all font-mono text-sm font-bold text-neutral-900">
                 {resultDialog.tempPassword}
               </p>
             </div>
@@ -1495,7 +1495,7 @@ export default function UsersPage() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const INPUT_CLASS =
-  "w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-yellow-300 focus:ring-1 focus:ring-yellow-200";
+  "w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-neutral-300 focus:ring-1 focus:ring-neutral-200";
 
 function StatTile({
   label,
@@ -1512,7 +1512,7 @@ function StatTile({
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
         <p className="font-mono text-xl font-black tabular-nums text-slate-900">{value}</p>
       </div>
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-50 text-yellow-700">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-neutral-50 text-neutral-700">
         {icon}
       </div>
     </div>
@@ -1521,11 +1521,11 @@ function StatTile({
 
 function RolePill({ role }: { role: DbRole }) {
   const styles: Record<DbRole, string> = {
-    super_admin: "bg-yellow-100 text-yellow-700",
-    doctor: "bg-yellow-100 text-yellow-700",
-    secretary: "bg-yellow-100 text-yellow-700",
-    staff: "bg-yellow-100 text-yellow-700",
-    patient: "bg-yellow-100 text-yellow-700",
+    super_admin: "bg-neutral-100 text-neutral-700",
+    doctor: "bg-neutral-100 text-neutral-700",
+    secretary: "bg-neutral-100 text-neutral-700",
+    staff: "bg-neutral-100 text-neutral-700",
+    patient: "bg-neutral-100 text-neutral-700",
     admin: "bg-slate-200 text-slate-700",
   };
   return (
@@ -1550,15 +1550,15 @@ function Field({
 }) {
   const toneClass =
     hintTone === "success"
-      ? "text-yellow-700"
+      ? "text-neutral-700"
       : hintTone === "error"
-        ? "text-yellow-600"
+        ? "text-neutral-600"
         : "text-slate-500";
   return (
     <label className="block">
       <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-600">
         {label}
-        {required ? <span className="ml-0.5 text-yellow-500">*</span> : null}
+        {required ? <span className="ml-0.5 text-neutral-500">*</span> : null}
       </span>
       {children}
       {hint ? <p className={`mt-1 text-[10px] ${toneClass}`}>{hint}</p> : null}
@@ -1592,7 +1592,7 @@ function ModalShell({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const accent = tone === "red" ? "bg-yellow-50 border-yellow-100" : "bg-yellow-50 border-yellow-100";
+  const accent = tone === "red" ? "bg-neutral-50 border-neutral-100" : "bg-neutral-50 border-neutral-100";
   const widthClass = maxWidth === "md" ? "max-w-md" : maxWidth === "xl" ? "max-w-2xl" : "max-w-lg";
 
   return (
@@ -1623,4 +1623,5 @@ function ModalShell({
     </div>
   );
 }
+
 

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import {
   GENDER_OPTIONS,
   type PatientSignupFields,
@@ -113,6 +114,37 @@ export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof AuthForm | ConsentKey, string>>>({});
+  const [nextPath] = useState(() => {
+    if (typeof window === "undefined") {
+      return "/dashboard";
+    }
+    return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
+  });
+
+  useEffect(() => {
+    try {
+      const rawDraft = localStorage.getItem("bookingDraft");
+      if (!rawDraft) return;
+
+      const parsed = JSON.parse(rawDraft) as {
+        formData?: Partial<{
+          patientName: string;
+          email: string;
+          phone: string;
+        }>;
+      };
+      queueMicrotask(() => {
+        setFormData((current) => ({
+          ...current,
+          fullName: current.fullName || parsed.formData?.patientName || "",
+          email: current.email || parsed.formData?.email || "",
+          phone: current.phone || parsed.formData?.phone || "",
+        }));
+      });
+    } catch {
+      // Ignore invalid local drafts; the registration form still works.
+    }
+  }, []);
 
   function updateField<K extends keyof AuthForm>(field: K, value: AuthForm[K]) {
     setFormData((current) => ({ ...current, [field]: value }));
@@ -201,7 +233,9 @@ export default function RegisterPage() {
         email: normalizedEmail,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/login&verified=1`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(
+            `/login?next=${encodeURIComponent(nextPath)}`,
+          )}&verified=1`,
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
@@ -246,7 +280,7 @@ export default function RegisterPage() {
       await supabase.auth.signOut();
 
       router.push(
-        `/login?message=${encodeURIComponent(
+        `/login?next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
           "Account created in pending state. Check your email to verify and finish registration.",
         )}`,
       );
@@ -479,7 +513,7 @@ export default function RegisterPage() {
                 className={`rounded-xl px-4 py-3 text-sm ${
                   isSuccessFeedback(feedback)
                     ? "border border-gold-200 bg-gold-50 text-gold-800"
-                    : "border border-black/10 bg-white text-black"
+                    : "border border-red-200 bg-red-50 text-red-700"
                 }`}
               >
                 {feedback}
@@ -503,7 +537,7 @@ export default function RegisterPage() {
           <div className="mt-1.5 text-center">
             <p className="text-xs text-black/65">
               Already have an account?{" "}
-              <Link href="/login" className="text-black/80 font-semibold hover:text-black hover:underline">
+              <Link href={`/login?next=${encodeURIComponent(nextPath)}`} className="text-black/80 font-semibold hover:text-black hover:underline">
                 Sign In
               </Link>
             </p>
@@ -546,7 +580,7 @@ function PhilippineFlagIcon() {
 }
 
 function FieldError({ message }: { message: string }) {
-  return <p className="mt-1 text-[10px] text-black/55">{message}</p>;
+  return <p className="mt-1 text-[10px] font-semibold text-red-600">{message}</p>;
 }
 
 function PolicyModalCard({

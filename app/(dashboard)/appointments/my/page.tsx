@@ -16,7 +16,7 @@ export default function AppointmentsMyRoute() {
   const { role, isLoading } = useRole();
 
   if (isLoading) {
-    return <div className="h-40 rounded-4xl border border-yellow-100 bg-white animate-pulse shadow-sm" />;
+    return <div className="h-40 rounded-4xl border border-neutral-100 bg-white animate-pulse shadow-sm" />;
   }
 
   if (role === "PATIENT") {
@@ -26,3 +26,4 @@ export default function AppointmentsMyRoute() {
   // Staff / doctor view — full management UI with edit + cancel actions.
   return <AppointmentListPage />;
 }
+

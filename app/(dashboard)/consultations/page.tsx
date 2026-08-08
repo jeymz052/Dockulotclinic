@@ -299,7 +299,7 @@ export default function OnlineConsultationPage() {
       <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">
               Consultations
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -347,7 +347,7 @@ export default function OnlineConsultationPage() {
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex h-full flex-col overflow-hidden xl:h-[38rem]">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex h-full flex-col overflow-hidden xl:h-[38rem]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -376,8 +376,8 @@ export default function OnlineConsultationPage() {
                     key={appointment.id}
                     className={`rounded-xl border p-3 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
                       isActive
-                        ? "border-amber-400 bg-yellow-50/70 ring-2 ring-yellow-200"
-                        : "border-slate-200 hover:border-yellow-200 hover:bg-yellow-50/40"
+                        ? "border-neutral-400 bg-neutral-50/70 ring-2 ring-neutral-200"
+                        : "border-slate-200 hover:border-neutral-200 hover:bg-neutral-50/40"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -429,7 +429,7 @@ export default function OnlineConsultationPage() {
                           rel="noreferrer"
                           className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                             isOnlineReady
-                              ? "border-yellow-200 bg-yellow-50 text-yellow-700 hover:border-yellow-300"
+                              ? "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300"
                               : "border-slate-200 bg-white text-slate-600"
                           }`}
                         >
@@ -446,10 +446,10 @@ export default function OnlineConsultationPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-neutral-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={activeAppointment.type === "Online" ? "sky" : "emerald"}>
@@ -514,36 +514,36 @@ export default function OnlineConsultationPage() {
               </div>
 
               {activeAppointment.type === "Online" ? (
-                <div className="rounded-[1.5rem] border border-yellow-100 bg-yellow-50/50 p-4">
+                <div className="rounded-[1.5rem] border border-neutral-100 bg-neutral-50/50 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaFileWaveform className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                      <FaFileWaveform className="h-4 w-4 text-neutral-400" aria-hidden="true" />
                       Online consultation intake
                     </p>
                     {activeOnlineConsultation?.platform ? (
-                      <span className="rounded-full border border-yellow-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-yellow-700">
+                      <span className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-700">
                         {activeOnlineConsultation.platform}
                       </span>
                     ) : null}
                   </div>
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-yellow-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Concern</p>
+                    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Concern</p>
                       <p className="mt-2 text-sm text-slate-700">
                         {activeOnlineConsultation?.concern || activeAppointment.reason || "No concern submitted."}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-yellow-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Symptoms</p>
+                    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Symptoms</p>
                       <p className="mt-2 text-sm text-slate-700">
                         {activeOnlineConsultation?.symptoms || "No additional symptoms submitted."}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 rounded-2xl border border-yellow-100 bg-white px-4 py-3">
+                  <div className="mt-4 rounded-2xl border border-neutral-100 bg-white px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-yellow-700">Attached files / photos</p>
-                      <span className="rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-semibold text-yellow-700">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Attached files / photos</p>
+                      <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
                         {activeOnlineConsultation?.file_urls?.length ?? 0} file{(activeOnlineConsultation?.file_urls?.length ?? 0) === 1 ? "" : "s"}
                       </span>
                     </div>
@@ -559,7 +559,7 @@ export default function OnlineConsultationPage() {
                               href={normalized.file_url ?? "#"}
                               target="_blank"
                               rel="noreferrer"
-                              className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-100"
+                              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100"
                             >
                               {normalized.file_name ?? `Attachment ${index + 1}`}
                             </a>
@@ -575,9 +575,9 @@ export default function OnlineConsultationPage() {
 
               {canManage ? (
                 <div className="grid gap-5">
-                  <div className="rounded-[1.5rem] border border-yellow-100 bg-slate-50/70 p-4">
+                  <div className="rounded-[1.5rem] border border-neutral-100 bg-slate-50/70 p-4">
                     <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaHeartPulse className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                      <FaHeartPulse className="h-4 w-4 text-neutral-400" aria-hidden="true" />
                       Vitals and visit context
                     </p>
                     <div className="mt-4">
@@ -586,7 +586,7 @@ export default function OnlineConsultationPage() {
                   </div>
 
                   <div className="grid gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-                    <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
+                    <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <label className="block text-sm font-medium text-slate-700">
                           Emergency Contact Name
@@ -598,7 +598,7 @@ export default function OnlineConsultationPage() {
                                 emergencyContactName: event.target.value,
                               }))
                             }
-                            className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                            className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                             placeholder="Parent, spouse, sibling, or guardian"
                           />
                         </label>
@@ -612,7 +612,7 @@ export default function OnlineConsultationPage() {
                                 emergencyContactPhone: event.target.value,
                               }))
                             }
-                            className="mt-2 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                            className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                             placeholder="+63 9XX XXX XXXX"
                           />
                         </label>
@@ -628,7 +628,7 @@ export default function OnlineConsultationPage() {
                               medicalHistory: event.target.value,
                             }))
                           }
-                          className="mt-2 min-h-28 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-28 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant medical background"
                         />
                       </label>
@@ -643,7 +643,7 @@ export default function OnlineConsultationPage() {
                               allergies: event.target.value,
                             }))
                           }
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies"
                         />
                       </label>
@@ -658,7 +658,7 @@ export default function OnlineConsultationPage() {
                               familyHistory: event.target.value,
                             }))
                           }
-                          className="mt-2 min-h-32 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-32 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
                         />
                         <span className="mt-2 block text-xs leading-5 text-slate-500">
@@ -676,7 +676,7 @@ export default function OnlineConsultationPage() {
                               status: event.target.value as ConsultationProgress,
                             }))
                           }
-                          className="mt-2 w-full rounded-2xl border border-yellow-100 bg-white px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 w-full rounded-2xl border border-neutral-100 bg-white px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                         >
                           <option value="Ready">Ready</option>
                           <option value="In Progress">In Progress</option>
@@ -689,14 +689,14 @@ export default function OnlineConsultationPage() {
                           type="button"
                           onClick={() => savePatientRecord(activeAppointment)}
                           disabled={isSaving || !activePatientRecord || !patientRecordDirty}
-                          className="rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-semibold text-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {isSaving ? "Saving..." : "Save Patient Record"}
                         </button>
                       </div>
                     </div>
 
-                    <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
+                    <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
                       <label className="block text-sm font-medium text-slate-700">
                         Diagnosis
                         <textarea
@@ -704,7 +704,7 @@ export default function OnlineConsultationPage() {
                           onChange={(event) =>
                             setDraft((current) => ({ ...current, diagnosis: event.target.value }))
                           }
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Clinical diagnosis, impression, or assessment"
                         />
                       </label>
@@ -716,7 +716,7 @@ export default function OnlineConsultationPage() {
                           onChange={(event) =>
                             setDraft((current) => ({ ...current, note: event.target.value }))
                           }
-                          className="mt-2 min-h-40 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-40 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Assessment, progress, symptoms, and recommendations"
                         />
                       </label>
@@ -731,12 +731,12 @@ export default function OnlineConsultationPage() {
                               prescription: event.target.value,
                             }))
                           }
-                          className="mt-2 min-h-28 w-full rounded-2xl border border-yellow-100 px-3 py-2.5 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                          className="mt-2 min-h-28 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                           placeholder="Medication, tests, referrals, or follow-up plan"
                         />
                       </label>
 
-                      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-yellow-100 bg-yellow-50/50 px-4 py-3 text-sm font-medium text-slate-700">
+                      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 px-4 py-3 text-sm font-medium text-slate-700">
                         <input
                           type="checkbox"
                           checked={draft.visibleToPatient}
@@ -746,7 +746,7 @@ export default function OnlineConsultationPage() {
                               visibleToPatient: event.target.checked,
                             }))
                           }
-                          className="h-4 w-4 rounded border-yellow-300 text-amber-400 focus:ring-amber-300"
+                          className="h-4 w-4 rounded border-neutral-300 text-neutral-400 focus:ring-neutral-300"
                         />
                         Visible in patient portal
                       </label>
@@ -772,8 +772,8 @@ export default function OnlineConsultationPage() {
               ) : null}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-neutral-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-50 text-neutral-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>
               <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
@@ -836,7 +836,7 @@ function PatientConsultationLobby({
       <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-yellow-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">
               Consultations
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
@@ -856,7 +856,7 @@ function PatientConsultationLobby({
       {error ? <Banner tone="error">{error}</Banner> : null}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:h-[calc(100vh-24rem)]">
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex flex-col overflow-hidden">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex flex-col overflow-hidden">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -884,8 +884,8 @@ function PatientConsultationLobby({
                       key={appointment.id}
                       className={`rounded-[1.5rem] border p-4 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
                         isActive
-                          ? "border-amber-400 bg-yellow-50/70 ring-2 ring-yellow-200"
-                          : "border-slate-200 hover:border-yellow-200 hover:bg-yellow-50/40"
+                          ? "border-neutral-400 bg-neutral-50/70 ring-2 ring-neutral-200"
+                          : "border-slate-200 hover:border-neutral-200 hover:bg-neutral-50/40"
                       }`}
                     >
                     <div className="flex items-start justify-between gap-3">
@@ -933,7 +933,7 @@ function PatientConsultationLobby({
                       <button
                         type="button"
                         onClick={() => setActiveAppointmentId(isActive ? null : appointment.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
                       >
                         Details
                       </button>
@@ -946,10 +946,10 @@ function PatientConsultationLobby({
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
           {activeAppointment ? (
             <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-yellow-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-neutral-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="sky">Online</Badge>
@@ -991,7 +991,7 @@ function PatientConsultationLobby({
               </div>
 
               {activeNote ? (
-                <div className="rounded-[1.5rem] border border-yellow-100 bg-white p-4">
+                <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
                   <p className="text-sm font-semibold text-slate-900">Diagnosis</p>
                   <p className="mt-2 text-sm text-slate-600">{activeNote.diagnosis || "No diagnosis recorded."}</p>
                   <p className="text-sm font-semibold text-slate-900">Consultation Notes</p>
@@ -1012,8 +1012,8 @@ function PatientConsultationLobby({
               )}
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-yellow-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-yellow-50 text-amber-400">
+            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-neutral-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-50 text-neutral-400">
                 <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
               </div>
               <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
@@ -1061,9 +1061,9 @@ function Metric({
   icon: ReactNode;
 }) {
   const styles = {
-    sky: "bg-yellow-50 text-yellow-700 border-yellow-100",
-    emerald: "bg-yellow-50 text-yellow-700 border-yellow-100",
-    amber: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    sky: "bg-neutral-50 text-neutral-700 border-neutral-100",
+    emerald: "bg-neutral-50 text-neutral-700 border-neutral-100",
+    amber: "bg-neutral-50 text-neutral-700 border-neutral-100",
   } as const;
 
   return (
@@ -1085,9 +1085,9 @@ function Badge({
   tone: "sky" | "emerald" | "amber";
 }) {
   const styles = {
-    sky: "bg-yellow-100 text-yellow-700",
-    emerald: "bg-yellow-100 text-yellow-700",
-    amber: "bg-yellow-100 text-yellow-700",
+    sky: "bg-neutral-100 text-neutral-700",
+    emerald: "bg-neutral-100 text-neutral-700",
+    amber: "bg-neutral-100 text-neutral-700",
   } as const;
 
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles[tone]}`}>{children}</span>;
@@ -1101,9 +1101,9 @@ function QueueFlag({
   tone: "sky" | "emerald" | "amber";
 }) {
   const styles = {
-    sky: "bg-yellow-100 text-yellow-700",
-    emerald: "bg-yellow-100 text-yellow-700",
-    amber: "bg-yellow-100 text-yellow-700",
+    sky: "bg-neutral-100 text-neutral-700",
+    emerald: "bg-neutral-100 text-neutral-700",
+    amber: "bg-neutral-100 text-neutral-700",
   } as const;
 
   return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${styles[tone]}`}>{label}</span>;
@@ -1122,7 +1122,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-yellow-700 shadow-sm">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-neutral-700 shadow-sm">
         {icon}
       </span>
       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
@@ -1141,7 +1141,7 @@ function Banner({
 }) {
   const styles = {
     info: "border-slate-200 bg-slate-50 text-slate-700",
-    error: "border-yellow-200 bg-yellow-50 text-yellow-700",
+    error: "border-neutral-200 bg-neutral-50 text-neutral-700",
   } as const;
   return <div className={`rounded-2xl border px-4 py-3 text-sm ${styles[tone]}`}>{children}</div>;
 }
@@ -1150,9 +1150,10 @@ function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-yellow-100 bg-white px-4 py-2.5 text-sm font-semibold text-yellow-700 shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:bg-yellow-50"
+      className="rounded-full border border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
     >
       {label}
     </Link>
   );
 }
+

@@ -197,8 +197,14 @@ export async function reserveAppointment(input: BookingInput, actor: Actor) {
   await enqueueNotification({
     user_id: input.patient_id,
     template: "appointment_booked",
-    channels: ["email", "sms"],
-    payload: { appointment_id: inserted.id, appointment_type: input.appointment_type },
+    channels: inserted.status === "Confirmed" ? ["email", "sms"] : ["email"],
+    payload: {
+      appointment_id: inserted.id,
+      appointment_type: input.appointment_type,
+      appointment_date: input.appointment_date,
+      start_time: input.start_time,
+      status: inserted.status,
+    },
   });
 
   await enqueueStaffAppointmentBookedNotifications({
@@ -262,7 +268,7 @@ export async function cancelAppointment(id: string, actor: Actor) {
   await enqueueNotification({
     user_id: appt.patient_id,
     template: "appointment_cancelled",
-    channels: ["email", "sms"],
+    channels: ["email"],
     payload: { appointment_id: id },
   });
   await enqueueAppointmentTeamNotifications({

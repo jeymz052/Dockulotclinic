@@ -217,9 +217,9 @@ function Surface({
 function StatCard({ label, value, tone = "slate" }: { label: string; value: ReactNode; tone?: "slate" | "sky" | "teal" }) {
   const toneClass =
     tone === "sky"
-      ? "border-gold-200 bg-gold-50 text-gold-800"
+      ? "border-neutral-200 bg-neutral-50 text-neutral-800"
       : tone === "teal"
-        ? "border-gold-100 bg-gold-50 text-gold-800"
+        ? "border-neutral-100 bg-neutral-50 text-neutral-800"
         : "border-neutral-200 bg-white text-black";
 
   return (
@@ -231,9 +231,9 @@ function StatCard({ label, value, tone = "slate" }: { label: string; value: Reac
 }
 
 function toneForStatus(status: string) {
-  if (status === "Published") return "border-gold-200 bg-gold-50 text-gold-700";
+  if (status === "Published") return "border-neutral-200 bg-neutral-50 text-neutral-700";
   if (status === "Archived") return "border-neutral-200 bg-neutral-100 text-neutral-600";
-  return "border-gold-100 bg-gold-50 text-gold-700";
+  return "border-neutral-100 bg-neutral-50 text-neutral-700";
 }
 
 function HeroImageUploader({
@@ -580,7 +580,7 @@ export default function BlogPostStudio() {
                 <FaFloppyDisk />
                 {draft.id && !isTemplateDraft ? "Update post" : "Save post"}
               </button>
-              <Link href="/blog" className="inline-flex items-center gap-2 rounded-full border border-gold-200 px-4 py-2 text-sm font-bold text-gold-700 transition hover:bg-gold-50">
+              <Link href="/blog" className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50">
                 View public blog
                 <FaArrowRight />
               </Link>
@@ -592,7 +592,7 @@ export default function BlogPostStudio() {
           <div className="mb-8 border-b border-neutral-200 pb-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm font-semibold text-neutral-500">
-                <Link href="/blog" className="transition hover:text-gold-700">
+                <Link href="/blog" className="transition hover:text-neutral-700">
                   Blog
                 </Link>
                 <span className="px-2 text-neutral-400">/</span>
@@ -602,7 +602,7 @@ export default function BlogPostStudio() {
               <button
                 type="button"
                 onClick={() => setIsPreviewMode(false)}
-                className="inline-flex items-center gap-2 self-start rounded-full border border-gold-200 bg-white px-4 py-2 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
+                className="inline-flex items-center gap-2 self-start rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
               >
                 <FaArrowLeft />
                 Back to builder
@@ -621,7 +621,7 @@ export default function BlogPostStudio() {
 
               <div className="flex gap-8">
                 <div className="hidden shrink-0 lg:block">
-                  <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-black px-3 py-4 text-white shadow-lg shadow-gold-800/15">
+                  <div className="flex w-24 flex-col items-center justify-center rounded-[1.5rem] bg-black px-3 py-4 text-white shadow-lg shadow-neutral-800/15">
                     <div className="text-3xl font-extrabold leading-none">{new Date().getDate().toString().padStart(2, "0")}</div>
                     <div className="mt-1 text-xs font-semibold tracking-wider">
                       {new Date().toLocaleString(undefined, { month: "short" }).toUpperCase()}
@@ -630,10 +630,10 @@ export default function BlogPostStudio() {
                 </div>
 
                 <div className="flex-1">
-                  <div className="inline-flex rounded-full bg-gold-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gold-700">
+                  <div className="inline-flex rounded-full bg-neutral-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">
                     {previewCategory}
                   </div>
-                  <h1 className="mt-5 text-4xl font-black tracking-tight text-gold-800 sm:text-5xl">{previewTitle}</h1>
+                  <h1 className="mt-5 text-4xl font-black tracking-tight text-neutral-800 sm:text-5xl">{previewTitle}</h1>
                   <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-neutral-500">
                     <span>By Doc Kulot</span>
                     <span>{previewCategory}</span>
@@ -662,7 +662,7 @@ export default function BlogPostStudio() {
                     )}
                   </div>
 
-                  <div className="mt-10 rounded-[1.75rem] border border-gold-100 bg-gold-50 px-6 py-5 text-sm leading-6 text-gold-800">
+                  <div className="mt-10 rounded-[1.75rem] border border-neutral-100 bg-neutral-50 px-6 py-5 text-sm leading-6 text-neutral-800">
                     Health content is for education only. If symptoms are urgent, seek care immediately.
                   </div>
                 </div>
@@ -670,11 +670,11 @@ export default function BlogPostStudio() {
             </main>
 
             <aside className="space-y-6">
-              <div className="rounded-[2rem] border border-gold-100 bg-gold-50 p-6 shadow-sm">
-                <h3 className="text-lg font-black tracking-tight text-gold-700">Categories</h3>
+              <div className="rounded-[2rem] border border-neutral-100 bg-neutral-50 p-6 shadow-sm">
+                <h3 className="text-lg font-black tracking-tight text-neutral-700">Categories</h3>
                 <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-700">
                   {contentCategories.map((category) => (
-                    <li key={category} className="border-b border-gold-100 py-3 transition hover:text-gold-700 last:border-b-0">
+                    <li key={category} className="border-b border-neutral-100 py-3 transition hover:text-neutral-700 last:border-b-0">
                       {category}
                     </li>
                   ))}
@@ -682,7 +682,7 @@ export default function BlogPostStudio() {
               </div>
 
               <div className="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-black tracking-tight text-gold-700">Recent</h3>
+                <h3 className="text-lg font-black tracking-tight text-neutral-700">Recent</h3>
                 <div className="mt-4 space-y-4">
                   {databasePosts.slice(0, 4).map((post) => (
                     <Link key={post.id} href={`/blog/${post.slug}`} className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-neutral-50">
@@ -713,9 +713,9 @@ export default function BlogPostStudio() {
 
   return (
     <div className="space-y-6 pb-10">
-      <section className="overflow-hidden rounded-[2.25rem] border border-gold-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.22),_transparent_28%),radial-gradient(circle_at_90%_12%,_rgba(59,130,246,0.14),_transparent_24%),linear-gradient(135deg,#fcf9ef_0%,#ffffff_45%,#f7f7f5_100%)] p-6 shadow-[0_30px_80px_-40px_rgba(17,17,17,0.45)] sm:p-8">
+      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.22),_transparent_28%),radial-gradient(circle_at_90%_12%,_rgba(59,130,246,0.14),_transparent_24%),linear-gradient(135deg,#fcf9ef_0%,#ffffff_45%,#f7f7f5_100%)] p-6 shadow-[0_30px_80px_-40px_rgba(17,17,17,0.45)] sm:p-8">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-gold-700">Internal publishing workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-neutral-700">Internal publishing workspace</p>
           <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Blog Builder</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-neutral-600 sm:text-base">
             Build the landing-page card, write the full article, and manage publishing in one workspace. Preview opens
@@ -726,7 +726,7 @@ export default function BlogPostStudio() {
             {["Landing card", "Article hero", "Story blocks", "Appointment CTA", "Health advisory"].map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-gold-200 bg-white/85 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-gold-700"
+                className="rounded-full border border-neutral-200 bg-white/85 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-neutral-700"
               >
                 {item}
               </span>
@@ -755,7 +755,7 @@ export default function BlogPostStudio() {
                   Complete the essentials below and the builder will mirror the public blog page more cleanly.
                 </p>
               </div>
-              <div className="rounded-full border border-gold-200 bg-gold-50 px-4 py-2 text-sm font-bold text-gold-700">
+              <div className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700">
                 {completionCount}/{readyChecks.length} ready
               </div>
             </div>
@@ -768,7 +768,7 @@ export default function BlogPostStudio() {
                   key={item.label}
                   className={`rounded-2xl border px-3 py-3 text-sm font-semibold ${
                     item.complete
-                      ? "border-gold-200 bg-gold-50 text-gold-700"
+                      ? "border-neutral-200 bg-neutral-50 text-neutral-700"
                       : "border-neutral-200 bg-white text-neutral-500"
                   }`}
                 >
@@ -795,7 +795,7 @@ export default function BlogPostStudio() {
             <button
               type="button"
               onClick={() => setIsPreviewMode(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-gold-200 px-4 py-2 text-sm font-bold text-gold-700 transition hover:bg-gold-50"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
             >
               <FaEye />
               Preview full page
@@ -813,7 +813,7 @@ export default function BlogPostStudio() {
               type="button"
               onClick={() => startTransition(() => void savePost({ status: "Published" }))}
               disabled={isPending || !draft.title.trim()}
-              className="rounded-full border border-gold-200 bg-gold-50 px-4 py-2 text-sm font-bold text-gold-700 transition hover:bg-gold-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Publish
             </button>
@@ -829,13 +829,13 @@ export default function BlogPostStudio() {
         }
       >
         {isTemplateDraft ? (
-          <div className="rounded-[1.5rem] border border-gold-200 bg-gold-50 px-4 py-3 text-sm font-semibold text-gold-700">
+          <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
             You are editing a starter template. Saving will create a new post in the main content library.
           </div>
         ) : null}
 
         {feedback ? (
-          <div className="mt-4 rounded-[1.5rem] border border-gold-200 bg-gold-50 px-4 py-3 text-sm font-semibold text-gold-700">
+          <div className="mt-4 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
             {feedback}
           </div>
         ) : null}
@@ -855,7 +855,7 @@ export default function BlogPostStudio() {
                     }));
                   }}
                   placeholder="Write a patient-friendly headline"
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 />
               </Field>
 
@@ -864,7 +864,7 @@ export default function BlogPostStudio() {
                   value={draft.slug}
                   onChange={(event) => updateDraft("slug", slugify(event.target.value))}
                   placeholder="blog-post-slug"
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 />
               </Field>
             </div>
@@ -874,7 +874,7 @@ export default function BlogPostStudio() {
                 <select
                   value={draft.content_type}
                   onChange={(event) => updateDraft("content_type", event.target.value)}
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 >
                   {contentTypes.map((type) => (
                     <option key={type}>{type}</option>
@@ -886,7 +886,7 @@ export default function BlogPostStudio() {
                 <select
                   value={draft.category}
                   onChange={(event) => updateDraft("category", event.target.value)}
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 >
                   {contentCategories.map((category) => (
                     <option key={category}>{category}</option>
@@ -904,7 +904,7 @@ export default function BlogPostStudio() {
                 onChange={(event) => updateDraft("excerpt", event.target.value)}
                 rows={4}
                 placeholder="This appears on the landing page and near the top of the public article."
-                className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </Field>
 
@@ -921,7 +921,7 @@ export default function BlogPostStudio() {
                   value={draft.embed_url}
                   onChange={(event) => updateDraft("embed_url", event.target.value)}
                   placeholder="https://youtube.com/embed/..."
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 />
               </Field>
             </div>
@@ -931,7 +931,7 @@ export default function BlogPostStudio() {
                 <select
                   value={draft.status}
                   onChange={(event) => updateDraft("status", event.target.value)}
-                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                  className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                 >
                   {["Draft", "Published", "Archived"].map((status) => (
                     <option key={status}>{status}</option>
@@ -960,7 +960,7 @@ export default function BlogPostStudio() {
                 onChange={(event) => updateDraft("body", event.target.value)}
                 rows={5}
                 placeholder="Optional plain text fallback."
-                className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </Field>
 
@@ -985,7 +985,7 @@ export default function BlogPostStudio() {
                           key={type}
                           type="button"
                           onClick={() => addBlock(type)}
-                          className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-gold-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-gold-700 transition hover:bg-gold-100"
+                          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-neutral-700 transition hover:bg-neutral-100"
                         >
                           <FaPlus />
                           {blockTypeLabels[type]}
@@ -1008,7 +1008,7 @@ export default function BlogPostStudio() {
                 <div key={`${block.type}-${index}`} className="rounded-[1.6rem] border border-neutral-200 bg-neutral-50 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gold-700">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-neutral-700">
                         <FaLayerGroup />
                         Block {index + 1}
                       </div>
@@ -1035,7 +1035,7 @@ export default function BlogPostStudio() {
                       <button
                         type="button"
                         onClick={() => removeBlock(index)}
-                        className="rounded-full border border-gold-200 bg-white p-2 text-gold-600 transition hover:bg-gold-50"
+                        className="rounded-full border border-neutral-200 bg-white p-2 text-neutral-600 transition hover:bg-neutral-50"
                         aria-label={`Delete block ${index + 1}`}
                       >
                         <FaTrash />
@@ -1049,7 +1049,7 @@ export default function BlogPostStudio() {
                         rows={block.type === "paragraph" ? 5 : 3}
                         value={block.text ?? ""}
                         onChange={(event) => updateBlock(index, { text: event.target.value })}
-                        className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                        className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       />
                     ) : null}
 
@@ -1060,7 +1060,7 @@ export default function BlogPostStudio() {
                             key={`${itemIndex}-${block.type}`}
                             value={item}
                             onChange={(event) => updateListItem(index, itemIndex, event.target.value)}
-                            className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                            className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                           />
                         ))}
                         <button
@@ -1080,13 +1080,13 @@ export default function BlogPostStudio() {
                           value={block.url ?? ""}
                           onChange={(event) => updateBlock(index, { url: event.target.value })}
                           placeholder="Image URL"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                         <input
                           value={block.alt ?? ""}
                           onChange={(event) => updateBlock(index, { alt: event.target.value })}
                           placeholder="Alt text"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                       </div>
                     ) : null}
@@ -1096,7 +1096,7 @@ export default function BlogPostStudio() {
                         value={block.url ?? ""}
                         onChange={(event) => updateBlock(index, { url: event.target.value })}
                         placeholder="Embed URL"
-                        className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                        className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       />
                     ) : null}
 
@@ -1106,13 +1106,13 @@ export default function BlogPostStudio() {
                           value={block.buttonText ?? ""}
                           onChange={(event) => updateBlock(index, { buttonText: event.target.value })}
                           placeholder="Button label"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                         <input
                           value={block.buttonLink ?? ""}
                           onChange={(event) => updateBlock(index, { buttonLink: event.target.value })}
                           placeholder="/#booking"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                       </div>
                     ) : null}
@@ -1123,14 +1123,14 @@ export default function BlogPostStudio() {
                           value={block.question ?? ""}
                           onChange={(event) => updateBlock(index, { question: event.target.value })}
                           placeholder="Question"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                         <textarea
                           rows={4}
                           value={block.answer ?? ""}
                           onChange={(event) => updateBlock(index, { answer: event.target.value })}
                           placeholder="Answer"
-                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         />
                       </div>
                     ) : null}
@@ -1167,7 +1167,7 @@ export default function BlogPostStudio() {
             value={libraryQuery}
             onChange={(event) => setLibraryQuery(event.target.value)}
             placeholder="Search by title, category, slug, or status"
-            className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+            className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
           />
 
           <div className="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -1206,14 +1206,14 @@ export default function BlogPostStudio() {
                     <button
                       type="button"
                       onClick={() => loadDraft(post)}
-                      className="rounded-full border border-gold-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-700 transition hover:bg-gold-50"
+                      className="rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-700 transition hover:bg-neutral-50"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => startTransition(() => void updateStoredPostStatus(post, "Published"))}
-                      className="rounded-full border border-gold-200 bg-gold-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-700 transition hover:bg-gold-100"
+                      className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-700 transition hover:bg-neutral-100"
                     >
                       Publish
                     </button>
@@ -1234,7 +1234,7 @@ export default function BlogPostStudio() {
                     <button
                       type="button"
                       onClick={() => startTransition(() => void removePost(post.id))}
-                      className="rounded-full border border-gold-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-700 transition hover:bg-gold-50"
+                      className="rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-700 transition hover:bg-neutral-50"
                     >
                       Delete
                     </button>

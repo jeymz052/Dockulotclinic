@@ -57,8 +57,8 @@ export default function PatientProfileSettingsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <section className="rounded-[2.25rem] border border-yellow-200 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.92),transparent_34%),linear-gradient(135deg,#fafafa_0%,#e6f4ff_42%,#cbe7ff_100%)] p-6 shadow-[0_24px_80px_rgba(17,17,17,0.10)] sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">Patient Settings</p>
+      <section className="rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.92),transparent_34%),linear-gradient(135deg,#fafafa_0%,#e6f4ff_42%,#cbe7ff_100%)] p-6 shadow-[0_24px_80px_rgba(17,17,17,0.10)] sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Patient Settings</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-black">Your account settings</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
           This patient version keeps account guidance simple and avoids sending you into system-wide clinic configuration.
@@ -66,9 +66,9 @@ export default function PatientProfileSettingsPage() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-[2rem] border border-yellow-100 bg-white p-6 shadow-sm">
+        <section className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-700">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
               <FaRegUser className="h-5 w-5" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function PatientProfileSettingsPage() {
               <input
                 value={form.fullName}
                 onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                 placeholder="Enter your full name"
               />
             </Field>
@@ -99,12 +99,12 @@ export default function PatientProfileSettingsPage() {
               <input
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                className="w-full rounded-2xl border border-yellow-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-yellow-300 focus:ring-4 focus:ring-amber-100"
+                className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
                 placeholder="Enter your phone number"
               />
             </Field>
 
-            <div className="rounded-[1.5rem] border border-yellow-100 bg-yellow-50/70 p-4 text-sm text-slate-700">
+            <div className="rounded-[1.5rem] border border-neutral-100 bg-neutral-50/70 p-4 text-sm text-slate-700">
               Your email stays locked here because it is used as your sign-in identity. Contact the clinic if that needs to change.
             </div>
 
@@ -112,8 +112,8 @@ export default function PatientProfileSettingsPage() {
               <div
                 className={`rounded-[1.5rem] border px-4 py-3 text-sm ${
                   feedback.type === "success"
-                    ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                    : "border-yellow-200 bg-yellow-50 text-yellow-700"
+                    ? "border-neutral-200 bg-neutral-50 text-neutral-700"
+                    : "border-neutral-200 bg-neutral-50 text-neutral-700"
                 }`}
               >
                 {feedback.message}
@@ -130,7 +130,7 @@ export default function PatientProfileSettingsPage() {
               </button>
               <button
                 type="button"
-                className="rounded-full border border-yellow-200 bg-white px-5 py-2.5 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50"
+                className="rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                 onClick={() => {
                   setForm({
                     fullName: profile?.full_name ?? user?.user_metadata?.full_name ?? "Patient",
@@ -146,9 +146,9 @@ export default function PatientProfileSettingsPage() {
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-[2rem] border border-yellow-100 bg-white p-6 shadow-sm">
+          <div className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-700">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
                 <FaBell className="h-4 w-4" />
               </div>
               <div>
@@ -165,12 +165,12 @@ export default function PatientProfileSettingsPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-yellow-100 bg-black p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
+          <div className="rounded-[2rem] border border-neutral-100 bg-black p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
             <div className="flex items-center gap-3">
-              <FaShieldHeart className="h-5 w-5 text-amber-300" />
+              <FaShieldHeart className="h-5 w-5 text-neutral-300" />
               <h2 className="text-lg font-bold">Safety and privacy</h2>
             </div>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-amber-50/85">
+            <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-50/85">
               <li>Use the same email address you use for bookings to avoid missed updates.</li>
               <li>Review your appointment details before joining an online consultation.</li>
               <li>Contact clinic staff if your name, email, or mobile number needs to be corrected.</li>
@@ -179,10 +179,10 @@ export default function PatientProfileSettingsPage() {
         </section>
       </div>
 
-      <div className="rounded-[2rem] border border-yellow-100 bg-yellow-50/60 p-6">
+      <div className="rounded-[2rem] border border-neutral-100 bg-neutral-50/60 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-yellow-700">
+            <div className="flex items-center gap-2 text-neutral-700">
               <FaCircleCheck className="h-4 w-4" />
               <p className="text-sm font-semibold">Need to update your details?</p>
             </div>
@@ -197,7 +197,7 @@ export default function PatientProfileSettingsPage() {
 
       <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 text-sm text-slate-500">
         <div className="flex items-center gap-2">
-          <FaLock className="h-4 w-4 text-yellow-700" />
+          <FaLock className="h-4 w-4 text-neutral-700" />
           <span>This page is a patient-friendly account overview, not the clinic&apos;s system settings panel.</span>
         </div>
       </div>
@@ -222,7 +222,7 @@ function Field({
 
 function Pill({ label }: { label: string }) {
   return (
-    <div className="rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-700">
+    <div className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-700">
       {label}
     </div>
   );
@@ -232,9 +232,10 @@ function QuickLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-yellow-200 bg-white px-4 py-2 text-sm font-semibold text-yellow-700 transition hover:border-yellow-300 hover:bg-yellow-50"
+      className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
     >
       {label}
     </Link>
   );
 }
+

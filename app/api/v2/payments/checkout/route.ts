@@ -3,6 +3,7 @@ import {
   createOnlineCheckoutSession,
   type OnlineCheckoutOption,
 } from "@/src/lib/services/payment";
+import type { ProcedureConsentPayload } from "@/src/lib/services/procedure-consent";
 
 type BookingCheckoutBody = {
   patientName?: string;
@@ -17,6 +18,7 @@ type BookingCheckoutBody = {
   service?: string;
   reservation_id?: string;
   payment_option?: OnlineCheckoutOption;
+  procedure_consent?: ProcedureConsentPayload;
 };
 
 export async function POST(req: Request) {
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
       service: body.service,
       reservationId: body.reservation_id,
       checkoutOption: body.payment_option,
+      procedureConsent: body.procedure_consent,
     }, actor);
 
     return ok({

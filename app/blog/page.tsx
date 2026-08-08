@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import BlogIndex from "@/src/components/blog/BlogIndex";
 import PublicHeader from "@/src/components/layout/PublicHeader";
 import { contentCategories } from "@/src/lib/healthcare-content";
 import { getPublishedContentPosts } from "@/src/lib/services/content-posts";
+
+export const metadata: Metadata = {
+  title: "Health Articles",
+  description:
+    "Read Doc Kulot health articles, patient education posts, clinic updates, lifestyle tips, and online consultation topics.",
+  alternates: {
+    canonical: "/blog",
+  },
+};
 
 export default async function BlogPage() {
   const posts = await getPublishedContentPosts(24);

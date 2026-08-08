@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import BookAppointmentPage from "@/src/components/appointments/BookAppointmentPage";
+
+export const metadata: Metadata = {
+  title: "Book an Appointment",
+  description:
+    "Book a Doc Kulot clinic appointment or online consultation by choosing a service, date, time, and patient details.",
+  alternates: {
+    canonical: "/booking",
+  },
+};
 
 export default function BookingPage() {
   return (

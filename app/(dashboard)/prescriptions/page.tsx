@@ -285,8 +285,8 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-gold-100 bg-linear-to-br from-gold-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-700">Prescription & Diagnosis</p>
+      <section className="rounded-[2rem] border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-700">Prescription & Diagnosis</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Prescription records</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
           Create prescriptions, release them to patients, and preview the official clinic format before it is downloaded, printed, or emailed.
@@ -302,17 +302,17 @@ export default function PrescriptionsPage() {
       <section className="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold-700">Preview</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Preview</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight text-black">Prescription format</h2>
             <p className="mt-2 text-sm text-neutral-600">This is the live clinic layout used for PDF and print output.</p>
           </div>
           {selectedPrescription ? (
             <div className="flex flex-wrap gap-2 print:hidden">
-              <button onClick={() => void downloadPdf(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-4 py-2 text-xs font-bold text-gold-700">
+              <button onClick={() => void downloadPdf(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700">
                 <FaDownload /> Download PDF
               </button>
               {canManage ? (
-                <button onClick={() => void emailPrescription(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-4 py-2 text-xs font-bold text-gold-700">
+                <button onClick={() => void emailPrescription(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700">
                   <FaPaperPlane /> Email to patient
                 </button>
               ) : null}
@@ -347,17 +347,17 @@ export default function PrescriptionsPage() {
             ) : null}
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100 disabled:bg-neutral-100" value={form.patient_id} onChange={(e) => setForm((s) => ({ ...s, patient_id: e.target.value }))}>
+            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:bg-neutral-100" value={form.patient_id} onChange={(e) => setForm((s) => ({ ...s, patient_id: e.target.value }))}>
               <option value="">Select patient</option>
               {patients.map((p) => <option key={p.id} value={p.id}>{p.profiles?.full_name ?? p.id}</option>)}
             </select>
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100 disabled:bg-neutral-100" value={form.doctor_id} onChange={(e) => setForm((s) => ({ ...s, doctor_id: e.target.value }))}>
+            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:bg-neutral-100" value={form.doctor_id} onChange={(e) => setForm((s) => ({ ...s, doctor_id: e.target.value }))}>
               <option value="">Select doctor</option>
               {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <input required className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100" placeholder="Diagnosis" value={form.diagnosis_text} onChange={(e) => setForm((s) => ({ ...s, diagnosis_text: e.target.value }))} />
-            <input className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100" placeholder="Treatment plan" value={form.treatment_plan} onChange={(e) => setForm((s) => ({ ...s, treatment_plan: e.target.value }))} />
-            <input type="date" className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100" value={form.follow_up_date} onChange={(e) => setForm((s) => ({ ...s, follow_up_date: e.target.value }))} />
+            <input required className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="Diagnosis" value={form.diagnosis_text} onChange={(e) => setForm((s) => ({ ...s, diagnosis_text: e.target.value }))} />
+            <input className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="Treatment plan" value={form.treatment_plan} onChange={(e) => setForm((s) => ({ ...s, treatment_plan: e.target.value }))} />
+            <input type="date" className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" value={form.follow_up_date} onChange={(e) => setForm((s) => ({ ...s, follow_up_date: e.target.value }))} />
             <label className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-semibold">
               <input type="checkbox" checked={form.released_to_patient} onChange={(e) => setForm((s) => ({ ...s, released_to_patient: e.target.checked }))} />
               Send to patient portal
@@ -373,7 +373,7 @@ export default function PrescriptionsPage() {
               <button
                 type="button"
                 onClick={addItemRow}
-                className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-4 py-2 text-xs font-bold text-gold-700 transition hover:bg-gold-50"
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50"
               >
                 <FaPlus className="h-3 w-3" />
                 Add medicine
@@ -391,7 +391,7 @@ export default function PrescriptionsPage() {
                       type="button"
                       onClick={() => removeItemRow(index)}
                       disabled={items.length === 1}
-                      className="inline-flex items-center gap-1 rounded-full border border-gold-200 px-3 py-1.5 text-[11px] font-bold text-gold-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-bold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <FaTrash className="h-3 w-3" />
                       Remove
@@ -401,32 +401,32 @@ export default function PrescriptionsPage() {
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     <input
                       required={index === 0}
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       placeholder="Medicine name"
                       value={item.medicine_name}
                       onChange={(e) => updateItem(index, "medicine_name", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       placeholder="Dosage"
                       value={item.dosage}
                       onChange={(e) => updateItem(index, "dosage", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       placeholder="Frequency"
                       value={item.frequency}
                       onChange={(e) => updateItem(index, "frequency", e.target.value)}
                     />
                     <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                       placeholder="Duration"
                       value={item.duration}
                       onChange={(e) => updateItem(index, "duration", e.target.value)}
                     />
                   </div>
                   <textarea
-                    className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100"
+                    className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                     placeholder="Dosage instructions, reminders, or pharmacy notes"
                     value={item.instructions}
                     onChange={(e) => updateItem(index, "instructions", e.target.value)}
@@ -436,7 +436,7 @@ export default function PrescriptionsPage() {
             </div>
           </div>
 
-          <textarea className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-gold-400 focus:ring-4 focus:ring-gold-100" placeholder="General instructions" value={form.general_instructions} onChange={(e) => setForm((s) => ({ ...s, general_instructions: e.target.value }))} />
+          <textarea className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="General instructions" value={form.general_instructions} onChange={(e) => setForm((s) => ({ ...s, general_instructions: e.target.value }))} />
           <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">
             {editingId ? <FaFloppyDisk /> : <FaPlus />}
             {editingId ? "Save changes" : "Create prescription"}
@@ -444,12 +444,12 @@ export default function PrescriptionsPage() {
         </form>
       ) : null}
 
-      {feedback ? <p className="rounded-xl bg-gold-50 px-4 py-3 text-sm font-semibold text-gold-700">{feedback}</p> : null}
+      {feedback ? <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
 
       <div className="grid gap-4">
         {prescriptions.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-            <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-gold-300" />
+            <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-neutral-300" />
             <h2 className="mt-3 text-lg font-bold text-black">No prescription history yet</h2>
             <p className="mt-2 text-sm text-neutral-500">
               {canManage ? "Create a prescription above to save it here." : "Released prescriptions from your doctor will appear here."}
@@ -459,14 +459,14 @@ export default function PrescriptionsPage() {
         {prescriptions.map((item) => (
           <article
             key={item.id}
-            className={`rounded-2xl border bg-white p-5 shadow-sm print:border-0 print:shadow-none hover:bg-gold-50 transition ${
-              selectedPrescription?.id === item.id ? "border-gold-300 ring-2 ring-gold-100" : "border-neutral-200"
+            className={`rounded-2xl border bg-white p-5 shadow-sm print:border-0 print:shadow-none hover:bg-neutral-50 transition ${
+              selectedPrescription?.id === item.id ? "border-neutral-300 ring-2 ring-neutral-100" : "border-neutral-200"
             }`}
             onClick={() => selectPreview(item)}
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">{item.prescription_no}</span>
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">{item.prescription_no}</span>
                 <h2 className="mt-2 text-lg font-bold text-black">{item.patients?.profiles?.full_name ?? "Patient"}</h2>
                 <p className="text-sm text-neutral-500">
                   Created {new Date(item.created_at).toLocaleDateString()}
@@ -478,22 +478,22 @@ export default function PrescriptionsPage() {
                   <FaEye /> Preview
                 </button>
                 {canManage ? <button onClick={() => editPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaPenToSquare /> Edit</button> : null}
-                {canManage ? <button onClick={() => toggleRelease(item)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 px-4 py-2 text-xs font-bold text-gold-700">{item.released_to_patient ? <FaEye /> : <FaPaperPlane />}{item.released_to_patient ? "Released" : "Send to portal"}</button> : null}
-                <button onClick={() => downloadPdf(item)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-4 py-2 text-xs font-bold text-gold-700"><FaDownload /> Download PDF</button>
-                {canManage ? <button onClick={() => emailPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-gold-200 bg-white px-4 py-2 text-xs font-bold text-gold-700"><FaPaperPlane /> Email</button> : null}
+                {canManage ? <button onClick={() => toggleRelease(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">{item.released_to_patient ? <FaEye /> : <FaPaperPlane />}{item.released_to_patient ? "Released" : "Send to portal"}</button> : null}
+                <button onClick={() => downloadPdf(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaDownload /> Download PDF</button>
+                {canManage ? <button onClick={() => emailPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaPaperPlane /> Email</button> : null}
                 <button onClick={() => printPrescription(item)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white"><FaPrint /> Print</button>
               </div>
             </div>
             <div className="mt-4 grid gap-3">
               {item.diagnoses?.diagnosis_text ? (
-                <div className="rounded-xl border border-gold-100 bg-gold-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">Diagnosis</p>
+                <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Diagnosis</p>
                   <p className="mt-2 text-sm text-neutral-700">{item.diagnoses.diagnosis_text}</p>
                 </div>
               ) : null}
               {item.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl border border-gold-100 bg-gold-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">Treatment Plan</p>
+                <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Treatment Plan</p>
                   <p className="mt-2 text-sm text-neutral-700">{item.diagnoses.treatment_plan}</p>
                 </div>
               ) : null}
@@ -506,7 +506,7 @@ export default function PrescriptionsPage() {
               ))}
             </div>
             {item.general_instructions ? <p className="mt-4 text-sm leading-6 text-neutral-700">{item.general_instructions}</p> : null}
-            {item.follow_up_date ? <p className="mt-3 text-sm font-semibold text-gold-700">Follow-up: {item.follow_up_date}</p> : null}
+            {item.follow_up_date ? <p className="mt-3 text-sm font-semibold text-neutral-700">Follow-up: {item.follow_up_date}</p> : null}
           </article>
         ))}
       </div>
@@ -517,7 +517,7 @@ export default function PrescriptionsPage() {
 function CapabilityCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
     <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <div className="text-2xl text-gold-400">{icon}</div>
+      <div className="text-2xl text-neutral-400">{icon}</div>
       <h2 className="mt-4 text-base font-bold text-black">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
     </article>
@@ -532,7 +532,7 @@ function PrescriptionSheet({ prescription }: { prescription: Prescription }) {
       <div className="mx-auto max-w-4xl rounded-[1.75rem] border border-neutral-300 bg-white p-6 shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
         <div className="flex items-start justify-between gap-4 border-b border-neutral-200 pb-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold-700">Doc Kulot</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Doc Kulot</p>
             <h3 className="mt-2 text-2xl font-black tracking-tight text-black">Prescription</h3>
             <p className="mt-1 text-sm text-neutral-600">Family Medicine | Aesthetic Medicine</p>
           </div>
@@ -614,3 +614,4 @@ function DetailBlock({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+

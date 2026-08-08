@@ -164,8 +164,8 @@ export default function InquiriesPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-yellow-100 bg-linear-to-br from-amber-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-yellow-700">Inquiry System</p>
+      <section className="rounded-[2rem] border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-700">Inquiry System</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Visitor and patient inquiries</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Reply, close, and convert qualified inquiries into appointments from one inbox.
@@ -178,7 +178,7 @@ export default function InquiriesPage() {
         <Metric icon={<FaUserPlus />} title="Closed" value={closed} />
       </div>
 
-      {feedback ? <p className="rounded-xl bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">{feedback}</p> : null}
+      {feedback ? <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
 
       <div className="grid gap-4">
         {inquiries.map((item) => {
@@ -193,7 +193,7 @@ export default function InquiriesPage() {
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.inquiry_type}</span>
                     <span className="text-xs text-slate-400">{new Date(item.created_at).toLocaleString()}</span>
                     {item.converted_appointment_id ? (
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">Converted</span>
+                      <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold text-neutral-700">Converted</span>
                     ) : null}
                   </div>
                   <h2 className="mt-3 text-lg font-bold text-black">{item.name}</h2>
@@ -202,20 +202,20 @@ export default function InquiriesPage() {
                   </p>
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.message}</p>
                   {item.reply ? (
-                    <p className="mt-3 rounded-xl bg-yellow-50 p-3 text-sm text-yellow-700">
+                    <p className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
                       <strong>Reply:</strong> {item.reply}
                     </p>
                   ) : null}
                   {item.converted_appointment_id ? (
-                    <p className="mt-3 text-sm font-medium text-yellow-700">
-                      Converted appointment ID: <span className="font-semibold text-yellow-800">{item.converted_appointment_id}</span>
+                    <p className="mt-3 text-sm font-medium text-neutral-700">
+                      Converted appointment ID: <span className="font-semibold text-neutral-800">{item.converted_appointment_id}</span>
                     </p>
                   ) : null}
                 </div>
 
                 <div className="w-full max-w-md space-y-3">
                   <textarea
-                    className="min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    className="min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                     placeholder="Write reply"
                     value={replyById[item.id] ?? ""}
                     onChange={(e) => setReplyById((current) => ({ ...current, [item.id]: e.target.value }))}
@@ -225,7 +225,7 @@ export default function InquiriesPage() {
                     <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       Status
                       <select
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         value={statusById[item.id] ?? item.status}
                         onChange={(e) =>
                           setStatusById((current) => ({
@@ -245,7 +245,7 @@ export default function InquiriesPage() {
                     <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       Doctor
                       <select
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         value={draft.doctorId}
                         onChange={(e) =>
                           setConvertDraftById((current) => ({
@@ -269,7 +269,7 @@ export default function InquiriesPage() {
                       Date
                       <input
                         type="date"
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         value={draft.date}
                         onChange={(e) =>
                           setConvertDraftById((current) => ({
@@ -283,7 +283,7 @@ export default function InquiriesPage() {
                       Start Time
                       <input
                         type="time"
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         value={draft.startTime}
                         onChange={(e) =>
                           setConvertDraftById((current) => ({
@@ -296,7 +296,7 @@ export default function InquiriesPage() {
                     <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       Type
                       <select
-                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                         value={draft.appointmentType}
                         onChange={(e) =>
                           setConvertDraftById((current) => ({
@@ -312,7 +312,7 @@ export default function InquiriesPage() {
                   </div>
 
                   <textarea
-                    className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
                     placeholder="Reason for appointment"
                     value={draft.reason}
                     onChange={(e) =>
@@ -339,7 +339,7 @@ export default function InquiriesPage() {
                     <button
                       onClick={() => convertInquiry(item)}
                       disabled={Boolean(item.converted_appointment_id) || doctors.length === 0}
-                      className="inline-flex items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-bold text-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-bold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Convert to appointment <FaArrowRight />
                     </button>
@@ -361,7 +361,7 @@ export default function InquiriesPage() {
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-sm text-slate-500">
           No inquiries yet.
           <div className="mt-3">
-            <Link href="/contact" className="font-semibold text-yellow-700 underline underline-offset-4">
+            <Link href="/contact" className="font-semibold text-neutral-700 underline underline-offset-4">
               View the public contact form
             </Link>
           </div>
@@ -374,10 +374,10 @@ export default function InquiriesPage() {
 function StatusPill({ status }: { status: InquiryStatus }) {
   const tone =
     status === "Pending"
-      ? "bg-yellow-100 text-yellow-700"
+      ? "bg-neutral-100 text-neutral-700"
       : status === "Replied"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-yellow-100 text-yellow-700";
+        ? "bg-neutral-100 text-neutral-700"
+        : "bg-neutral-100 text-neutral-700";
 
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone}`}>{status}</span>;
 }
@@ -385,9 +385,10 @@ function StatusPill({ status }: { status: InquiryStatus }) {
 function Metric({ icon, title, value }: { icon: ReactNode; title: string; value: number }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="text-2xl text-amber-400">{icon}</div>
+      <div className="text-2xl text-neutral-400">{icon}</div>
       <p className="mt-3 text-sm font-semibold text-slate-500">{title}</p>
       <p className="mt-1 text-3xl font-black text-black">{value}</p>
     </div>
   );
 }
+

@@ -220,7 +220,7 @@ function Calendar({ appointments }: { appointments: AppointmentRecord[] }) {
             >
               {day}
               {hasAppts && !isToday(day ?? 0) ? (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-gold-300" />
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-neutral-300" />
               ) : null}
             </div>
           );
@@ -245,7 +245,7 @@ function ActivityDetails({ appointments }: { appointments: AppointmentRecord[] }
         <div className="space-y-3">
           {todayAppts.map((appt) => {
             const color =
-              appt.type === "Online" ? "bg-gold-300" : appt.status === "Completed" ? "bg-gold-300" : "bg-gold-300";
+              appt.type === "Online" ? "bg-neutral-300" : appt.status === "Completed" ? "bg-neutral-300" : "bg-neutral-300";
             return (
               <div key={appt.id} className="flex items-center gap-3">
                 <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${color}`} />
@@ -259,7 +259,7 @@ function ActivityDetails({ appointments }: { appointments: AppointmentRecord[] }
                 </div>
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    appt.type === "Online" ? "bg-gold-50 text-gold-400" : "bg-gold-50 text-gold-400"
+                    appt.type === "Online" ? "bg-neutral-50 text-neutral-400" : "bg-neutral-50 text-neutral-400"
                   }`}
                 >
                   {appt.type}
@@ -385,15 +385,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="overflow-hidden rounded-[2.25rem] border border-gold-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.16),_transparent_34%),linear-gradient(135deg,_#ffffff,_#fcf9ef_52%,_#f8efd0)] p-6 shadow-[0_28px_70px_rgba(17,17,17,0.12)] animate-fade-in-down">
+      <div className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.16),_transparent_34%),linear-gradient(135deg,_#ffffff,_#fcf9ef_52%,_#f8efd0)] p-6 shadow-[0_28px_70px_rgba(17,17,17,0.12)] animate-fade-in-down">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gold-700">Clinic Overview</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Clinic Overview</p>
             <h1 className="mt-3 text-3xl font-black text-neutral-900">{greetingTitle}</h1>
             <p className="mt-3 text-sm text-neutral-600 mt-0.5">{greeting.subtitle}</p>
           </div>
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gold-200 bg-gold-50 px-4 py-2 text-xs font-semibold text-gold-700">
-            <span className="h-2 w-2 rounded-full bg-gold-300 animate-pulse" />
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700">
+            <span className="h-2 w-2 rounded-full bg-neutral-300 animate-pulse" />
             {todayAppointments.length} appointments today
           </div>
         </div>
@@ -401,7 +401,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Link href="/patients" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-gold-400 to-gold-300 p-5 shadow-md text-white transition-all duration-300 hover:shadow-xl hover:scale-[1.03] animate-fade-in-up stagger-1">
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-neutral-400 to-neutral-300 p-5 shadow-md text-white transition-all duration-300 hover:shadow-xl hover:scale-[1.03] animate-fade-in-up stagger-1">
           <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-white/10 animate-float-slow" />
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Total Patients</p>
@@ -415,11 +415,11 @@ export default function AdminDashboard() {
         </Link>
 
         <Link href="/appointments" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-gold-300 animate-fade-in-up stagger-2">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-gold-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-2">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Appointments</p>
-            <span className="text-xs font-semibold text-gold-400">today</span>
+            <span className="text-xs font-semibold text-neutral-400">today</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{todayAppointments.length}</p>
           <p className="text-xs text-neutral-400 mt-1">Scheduled for today</p>
@@ -429,11 +429,11 @@ export default function AdminDashboard() {
         </Link>
 
         <Link href="/appointments?filter=online" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-gold-300 animate-fade-in-up stagger-3">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-gold-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-3">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Online Consults</p>
-            <span className="text-xs font-semibold text-gold-400">today</span>
+            <span className="text-xs font-semibold text-neutral-400">today</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{onlineConsultsToday}</p>
           <p className="text-xs text-neutral-400 mt-1">Virtual consultations today</p>
@@ -446,11 +446,11 @@ export default function AdminDashboard() {
         </Link>
 
         <Link href="/payments/pos" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-gold-300 animate-fade-in-up stagger-4">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-gold-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-4">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Ready For POS</p>
-            <span className="text-xs font-semibold text-gold-400">all time</span>
+            <span className="text-xs font-semibold text-neutral-400">all time</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{readyForPos}</p>
           <p className="text-xs text-neutral-400 mt-1">Clinic consultations ready for billing</p>
@@ -460,7 +460,7 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-5">
+      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-bold text-neutral-900">Core Management</h2>
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="min-w-0 rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-5">
+        <div className="min-w-0 rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-neutral-900">Patient Trends</h2>
             <span className="text-xs text-neutral-400">Last 7 days</span>
@@ -504,7 +504,7 @@ export default function AdminDashboard() {
           </ChartContainer>
         </div>
 
-        <div className="min-w-0 rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-6">
+        <div className="min-w-0 rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-neutral-900">Appointment Trends</h2>
             <span className="text-xs text-neutral-400">Last 7 days</span>
@@ -523,7 +523,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="rounded-4xl border border-gold-100 bg-white px-5 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-7">
+      <div className="rounded-4xl border border-neutral-100 bg-white px-5 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-7">
         <h3 className="text-base font-bold text-neutral-900 mb-3">Overview</h3>
         <div className="grid grid-cols-1 divide-y divide-neutral-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <DonutSection title="Appointment Types" data={appointmentTypeData} colors={DONUT_COLORS_APPOINTMENT} />
@@ -533,15 +533,15 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] space-y-6 animate-fade-in-up stagger-8">
+        <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] space-y-6 animate-fade-in-up stagger-8">
           <Calendar appointments={appointments} />
         </div>
-        <div className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-8">
+        <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-8">
           <ActivityDetails appointments={appointments} />
         </div>
       </div>
 
-      <div className="rounded-4xl border border-gold-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-8">
+      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-8">
         <h2 className="text-base font-bold text-neutral-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAction label="Book Appointment" href="/appointments" color="teal" />
@@ -556,10 +556,10 @@ export default function AdminDashboard() {
 
 function QuickAction({ label, href, color }: { label: string; href: string; color: "teal" | "sky" | "emerald" | "amber" }) {
   const colorMap = {
-    teal: "border-gold-200 hover:bg-gold-50 hover:border-gold-400 text-gold-700",
-    sky: "border-gold-200 hover:bg-gold-50 hover:border-gold-400 text-gold-700",
-    emerald: "border-gold-200 hover:bg-gold-50 hover:border-gold-400 text-gold-700",
-    amber: "border-gold-200 hover:bg-gold-50 hover:border-gold-400 text-gold-700",
+    teal: "border-neutral-200 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-700",
+    sky: "border-neutral-200 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-700",
+    emerald: "border-neutral-200 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-700",
+    amber: "border-neutral-200 hover:bg-neutral-50 hover:border-neutral-400 text-neutral-700",
   };
   return (
     <Link

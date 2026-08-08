@@ -78,7 +78,7 @@ async function handleReminderCron(req: Request) {
           await enqueueNotification({
             user_id: r.patient_id,
             template: "appointment_reminder_6h",
-            channels: ["email", "sms"],
+            channels: ["email"],
             payload: {
               appointment_id: r.id,
               appointment_type: r.appointment_type,

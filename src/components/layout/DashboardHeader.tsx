@@ -118,7 +118,7 @@ function mapTemplateToLabel(template: string) {
       return "Registration";
     case "appointment_booked":
     case "appointment_staff_booked":
-      return "Appointment Booking";
+      return "Booking Received";
     case "appointment_staff_confirmed":
       return "Appointment Confirmed";
     case "appointment_staff_rescheduled":
@@ -126,8 +126,9 @@ function mapTemplateToLabel(template: string) {
     case "appointment_confirmed":
       return "Appointment Confirmed";
     case "appointment_payment_success":
-    case "appointment_paid_and_confirmed":
       return "Payment Success";
+    case "appointment_paid_and_confirmed":
+      return "Paid Booking Confirmed";
     case "online_meeting_link":
       return "Online Meeting Link";
     case "appointment_payment_failed":
@@ -145,7 +146,9 @@ function mapTemplateToLabel(template: string) {
     case "appointment_staff_payment_failed":
       return "Payment Issue";
     case "billing_issued":
-      return "Billing Notice";
+      return "Clinic Bill Ready";
+    case "prescription_released":
+      return "Prescription Ready";
     case "appointment_cancelled":
     case "appointment_staff_cancelled":
       return "Appointment Update";
@@ -452,7 +455,7 @@ export function DashboardHeader({
             >
               <FaBell className="h-4 w-4 text-black/80" />
               {notifCount > 0 ? (
-                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-neutral-900 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
+                <span className="absolute right-1.5 top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white sm:right-2 sm:top-2">
                   {notifCount > 99 ? "99+" : notifCount}
                 </span>
               ) : null}
