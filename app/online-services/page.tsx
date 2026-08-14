@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { onlineConsultationSteps } from "@/src/lib/healthcare-content";
 
 export const metadata: Metadata = {
-  title: "Online Consultation",
+  title: "Virtual Consult",
   description:
-    "Learn how Doc Kulot telemedicine works for online consultation, uploads, payment, meeting links, diagnosis, prescriptions, and follow-up care.",
+    "Learn how Doc Kulot virtual consults work for uploads, payment, meeting links, diagnosis, prescriptions, and follow-up care.",
   alternates: {
     canonical: "/online-services",
   },
@@ -16,7 +16,7 @@ export default function OnlineServicesPage() {
     <main className="min-h-screen bg-white px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-5xl">
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-yellow-700">Online Services</p>
-        <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Online consultation workflow</h1>
+        <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Virtual consult workflow</h1>
         <p className="mt-4 leading-8 text-slate-600">
           Patients can book telemedicine care, upload concerns or files, pay the 800 peso fee for the first consult plus one follow-up, receive a meeting link,
           and later access released diagnosis and prescription records through the patient portal.
@@ -36,7 +36,7 @@ export default function OnlineServicesPage() {
           interpretation, and prescription refill support.
         </div>
         <Link href="/#booking" className="mt-10 inline-flex rounded-full bg-black px-6 py-3 text-sm font-bold text-white">
-          Book online consultation
+          Book virtual consult
         </Link>
       </div>
     </main>

@@ -51,7 +51,7 @@ export async function createStripeCheckoutSession(input: {
   body.set("line_items[0][price_data][unit_amount]", String(Math.round(input.amount * 100)));
   body.set(
     "line_items[0][price_data][product_data][name]",
-    `Online Consultation (${formatDurationLabel(input.appointment.start_time, input.appointment.end_time)}) - ${input.appointment.appointment_date}`,
+    `Virtual Consult (${formatDurationLabel(input.appointment.start_time, input.appointment.end_time)}) - ${input.appointment.appointment_date}`,
   );
   body.set("metadata[appointment_id]", input.appointment.id);
 
@@ -107,7 +107,7 @@ export async function createStripeCheckoutSessionForReservation(input: {
   body.set("line_items[0][price_data][unit_amount]", String(Math.round(input.reservation.amount * 100)));
   body.set(
     "line_items[0][price_data][product_data][name]",
-    `Online Consultation (${formatDurationLabel(input.reservation.start_time, input.reservation.end_time)}) - ${input.reservation.appointment_date}`,
+    `Virtual Consult (${formatDurationLabel(input.reservation.start_time, input.reservation.end_time)}) - ${input.reservation.appointment_date}`,
   );
   body.set("metadata[reservation_id]", input.reservation.id);
 

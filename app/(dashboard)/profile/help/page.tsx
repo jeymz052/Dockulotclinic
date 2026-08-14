@@ -14,7 +14,7 @@ const PATIENT_TOPICS = [
     answer: "Open My Appointments to see pending, confirmed, completed, or cancelled bookings, plus any schedule updates.",
   },
   {
-    question: "How do I join my online consultation?",
+    question: "How do I join my virtual consult?",
     answer: "Open Consultations near your appointment time. When the doctor is ready, the meeting link appears in your session.",
   },
   {
@@ -212,7 +212,7 @@ const PATIENT_MODULES = [
     href: "/payments",
     kicker: "Payments",
     title: "Check billing history",
-    description: "Review paid transactions, receipts, and your online consultation payment history.",
+    description: "Review paid transactions, receipts, and your virtual consult payment history.",
     icon: <FaCreditCard className="h-4 w-4" />,
   },
   {

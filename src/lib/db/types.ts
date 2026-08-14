@@ -20,6 +20,11 @@ export type ApptStatus =
   | "NoShow";
 
 export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
+export type AppointmentRescheduleRequestStatus =
+  | "Pending"
+  | "Approved"
+  | "Rejected"
+  | "Cancelled";
 
 export type PaymentMethod = "Cash" | "GCash" | "QR" | "Card" | "BankTransfer";
 
@@ -121,6 +126,25 @@ export type OnlineBookingReservation = {
   updated_at: string;
 };
 
+export type AppointmentRescheduleRequest = {
+  id: string;
+  appointment_id: string;
+  patient_id: string;
+  doctor_id: string;
+  requested_appointment_date: string;
+  requested_start_time: string;
+  requested_end_time: string;
+  requested_appointment_type: ApptType;
+  reason: string | null;
+  status: AppointmentRescheduleRequestStatus;
+  requested_by: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PatientProcedureConsent = {
   id: string;
   patient_id: string;
@@ -202,11 +226,27 @@ export type LandingTestimonial = {
   quote: string;
 };
 
+export type LandingHeroSlide = {
+  key: string;
+  image: string;
+  title: string;
+  subtitle: string;
+};
+
 export type LandingProgramSlide = {
   key: string;
   name: string;
   description: string;
   ctaLabel: string;
+};
+
+export type LandingBeforeAfterResult = {
+  title: string;
+  beforeImage?: string;
+  afterImage?: string;
+  image?: string;
+  program: string;
+  caption: string;
 };
 
 export type LandingNavItem = {
@@ -246,6 +286,7 @@ export type LandingContent = {
   hero_cta_primary: string;
   hero_cta_secondary: string;
   hero_background_url: string | null;
+  hero_slides: LandingHeroSlide[];
   about_eyebrow: string;
   about_title: string;
   about_subtitle: string;
@@ -266,6 +307,7 @@ export type LandingContent = {
   // Phase 2 fields — see migrations/20260508b_landing_content_full.sql
   nav_items: LandingNavItem[];
   program_slides: LandingProgramSlide[];
+  program_feature_image_url: string | null;
   services_eyebrow: string;
   services_title: string;
   services_subtitle: string;
@@ -286,6 +328,10 @@ export type LandingContent = {
   results_eyebrow: string;
   results_title: string;
   results_subtitle: string;
+  results_board_title: string;
+  results_board_subtitle: string;
+  results_board_label: string;
+  results_items: LandingBeforeAfterResult[];
   faq_eyebrow: string;
   faq_title: string;
   faq_subtitle: string;

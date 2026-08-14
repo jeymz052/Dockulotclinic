@@ -73,17 +73,17 @@ type ReportsPayload = {
 };
 
 const KPI_ACCENTS = [
-  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
-  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
-  "from-neutral-100 via-white to-slate-50 border-neutral-200",
-  "from-neutral-100 via-white to-neutral-50 border-neutral-200",
-  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
-  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
-  "from-neutral-50 via-white to-neutral-100 border-neutral-200",
-  "from-slate-50 via-white to-neutral-100 border-slate-200",
+  "border-black bg-black text-white",
+  "border-neutral-200 bg-white text-black",
+  "border-neutral-200 bg-neutral-50 text-black",
+  "border-neutral-200 bg-white text-black",
+  "border-black bg-black text-white",
+  "border-neutral-200 bg-white text-black",
+  "border-neutral-200 bg-neutral-50 text-black",
+  "border-neutral-200 bg-white text-black",
 ] as const;
 
-const BAR_COLORS = ["#0369a1", "#854D0E", "#A16207", "#CA8A04", "#2563eb", "#0891b2"];
+const BAR_COLORS = ["#111111", "#525252", "#a3a3a3", "#d4d4d4", "#737373", "#262626"];
 
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-PH", {
@@ -167,17 +167,17 @@ function buildWorkbook(data: ReportsPayload, from: string, to: string) {
  xmlns:html="http://www.w3.org/TR/REC-html40">
 <Styles>
   <Style ss:ID="Title">
-    <Font ss:Bold="1" ss:Size="14" ss:Color="#075985"/>
-    <Interior ss:Color="#E0F2FE" ss:Pattern="Solid"/>
-    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#7DD3FC"/></Borders>
+    <Font ss:Bold="1" ss:Size="14" ss:Color="#111111"/>
+    <Interior ss:Color="#F5F5F5" ss:Pattern="Solid"/>
+    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D4D4D4"/></Borders>
   </Style>
   <Style ss:ID="Header">
     <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-    <Interior ss:Color="#0284C7" ss:Pattern="Solid"/>
-    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0369A1"/></Borders>
+    <Interior ss:Color="#111111" ss:Pattern="Solid"/>
+    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#111111"/></Borders>
   </Style>
   <Style ss:ID="Body">
-    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0F2FE"/></Borders>
+    <Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E5E5"/></Borders>
   </Style>
 </Styles>
 ${worksheet("Clinic Summary", [
@@ -605,17 +605,17 @@ export default function ReportsPage() {
   const maxRequestedServiceCount = Math.max(...((data?.requested_services ?? []).map((row) => row.count)), 1);
 
   return (
-    <div className="rounded-[2rem] bg-[linear-gradient(180deg,#eff8ff_0%,#fffbeb_42%,#ffffff_100%)] p-4 text-black shadow-inner sm:p-6">
-      <div className="space-y-6 pb-8">
-        <section className="overflow-hidden rounded-[1.75rem] border border-neutral-100 bg-white shadow-[0_24px_70px_rgba(14,116,144,0.12)]">
-          <div className="grid gap-0 xl:grid-cols-[1.25fr_0.75fr]">
-            <div className="bg-[linear-gradient(135deg,#075985_0%,#854D0E_52%,#fde68a_100%)] px-6 py-7 text-white sm:px-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-neutral-100">Reports & Analytics</p>
-              <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-tight md:text-4xl">
-                Clinic performance, content reach, and service demand
+    <main className="min-h-screen bg-white text-black">
+      <div className="mx-auto max-w-[1500px] space-y-7 pb-10">
+        <section className="overflow-hidden rounded-lg border border-black bg-black text-white shadow-[0_24px_70px_rgba(0,0,0,0.18)]">
+          <div className="grid gap-0 xl:grid-cols-[1.35fr_0.65fr]">
+            <div className="px-5 py-7 sm:px-8 lg:px-10">
+              <p className="text-xs font-black uppercase tracking-[0.34em] text-white/55">Reports & Analytics</p>
+              <h1 className="mt-4 max-w-4xl text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+                Clinic performance in one clean command center
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-50/95">
-                A calm reporting workspace for appointments, sales, POS, patient count, content views, website traffic, and booking intent.
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+                Track appointments, revenue, POS collections, content reach, traffic, and service demand from the same reporting window.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <QuickLink href="/appointments" label="Appointments" />
@@ -623,22 +623,22 @@ export default function ReportsPage() {
                 <QuickLink href="/contents" label="Content" />
               </div>
             </div>
-            <div className="grid gap-3 bg-neutral-50/70 p-5 sm:grid-cols-3 xl:grid-cols-1">
-              <HeroStat label="Report Window" value={`${formatDateLabel(from)} - ${formatDateLabel(to)}`} />
-              <HeroStat label="Monthly Sales" value={loading ? "..." : formatMoney(data?.sales_summary.monthly ?? 0)} />
-              <HeroStat label="Content Clicks" value={loading ? "..." : String(data?.content_clicks_total ?? 0)} />
+            <div className="grid border-t border-white/10 bg-white/[0.06] p-4 sm:grid-cols-3 xl:grid-cols-1 xl:border-l xl:border-t-0">
+              <HeroStat label="Report window" value={`${formatDateLabel(from)} - ${formatDateLabel(to)}`} />
+              <HeroStat label="Monthly sales" value={loading ? "..." : formatMoney(data?.sales_summary.monthly ?? 0)} />
+              <HeroStat label="Content clicks" value={loading ? "..." : String(data?.content_clicks_total ?? 0)} />
             </div>
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-neutral-100 bg-white/95 p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
-          <div className="grid gap-5 xl:grid-cols-[1.15fr_1.05fr_1.05fr_0.85fr] xl:items-end">
+        <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_18px_45px_rgba(0,0,0,0.06)] sm:p-5">
+          <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr_1.1fr_0.85fr] xl:items-end">
             <div className="self-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-400">Report Window</p>
-              <p className="mt-1 text-sm text-slate-600">Filter the dashboard by date range, then export the same view for records.</p>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-neutral-500">Report window</p>
+              <p className="mt-1 text-sm leading-6 text-neutral-600">Filter the dashboard and export exactly what is on screen.</p>
             </div>
 
-            <ControlGroup label="Quick Range">
+            <ControlGroup label="Quick range">
               <div className="grid grid-cols-2 gap-2">
                 <PresetButton label="Today" onClick={() => { setFrom(todayIso); setTo(todayIso); }} />
                 <PresetButton label="Last 7 days" onClick={() => applyPreset(setFrom, setTo, 6)} />
@@ -647,7 +647,7 @@ export default function ReportsPage() {
               </div>
             </ControlGroup>
 
-            <ControlGroup label="Custom Dates">
+            <ControlGroup label="Custom dates">
               <div className="grid grid-cols-2 gap-2">
                 <DateField label="From" value={from} onChange={setFrom} />
                 <DateField label="To" value={to} onChange={setTo} />
@@ -662,285 +662,281 @@ export default function ReportsPage() {
                   onClick={() => data && downloadWorkbook(data, from, to)}
                   disabled={!data || loading}
                 />
-                  <ExportButton
-                    label="PDF"
-                    icon={FaFilePdf}
-                    onClick={() => data && downloadPdf(data, from, to)}
-                    disabled={!data || loading}
-                  />
+                <ExportButton
+                  label="PDF"
+                  icon={FaFilePdf}
+                  onClick={() => data && downloadPdf(data, from, to)}
+                  disabled={!data || loading}
+                />
               </div>
             </ControlGroup>
           </div>
         </section>
 
-      {error ? (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div>
-      ) : null}
+        {error ? (
+          <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-800">{error}</div>
+        ) : null}
 
-      <ReportGroup
-        eyebrow="Clinic Reports"
-        title="Operational KPI cards"
-        description="All required clinic reports are shown as dashboard cards, then expanded with charts below."
-        items={clinicKpis}
-      />
+        <ReportGroup
+          eyebrow="Clinic reports"
+          title="Operational snapshot"
+          description="Appointments, patient volume, sales, and POS performance stay visible before you move into trend analysis."
+          items={clinicKpis}
+        />
 
-      <ReportGroup
-        eyebrow="Content Reports"
-        title="Content and traffic KPI cards"
-        description="Content reach, booking clicks, traffic, and service demand stay visible before the detailed charts."
-        items={contentKpis}
-      />
-
-      <div className="space-y-6">
-        <Panel title="Clinic Reports" subtitle="Appointment totals rebuilt to match the required clinic metrics">
-          {loading ? (
-            <LoadingBlock className="h-[280px]" />
-          ) : (
-            <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <InfoTile label="Total appointments" value={String(data?.appointment_summary.total ?? 0)} />
-                <InfoTile label="Completed appointments" value={String(data?.appointment_summary.completed ?? 0)} />
-                <InfoTile label="Cancelled appointments" value={String(data?.appointment_summary.cancelled ?? 0)} />
-                <InfoTile label="Patient count" value={String(data?.volume.total_patients ?? 0)} />
-              </div>
-              <ChartShell title="Appointment Status Mix" caption="Completed, cancelled, and remaining appointment statuses">
-                {!clinicStatusData.length ? (
-                  <EmptyState text="No appointment status data is available yet." />
-                ) : (
-                  <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-                    <div className="h-[280px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={clinicStatusData}
-                            dataKey="value"
-                            nameKey="label"
-                            innerRadius={64}
-                            outerRadius={104}
-                            paddingAngle={3}
-                          >
-                            {clinicStatusData.map((row, index) => (
-                              <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => `${numberFromChartValue(value)} appointments`} />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-3 self-center">
-                      {clinicStatusData.map((row, index) => (
-                        <LegendRow
-                          key={row.label}
-                          color={BAR_COLORS[index % BAR_COLORS.length]}
-                          label={row.label}
-                          value={`${row.value} appointments`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </ChartShell>
-            </div>
-          )}
-        </Panel>
-
-        <Panel title="Sales Analytics" subtitle="Daily sales, monthly sales, and POS reporting in one chart block">
-          {loading ? (
-            <LoadingBlock className="h-[360px]" />
-          ) : (
-            <div className="space-y-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <InfoTile label="Daily sales" value={formatMoney(data?.sales_summary.daily ?? 0)} />
-                <InfoTile label="Monthly sales" value={formatMoney(data?.sales_summary.monthly ?? 0)} />
-                <InfoTile label="POS collections" value={formatMoney(data?.pos_summary.paid_total ?? 0)} />
-                <InfoTile label="POS average ticket" value={formatMoney(data?.pos_summary.average_ticket ?? 0)} />
-              </div>
-              <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
-                <ChartShell title="Revenue Trend" caption="Paid revenue by day in the selected report window">
-                  {!salesTrendData.length ? (
-                    <EmptyState text="No daily sales trend is available for this range." />
+        <div className="space-y-6">
+          <Panel title="Clinic reports" subtitle="Status mix and appointment volume for the selected range">
+            {loading ? (
+              <LoadingBlock className="h-[360px]" />
+            ) : (
+              <div className="space-y-5">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <InfoTile label="Total appointments" value={String(data?.appointment_summary.total ?? 0)} />
+                  <InfoTile label="Completed" value={String(data?.appointment_summary.completed ?? 0)} />
+                  <InfoTile label="Cancelled" value={String(data?.appointment_summary.cancelled ?? 0)} />
+                  <InfoTile label="Patient count" value={String(data?.volume.total_patients ?? 0)} />
+                </div>
+                <ChartShell title="Appointment status mix" caption="Completed, cancelled, and remaining appointment statuses">
+                  {!clinicStatusData.length ? (
+                    <EmptyState text="No appointment status data is available yet." />
                   ) : (
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={salesTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="salesRevenueFill" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#854D0E" stopOpacity={0.32} />
-                              <stop offset="95%" stopColor="#854D0E" stopOpacity={0.04} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid stroke="#dbeafe" strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#64748b" fontSize={12} />
-                          <YAxis stroke="#64748b" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
-                          <Tooltip
-                            labelFormatter={(label) => formatDateLabel(String(label))}
-                            formatter={(value) => formatMoney(numberFromChartValue(value))}
+                    <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+                      <div className="h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={clinicStatusData} dataKey="value" nameKey="label" innerRadius={64} outerRadius={104} paddingAngle={3}>
+                              {clinicStatusData.map((row, index) => (
+                                <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => `${numberFromChartValue(value)} appointments`} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="space-y-3 self-center">
+                        {clinicStatusData.map((row, index) => (
+                          <LegendRow
+                            key={row.label}
+                            color={BAR_COLORS[index % BAR_COLORS.length]}
+                            label={row.label}
+                            value={`${row.value} appointments`}
                           />
-                          <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#854D0E" fill="url(#salesRevenueFill)" strokeWidth={3} />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </ChartShell>
-                <ChartShell title="Sales Snapshot" caption="Daily, monthly, and POS totals">
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={salesData} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 0 }}>
-                        <CartesianGrid stroke="#dbeafe" strokeDasharray="3 3" horizontal={false} />
-                        <XAxis type="number" stroke="#64748b" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
-                        <YAxis dataKey="label" type="category" width={86} stroke="#64748b" fontSize={11} />
-                        <Tooltip formatter={(value) => formatMoney(numberFromChartValue(value))} />
-                        <Bar dataKey="value" radius={[0, 12, 12, 0]}>
-                          {salesData.map((row, index) => (
-                            <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </ChartShell>
               </div>
-            </div>
-          )}
-        </Panel>
+            )}
+          </Panel>
 
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-        <Panel title="Website Visitor Traffic" subtitle="Daily website traffic for the selected report window">
-          {loading ? (
-            <LoadingBlock className="h-[320px]" />
-          ) : !data?.visitor_traffic.length ? (
-            <EmptyState text="No website visitor traffic has been tracked yet." />
-          ) : (
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.visitor_traffic} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="pageviewFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#A16207" stopOpacity={0.32} />
-                      <stop offset="95%" stopColor="#A16207" stopOpacity={0.04} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#64748b" fontSize={12} />
-                  <YAxis allowDecimals={false} stroke="#64748b" fontSize={12} />
-                  <Tooltip
-                    labelFormatter={(label) => formatDateLabel(String(label))}
-                    formatter={(value, name) => [`${numberFromChartValue(value)}`, String(name) === "visitors" ? "Visitors" : "Pageviews"]}
-                  />
-                  <Legend />
-                  <Area type="monotone" dataKey="pageviews" name="Pageviews" stroke="#A16207" fill="url(#pageviewFill)" strokeWidth={3} />
-                  <Bar dataKey="visitors" name="Visitors" fill="#14b8a6" radius={[8, 8, 0, 0]} maxBarSize={28} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Panel>
-
-        <Panel title="Appointment Clicks From Content" subtitle="Tracked booking CTA clicks coming from blog and video content">
-          {loading ? (
-            <LoadingBlock className="h-[320px]" />
-          ) : (
-            <div className="flex h-[320px] flex-col justify-between rounded-[1.75rem] border border-neutral-100 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-6">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Content conversion signal</p>
-                <p className="mt-4 text-6xl font-black tracking-tight text-black">{data?.content_clicks_total ?? 0}</p>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  This counts booking-intent clicks from the content pages and helps connect educational content to appointment demand.
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <MiniInfo label="Blogs tracked" value={String(data?.top_blogs.length ?? 0)} />
-                <MiniInfo label="Videos tracked" value={String(data?.top_videos.length ?? 0)} />
-              </div>
-            </div>
-          )}
-        </Panel>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Panel title="Most Viewed Blogs" subtitle="Top blog posts by views in the selected range">
-          {loading ? (
-            <LoadingBlock className="h-[320px]" />
-          ) : !blogChartData.length ? (
-            <EmptyState text="No blog view analytics are available yet." />
-          ) : (
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={blogChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
-                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} stroke="#64748b" fontSize={12} />
-                  <YAxis dataKey="name" type="category" width={150} stroke="#64748b" fontSize={11} />
-                  <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
-                  <Bar dataKey="views" fill="#854D0E" radius={[0, 12, 12, 0]} maxBarSize={34} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Panel>
-
-        <Panel title="Most Viewed Videos" subtitle="Top video and replay content by views in the selected range">
-          {loading ? (
-            <LoadingBlock className="h-[320px]" />
-          ) : !videoChartData.length ? (
-            <EmptyState text="No video analytics are available yet." />
-          ) : (
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={videoChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
-                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} stroke="#64748b" fontSize={12} />
-                  <YAxis dataKey="name" type="category" width={150} stroke="#64748b" fontSize={11} />
-                  <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
-                  <Bar dataKey="views" fill="#6366f1" radius={[0, 12, 12, 0]} maxBarSize={34} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </Panel>
-      </div>
-
-      <Panel title="Most Requested Services" subtitle="Service demand based on booked appointments in the selected range">
-        {loading ? (
-          <LoadingBlock className="h-[340px]" />
-        ) : !data?.requested_services.length ? (
-          <EmptyState text="No requested service data is available yet." />
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-3">
-              {data.requested_services.map((row) => (
-                <div key={row.service} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">{row.service}</p>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-700">{row.count}</span>
-                  </div>
-                  <div className="mt-3 h-2.5 rounded-full bg-slate-200">
-                    <div
-                      className="h-2.5 rounded-full bg-linear-to-r from-neutral-300 to-neutral-400"
-                      style={{ width: `${Math.max((row.count / maxRequestedServiceCount) * 100, 10)}%` }}
-                    />
-                  </div>
+          <Panel title="Sales analytics" subtitle="Daily sales, monthly sales, and POS reporting in one view">
+            {loading ? (
+              <LoadingBlock className="h-[360px]" />
+            ) : (
+              <div className="space-y-5">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <InfoTile label="Daily sales" value={formatMoney(data?.sales_summary.daily ?? 0)} />
+                  <InfoTile label="Monthly sales" value={formatMoney(data?.sales_summary.monthly ?? 0)} />
+                  <InfoTile label="POS collections" value={formatMoney(data?.pos_summary.paid_total ?? 0)} />
+                  <InfoTile label="Average ticket" value={formatMoney(data?.pos_summary.average_ticket ?? 0)} />
                 </div>
-              ))}
+                <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+                  <ChartShell title="Revenue trend" caption="Paid revenue by day in the selected report window">
+                    {!salesTrendData.length ? (
+                      <EmptyState text="No daily sales trend is available for this range." />
+                    ) : (
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={salesTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+                            <defs>
+                              <linearGradient id="salesRevenueFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#111111" stopOpacity={0.24} />
+                                <stop offset="95%" stopColor="#111111" stopOpacity={0.03} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={12} />
+                            <YAxis stroke="#737373" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
+                            <Tooltip
+                              labelFormatter={(label) => formatDateLabel(String(label))}
+                              formatter={(value) => formatMoney(numberFromChartValue(value))}
+                            />
+                            <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#111111" fill="url(#salesRevenueFill)" strokeWidth={3} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </ChartShell>
+                  <ChartShell title="Sales snapshot" caption="Daily, monthly, and POS totals">
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={salesData} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 0 }}>
+                          <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
+                          <XAxis type="number" stroke="#737373" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
+                          <YAxis dataKey="label" type="category" width={86} stroke="#737373" fontSize={11} />
+                          <Tooltip formatter={(value) => formatMoney(numberFromChartValue(value))} />
+                          <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                            {salesData.map((row, index) => (
+                              <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </ChartShell>
+                </div>
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        <ReportGroup
+          eyebrow="Content reports"
+          title="Reach, traffic, and demand"
+          description="The content view connects public engagement to booking intent and requested service demand."
+          items={contentKpis}
+        />
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+          <Panel title="Website visitor traffic" subtitle="Daily website traffic for the selected report window">
+            {loading ? (
+              <LoadingBlock className="h-[320px]" />
+            ) : !data?.visitor_traffic.length ? (
+              <EmptyState text="No website visitor traffic has been tracked yet." />
+            ) : (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.visitor_traffic} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="pageviewFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#111111" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#111111" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="visitorFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#737373" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#737373" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={12} />
+                    <YAxis allowDecimals={false} stroke="#737373" fontSize={12} />
+                    <Tooltip
+                      labelFormatter={(label) => formatDateLabel(String(label))}
+                      formatter={(value, name) => [`${numberFromChartValue(value)}`, String(name) === "visitors" ? "Visitors" : "Pageviews"]}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="pageviews" name="Pageviews" stroke="#111111" fill="url(#pageviewFill)" strokeWidth={3} />
+                    <Area type="monotone" dataKey="visitors" name="Visitors" stroke="#737373" fill="url(#visitorFill)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Appointment clicks from content" subtitle="Tracked booking CTA clicks from blog and video pages">
+            {loading ? (
+              <LoadingBlock className="h-[320px]" />
+            ) : (
+              <div className="flex min-h-[320px] flex-col justify-between rounded-lg border border-black bg-black p-6 text-white">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-white/55">Content conversion signal</p>
+                  <p className="mt-5 text-6xl font-black tracking-tight text-white">{data?.content_clicks_total ?? 0}</p>
+                  <p className="mt-3 text-sm leading-6 text-white/65">
+                    Booking-intent clicks from content pages, useful for connecting patient education to appointment demand.
+                  </p>
+                </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <MiniInfo label="Blogs tracked" value={String(data?.top_blogs.length ?? 0)} />
+                  <MiniInfo label="Videos tracked" value={String(data?.top_videos.length ?? 0)} />
+                </div>
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Panel title="Most viewed blogs" subtitle="Top blog posts by views in the selected range">
+            {loading ? (
+              <LoadingBlock className="h-[320px]" />
+            ) : !blogChartData.length ? (
+              <EmptyState text="No blog view analytics are available yet." />
+            ) : (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={blogChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+                    <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
+                    <YAxis dataKey="name" type="category" width={150} stroke="#737373" fontSize={11} />
+                    <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
+                    <Bar dataKey="views" fill="#111111" radius={[0, 6, 6, 0]} maxBarSize={34} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Most viewed videos" subtitle="Top video and replay content by views in the selected range">
+            {loading ? (
+              <LoadingBlock className="h-[320px]" />
+            ) : !videoChartData.length ? (
+              <EmptyState text="No video analytics are available yet." />
+            ) : (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={videoChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+                    <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
+                    <YAxis dataKey="name" type="category" width={150} stroke="#737373" fontSize={11} />
+                    <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
+                    <Bar dataKey="views" fill="#525252" radius={[0, 6, 6, 0]} maxBarSize={34} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        <Panel title="Most requested services" subtitle="Service demand based on booked appointments in the selected range">
+          {loading ? (
+            <LoadingBlock className="h-[340px]" />
+          ) : !data?.requested_services.length ? (
+            <EmptyState text="No requested service data is available yet." />
+          ) : (
+            <div className="grid gap-5 xl:grid-cols-[0.75fr_1.25fr]">
+              <div className="space-y-3">
+                {data.requested_services.map((row) => (
+                  <div key={row.service} className="rounded-lg border border-neutral-200 bg-white p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 text-sm font-bold text-neutral-950">{row.service}</p>
+                      <span className="shrink-0 rounded-md bg-black px-3 py-1 text-xs font-black text-white">{row.count}</span>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-neutral-100">
+                      <div
+                        className="h-2 rounded-full bg-black"
+                        style={{ width: `${Math.max((row.count / maxRequestedServiceCount) * 100, 10)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="h-[340px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.requested_services} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+                    <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
+                    <YAxis dataKey="service" type="category" width={130} stroke="#737373" fontSize={11} />
+                    <Tooltip formatter={(value) => `${numberFromChartValue(value)} requests`} />
+                    <Bar dataKey="count" fill="#111111" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.requested_services} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
-                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} stroke="#64748b" fontSize={12} />
-                  <YAxis dataKey="service" type="category" width={130} stroke="#64748b" fontSize={11} />
-                  <Tooltip formatter={(value) => `${numberFromChartValue(value)} requests`} />
-                  <Bar dataKey="count" fill="#A16207" radius={[0, 12, 12, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-      </Panel>
+          )}
+        </Panel>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -966,10 +962,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
-      <div className="mb-5 border-b border-neutral-50 pb-4">
-        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-[0_18px_45px_rgba(0,0,0,0.06)] sm:p-6">
+      <div className="mb-5 border-b border-neutral-200 pb-4">
+        <h2 className="text-lg font-black tracking-tight text-neutral-950">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-neutral-600">{subtitle}</p>
       </div>
       {children}
     </section>
@@ -978,9 +974,9 @@ function Panel({
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-neutral-100 bg-white px-4 py-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">{label}</p>
-      <p className="mt-2 break-words text-xl font-black tracking-tight text-black">{value}</p>
+    <div className="border-b border-white/10 px-4 py-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 xl:border-b xl:border-r-0 xl:last:border-b-0">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45">{label}</p>
+      <p className="mt-2 break-words text-xl font-black tracking-tight text-white">{value}</p>
     </div>
   );
 }
@@ -995,10 +991,10 @@ function ChartShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-neutral-100 bg-[linear-gradient(180deg,#f8fcff_0%,#ffffff_100%)] p-4 shadow-sm">
+    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
       <div className="mb-4">
-        <h3 className="text-sm font-black uppercase tracking-[0.14em] text-neutral-700">{title}</h3>
-        <p className="mt-1 text-sm text-slate-500">{caption}</p>
+        <h3 className="text-sm font-black uppercase tracking-[0.14em] text-neutral-950">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-neutral-600">{caption}</p>
       </div>
       {children}
     </div>
@@ -1007,12 +1003,12 @@ function ChartShell({
 
 function LegendRow({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-100 bg-white px-4 py-3 shadow-sm">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-        <span className="truncate text-sm font-semibold text-slate-700">{label}</span>
+        <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: color }} />
+        <span className="truncate text-sm font-semibold text-neutral-700">{label}</span>
       </div>
-      <span className="shrink-0 text-sm font-black text-black">{value}</span>
+      <span className="shrink-0 text-sm font-black text-neutral-950">{value}</span>
     </div>
   );
 }
@@ -1029,11 +1025,11 @@ function ReportGroup({
   items: KpiItem[];
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(14,116,144,0.08)]">
-      <div className="mb-5 flex flex-col gap-1 border-b border-neutral-50 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">{eyebrow}</p>
-        <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
-        <p className="text-sm leading-6 text-slate-500">{description}</p>
+    <section className="space-y-4">
+      <div className="flex flex-col gap-1 border-b border-neutral-200 pb-4">
+        <p className="text-xs font-black uppercase tracking-[0.24em] text-neutral-500">{eyebrow}</p>
+        <h2 className="text-2xl font-black tracking-tight text-black">{title}</h2>
+        <p className="max-w-3xl text-sm leading-6 text-neutral-600">{description}</p>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
         {items.map((item) => (
@@ -1057,35 +1053,37 @@ function KpiCard({
   accent: string;
   icon: IconType;
 }) {
+  const isDark = accent.includes("bg-black");
+
   return (
-    <div className={`min-h-36 rounded-[1.25rem] border bg-linear-to-br ${accent} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(14,116,144,0.14)]`}>
+    <div className={`min-h-36 rounded-lg border ${accent} p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(0,0,0,0.10)]`}>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="h-1.5 w-12 rounded-full bg-neutral-300/80" />
-        <div className="flex size-10 items-center justify-center rounded-2xl border border-neutral-100 bg-white/80 text-neutral-700 shadow-sm">
+        <div className={isDark ? "h-1.5 w-12 rounded-full bg-white/35" : "h-1.5 w-12 rounded-full bg-black"} />
+        <div className={isDark ? "flex size-10 items-center justify-center rounded-md border border-white/15 bg-white/10 text-white" : "flex size-10 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-950"}>
           <Icon className="text-lg" aria-hidden="true" />
         </div>
       </div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">{label}</p>
-      <p className="mt-3 break-words text-2xl font-black tracking-tight text-black sm:text-3xl">{value}</p>
-      <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-600">{hint}</p>
+      <p className={isDark ? "text-xs font-black uppercase tracking-[0.16em] text-white/55" : "text-xs font-black uppercase tracking-[0.16em] text-neutral-500"}>{label}</p>
+      <p className={isDark ? "mt-3 break-words text-2xl font-black tracking-tight text-white sm:text-3xl" : "mt-3 break-words text-2xl font-black tracking-tight text-black sm:text-3xl"}>{value}</p>
+      <p className={isDark ? "mt-2 line-clamp-2 text-sm leading-5 text-white/65" : "mt-2 line-clamp-2 text-sm leading-5 text-neutral-600"}>{hint}</p>
     </div>
   );
 }
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-900">{value}</p>
+    <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <p className="mt-2 break-words text-2xl font-black text-neutral-950">{value}</p>
     </div>
   );
 }
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-900">{value}</p>
+    <div className="rounded-lg border border-white/15 bg-white/10 px-4 py-3">
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/55">{label}</p>
+      <p className="mt-1 text-xl font-black text-white">{value}</p>
     </div>
   );
 }
@@ -1094,7 +1092,7 @@ function QuickLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-white/25 bg-white/15 px-4 py-2.5 text-center text-sm font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/25"
+      className="rounded-md border border-white/20 bg-white/10 px-4 py-2.5 text-center text-sm font-bold text-white transition hover:-translate-y-0.5 hover:border-white hover:bg-white hover:text-black"
     >
       {label}
     </Link>
@@ -1104,7 +1102,7 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-700">{label}</p>
+      <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-neutral-500">{label}</p>
       {children}
     </div>
   );
@@ -1121,12 +1119,12 @@ function DateField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-semibold text-neutral-500">{label}</span>
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-2xl border border-neutral-100 bg-neutral-50/70 px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-4 focus:ring-neutral-100"
+        className="h-11 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-800 outline-none transition focus:border-black focus:ring-4 focus:ring-neutral-100"
       />
     </label>
   );
@@ -1148,7 +1146,7 @@ function ExportButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-neutral-400 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-400 disabled:cursor-not-allowed disabled:bg-slate-300"
+      className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-black px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
     >
       <Icon className="text-base" aria-hidden="true" />
       {label}
@@ -1161,7 +1159,7 @@ function PresetButton({ label, onClick }: { label: string; onClick: () => void }
     <button
       type="button"
       onClick={onClick}
-      className="h-11 rounded-2xl border border-neutral-100 bg-neutral-50 px-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-200 hover:bg-neutral-100 hover:text-neutral-800"
+      className="h-11 rounded-md border border-neutral-200 bg-white px-3 text-sm font-bold text-neutral-700 transition hover:border-black hover:bg-black hover:text-white"
     >
       {label}
     </button>
@@ -1169,12 +1167,12 @@ function PresetButton({ label, onClick }: { label: string; onClick: () => void }
 }
 
 function LoadingBlock({ className }: { className: string }) {
-  return <div className={`rounded-3xl bg-neutral-100/70 shimmer ${className}`} />;
+  return <div className={`rounded-lg bg-neutral-100/70 shimmer ${className}`} />;
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="flex h-[220px] items-center justify-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/70 px-6 text-center text-sm text-slate-500">
+    <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-6 text-center text-sm font-medium text-neutral-500">
       {text}
     </div>
   );

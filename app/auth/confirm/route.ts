@@ -3,6 +3,18 @@ import { createClient, type EmailOtpType } from "@supabase/supabase-js";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { enqueueNotification } from "@/src/lib/services/notification";
+import { formatPatientFullName } from "@/src/lib/patient-registration";
+
+function isMissingOfficialPatientColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === "object"
+      && "code" in error
+      && (error as { code?: string }).code === "42703"
+      && "message" in error
+      && /first_name|middle_name|last_name|suffix_name|civil_status|religion|occupation|guardian_name/i.test(String((error as { message?: unknown }).message ?? "")),
+  );
+}
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -87,13 +99,25 @@ export async function GET(request: Request) {
         authUser.user?.user_metadata && typeof authUser.user.user_metadata === "object"
           ? authUser.user.user_metadata
           : {};
-      const fullName = typeof userMetadata.full_name === "string" && userMetadata.full_name.trim()
-        ? userMetadata.full_name.trim()
-        : authUser.user?.email?.split("@")[0] ?? "Patient";
+      const firstName = typeof userMetadata.first_name === "string" ? userMetadata.first_name.trim() : "";
+      const middleName = typeof userMetadata.middle_name === "string" ? userMetadata.middle_name.trim() : "";
+      const lastName = typeof userMetadata.last_name === "string" ? userMetadata.last_name.trim() : "";
+      const suffixName = typeof userMetadata.suffix_name === "string" ? userMetadata.suffix_name.trim() : "";
+      const fullName = formatPatientFullName({
+        firstName,
+        middleName,
+        lastName,
+        suffixName,
+        fullName: typeof userMetadata.full_name === "string" ? userMetadata.full_name : null,
+      }) || authUser.user?.email?.split("@")[0] || "Patient";
       const phone = typeof userMetadata.phone === "string" ? userMetadata.phone.trim() : "";
       const dob = typeof userMetadata.dob === "string" ? userMetadata.dob : null;
       const gender = typeof userMetadata.gender === "string" ? userMetadata.gender : null;
+      const civilStatus = typeof userMetadata.civil_status === "string" ? userMetadata.civil_status : null;
       const address = typeof userMetadata.address === "string" ? userMetadata.address : null;
+      const religion = typeof userMetadata.religion === "string" ? userMetadata.religion : null;
+      const occupation = typeof userMetadata.occupation === "string" ? userMetadata.occupation : null;
+      const guardianName = typeof userMetadata.guardian_name === "string" ? userMetadata.guardian_name : null;
       const email = authUser.user?.email?.trim().toLowerCase();
 
       if (!email) {
@@ -110,10 +134,18 @@ export async function GET(request: Request) {
         user_metadata: {
           ...userMetadata,
           full_name: fullName,
+          first_name: firstName,
+          middle_name: middleName,
+          last_name: lastName,
+          suffix_name: suffixName,
           phone,
           dob,
           gender,
+          civil_status: civilStatus,
           address,
+          religion,
+          occupation,
+          guardian_name: guardianName,
         },
       });
       if (updateAuthError) throw updateAuthError;
@@ -128,13 +160,32 @@ export async function GET(request: Request) {
       });
       if (upsertProfileError) throw upsertProfileError;
 
-      const { error: upsertPatientError } = await admin.from("patients").upsert({
+      const patientProfile = {
         id: verifiedUserId,
+        first_name: firstName || null,
+        middle_name: middleName || null,
+        last_name: lastName || null,
+        suffix_name: suffixName || null,
         dob,
         gender,
+        civil_status: civilStatus,
         address,
-      });
-      if (upsertPatientError) throw upsertPatientError;
+        religion,
+        occupation,
+        guardian_name: guardianName,
+      };
+      const { error: upsertPatientError } = await admin.from("patients").upsert(patientProfile);
+      if (isMissingOfficialPatientColumn(upsertPatientError)) {
+        const { error: legacyPatientError } = await admin.from("patients").upsert({
+          id: verifiedUserId,
+          dob,
+          gender,
+          address,
+        });
+        if (legacyPatientError) throw legacyPatientError;
+      } else if (upsertPatientError) {
+        throw upsertPatientError;
+      }
 
       await enqueueNotification({
         user_id: verifiedUserId,

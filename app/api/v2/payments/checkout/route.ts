@@ -18,6 +18,7 @@ type BookingCheckoutBody = {
   service?: string;
   reservation_id?: string;
   payment_option?: OnlineCheckoutOption;
+  payment_account_id?: string;
   procedure_consent?: ProcedureConsentPayload;
 };
 
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
       service: body.service,
       reservationId: body.reservation_id,
       checkoutOption: body.payment_option,
+      paymentAccountId: body.payment_account_id,
       procedureConsent: body.procedure_consent,
     }, actor);
 

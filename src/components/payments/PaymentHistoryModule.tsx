@@ -1,23 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FaArrowRight,
+  FaClockRotateLeft,
+  FaMagnifyingGlass,
+  FaReceipt,
+  FaRotateRight,
+} from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 
-type OnlinePaymentMethod = "GCash" | "QR" | "Card" | "BankTransfer";
+type OnlinePaymentMethod = "Cash" | "GCash" | "QR" | "Card" | "BankTransfer";
+type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
+type BillingStatus = "Draft" | "Issued" | "Paid" | "Void";
+type HistoryTab = "all" | "online" | "pos";
+type HistoryStatusFilter = "all" | "paid" | "pending" | "failed";
+
+type PaymentAppointment = {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  appointment_type: "Clinic" | "Online";
+  status: string;
+};
 
 type OnlinePaymentRecord = {
   id: string;
   appointment_id: string | null;
+  billing_id: string | null;
   amount: number;
   method: OnlinePaymentMethod;
-  status: "Pending" | "Paid" | "Failed";
+  status: PaymentStatus;
   provider: string | null;
   provider_ref: string | null;
   created_at: string;
   paid_at: string | null;
+  appointment?: PaymentAppointment | null;
 };
 
 type BillingRecord = {
@@ -28,52 +52,154 @@ type BillingRecord = {
   discount: number;
   tax: number;
   total: number;
-  status: "Draft" | "Issued" | "Paid" | "Void";
+  status: BillingStatus;
   issued_at: string | null;
   created_at: string;
 };
 
-type HistoryTab = "online" | "pos";
+type PatientProfile = {
+  id: string;
+  email: string | null;
+  full_name: string;
+};
 
-const HISTORY_PAGE_SIZE = 8;
+type HistoryRow = {
+  id: string;
+  kind: "online" | "pos";
+  patient: string;
+  detail: string;
+  amount: number;
+  method: string;
+  status: "Pending" | "Paid" | "Failed";
+  statusLabel: string;
+  dateLabel: string;
+  timestamp: number;
+  reference: string;
+  receiptHref?: string;
+};
+
+const HISTORY_PAGE_SIZE = 10;
 
 function peso(amount: number) {
   return `PHP ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatRecordDate(value: string | null) {
+  if (!value) return "Not yet";
+
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatMethod(method?: OnlinePaymentMethod) {
+  if (method === "Cash") return "Cash";
+  if (method === "GCash") return "GCash / QR";
+  if (method === "QR") return "QR Ph";
+  if (method === "BankTransfer") return "Bank Transfer";
+  if (method === "Card") return "Card";
+  return "Payment";
+}
+
+function statusFromBilling(status: BillingStatus): HistoryRow["status"] {
+  if (status === "Paid") return "Paid";
+  if (status === "Void") return "Failed";
+  return "Pending";
+}
+
+function normalizePaymentStatus(status: PaymentStatus): HistoryRow["status"] {
+  if (status === "Paid") return "Paid";
+  if (status === "Failed" || status === "Refunded") return "Failed";
+  return "Pending";
+}
+
+function shortRef(value: string | null | undefined, fallback: string) {
+  const cleanValue = value?.trim();
+  if (cleanValue) return cleanValue.length > 18 ? `${cleanValue.slice(0, 18)}...` : cleanValue;
+  return fallback;
+}
+
+function timeValue(value: string | null | undefined) {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function PaymentHistoryModule() {
-  const { accessToken } = useRole();
-  const { appointments } = useAppointments();
+  const { accessToken, profile, role } = useRole();
+  const { appointments, error: appointmentError } = useAppointments();
   const [payments, setPayments] = useState<OnlinePaymentRecord[]>([]);
   const [billings, setBillings] = useState<BillingRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<HistoryTab>("online");
+  const [patients, setPatients] = useState<PatientProfile[]>([]);
+  const [activeTab, setActiveTab] = useState<HistoryTab>("all");
+  const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>("all");
+  const [query, setQuery] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
+  const [paymentLoading, setPaymentLoading] = useState(true);
   const [billingLoading, setBillingLoading] = useState(true);
+  const [patientLoading, setPatientLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const onlineAppointments = useMemo(
-    () => appointments.filter((appointment) => appointment.type === "Online"),
+  const canSeeAllPatients = role === "SUPER_ADMIN" || role === "SECRETARY" || role === "DOCTOR";
+  const isLoading = paymentLoading || billingLoading || patientLoading;
+
+  const appointmentById = useMemo(
+    () => new Map(appointments.map((appointment) => [appointment.id, appointment])),
     [appointments],
   );
+
+  const patientById = useMemo(() => {
+    const map = new Map<string, string>();
+    patients.forEach((patient) => {
+      map.set(patient.id, patient.full_name || patient.email || `Patient ${patient.id.slice(0, 8)}`);
+    });
+    if (profile?.id) {
+      map.set(profile.id, profile.full_name || profile.email || "My account");
+    }
+    appointments.forEach((appointment) => {
+      // AppointmentRecord does not expose patient_id, but it carries the
+      // display name for records loaded through /api/appointments.
+      map.set(appointment.email.toLowerCase(), appointment.patientName);
+    });
+    return map;
+  }, [appointments, patients, profile]);
+
+  const resolvePatientName = useCallback((patientId: string | null | undefined, fallback?: string | null) => {
+    if (fallback?.trim()) return fallback.trim();
+    if (!patientId) return canSeeAllPatients ? "Patient record" : "My record";
+    return patientById.get(patientId) ?? `Patient ${patientId.slice(0, 8).toUpperCase()}`;
+  }, [canSeeAllPatients, patientById]);
 
   useEffect(() => {
     if (!accessToken) return;
     let active = true;
 
     async function loadPayments() {
-      const url = new URL("/api/v2/payments", window.location.origin);
-      onlineAppointments.forEach((appointment) => {
-        url.searchParams.append("appointment_id", appointment.id);
-      });
-
-      const res = await fetch(url.toString(), {
-        cache: "no-store",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!res.ok) return;
-
-      const payload = (await res.json()) as { payments: OnlinePaymentRecord[] };
-      if (active) {
-        setPayments(payload.payments);
+      try {
+        setPaymentLoading(true);
+        const res = await fetch("/api/v2/payments", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const payload = (await res.json().catch(() => ({}))) as {
+          payments?: OnlinePaymentRecord[];
+          message?: string;
+        };
+        if (!res.ok) throw new Error(payload.message ?? "Failed to load online payments.");
+        if (active) {
+          setPayments(payload.payments ?? []);
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : "Failed to load payment history.");
+        }
+      } finally {
+        if (active) setPaymentLoading(false);
       }
     }
 
@@ -81,7 +207,7 @@ export function PaymentHistoryModule() {
     return () => {
       active = false;
     };
-  }, [accessToken, onlineAppointments]);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -94,11 +220,18 @@ export function PaymentHistoryModule() {
           cache: "no-store",
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        if (!res.ok) return;
-
-        const payload = (await res.json()) as { billings: BillingRecord[] };
+        const payload = (await res.json().catch(() => ({}))) as {
+          billings?: BillingRecord[];
+          message?: string;
+        };
+        if (!res.ok) throw new Error(payload.message ?? "Failed to load POS billings.");
         if (active) {
-          setBillings(payload.billings);
+          setBillings(payload.billings ?? []);
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : "Failed to load billing history.");
         }
       } finally {
         if (active) setBillingLoading(false);
@@ -112,144 +245,332 @@ export function PaymentHistoryModule() {
   }, [accessToken]);
 
   useEffect(() => {
+    if (!accessToken || !canSeeAllPatients) return;
+    let active = true;
+
+    async function loadPatients() {
+      try {
+        setPatientLoading(true);
+        const res = await fetch("/api/v2/users?role=patient&active=true", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) return;
+        const payload = (await res.json()) as { users?: PatientProfile[] };
+        if (active) setPatients(payload.users ?? []);
+      } finally {
+        if (active) setPatientLoading(false);
+      }
+    }
+
+    void loadPatients();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, canSeeAllPatients]);
+
+  useEffect(() => {
     setHistoryPage(1);
-  }, [activeTab]);
+  }, [activeTab, query, statusFilter]);
 
-  const appointmentById = useMemo(
-    () => new Map(appointments.map((appointment) => [appointment.id, appointment])),
-    [appointments],
-  );
-  const onlineRows = useMemo(
-    () =>
-      [...payments]
-        .sort((left, right) => `${right.created_at}`.localeCompare(`${left.created_at}`))
-        .map((payment) => {
-          const appointment = payment.appointment_id ? appointmentById.get(payment.appointment_id) ?? null : null;
-          const doctor = appointment ? getDoctorById(appointment.doctorId) : null;
-          return {
-            id: payment.id,
-            patient: appointment?.patientName ?? "Online consultation payment",
-            details: appointment
-              ? `${doctor?.name ?? "Assigned doctor"} | ${formatDisplayDate(appointment.date)} | ${formatRange(appointment.start, appointment.end)}`
-              : doctor?.name ?? "Assigned doctor",
-            amount: peso(payment.amount),
-            method: formatMethod(payment.method),
-            status: payment.status,
-            created: formatRecordDate(payment.created_at),
-            paidAt: formatRecordDate(payment.paid_at),
-          };
-        }),
-    [appointmentById, payments],
-  );
-  const posRows = useMemo(
-    () =>
-      [...billings]
-        .sort((left, right) => `${right.created_at}`.localeCompare(`${left.created_at}`))
-        .map((billing) => {
-          const appointment = billing.appointment_id ? appointmentById.get(billing.appointment_id) ?? null : null;
-          return {
-            id: billing.id,
-            patient: appointment?.patientName ?? `Billing ${billing.id.slice(0, 8).toUpperCase()}`,
-            details: appointment
-              ? `${formatDisplayDate(appointment.date)} | ${formatRange(appointment.start, appointment.end)}`
-              : "Clinic billing record",
-            total: peso(Number(billing.total)),
-            status: billing.status,
-            issued: formatRecordDate(billing.issued_at ?? billing.created_at),
-            receiptHref: `/payments/receipt/${billing.id}`,
-          };
-        }),
-    [appointmentById, billings],
-  );
+  const rows = useMemo<HistoryRow[]>(() => {
+    const onlineRows = payments.map((payment) => {
+      const localAppointment = payment.appointment_id ? appointmentById.get(payment.appointment_id) ?? null : null;
+      const dbAppointment = payment.appointment ?? null;
+      const doctorId = localAppointment?.doctorId ?? dbAppointment?.doctor_id ?? "";
+      const doctor = doctorId ? getDoctorById(doctorId) : null;
+      const appointmentDate = localAppointment?.date ?? dbAppointment?.appointment_date ?? "";
+      const appointmentStart = localAppointment?.start ?? dbAppointment?.start_time ?? "";
+      const appointmentEnd = localAppointment?.end ?? dbAppointment?.end_time ?? "";
+      const scheduleLabel = appointmentDate && appointmentStart && appointmentEnd
+        ? `${formatDisplayDate(appointmentDate)} | ${formatRange(appointmentStart, appointmentEnd)}`
+        : "Online reservation";
+      const status = normalizePaymentStatus(payment.status);
 
-  const currentRows = activeTab === "online" ? onlineRows : posRows;
-  const totalPages = Math.max(1, Math.ceil(currentRows.length / HISTORY_PAGE_SIZE));
-  const paginatedRows = currentRows.slice((historyPage - 1) * HISTORY_PAGE_SIZE, historyPage * HISTORY_PAGE_SIZE);
+      return {
+        id: payment.id,
+        kind: "online",
+        patient: resolvePatientName(dbAppointment?.patient_id, localAppointment?.patientName),
+        detail: `${doctor?.name ?? "Online consultation"} | ${scheduleLabel}`,
+        amount: Number(payment.amount),
+        method: formatMethod(payment.method),
+        status,
+        statusLabel: payment.status,
+        dateLabel: formatRecordDate(payment.paid_at ?? payment.created_at),
+        timestamp: timeValue(payment.paid_at ?? payment.created_at),
+        reference: shortRef(payment.provider_ref, payment.id.slice(0, 8).toUpperCase()),
+      } satisfies HistoryRow;
+    });
+
+    const posRows = billings.map((billing) => {
+      const appointment = billing.appointment_id ? appointmentById.get(billing.appointment_id) ?? null : null;
+      const detail = appointment
+        ? `${formatDisplayDate(appointment.date)} | ${formatRange(appointment.start, appointment.end)}`
+        : "Clinic billing record";
+
+      return {
+        id: billing.id,
+        kind: "pos",
+        patient: resolvePatientName(billing.patient_id, appointment?.patientName),
+        detail,
+        amount: Number(billing.total),
+        method: "Clinic POS",
+        status: statusFromBilling(billing.status),
+        statusLabel: billing.status,
+        dateLabel: formatRecordDate(billing.issued_at ?? billing.created_at),
+        timestamp: timeValue(billing.issued_at ?? billing.created_at),
+        reference: billing.id.slice(0, 8).toUpperCase(),
+        receiptHref: `/payments/receipt/${billing.id}`,
+      } satisfies HistoryRow;
+    });
+
+    return [...onlineRows, ...posRows].sort((left, right) => right.timestamp - left.timestamp);
+  }, [appointmentById, billings, payments, resolvePatientName]);
+
+  const filteredRows = useMemo(() => {
+    const cleanQuery = query.trim().toLowerCase();
+    return rows.filter((row) => {
+      const matchesTab = activeTab === "all" || row.kind === activeTab;
+      const matchesStatus = statusFilter === "all" || row.status.toLowerCase() === statusFilter;
+      const matchesQuery =
+        !cleanQuery
+        || [row.patient, row.detail, row.method, row.reference, row.statusLabel]
+          .some((value) => value.toLowerCase().includes(cleanQuery));
+
+      return matchesTab && matchesStatus && matchesQuery;
+    });
+  }, [activeTab, query, rows, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / HISTORY_PAGE_SIZE));
+  const paginatedRows = filteredRows.slice(
+    (historyPage - 1) * HISTORY_PAGE_SIZE,
+    historyPage * HISTORY_PAGE_SIZE,
+  );
 
   return (
-    <section className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-5 pb-8">
+      <section className="border-b border-neutral-200 pb-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Payments</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-950">Payment History</h1>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              {canSeeAllPatients
+                ? "All patient payment records are listed here across online payments and clinic POS billings."
+                : "Your online and clinic payment records are listed here."}
+            </p>
+          </div>
+
+          {canSeeAllPatients ? (
+            <Link
+              href="/payments/pos"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800"
+            >
+              <FaReceipt className="h-4 w-4" aria-hidden="true" />
+              POS Billing
+            </Link>
+          ) : null}
+        </div>
+      </section>
+
+      {loadError || appointmentError ? (
+        <div className="rounded-md border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {loadError ?? appointmentError}
+        </div>
+      ) : null}
+
+      <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <div className="border-b border-neutral-100 p-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+            <div className="relative">
+              <FaMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden="true" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={canSeeAllPatients ? "Search patient, reference, method..." : "Search your payment history..."}
+                className="h-11 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-sm font-medium text-neutral-900 outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-2 focus:ring-neutral-100"
+              />
+            </div>
+
+            <div className="inline-grid grid-cols-3 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+              <FilterButton active={activeTab === "all"} onClick={() => setActiveTab("all")}>
+                All
+              </FilterButton>
+              <FilterButton active={activeTab === "online"} onClick={() => setActiveTab("online")}>
+                Online
+              </FilterButton>
+              <FilterButton active={activeTab === "pos"} onClick={() => setActiveTab("pos")}>
+                POS
+              </FilterButton>
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as HistoryStatusFilter)}
+              className="h-11 rounded-md border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-700 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
+            >
+              <option value="all">All statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed / Void</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
+          <table className="min-w-full divide-y divide-neutral-100 text-sm">
+            <thead className="bg-neutral-50">
+              <tr>
+                {["Patient", "Payment", "Amount", "Status", "Date", "Reference", ""].map((column) => (
+                  <th key={column} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100 bg-white">
+              <HistoryRows rows={paginatedRows} loading={isLoading} />
+            </tbody>
+          </table>
+        </div>
+
+        <div className="divide-y divide-neutral-100 lg:hidden">
+          {isLoading ? (
+            <LoadingPanel />
+          ) : paginatedRows.length > 0 ? (
+            paginatedRows.map((row) => <MobileHistoryRow key={`${row.kind}-${row.id}`} row={row} />)
+          ) : (
+            <EmptyPanel />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-neutral-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-neutral-500">
+            Showing {filteredRows.length === 0 ? 0 : (historyPage - 1) * HISTORY_PAGE_SIZE + 1}
+            {" - "}
+            {Math.min(historyPage * HISTORY_PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
+          </p>
+          <Pagination
+            page={historyPage}
+            totalPages={totalPages}
+            onPrevious={() => setHistoryPage((current) => Math.max(1, current - 1))}
+            onNext={() => setHistoryPage((current) => Math.min(totalPages, current + 1))}
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function FilterButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-3 py-2 text-sm font-semibold transition ${
+        active ? "bg-white text-neutral-950 shadow-sm" : "text-neutral-500 hover:text-neutral-800"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function HistoryRows({ rows, loading }: { rows: HistoryRow[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <tr>
+        <td colSpan={7}>
+          <LoadingPanel />
+        </td>
+      </tr>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <tr>
+        <td colSpan={7}>
+          <EmptyPanel />
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <>
+      {rows.map((row) => (
+        <tr key={`${row.kind}-${row.id}`} className="align-top transition hover:bg-neutral-50/70">
+          <td className="px-4 py-4">
+            <p className="font-semibold text-neutral-950">{row.patient}</p>
+            <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-neutral-400">
+              {row.kind === "online" ? "Online" : "Clinic POS"}
+            </p>
+          </td>
+          <td className="max-w-md px-4 py-4">
+            <p className="font-medium text-neutral-800">{row.method}</p>
+            <p className="mt-1 text-sm leading-5 text-neutral-500">{row.detail}</p>
+          </td>
+          <td className="px-4 py-4 font-mono font-bold text-neutral-950">{peso(row.amount)}</td>
+          <td className="px-4 py-4">
+            <StatusPill tone={row.status}>{row.statusLabel}</StatusPill>
+          </td>
+          <td className="px-4 py-4 text-neutral-600">{row.dateLabel}</td>
+          <td className="px-4 py-4 font-mono text-xs font-semibold text-neutral-500">{row.reference}</td>
+          <td className="px-4 py-4 text-right">
+            {row.receiptHref ? (
+              <Link
+                href={row.receiptHref}
+                className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Receipt
+                <FaArrowRight className="h-3 w-3" aria-hidden="true" />
+              </Link>
+            ) : null}
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function MobileHistoryRow({ row }: { row: HistoryRow }) {
+  return (
+    <article className="p-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">Payment History</p>
-          <h1 className="mt-2 text-2xl font-bold text-neutral-900">History</h1>
+          <p className="font-semibold text-neutral-950">{row.patient}</p>
+          <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-neutral-400">
+            {row.kind === "online" ? "Online" : "Clinic POS"}
+          </p>
         </div>
-
-        <div className="inline-flex rounded-full border border-neutral-100 bg-neutral-50/70 p-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("online")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "online"
-                ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
-                : "text-neutral-600 hover:text-neutral-700"
-            }`}
-          >
-            Online Payments
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("pos")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "pos"
-                ? "bg-[linear-gradient(135deg,#67490c,#855d0c)] text-white shadow-sm"
-                : "text-neutral-600 hover:text-neutral-700"
-            }`}
-          >
-            Clinic POS
-          </button>
+        <StatusPill tone={row.status}>{row.statusLabel}</StatusPill>
+      </div>
+      <div className="mt-3 space-y-2 text-sm text-neutral-600">
+        <p className="font-medium text-neutral-800">{row.method}</p>
+        <p>{row.detail}</p>
+        <div className="flex items-center justify-between gap-3 border-t border-neutral-100 pt-3">
+          <span className="font-mono text-base font-bold text-neutral-950">{peso(row.amount)}</span>
+          <span>{row.dateLabel}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-xs font-semibold text-neutral-500">{row.reference}</span>
+          {row.receiptHref ? (
+            <Link href={row.receiptHref} className="inline-flex items-center gap-1 text-xs font-bold text-neutral-800">
+              Receipt <FaArrowRight className="h-3 w-3" aria-hidden="true" />
+            </Link>
+          ) : null}
         </div>
       </div>
-
-      <div className="mt-6 overflow-hidden rounded-3xl border border-neutral-100">
-        {activeTab === "online" ? (
-          <HistoryTable
-            columns={["Patient", "Details", "Amount", "Method", "Status", "Created", "Paid At"]}
-            loading={false}
-            emptyLabel="No online payment records yet."
-            rows={paginatedRows.map((row) => {
-              const payment = row as (typeof onlineRows)[number];
-              return [
-                payment.patient,
-                payment.details,
-                payment.amount,
-                payment.method,
-                <StatusPill key={`${payment.id}-status`} tone={payment.status}>{payment.status}</StatusPill>,
-                payment.created,
-                payment.paidAt,
-              ];
-            })}
-          />
-        ) : (
-          <HistoryTable
-            columns={["Patient", "Details", "Total", "Status", "Issued", "Receipt"]}
-            loading={billingLoading}
-            emptyLabel="No POS billing records yet."
-            rows={paginatedRows.map((row) => {
-              const billing = row as (typeof posRows)[number];
-              return [
-                billing.patient,
-                billing.details,
-                billing.total,
-                <StatusPill key={`${billing.id}-status`} tone={billing.status === "Void" ? "Failed" : billing.status === "Paid" ? "Paid" : "Pending"}>
-                  {billing.status}
-                </StatusPill>,
-                billing.issued,
-                <Link key={`${billing.id}-receipt`} href={billing.receiptHref} className="font-semibold text-neutral-700 hover:text-neutral-700">
-                  Open receipt
-                </Link>,
-              ];
-            })}
-          />
-        )}
-      </div>
-
-      <Pagination
-        page={historyPage}
-        totalPages={totalPages}
-        onPrevious={() => setHistoryPage((current) => Math.max(1, current - 1))}
-        onNext={() => setHistoryPage((current) => Math.min(totalPages, current + 1))}
-      />
-    </section>
+    </article>
   );
 }
 
@@ -257,66 +578,44 @@ function StatusPill({
   tone,
   children,
 }: {
-  tone: "Pending" | "Paid" | "Failed";
+  tone: HistoryRow["status"];
   children: string;
 }) {
   const classes =
     tone === "Paid"
-      ? "bg-neutral-50 text-neutral-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : tone === "Failed"
-        ? "bg-neutral-50 text-neutral-700"
-        : "bg-neutral-50 text-neutral-700";
-
-  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${classes}`}>{children}</span>;
-}
-
-function HistoryTable({
-  columns,
-  rows,
-  emptyLabel,
-  loading,
-}: {
-  columns: string[];
-  rows: Array<Array<string | React.ReactNode>>;
-  emptyLabel: string;
-  loading: boolean;
-}) {
-  if (loading) {
-    return <div className="h-32 animate-pulse bg-neutral-100" />;
-  }
+        ? "border-red-200 bg-red-50 text-red-700"
+        : "border-amber-200 bg-amber-50 text-amber-700";
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-neutral-100 text-sm">
-        <thead className="bg-neutral-50/70">
-          <tr>
-            {columns.map((column) => (
-              <th key={column} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-neutral-50 bg-white">
-          {rows.length > 0 ? (
-            rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="align-top">
-                {row.map((cell, cellIndex) => (
-                  <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-4 text-neutral-700">
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-neutral-500">
-                {emptyLabel}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${classes}`}>
+      {children}
+    </span>
+  );
+}
+
+function LoadingPanel() {
+  return (
+    <div className="flex min-h-44 items-center justify-center p-6">
+      <div className="flex items-center gap-3 text-sm font-semibold text-neutral-500">
+        <FaRotateRight className="h-4 w-4 animate-spin" aria-hidden="true" />
+        Loading payment history...
+      </div>
+    </div>
+  );
+}
+
+function EmptyPanel() {
+  return (
+    <div className="flex min-h-44 flex-col items-center justify-center p-6 text-center">
+      <div className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
+        <FaClockRotateLeft className="h-5 w-5" aria-hidden="true" />
+      </div>
+      <p className="mt-3 font-semibold text-neutral-900">No payment records found</p>
+      <p className="mt-1 max-w-sm text-sm leading-6 text-neutral-500">
+        Try another status, tab, or search term.
+      </p>
     </div>
   );
 }
@@ -333,48 +632,26 @@ function Pagination({
   onNext: () => void;
 }) {
   return (
-    <div className="mt-5 flex items-center justify-between gap-3">
-      <p className="text-sm text-neutral-500">
-        Page {page} of {totalPages}
-      </p>
-        <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onPrevious}
-          disabled={page <= 1}
-          className="rounded-full border border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={page >= totalPages}
-          className="rounded-full border border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onPrevious}
+        disabled={page <= 1}
+        className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Previous
+      </button>
+      <span className="rounded-md bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-600">
+        {page} / {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={page >= totalPages}
+        className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Next
+      </button>
     </div>
   );
-}
-
-function formatRecordDate(value: string | null) {
-  if (!value) return "Not yet";
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function formatMethod(method?: OnlinePaymentMethod) {
-  if (method === "GCash") return "GCash / QR";
-  if (method === "QR") return "QR Payment";
-  if (method === "BankTransfer") return "Bank Transfer";
-  if (method === "Card") return "Card Payment";
-  return "No payment yet";
 }

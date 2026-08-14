@@ -148,10 +148,10 @@ export default function ConsultationHistoryPage() {
             const doctor = getDoctorById(note.doctorId);
             const statusTone =
               note.status === "Completed"
-                ? "bg-neutral-100 text-neutral-700"
+                ? "bg-emerald-100 text-emerald-700"
                 : note.status === "In Progress"
-                  ? "bg-neutral-100 text-neutral-700"
-                  : "bg-neutral-100 text-neutral-700";
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-sky-100 text-sky-700";
 
             return (
               <article
@@ -246,9 +246,9 @@ function SummaryChip({
 }) {
   const toneClass =
     tone === "emerald"
-      ? "border-neutral-200 bg-neutral-50 text-neutral-700"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
       : tone === "sky"
-        ? "border-neutral-200 bg-neutral-50 text-neutral-700"
+        ? "border-sky-200 bg-sky-50 text-sky-700"
         : "border-slate-200 bg-white text-slate-700";
 
   return (

@@ -20,7 +20,12 @@ import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 import type { PatientRecordItem } from "@/src/lib/clinic";
-import { GENDER_OPTIONS, validatePatientRegistrationFields } from "@/src/lib/patient-registration";
+import {
+  CIVIL_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+  formatPatientFullName,
+  validatePatientRegistrationFields,
+} from "@/src/lib/patient-registration";
 import { getClinicToday } from "@/src/lib/timezone";
 
 type WalkInForm = Omit<PatientRecordItem, "id" | "status">;
@@ -34,12 +39,22 @@ const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
 const today = getClinicToday();
 
 const INITIAL_FORM: IntakeForm = {
+  patientNumber: "",
   fullName: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  suffixName: "",
   email: "",
   phone: "",
   dateOfBirth: "",
   gender: "",
+  civilStatus: "",
   address: "",
+  religion: "",
+  occupation: "",
+  guardianName: "",
+  doctorNotes: "",
   emergencyContactName: "",
   emergencyContactPhone: "",
   familyHistory: "",
@@ -104,6 +119,7 @@ export default function WalkInIntakePage() {
     }
 
     startTransition(async () => {
+      const fullName = formatPatientFullName(form);
       const patientRecordResponse = await fetch("/api/patients", {
         method: "POST",
         headers: {
@@ -111,12 +127,22 @@ export default function WalkInIntakePage() {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          fullName: form.fullName,
+          patientNumber: form.patientNumber,
+          fullName,
+          firstName: form.firstName,
+          middleName: form.middleName,
+          lastName: form.lastName,
+          suffixName: form.suffixName,
           email: form.email,
           phone: form.phone,
           dateOfBirth: form.dateOfBirth,
           gender: form.gender,
+          civilStatus: form.civilStatus,
           address: form.address,
+          religion: form.religion,
+          occupation: form.occupation,
+          guardianName: form.guardianName,
+          doctorNotes: form.doctorNotes,
           emergencyContactName: form.emergencyContactName,
           emergencyContactPhone: form.emergencyContactPhone,
           familyHistory: form.familyHistory,
@@ -140,7 +166,7 @@ export default function WalkInIntakePage() {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          patientName: form.fullName,
+          patientName: fullName,
           email: form.email,
           phone: form.phone,
           doctorId: activeDoctorId,
@@ -259,7 +285,11 @@ export default function WalkInIntakePage() {
               <p className="mt-2 text-sm text-neutral-600">Create or refresh the patient record before placing them in the active clinic queue.</p>
 
               <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                <Field label="Full Name"><input type="text" value={form.fullName} onChange={(event) => updateField("fullName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Juan Dela Cruz" required /></Field>
+                <Field label="Patient Number"><input type="text" value={form.patientNumber} onChange={(event) => updateField("patientNumber", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Optional clinic code" /></Field>
+                <Field label="First Name"><input type="text" value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Juan" required /></Field>
+                <Field label="Family Name"><input type="text" value={form.lastName} onChange={(event) => updateField("lastName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Dela Cruz" required /></Field>
+                <Field label="Middle Name"><input type="text" value={form.middleName} onChange={(event) => updateField("middleName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Middle name" /></Field>
+                <Field label="Suffix Name"><input type="text" value={form.suffixName} onChange={(event) => updateField("suffixName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Jr., III, optional" /></Field>
                 <Field label="Email"><input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="juan@example.com" required /></Field>
                 <Field label="Phone"><input type="tel" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="+63 912 345 6789" required /></Field>
                 <Field label="Date of Birth"><input type="date" max={maxBirthDate} value={form.dateOfBirth} onChange={(event) => updateField("dateOfBirth", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" required /></Field>
@@ -267,6 +297,14 @@ export default function WalkInIntakePage() {
                   <select value={form.gender} onChange={(event) => updateField("gender", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" required>
                     <option value="">Select gender</option>
                     {GENDER_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Civil Status (optional)">
+                  <select value={form.civilStatus} onChange={(event) => updateField("civilStatus", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100">
+                    <option value="">Select civil status</option>
+                    {CIVIL_STATUS_OPTIONS.map((option) => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
@@ -283,9 +321,13 @@ export default function WalkInIntakePage() {
 
               <Field label="Address"><input type="text" value={form.address} onChange={(event) => updateField("address", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Street, barangay, city" required /></Field>
               <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+                <Field label="Religion"><input type="text" value={form.religion} onChange={(event) => updateField("religion", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Religion" /></Field>
+                <Field label="Occupation"><input type="text" value={form.occupation} onChange={(event) => updateField("occupation", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Occupation" /></Field>
+                <Field label="Name of Guardian (for peds)"><input type="text" value={form.guardianName} onChange={(event) => updateField("guardianName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Parent or guardian name" /></Field>
                 <Field label="Emergency Contact Name"><input type="text" value={form.emergencyContactName} onChange={(event) => updateField("emergencyContactName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Parent, spouse, sibling, guardian" /></Field>
                 <Field label="Emergency Contact Phone"><input type="text" value={form.emergencyContactPhone} onChange={(event) => updateField("emergencyContactPhone", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="+63 9XX XXX XXXX" /></Field>
               </div>
+              <Field label="Doctor's Notes"><textarea value={form.doctorNotes} onChange={(event) => updateField("doctorNotes", event.target.value)} rows={4} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Date, chief complaint, S/O/A/P notes" /></Field>
               <Field label="Medical History"><textarea value={form.medicalHistory} onChange={(event) => updateField("medicalHistory", event.target.value)} rows={4} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Past illnesses, operations, maintenance medicines, pregnancy history, or other relevant medical history" /></Field>
               <Field label="Allergies"><textarea value={form.allergies} onChange={(event) => updateField("allergies", event.target.value)} rows={3} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Drug allergies, food allergies, latex, or no known allergies" /></Field>
             </div>
@@ -329,7 +371,7 @@ export default function WalkInIntakePage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-400">Walk-In Summary</p>
             <h2 className="mt-2 text-lg font-bold text-neutral-900">Ready for front desk handoff</h2>
             <div className="mt-4 space-y-3">
-              <SummaryRow label="Patient">{form.fullName.trim() || "Waiting for patient name"}</SummaryRow>
+              <SummaryRow label="Patient">{formatPatientFullName(form) || "Waiting for patient name"}</SummaryRow>
               <SummaryRow label="Contact">{form.phone.trim() || form.email.trim() || "Waiting for contact details"}</SummaryRow>
               <SummaryRow label="Doctor">{selectedDoctor?.name ?? "Loading doctor..."}</SummaryRow>
               <SummaryRow label="Date">{formatDisplayDate(form.date)}</SummaryRow>

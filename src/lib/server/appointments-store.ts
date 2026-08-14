@@ -6,7 +6,6 @@ import type {
   AppointmentType,
 } from "@/src/lib/appointments";
 import {
-  addOneHourSql,
   findOrCreatePatientByEmail,
   getDoctorSlugById,
   legacyStatusMatchesLiving,
@@ -18,8 +17,11 @@ import { getClinicToday, isPastInClinicTime } from "@/src/lib/timezone";
 import {
   getSchedulableSlotsForDate,
   getUnavailabilityForDate,
+  resolveSchedulableSlotForStart,
 } from "@/src/lib/services/schedule";
 import { findNextAvailableSharedSlot } from "@/src/lib/services/appointment-availability";
+import { isProcedureServiceTitle, parseAppointmentContext } from "@/src/lib/appointment-context";
+import { CONSULTATION_SLOT_MINUTES, MAX_BOOKINGS_PER_SLOT, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 import {
   enqueueAppointmentTeamNotifications,
   enqueueNotification,
@@ -38,13 +40,46 @@ export type AppointmentCreatePayload = {
   patientStatus?: "New" | "Existing";
 };
 
+function isMissingPatientCategoryColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === "object"
+      && "code" in error
+      && (error as { code?: string }).code === "42703"
+      && "message" in error
+      && /patient_category/i.test(String((error as { message?: unknown }).message ?? "")),
+  );
+}
+
+function formatAppointmentType(type: AppointmentType | string) {
+  return type === "Online" ? "Virtual consult" : type;
+}
+
+async function upsertPatientCategory(patientId: string, category: "New" | "Regular") {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("patients")
+    .upsert({
+      id: patientId,
+      patient_category: category,
+    });
+  if (isMissingPatientCategoryColumn(error)) {
+    const { error: legacyError } = await supabase
+      .from("patients")
+      .upsert({ id: patientId });
+    if (legacyError) throw legacyError;
+    return;
+  }
+  if (error) throw error;
+}
+
 type AppointmentCreateContext = {
   actor?: AuthenticatedUser;
   initialStatus?: "Pending" | "Confirmed" | "CheckedIn";
 };
 
 // `meetingLink` is optional on update — when omitted we keep whatever's in DB.
-// When present and the appointment is Online, it overrides the clinic-wide
+// When present and the appointment is a virtual consult, it overrides the clinic-wide
 // default link. When present and the appointment is Clinic, it's ignored.
 export type AppointmentUpdatePayload = AppointmentCreatePayload & {
   id: string;
@@ -87,8 +122,14 @@ function overlapsBlocks(
   });
 }
 
-async function buildConflictHint(doctorUuid: string, date: string, type: AppointmentType) {
-  const next = await findNextAvailableSharedSlot(doctorUuid, date, type, 14);
+function slotMinutesBetween(start: string, end: string) {
+  const [startHours, startMinutes] = normalizeTime(start).split(":").map(Number);
+  const [endHours, endMinutes] = normalizeTime(end).split(":").map(Number);
+  return Math.max(1, endHours * 60 + endMinutes - (startHours * 60 + startMinutes));
+}
+
+async function buildConflictHint(doctorUuid: string, date: string, type: AppointmentType, slotMinutes = CONSULTATION_SLOT_MINUTES) {
+  const next = await findNextAvailableSharedSlot(doctorUuid, date, type, 14, { slotMinutes });
   if (!next) return "";
   return next.date === date
     ? ` Next available: ${next.slot.start}-${next.slot.end}.`
@@ -97,6 +138,13 @@ async function buildConflictHint(doctorUuid: string, date: string, type: Appoint
 
 function supportsType(mode: "Clinic" | "Online" | "Both", type: AppointmentType) {
   return mode === "Both" || mode === type;
+}
+
+function resolveSlotMinutesForPayload(payload: Pick<AppointmentCreatePayload, "reason" | "type">) {
+  if (payload.type === "Online") return CONSULTATION_SLOT_MINUTES;
+  return isProcedureServiceTitle(parseAppointmentContext(payload.reason).service)
+    ? PROCEDURE_SLOT_MINUTES
+    : CONSULTATION_SLOT_MINUTES;
 }
 function matchesExactSlot(
   slot: { start: string; end: string },
@@ -126,7 +174,10 @@ export async function validateSharedSlotOrThrow(input: {
     throw new Error("Past time slots cannot be booked.");
   }
 
-  const schedulableSlots = await getSchedulableSlotsForDate(input.doctorUuid, input.date);
+  const schedulableSlots = await getSchedulableSlotsForDate(input.doctorUuid, input.date, {
+    slotMinutes: slotMinutesBetween(input.start_time, input.end_time),
+    type: input.type,
+  });
   if (schedulableSlots.length === 0) {
     throw new Error("Doctor is not working on the selected date.");
   }
@@ -143,7 +194,7 @@ export async function validateSharedSlotOrThrow(input: {
 
   const blocks = await getUnavailabilityForDate(input.doctorUuid, input.date);
   if (overlapsBlocks(input.date, input.start_time, input.end_time, blocks)) {
-    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type);
+    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type, slotMinutesBetween(input.start_time, input.end_time));
     throw new Error(`Doctor is unavailable during that time.${hint}`);
   }
 
@@ -205,34 +256,21 @@ export async function validateSharedSlotOrThrow(input: {
     overlapsSlot(input.start_time, input.end_time, row.start_time, row.end_time),
   );
 
-  const conflictingType = overlapping.find(
-    (row) => row.appointment_type !== input.type,
-  );
-  const hasReservationConflict =
-    input.type === "Clinic" && overlappingReservations.length > 0;
+  const conflictingType = overlapping[0] ?? null;
+  const hasReservationConflict = overlappingReservations.length > 0;
   if (conflictingType || hasReservationConflict) {
-    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type);
+    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type, slotMinutesBetween(input.start_time, input.end_time));
     throw new Error(
-      `${conflictingType?.appointment_type ?? "Online"} booking already occupies this shared slot.${hint}`,
+      `${formatAppointmentType(conflictingType?.appointment_type ?? "Online")} booking already occupies this time slot.${hint}`,
     );
   }
 
-  if (overlapping.length + overlappingReservations.length >= 5) {
-    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type);
-    throw new Error(`This slot is already full (max 5 patients).${hint}`);
+  if (overlapping.length + overlappingReservations.length >= MAX_BOOKINGS_PER_SLOT) {
+    const hint = await buildConflictHint(input.doctorUuid, input.date, input.type, slotMinutesBetween(input.start_time, input.end_time));
+    throw new Error(`This slot is already booked.${hint}`);
   }
 
-  const used = new Set([
-    ...overlapping.map((row) => row.queue_number as number),
-    ...overlappingReservations.map((row) => row.queue_number as number),
-  ]);
-  let queueNumber = 1;
-  while (queueNumber <= 5 && used.has(queueNumber)) queueNumber += 1;
-  if (queueNumber > 5) {
-    throw new Error("This slot is already full (max 5 patients).");
-  }
-
-  return { queueNumber };
+  return { queueNumber: 1 };
 }
 
 export async function resolveBookingPatientId(
@@ -253,12 +291,7 @@ export async function resolveBookingPatientId(
       })
       .eq("id", patientUuid);
 
-    await supabase
-      .from("patients")
-      .upsert({
-        id: patientUuid,
-        patient_category: resolvedCategory,
-      });
+    await upsertPatientCategory(patientUuid, resolvedCategory);
 
     return patientUuid;
   }
@@ -269,12 +302,7 @@ export async function resolveBookingPatientId(
     payload.phone,
   );
 
-  await supabase
-    .from("patients")
-    .upsert({
-      id: patientUuid,
-      patient_category: resolvedCategory,
-    });
+  await upsertPatientCategory(patientUuid, resolvedCategory);
 
   return patientUuid;
 }
@@ -373,7 +401,7 @@ export async function createPersistedAppointmentWithContext(
   try {
     const doctorUuid = await resolveAssignedDoctorUuid(payload.doctorId);
     if (payload.type === "Online") {
-      throw new Error("Online consultations require payment first. Start checkout to confirm the slot.");
+      throw new Error("Virtual consults require payment first. Start checkout to confirm the slot.");
     }
 
     const patientUuid = await resolveBookingPatientId(payload, {
@@ -381,8 +409,11 @@ export async function createPersistedAppointmentWithContext(
       actorUserId: context.actor?.user.id,
     });
 
-    const start_time = normalizeSqlTime(payload.start);
-    const end_time = addOneHourSql(payload.start);
+    const slot = await resolveSchedulableSlotForStart(doctorUuid, payload.date, payload.start, payload.type, {
+      slotMinutes: resolveSlotMinutesForPayload(payload),
+    });
+    const start_time = normalizeSqlTime(slot.start);
+    const end_time = slot.end;
     const { queueNumber } = await validateSharedSlotOrThrow({
       doctorUuid,
       date: payload.date,
@@ -489,8 +520,11 @@ export async function updatePersistedAppointment(payload: AppointmentUpdatePaylo
     }
 
     const doctorUuid = await resolveAssignedDoctorUuid(payload.doctorId);
-    const start_time = normalizeSqlTime(payload.start);
-    const end_time = addOneHourSql(payload.start);
+    const slot = await resolveSchedulableSlotForStart(doctorUuid, payload.date, payload.start, payload.type, {
+      slotMinutes: resolveSlotMinutesForPayload(payload),
+    });
+    const start_time = normalizeSqlTime(slot.start);
+    const end_time = slot.end;
     if (payload.type === "Online" && existing.appointment_type !== "Online") {
       return {
         ok: false as const,

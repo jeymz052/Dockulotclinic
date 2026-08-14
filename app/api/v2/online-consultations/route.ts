@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       }>();
     if (appointmentError) throw appointmentError;
     if (appointment.appointment_type !== "Online") {
-      throw new HttpError(400, "Only online appointments can use this module.");
+      throw new HttpError(400, "Only virtual consult appointments can use this module.");
     }
     if (actor.profile.role === "patient" && appointment.patient_id !== actor.id) {
       throw new HttpError(403, "Forbidden");

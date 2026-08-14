@@ -67,7 +67,7 @@ export default function PatientDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard href="/appointments/my" label="Upcoming" value={upcoming.length} helper="Appointments waiting for you" tone="sky" icon={<FaCalendarDays className="text-2xl" />} />
         <MetricCard href="/appointments/my?filter=clinic" label="Clinic Visits" value={clinicVisits} helper="In-person appointments" tone="teal" icon={<FaHospital className="text-2xl" />} />
-        <MetricCard href="/consultations" label="Online Consults" value={onlineConsultations} helper="Video consultations" tone="sky" icon={<FaVideo className="text-2xl" />} />
+        <MetricCard href="/consultations" label="Virtual Consults" value={onlineConsultations} helper="Video consultations" tone="sky" icon={<FaVideo className="text-2xl" />} />
         <MetricCard href="/appointments/my?tab=completed" label="Completed" value={pastCompleted} helper="Past visits completed" tone="sky" icon={<FaChevronRight className="text-2xl" />} />
         <MetricCard href="/portal" label="Patient Portal" value="Open" helper="All patient records" tone="sky" icon={<FaShieldHalved className="text-2xl" />} />
         <MetricCard href="/profile/files" label="Medical Files" value="Files" helper="Lab results and documents" tone="indigo" icon={<FaFileLines className="text-2xl" />} />
@@ -77,23 +77,23 @@ export default function PatientDashboard() {
       </div>
 
       {next ? (
-          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-neutral-200 bg-linear-to-br from-neutral-50/80 via-neutral-50/40 to-neutral-50/20 p-8 shadow-[0_28px_54px_rgba(17,17,17,0.16)] animate-pop-in transition hover:-translate-y-1">
-            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-neutral-300/20 to-neutral-200/10 blur-3xl" />
-            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-neutral-200/20 to-neutral-100/10 blur-3xl" />
+          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-emerald-100 bg-linear-to-br from-emerald-50/80 via-white to-sky-50/50 p-8 shadow-[0_28px_54px_rgba(16,185,129,0.14)] animate-pop-in transition hover:-translate-y-1">
+            <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-emerald-300/20 to-sky-300/10 blur-3xl" />
+            <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-teal-200/20 to-cyan-200/10 blur-3xl" />
           <div className="relative">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-4 py-2 mb-4">
-                  <span className="h-2 w-2 rounded-full bg-black animate-pulse" />
-                  <span className="text-xs font-bold text-neutral-700">YOUR NEXT APPOINTMENT</span>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-emerald-700">YOUR NEXT APPOINTMENT</span>
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-neutral-900 mt-3">
                   {formatDate(next.date)} <span className="text-neutral-400">·</span> {next.start}
                 </h2>
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
-                      <span className="text-lg">#{next.queueNumber}</span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <span className="text-lg font-bold">#{next.queueNumber}</span>
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-neutral-900">Queue Position</p>
@@ -101,8 +101,8 @@ export default function PatientDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
-                      {next.type === "Online" ? <FaVideo className="text-sm text-neutral-700" /> : <FaHospital className="text-sm text-neutral-700" />}
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${next.type === "Online" ? "bg-sky-100 text-sky-700" : "bg-teal-100 text-teal-700"}`}>
+                      {next.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-neutral-900">{getAppointmentPrimaryLabel(next.reason, next.type)}</p>
@@ -120,7 +120,7 @@ export default function PatientDashboard() {
                     href={next.meetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-neutral-400 to-neutral-300 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(17,17,17,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(17,17,17,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(14,165,233,0.28)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(14,165,233,0.36)]"
                   >
                     <FaVideo />
                     Join consultation
@@ -134,7 +134,7 @@ export default function PatientDashboard() {
 
       <SectionCard
         title="Your Upcoming Schedule"
-        description="Don't miss your appointments. Check dates, times, and join online consultations directly."
+        description="Don't miss your appointments. Check dates, times, and join virtual consults directly."
         actionLabel="View all appointments"
         actionHref="/appointments/my"
       >
@@ -153,7 +153,7 @@ export default function PatientDashboard() {
             <p className="mt-2 text-sm text-neutral-500">You&apos;re all caught up! Book your next appointment when you need one.</p>
             <Link
               href="/appointments"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-neutral-400 to-neutral-300 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(17,17,17,0.25)] transition hover:-translate-y-1"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-linear-to-r from-emerald-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-[0_12px_24px_rgba(16,185,129,0.25)] transition hover:-translate-y-1"
             >
               <FaCalendarDays />
               Book appointment
@@ -168,13 +168,13 @@ export default function PatientDashboard() {
                 className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-neutral-200 hover:bg-neutral-50/60 hover:shadow-[0_8px_20px_rgba(17,17,17,0.10)] animate-slide-in-left stagger-${Math.min(i + 1, 5)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-neutral-300 to-neutral-400" : "bg-linear-to-br from-neutral-300 to-neutral-400"}`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${appt.type === "Online" ? "bg-linear-to-br from-sky-400 to-blue-600" : "bg-linear-to-br from-teal-400 to-emerald-600"}`}>
                     {appt.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-neutral-900">{formatDate(appt.date)} · {appt.start}</p>
                     <p className="mt-1 text-xs text-neutral-500">
-                      {appt.type === "Online" ? "Online consultation" : "Clinic visit"}
+                      {appt.type === "Online" ? "Virtual consult" : "Clinic visit"}
                       {getAppointmentPrimaryLabel(appt.reason, appt.type) ? ` • ${getAppointmentPrimaryLabel(appt.reason, appt.type)}` : ""}
                     </p>
                   </div>
@@ -197,7 +197,7 @@ export default function PatientDashboard() {
           <ActionCard href="/appointments/my" title="View Schedule" description="See your upcoming and past appointments." tone="teal" icon={<FaCalendarDays className="text-lg" />} />
           <ActionCard href="/payments" title="Online Payments" description="Pay active billings and review payment status." tone="sky" icon={<FaCreditCard className="text-lg" />} />
           <ActionCard href="/payments/history" title="Payment History" description="Open receipts and past transaction records." tone="cyan" icon={<FaChevronRight className="text-lg" />} />
-          <ActionCard href="/consultations" title="Join Online Consultation" description="Open your active online consultation link." tone="violet" icon={<FaVideo className="text-lg" />} />
+          <ActionCard href="/consultations" title="Join Virtual Consult" description="Open your active virtual consult link." tone="violet" icon={<FaVideo className="text-lg" />} />
           <ActionCard href="/consultations/history" title="Consultation History" description="Review past visit notes and follow-ups." tone="cyan" icon={<FaFileLines className="text-lg" />} />
         </div>
       </SectionCard>

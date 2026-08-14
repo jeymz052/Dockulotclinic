@@ -5,9 +5,18 @@ export async function GET(req: Request) {
   try {
     const actor = await requireActor(req);
     const url = new URL(req.url);
+    const appointmentTypeParam = url.searchParams.get("appointment_type");
+    const appointmentType =
+      appointmentTypeParam === "Clinic" || appointmentTypeParam === "Online"
+        ? appointmentTypeParam
+        : undefined;
+    if (appointmentTypeParam && !appointmentType) {
+      throw new HttpError(400, "appointment_type must be Clinic or Online");
+    }
     const billings = await listBillings(actor, {
       patient_id: url.searchParams.get("patient_id") ?? undefined,
       status: url.searchParams.get("status") ?? undefined,
+      appointment_type: appointmentType,
     });
     return ok({ billings });
   } catch (e) {

@@ -17,6 +17,7 @@ type NotificationRow = {
 type NotificationFeedItem = {
   id: string;
   template: string;
+  payload: Record<string, unknown>;
   subject: string;
   body: string;
   status: "queued" | "sent" | "failed";
@@ -107,6 +108,7 @@ export async function GET(req: Request) {
         feed.set(key, {
           id: item.id,
           template: item.template ?? "notification",
+          payload: item.payload ?? {},
           subject: renderTemplate(item.template ?? "welcome", item.payload ?? {}).subject,
           body: renderTemplate(item.template ?? "welcome", item.payload ?? {}).body,
           status: normalizeStatus(item.status),

@@ -74,7 +74,7 @@ export default function FaqContentPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-700">FAQ Management</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Public FAQ content</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-          Add and publish FAQs for appointments, clinic services, online consultation, payments, prescriptions, patient portal help, vlog/content, and contact inquiries.
+          Add and publish FAQs for appointments, clinic services, virtual consults, payments, prescriptions, patient portal help, vlog/content, and contact inquiries.
         </p>
         <Link href="/faq" className="mt-5 inline-flex rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">
           View public FAQ

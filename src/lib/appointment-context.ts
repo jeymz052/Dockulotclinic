@@ -90,7 +90,7 @@ export function getAppointmentPrimaryLabel(rawReason: string | null | undefined,
   const parsed = parseAppointmentContext(rawReason);
   if (parsed.service) return parsed.service;
   if (parsed.reason) return parsed.reason;
-  if (fallbackType === "Online") return "Online Consultation";
+  if (fallbackType === "Online") return "Virtual Consult";
   if (fallbackType === "Clinic") return "General Consultation";
   return "Consultation";
 }

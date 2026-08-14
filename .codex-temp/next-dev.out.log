@@ -2,3 +2,9 @@
 > clinicmanagement-system@0.1.0 dev
 > next dev
 
+▲ Next.js 16.2.3 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://172.20.10.7:3001
+- Environments: .env.local
+✓ Ready in 1938ms
+[?25h

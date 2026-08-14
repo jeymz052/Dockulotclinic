@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { FaEnvelope, FaTiktok } from "react-icons/fa6";
 import InquiryForm from "@/src/components/marketing/InquiryForm";
+import { DOCKULOT_EMAIL, DOCKULOT_TIKTOK_URL } from "@/src/lib/public-links";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -38,6 +40,28 @@ export default function ContactPage() {
           <Link href="/#booking" className="mt-8 inline-flex rounded-full bg-black px-6 py-3 text-sm font-bold text-white">
             Go to booking
           </Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={`mailto:${DOCKULOT_EMAIL}`}
+              className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-yellow-700 text-white">
+                <FaEnvelope className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+              {DOCKULOT_EMAIL}
+            </a>
+            <a
+              href={DOCKULOT_TIKTOK_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
+            >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-white">
+                <FaTiktok className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+              Doc Kulot TikTok
+            </a>
+          </div>
         </section>
         <InquiryForm />
       </div>

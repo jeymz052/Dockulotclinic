@@ -2,6 +2,8 @@ import { HttpError, httpError, isClinicStaff, ok, requireActor } from "@/src/lib
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { resolveBookingPatientId, validateSharedSlotOrThrow } from "@/src/lib/server/appointments-store";
 import { enqueueAppointmentTeamNotifications, enqueueNotification } from "@/src/lib/services/notification";
+import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
+import { CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 type ConvertPayload = {
   doctorId?: string;
@@ -26,18 +28,6 @@ type InquiryRow = {
 
 function normalizeTime(value: string) {
   return value.length === 5 ? `${value}:00` : value;
-}
-
-function addOneHour(value: string) {
-  const [hoursText, minutesText = "0", secondsText = "0"] = normalizeTime(value).split(":");
-  const hours = Number(hoursText);
-  const minutes = Number(minutesText);
-  const seconds = Number(secondsText);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) {
-    throw new HttpError(400, "Invalid startTime");
-  }
-  const nextHours = (hours + 1) % 24;
-  return `${String(nextHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 export async function POST(req: Request, ctx: Ctx) {
@@ -82,8 +72,15 @@ export async function POST(req: Request, ctx: Ctx) {
       { actorRole: actor.profile.role === "patient" ? "PATIENT" : undefined, actorUserId: actor.id },
     );
 
-    const start_time = normalizeTime(body.startTime);
-    const end_time = addOneHour(start_time);
+    const slot = await resolveSchedulableSlotForStart(
+      body.doctorId,
+      body.date,
+      body.startTime,
+      body.appointmentType,
+      { slotMinutes: CONSULTATION_SLOT_MINUTES },
+    );
+    const start_time = normalizeTime(slot.start);
+    const end_time = slot.end;
     const reason = (body.reason ?? inquiry.message).trim();
 
     const { queueNumber } = await validateSharedSlotOrThrow({

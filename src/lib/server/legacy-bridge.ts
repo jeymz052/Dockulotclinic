@@ -62,17 +62,58 @@ export async function findOrCreatePatientByEmail(
 ): Promise<string> {
   assertEmailNotProtectedPatient(email);
   const supabase = getSupabaseAdmin();
+  const normalizedEmail = email.toLowerCase();
+  const normalizedName = full_name.trim();
+  const normalizedPhone = phone.trim();
 
   const { data: existing } = await supabase
     .from("profiles")
     .select("id, role")
-    .eq("email", email.toLowerCase())
+    .eq("email", normalizedEmail)
     .maybeSingle<{ id: string; role: string }>();
   if (existing) {
     if (existing.role !== "patient") {
       throw new Error(`Email ${email} is registered to a non-patient account.`);
     }
     return existing.id;
+  }
+
+  const fallbackMatches = [];
+  if (normalizedPhone) {
+    fallbackMatches.push(
+      supabase
+        .from("profiles")
+        .select("id, role, email")
+        .eq("phone", normalizedPhone)
+        .eq("role", "patient")
+        .maybeSingle<{ id: string; role: string; email: string }>(),
+    );
+  }
+  if (normalizedName) {
+    fallbackMatches.push(
+      supabase
+        .from("profiles")
+        .select("id, role, email")
+        .eq("full_name", normalizedName)
+        .eq("role", "patient")
+        .maybeSingle<{ id: string; role: string; email: string }>(),
+    );
+  }
+  const matchedImportedProfile = (await Promise.all(fallbackMatches)).find((result) => result.data)?.data ?? null;
+  if (matchedImportedProfile) {
+    await supabase
+      .from("profiles")
+      .update({
+        email: normalizedEmail,
+        full_name: normalizedName,
+        phone: normalizedPhone || null,
+      })
+      .eq("id", matchedImportedProfile.id);
+    await supabase.auth.admin.updateUserById(matchedImportedProfile.id, {
+      email: normalizedEmail,
+      user_metadata: { full_name: normalizedName },
+    });
+    return matchedImportedProfile.id;
   }
 
   const { data: created, error } = await supabase.auth.admin.createUser({

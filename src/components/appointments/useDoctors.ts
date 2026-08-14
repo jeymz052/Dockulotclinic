@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { DOCTORS } from "@/src/lib/appointments";
 import {
-  CLINIC_CONSULTATION_HOURLY_RATE,
-  ONLINE_CONSULTATION_HOURLY_RATE,
+  DEFAULT_CLINIC_CONSULTATION_FEE,
+  DEFAULT_ONLINE_CONSULTATION_FEE,
   normalizeConfiguredClinicConsultationRate,
   normalizeConfiguredOnlineConsultationRate,
 } from "@/src/lib/consultation-pricing";
@@ -16,6 +16,7 @@ const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
 
 export type BookingDoctor = {
   id: string;
+  dbId: string;
   slug: string;
   name: string;
   specialty: string;
@@ -55,6 +56,7 @@ export function useDoctors() {
 
         const nextDoctors = (body.doctors ?? []).map((doctor) => ({
           id: doctor.slug ?? doctor.id,
+          dbId: doctor.id,
           slug: doctor.slug ?? doctor.id,
           name: doctor.full_name ?? doctor.name ?? DEFAULT_DOCTOR?.name ?? FALLBACK_DOCTOR_NAME,
           specialty: doctor.specialty ?? DEFAULT_DOCTOR?.specialty ?? FALLBACK_DOCTOR_SPECIALTY,
@@ -71,11 +73,12 @@ export function useDoctors() {
         setDoctors(
           DOCTORS.map((doctor) => ({
             id: doctor.id,
+            dbId: doctor.id,
             slug: doctor.id,
             name: doctor.name,
             specialty: doctor.specialty,
-            consultation_fee_clinic: CLINIC_CONSULTATION_HOURLY_RATE,
-            consultation_fee_online: ONLINE_CONSULTATION_HOURLY_RATE,
+            consultation_fee_clinic: DEFAULT_CLINIC_CONSULTATION_FEE,
+            consultation_fee_online: DEFAULT_ONLINE_CONSULTATION_FEE,
           })),
         );
       } finally {

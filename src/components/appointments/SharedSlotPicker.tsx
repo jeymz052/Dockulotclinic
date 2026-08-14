@@ -21,10 +21,9 @@ export function SharedSlotPicker({
 }: SharedSlotPickerProps) {
   const availableSlots = slotStatuses.filter((slot) => slot.availableForType);
   const blockedSlots = slotStatuses.filter((slot) => !slot.availableForType);
-  const selectedSlot = slotStatuses.find((slot) => slot.start === selectedStart) ?? null;
 
   return (
-    <div className="overflow-hidden rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f6fbff_100%)] p-5 shadow-[0_20px_60px_rgba(17,17,17,0.08)] transition-transform duration-300 hover:-translate-y-0.5">
+    <div className="overflow-hidden rounded-4xl border border-neutral-100 bg-white p-5 shadow-[0_20px_60px_rgba(17,17,17,0.08)] sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-500">Time Selection</p>
@@ -41,17 +40,17 @@ export function SharedSlotPicker({
         <SlotMetric
           label="Available"
           value={String(availableSlots.length)}
-          tone="emerald"
+          tone="green"
         />
         <SlotMetric
           label="Blocked"
           value={String(blockedSlots.length)}
-          tone="slate"
+          tone="red"
         />
         <SlotMetric
-          label="Queue"
-          value={selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"}
-          tone="teal"
+          label="Capacity"
+          value="1 patient"
+          tone="orange"
         />
       </div>
 
@@ -61,10 +60,12 @@ export function SharedSlotPicker({
         </div>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-3">
         {slotStatuses.map((slot) => {
           const isSelected = selectedStart === slot.start;
           const available = slot.availableForType;
+          const colors = slotColorClasses(slot.activeType);
+          const statusLabel = available ? "Available" : slot.reason;
 
           return (
             <button
@@ -72,80 +73,55 @@ export function SharedSlotPicker({
               type="button"
               disabled={!available || disabled || loading}
               onClick={() => onSelect(slot.start)}
-              className={`group rounded-[1.4rem] border px-4 py-4 text-left transition-all duration-200 ${
+              className={`group min-h-32 rounded-2xl border p-4 text-left transition-all duration-200 ${
                 isSelected
-                  ? "border-neutral-300 bg-[linear-gradient(180deg,#fafafa_0%,#e5e5e5_100%)] shadow-[0_16px_35px_rgba(17,17,17,0.18)]"
+                  ? `${colors.selected} shadow-[0_14px_30px_rgba(15,23,42,0.12)]`
                   : available
-                    ? "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50/40 hover:shadow-[0_14px_28px_rgba(17,17,17,0.12)]"
-                    : "cursor-not-allowed border-slate-200 bg-slate-50/80 opacity-70"
+                    ? `${colors.available} hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]`
+                    : "cursor-not-allowed border-neutral-200 bg-neutral-50/90 text-neutral-400"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className={`text-sm font-semibold ${
-                    isSelected ? "text-neutral-700" : available ? "text-slate-900" : "text-slate-400"
+              <div className="flex h-full flex-col justify-between gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={`whitespace-nowrap text-base font-black ${
+                    isSelected ? colors.selectedText : available ? colors.text : "text-slate-400"
                   }`}>
-                    {formatRange(slot.start, slot.end)}
-                  </p>
-                  <p className={`mt-1 text-[11px] font-medium ${
-                    isSelected ? "text-neutral-700" : available ? "text-slate-500" : "text-slate-400"
+                      {formatRange(slot.start, slot.end)}
+                    </p>
+                    <p className={`mt-1 text-[11px] font-bold uppercase tracking-[0.14em] ${
+                    isSelected ? colors.selectedMutedText : available ? colors.mutedText : "text-slate-400"
                   }`}>
-                    {slot.activeType ?? "Open"}
-                  </p>
+                      {formatSlotActiveType(slot.activeType)}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${
+                    available
+                      ? isSelected
+                        ? colors.selectedBadge
+                        : colors.badge
+                      : "bg-white text-neutral-500"
+                  }`}>
+                    {available ? "Open" : "Closed"}
+                  </span>
                 </div>
-                <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                  available
-                    ? isSelected
-                      ? "bg-white/80 text-neutral-700"
-                      : "bg-neutral-50 text-neutral-700"
-                    : "bg-slate-200 text-slate-500"
-                }`}>
-                  {available ? "Available" : "Blocked"}
-                </span>
-              </div>
 
-              <div className="mt-4 flex items-center justify-between">
-                <span className={`text-[11px] ${
-                  available ? "text-slate-500" : "text-neutral-500"
-                }`}>
-                  {available ? `Queue #${slot.nextQueueNumber}` : slot.reason}
-                </span>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((dot) => (
-                    <span
-                      key={dot}
-                      className={`h-1.5 w-4 rounded-full transition-all ${
-                        dot <= slot.bookedCount
-                          ? slot.bookedCount >= 5
-                            ? "bg-black"
-                            : "bg-neutral-300"
-                          : isSelected
-                            ? "bg-white/80"
-                            : "bg-slate-200"
-                      }`}
-                    />
-                  ))}
+                <div className="flex items-end justify-between gap-3">
+                  <span className={`text-xs font-semibold ${
+                    available ? colors.mutedText : "text-neutral-500"
+                  }`}>
+                    {statusLabel}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                    slot.bookedCount > 0
+                      ? "bg-red-100 text-red-700"
+                      : available
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-white text-neutral-500"
+                  }`}>
+                    {slot.bookedCount > 0 ? "Booked" : "1 slot"}
+                  </span>
                 </div>
-              </div>
-
-              <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${
-                isSelected ? "bg-white/70" : "bg-slate-100"
-              }`}>
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    slot.bookedCount === 0
-                      ? "w-1/12 bg-neutral-200"
-                      : slot.bookedCount === 1
-                        ? "w-1/5 bg-neutral-300"
-                        : slot.bookedCount === 2
-                          ? "w-2/5 bg-black"
-                          : slot.bookedCount === 3
-                            ? "w-3/5 bg-neutral-300"
-                            : slot.bookedCount === 4
-                              ? "w-4/5 bg-black"
-                              : "w-full bg-black"
-                  }`}
-                />
               </div>
             </button>
           );
@@ -155,6 +131,65 @@ export function SharedSlotPicker({
   );
 }
 
+function slotColorClasses(activeType: SlotStatus["activeType"]) {
+  if (activeType === "Online") {
+    return {
+      selected: "border-sky-300 bg-sky-50 ring-2 ring-sky-100",
+      available: "border-sky-100 bg-white hover:border-sky-200 hover:bg-sky-50/50",
+      text: "text-sky-950",
+      mutedText: "text-sky-700",
+      selectedText: "text-sky-950",
+      selectedMutedText: "text-sky-700",
+      badge: "bg-sky-50 text-sky-700",
+      selectedBadge: "bg-white text-sky-700",
+      dot: "bg-sky-300",
+      fullDot: "bg-sky-600",
+      emptyBar: "bg-sky-100",
+      bar: "bg-sky-300",
+      strongBar: "bg-sky-600",
+    };
+  }
+
+  if (activeType === "Clinic") {
+    return {
+      selected: "border-orange-300 bg-orange-50 ring-2 ring-orange-100",
+      available: "border-orange-100 bg-white hover:border-orange-200 hover:bg-orange-50/50",
+      text: "text-orange-950",
+      mutedText: "text-orange-700",
+      selectedText: "text-orange-950",
+      selectedMutedText: "text-orange-700",
+      badge: "bg-orange-50 text-orange-700",
+      selectedBadge: "bg-white text-orange-700",
+      dot: "bg-orange-300",
+      fullDot: "bg-orange-600",
+      emptyBar: "bg-orange-100",
+      bar: "bg-orange-300",
+      strongBar: "bg-orange-600",
+    };
+  }
+
+  return {
+    selected: "border-green-600 bg-green-50 ring-2 ring-green-200",
+    available: "border-green-200 bg-white hover:border-green-500 hover:bg-green-50/70",
+    text: "text-green-950",
+    mutedText: "text-green-700",
+    selectedText: "text-green-950",
+    selectedMutedText: "text-green-700",
+    badge: "bg-green-100 text-green-800",
+    selectedBadge: "bg-white text-green-700",
+    dot: "bg-green-400",
+    fullDot: "bg-green-600",
+    emptyBar: "bg-green-100",
+    bar: "bg-green-400",
+    strongBar: "bg-green-600",
+  };
+}
+
+function formatSlotActiveType(activeType: SlotStatus["activeType"]) {
+  if (activeType === "Online") return "Virtual Consult";
+  return activeType ?? "Open";
+}
+
 function SlotMetric({
   label,
   value,
@@ -162,12 +197,12 @@ function SlotMetric({
 }: {
   label: string;
   value: string;
-  tone: "emerald" | "slate" | "teal";
+  tone: "green" | "red" | "orange";
 }) {
   const toneMap = {
-    emerald: "border-neutral-100 bg-neutral-50/80 text-neutral-700",
-    slate: "border-slate-200 bg-slate-50 text-slate-600",
-    teal: "border-neutral-100 bg-neutral-50/80 text-neutral-700",
+    green: "border-green-200 bg-green-50/80 text-green-700",
+    red: "border-red-200 bg-red-50/80 text-red-700",
+    orange: "border-orange-100 bg-orange-50/80 text-orange-700",
   };
 
   return (

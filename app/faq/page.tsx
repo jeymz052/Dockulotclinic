@@ -5,7 +5,7 @@ import type { PublicFaq } from "@/src/lib/services/faqs";
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
-    "Find answers to common Doc Kulot questions about appointments, clinic services, online consultation, payments, prescriptions, patient portal, videos, and inquiries.",
+    "Find answers to common Doc Kulot questions about appointments, clinic services, virtual consults, payments, prescriptions, patient portal, videos, and inquiries.",
   alternates: {
     canonical: "/faq",
   },
@@ -21,7 +21,7 @@ export default async function FaqPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-yellow-700">FAQ System</p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Frequently asked questions</h1>
         <p className="mt-4 max-w-3xl leading-8 text-slate-600">
-          Browse all published clinic FAQs by category, from appointments and services to online consultation,
+          Browse all published clinic FAQs by category, from appointments and services to virtual consults,
           prescriptions, patient portal help, and creator content.
         </p>
 

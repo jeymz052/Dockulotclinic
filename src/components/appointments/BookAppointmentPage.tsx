@@ -17,8 +17,6 @@ import {
   FaArrowRotateLeft,
   FaArrowLeft,
   FaArrowRight,
-  FaCcVisa,
-  FaBuildingColumns,
 } from "react-icons/fa6";
 import { createAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { SharedSlotPicker } from "@/src/components/appointments/SharedSlotPicker";
@@ -27,7 +25,7 @@ import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useAppointmentAvailability } from "@/src/components/appointments/useAppointmentAvailability";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import { QrPhLogo } from "@/src/components/payments/QrPhLogo";
+import type { OnlinePaymentAccount, SystemSettings } from "@/src/lib/clinic";
 import {
   encodeAppointmentContext,
   getDefaultServiceForType,
@@ -47,9 +45,21 @@ import { getClinicToday } from "@/src/lib/timezone";
 import {
   FOLLOW_UP_CLINIC_CONSULTATION_FEE,
   NEW_PATIENT_CLINIC_CONSULTATION_FEE,
-  PROCEDURE_DOWNPAYMENT_AMOUNT,
   formatDurationLabel,
 } from "@/src/lib/consultation-pricing";
+import {
+  BOOKING_PRICING_CODES,
+  formatBookingPeso,
+  getBookingPriceAmount,
+  getClinicConsultationAmount,
+  getProcedureDisplayPriceLabel,
+  type PricingItem,
+} from "@/src/lib/booking-pricing";
+import {
+  BOOKING_CLINIC_LOCATIONS,
+  CONSULTATION_SLOT_MINUTES,
+  PROCEDURE_SLOT_MINUTES,
+} from "@/src/lib/clinic-schedule";
 
 type BookingForm = {
   visitPath: BookingVisitPath;
@@ -73,12 +83,6 @@ type BookingForm = {
 type BookingPatientStatus = "Existing" | "New";
 type BookingVisitPath = "Clinic" | "Online" | "Procedure";
 
-type BookingClinicOption = {
-  value: string;
-  label: string;
-  note: string;
-};
-
 type UploadedConcernFile = {
   file_name: string;
   file_type: string;
@@ -93,51 +97,31 @@ const BOOKING_VISIT_OPTIONS: Array<{
   path: BookingVisitPath;
   label: string;
   helper: string;
-  price: string;
 }> = [
-  {
-    path: "Online",
-    label: "Virtual Consult",
-    helper: "Video call from home. Includes first consult plus one follow-up.",
-    price: "800 PHP",
-  },
   {
     path: "Clinic",
     label: "Clinic Visit",
     helper: "In-person consultation at the clinic. Procedures are booked separately.",
-    price: "600 first consult / 300 follow-up",
   },
   {
     path: "Procedure",
     label: "Medical Procedure",
     helper: "Reserve an actual clinic procedure schedule for Botox, Mesolipo, fillers, sclerotherapy, wart removal, mole surgery, and similar procedures.",
-    price: "1,000 PHP reservation",
+  },
+  {
+    path: "Online",
+    label: "Virtual Consult",
+    helper: "Video call from home. Includes first consult plus one follow-up.",
   },
 ];
 
-const BOOKING_CLINICS: BookingClinicOption[] = [
-  {
-    value: "premier-medical-center",
-    label: "Premier Medical Center",
-    note: "Room 420, Tuesday / Thursday / Saturday",
-  },
-  {
-    value: "fammed-family-clinic",
-    label: "FamMed Family Clinic",
-    note: "Arquiza Building, Pasobolong, Zamboanga City. Fridays only.",
-  },
-  {
-    value: "rt-lim-family-hospital",
-    label: "RT Lim Family Hospital",
-    note: "Room 4, every 1st and 3rd Sunday of the month.",
-  },
-];
+const BOOKING_CLINICS = BOOKING_CLINIC_LOCATIONS;
 
 const PROCEDURE_SERVICE_TITLES = new Set(
   clinicServices.filter((service) => service.appointmentOnly).map((service) => service.title),
 );
 
-type OnlinePaymentOption = "paymongo_gcash" | "paymongo_card" | "paymongo_bank";
+type OnlinePaymentOption = string;
 
 const today = getClinicToday();
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
@@ -158,140 +142,12 @@ const INITIAL_FORM: BookingForm = {
   reason: "",
   symptoms: "",
   durationMinutes: "60",
-  paymentOption: "paymongo_gcash",
+  paymentOption: "",
 };
 
 function normalizeConsentName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
-
-type OnlinePaymentOptionConfig = {
-  value: OnlinePaymentOption;
-  label: string;
-  detail: string;
-  // Tailwind utility classes for the logo tile background + ring colour shown
-  // in the selected state, so each option keeps its own brand accent.
-  accent: {
-    tileBg: string;
-    ring: string;
-    selectedBorder: string;
-    selectedBg: string;
-    selectedBadge: string;
-  };
-  brands: Array<{ key: string; node: React.ReactNode }>;
-  logo: React.ReactNode;
-  // `available: false` keeps the option visible but disabled, with a "Not yet
-  // available" badge. Flip to true once PayMongo activates the underlying
-  // method on the merchant account (see comments in
-  // src/lib/services/paymongo.ts for the full activation flip-list).
-  available: boolean;
-  // Optional explanation shown in the disabled state — kept short so the
-  // button doesn't grow taller when toggled off.
-  unavailableNote?: string;
-};
-
-// NOTE: only `paymongo_gcash` is activated today — it routes to PayMongo's
-// QR Ph rail, which is universally scannable by GCash, Maya, and any
-// InstaPay / Pesonet-enabled wallet or bank app. Card and Online Bank
-// Transfer stay visible (with brand chips) but disabled, so patients can
-// see what's coming and staff have a clear "flip to true" once PayMongo
-// activates those methods on the merchant account. See the activation
-// flip-list in src/lib/services/paymongo.ts.
-const ONLINE_PAYMENT_OPTIONS: OnlinePaymentOptionConfig[] = [
-  {
-    value: "paymongo_gcash",
-    label: "QR Ph (GCash, Maya, Banks)",
-    detail: "Scan the QR with GCash, Maya, or any InstaPay/Pesonet-enabled wallet or bank app.",
-    accent: {
-      tileBg: "bg-[#204884]",
-      ring: "ring-[#204884]/25",
-      selectedBorder: "border-[#204884]",
-      selectedBg: "bg-[#f4f7fc]",
-      selectedBadge: "bg-[#204884] text-white",
-    },
-    logo: <QRPhLogoTile />,
-    brands: [
-      {
-        key: "qrph",
-        node: (
-          <BrandChip className="border border-[#204884]/20 bg-white text-[#204884]">
-            <QrPhLogo className="h-auto w-9" />
-          </BrandChip>
-        ),
-      },
-      { key: "gcash", node: <BrandChip className="bg-[#eaf3ff] text-[#007dfe]">GCash</BrandChip> },
-      { key: "maya", node: <BrandChip className="bg-[#e8fff5] text-[#008f5a]">Maya</BrandChip> },
-      { key: "banks", node: <BrandChip className="bg-[#eef4fb] text-[#204884]">+ Banks</BrandChip> },
-    ],
-    available: true,
-  },
-  {
-    value: "paymongo_card",
-    label: "Credit / Debit Card",
-    detail: "Pay with Visa, Mastercard, or JCB through PayMongo's secure checkout.",
-    accent: {
-      tileBg: "bg-[#1a1f71]",
-      ring: "ring-[#1a1f71]/25",
-      selectedBorder: "border-[#1a1f71]",
-      selectedBg: "bg-[#f4f5ff]",
-      selectedBadge: "bg-[#1a1f71] text-white",
-    },
-    logo: <CardLogo />,
-    brands: [
-      {
-        key: "visa",
-        node: (
-          <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <FaCcVisa className="h-5 w-auto text-[#1a1f71]" />
-          </span>
-        ),
-      },
-      {
-        key: "mc",
-        node: (
-          <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <MastercardMark />
-          </span>
-        ),
-      },
-      {
-        key: "jcb",
-        node: (
-          <span className="inline-flex items-center justify-center h-7 w-11 rounded-md bg-white border border-slate-200 shadow-xs">
-            <JcbMark />
-          </span>
-        ),
-      },
-    ],
-    available: false,
-    unavailableNote: "Card payments are pending PayMongo activation — please use QR Ph for now.",
-  },
-  {
-    value: "paymongo_bank",
-    label: "Online Bank Transfer",
-    detail: "Pay directly from your online banking — BPI, UnionBank, RCBC, Chinabank and more.",
-    accent: {
-      tileBg: "bg-[#0b4a8b]",
-      ring: "ring-[#0b4a8b]/25",
-      selectedBorder: "border-[#0b4a8b]",
-      selectedBg: "bg-[#f3f8fd]",
-      selectedBadge: "bg-[#0b4a8b] text-white",
-    },
-    logo: <BankLogo />,
-    brands: [
-      { key: "bpi", node: <BrandChip className="bg-[#fff0f0] text-[#b11116]">BPI</BrandChip> },
-      { key: "ubp", node: <BrandChip className="bg-[#fff3ea] text-[#e65300]">UnionBank</BrandChip> },
-      { key: "rcbc", node: <BrandChip className="bg-[#eaf3ff] text-[#005baa]">RCBC</BrandChip> },
-      {
-        key: "chinabank",
-        node: <BrandChip className="bg-[#fff0f0] text-[#cf202e]">Chinabank</BrandChip>,
-      },
-      { key: "more", node: <BrandChip className="bg-[#eef4fb] text-[#0b4a8b]">+ more</BrandChip> },
-    ],
-    available: false,
-    unavailableNote: "Direct bank transfer is pending PayMongo activation — please use QR Ph (your bank app can scan it).",
-  },
-];
 
 function BrandChip({
   children,
@@ -309,65 +165,6 @@ function BrandChip({
   );
 }
 
-function QRPhLogoTile() {
-  return (
-    <span className="inline-flex h-12 w-20 items-center justify-center rounded-2xl border border-[#204884]/15 bg-white px-2 shadow-md">
-      <QrPhLogo className="h-auto w-full" />
-    </span>
-  );
-}
-
-function MastercardMark() {
-  return (
-    <span className="relative h-4 w-7" role="img" aria-label="Mastercard">
-      <span className="absolute left-0 top-0 h-4 w-4 rounded-full bg-[#eb001b]" />
-      <span className="absolute right-0 top-0 h-4 w-4 rounded-full bg-[#f79e1b] opacity-90" />
-    </span>
-  );
-}
-
-function JcbMark() {
-  return (
-    <span
-      className="inline-flex overflow-hidden rounded-[3px] bg-white text-[9px] font-black leading-4 shadow-xs"
-      role="img"
-      aria-label="JCB"
-    >
-      <span className="bg-[#0b4ea2] px-1 text-white">J</span>
-      <span className="bg-[#d71920] px-1 text-white">C</span>
-      <span className="bg-[#008c44] px-1 text-white">B</span>
-    </span>
-  );
-}
-
-function CardLogo() {
-  // Generic card-shape logo tile with two stripes evoking a chip card.
-  return (
-    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#2435a1] to-[#12175e] shadow-md">
-      <svg
-        viewBox="0 0 32 24"
-        fill="none"
-        className="h-6 w-6"
-        aria-hidden="true"
-      >
-        <rect x="1" y="3" width="30" height="18" rx="3" stroke="white" strokeWidth="1.5" />
-        <rect x="1" y="7.5" width="30" height="3" fill="white" />
-        <rect x="5" y="14" width="8" height="2" rx="0.5" fill="white" opacity="0.85" />
-        <rect x="5" y="17" width="5" height="1.5" rx="0.5" fill="white" opacity="0.6" />
-      </svg>
-    </span>
-  );
-}
-
-function BankLogo() {
-  // Bank columns icon on blue gradient.
-  return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[#1464b4] to-[#08396c] shadow-md">
-      <FaBuildingColumns className="h-6 w-6 text-white" />
-    </span>
-  );
-}
-
 function getVisitPathLabel(path: BookingVisitPath) {
   if (path === "Procedure") return "Medical Procedure";
   return path === "Clinic" ? "Clinic Visit" : "Virtual Consult";
@@ -379,22 +176,71 @@ function VisitPathIcon({ path, className }: { path: BookingVisitPath; className?
   return <FaHospital className={className} aria-hidden="true" />;
 }
 
-function getServicePriceLabel(serviceTitle: string) {
-  return clinicServices.find((service) => service.title === serviceTitle)?.priceLabel ?? null;
+function visitPathColorClasses(path: BookingVisitPath) {
+  if (path === "Online") {
+    return {
+      cardSelected: "border-sky-300 bg-sky-50 shadow-[0_12px_28px_rgba(14,165,233,0.14)] ring-2 ring-sky-100 ring-offset-1",
+      cardIdle: "border-sky-100 bg-white hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_12px_24px_rgba(14,165,233,0.10)]",
+      iconSelected: "bg-white text-sky-700 shadow-sm",
+      iconIdle: "bg-sky-50 text-sky-700 group-hover:bg-sky-100",
+      selectedBadge: "bg-sky-600 text-white",
+      chooseBadge: "border-sky-200 bg-white text-sky-700",
+      priceBadge: "border-sky-200 bg-sky-50 text-sky-700",
+    };
+  }
+
+  if (path === "Procedure") {
+    return {
+      cardSelected: "border-amber-300 bg-amber-50 shadow-[0_12px_28px_rgba(245,158,11,0.16)] ring-2 ring-amber-100 ring-offset-1",
+      cardIdle: "border-amber-100 bg-white hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-[0_12px_24px_rgba(245,158,11,0.10)]",
+      iconSelected: "bg-white text-amber-700 shadow-sm",
+      iconIdle: "bg-amber-50 text-amber-700 group-hover:bg-amber-100",
+      selectedBadge: "bg-amber-600 text-white",
+      chooseBadge: "border-amber-200 bg-white text-amber-700",
+      priceBadge: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  return {
+    cardSelected: "border-teal-300 bg-teal-50 shadow-[0_12px_28px_rgba(20,184,166,0.14)] ring-2 ring-teal-100 ring-offset-1",
+    cardIdle: "border-teal-100 bg-white hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-[0_12px_24px_rgba(20,184,166,0.10)]",
+    iconSelected: "bg-white text-teal-700 shadow-sm",
+    iconIdle: "bg-teal-50 text-teal-700 group-hover:bg-teal-100",
+    selectedBadge: "bg-teal-600 text-white",
+    chooseBadge: "border-teal-200 bg-white text-teal-700",
+    priceBadge: "border-teal-200 bg-teal-50 text-teal-700",
+  };
+}
+
+function getServicePriceLabel(serviceTitle: string, pricingItems: PricingItem[]) {
+  return getProcedureDisplayPriceLabel(pricingItems, serviceTitle)
+    ?? clinicServices.find((service) => service.title === serviceTitle)?.priceLabel
+    ?? null;
 }
 
 function getClinicConsultKindLabel(kind: ClinicConsultKind) {
   return kind === "FollowUp" ? "Follow-up clinic consult" : "First clinic consult";
 }
 
-function getClinicConsultKindFee(kind: ClinicConsultKind) {
-  return kind === "FollowUp" ? FOLLOW_UP_CLINIC_CONSULTATION_FEE : NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+function getClinicConsultKindFee(kind: ClinicConsultKind, pricingItems: PricingItem[]) {
+  if (pricingItems.length === 0) {
+    return kind === "FollowUp" ? FOLLOW_UP_CLINIC_CONSULTATION_FEE : NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+  }
+  return getClinicConsultationAmount(pricingItems, kind);
 }
 
-function getConsultationFeeLabel(type: AppointmentType, clinicConsultKind: ClinicConsultKind = "FirstConsult") {
-  return type === "Online"
-    ? "800 online consult - includes first consult + 1 follow-up"
-    : `${peso(getClinicConsultKindFee(clinicConsultKind))} ${clinicConsultKind === "FollowUp" ? "follow-up" : "first clinic consult"}`;
+function getConsultationFeeLabel(
+  type: AppointmentType,
+  clinicConsultKind: ClinicConsultKind,
+  pricingItems: PricingItem[],
+) {
+  if (type === "Online") {
+    return `${formatBookingPeso(getBookingPriceAmount(pricingItems, BOOKING_PRICING_CODES.VIRTUAL_CONSULT))} virtual consult`;
+  }
+
+  return `${formatBookingPeso(getClinicConsultKindFee(clinicConsultKind, pricingItems))} ${
+    clinicConsultKind === "FollowUp" ? "follow-up" : "first clinic consult"
+  }`;
 }
 
 function getBookingServicePriceLabel(
@@ -402,14 +248,15 @@ function getBookingServicePriceLabel(
   path: BookingVisitPath,
   type: AppointmentType,
   clinicConsultKind: ClinicConsultKind,
+  pricingItems: PricingItem[],
 ) {
   if (path === "Procedure") {
-    return getServicePriceLabel(serviceTitle);
+    return getServicePriceLabel(serviceTitle, pricingItems);
   }
 
   return type === "Clinic"
-    ? getConsultationFeeLabel(type, clinicConsultKind)
-    : getServicePriceLabel(serviceTitle) ?? getConsultationFeeLabel(type, clinicConsultKind);
+    ? getConsultationFeeLabel(type, clinicConsultKind, pricingItems)
+    : getServicePriceLabel(serviceTitle, pricingItems) ?? getConsultationFeeLabel(type, clinicConsultKind, pricingItems);
 }
 
 function getServiceDescription(serviceTitle: string) {
@@ -417,20 +264,45 @@ function getServiceDescription(serviceTitle: string) {
 }
 
 function peso(amount: number) {
-  return `${amount.toLocaleString("en-PH")} PHP`;
+  return formatBookingPeso(amount);
 }
 
 function VisitPathValue({ path }: { path: BookingVisitPath }) {
+  const iconColor =
+    path === "Online" ? "text-sky-600" : path === "Clinic" ? "text-teal-600" : "text-amber-600";
+
   return (
     <>
-      <VisitPathIcon path={path} className="h-3.5 w-3.5 text-neutral-600" />
+      <VisitPathIcon path={path} className={`h-3.5 w-3.5 ${iconColor}`} />
       {getVisitPathLabel(path)}
     </>
   );
 }
 
-function paymentOptionLabel(option: OnlinePaymentOption) {
-  return ONLINE_PAYMENT_OPTIONS.find((item) => item.value === option)?.label ?? "Online payment";
+function paymentOptionLabel(option: OnlinePaymentOption, accounts: OnlinePaymentAccount[]) {
+  const account = accounts.find((item) => item.id === option);
+  if (!account) return "Online payment";
+  return account.kind === "Bank" && account.bankName
+    ? account.bankName
+    : account.label || account.kind;
+}
+
+function paymentAccountDetail(account: OnlinePaymentAccount) {
+  const provider = account.kind === "Bank" && account.bankName ? account.bankName : account.kind;
+  const number = account.accountNumber ? `No. ${account.accountNumber}` : "Account number not set";
+  const name = account.accountName ? `under ${account.accountName}` : "account name not set";
+  return `${provider} ${number}, ${name}`;
+}
+
+function paymentAccountInitial(account: OnlinePaymentAccount) {
+  return (account.label || account.kind || "P").slice(0, 1).toUpperCase();
+}
+
+function paymentAccountTone(account: OnlinePaymentAccount) {
+  if (account.kind === "GCash") return "border-[#007dfe] bg-[#eaf3ff] text-[#007dfe]";
+  if (account.kind === "Maya") return "border-[#008f5a] bg-[#e8fff5] text-[#008f5a]";
+  if (account.kind === "Bank") return "border-[#0b4a8b] bg-[#f3f8fd] text-[#0b4a8b]";
+  return "border-neutral-300 bg-white text-neutral-700";
 }
 
 function readFileAsDataUrl(file: File) {
@@ -453,7 +325,7 @@ function resolveAftercareGuide(serviceTitle: string) {
 export default function BookAppointmentPage() {
   const pathname = usePathname();
   const authReturnPath = pathname === "/" ? "/#booking" : pathname;
-  const { accessToken, role, user, profile } = useRole();
+  const { accessToken, role, user, profile, isLoading: authLoading } = useRole();
   const { setAppointments, isLoading, error } = useAppointments();
   const { doctors } = useDoctors();
   const [formData, setFormData] = useState<BookingForm>(INITIAL_FORM);
@@ -464,19 +336,28 @@ export default function BookAppointmentPage() {
   const [procedureAftercareAcknowledged, setProcedureAftercareAcknowledged] = useState(false);
   const [isProcedureConsentModalOpen, setIsProcedureConsentModalOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [bookingPricing, setBookingPricing] = useState<PricingItem[]>([]);
+  const [onlinePaymentAccounts, setOnlinePaymentAccounts] = useState<OnlinePaymentAccount[]>([]);
+  const [isLoadingPaymentAccounts, setIsLoadingPaymentAccounts] = useState(false);
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [visibleWeekStart, setVisibleWeekStart] = useState(today);
 
   const primaryDoctor = doctors[0] ?? null;
   const activeDoctorId = primaryDoctor?.slug ?? DEFAULT_DOCTOR_ID;
   const selectedDoctor = primaryDoctor ?? getDoctorById(activeDoctorId);
+  const isProcedureBooking = formData.visitPath === "Procedure" || PROCEDURE_SERVICE_TITLES.has(formData.service);
   const {
     slotStatuses,
     blockedReason,
     nextAvailableSlot,
     isLoading: availabilityLoading,
     error: availabilityError,
-  } = useAppointmentAvailability(activeDoctorId, formData.date, formData.type);
+  } = useAppointmentAvailability(
+    activeDoctorId,
+    formData.date,
+    formData.type,
+    isProcedureBooking ? PROCEDURE_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES,
+  );
   const selectedSlot = slotStatuses.find((slot) => slot.start === formData.start) ?? null;
   const procedureServiceOptions = useMemo(
     () =>
@@ -490,14 +371,33 @@ export default function BookAppointmentPage() {
     [formData.type],
   );
   const serviceOptions = formData.visitPath === "Procedure" ? procedureServiceOptions : consultationServiceOptions;
-  const isProcedureBooking = formData.visitPath === "Procedure" || PROCEDURE_SERVICE_TITLES.has(formData.service);
   const appointmentClinicConsultKind =
     formData.visitPath === "Clinic" && !isProcedureBooking ? formData.clinicConsultKind : undefined;
-  const requiresPayMongoCheckout = formData.type === "Online" || isProcedureBooking;
+  const requiresOnlinePayment = formData.type === "Online" || isProcedureBooking;
+  const activePaymentAccounts = useMemo(
+    () => onlinePaymentAccounts.filter((account) => account.isActive),
+    [onlinePaymentAccounts],
+  );
+  const selectedPaymentAccount =
+    activePaymentAccounts.find((account) => account.id === formData.paymentOption) ?? null;
   const selectedSlotDuration = selectedSlot
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
-    : "1 hr";
+    : isProcedureBooking ? "1 hr" : "30 min";
   const selectedAftercareGuide = useMemo(() => resolveAftercareGuide(formData.service), [formData.service]);
+  const procedureReservationAmount = getBookingPriceAmount(
+    bookingPricing,
+    BOOKING_PRICING_CODES.PROCEDURE_RESERVATION,
+  );
+  const visitPathPriceLabels = useMemo(
+    () => ({
+      Clinic: `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} first consult / ${formatBookingPeso(
+        getClinicConsultKindFee("FollowUp", bookingPricing),
+      )} follow-up`,
+      Procedure: `${formatBookingPeso(procedureReservationAmount)} reservation`,
+      Online: `${formatBookingPeso(getBookingPriceAmount(bookingPricing, BOOKING_PRICING_CODES.VIRTUAL_CONSULT))}`,
+    }),
+    [bookingPricing, procedureReservationAmount],
+  );
 
   const BOOKING_STEP_LABELS = [
     "Patient Type",
@@ -529,17 +429,27 @@ export default function BookAppointmentPage() {
         const parsed = JSON.parse(raw) as { formData?: Partial<BookingForm>; activeStep?: number };
         if (parsed?.formData) {
           setFormData((cur) => {
+            const restoredHasPatientDetails =
+              Boolean(parsed.formData?.patientName?.trim())
+              || Boolean(parsed.formData?.email?.trim())
+              || Boolean(parsed.formData?.phone?.trim())
+              || Boolean(parsed.formData?.reason?.trim())
+              || Boolean(parsed.formData?.start);
             const nextType = parsed.formData?.type ?? cur.type;
             const restoredService = parsed.formData?.service ?? cur.service;
-            const restoredVisitPath =
-              parsed.formData?.visitPath
-              ?? (PROCEDURE_SERVICE_TITLES.has(restoredService) ? "Procedure" : nextType);
+            const restoredVisitPath = restoredHasPatientDetails
+              ? parsed.formData?.visitPath
+                ?? (PROCEDURE_SERVICE_TITLES.has(restoredService) ? "Procedure" : nextType)
+              : cur.visitPath;
+            const restoredType: AppointmentType = restoredVisitPath === "Online" ? "Online" : "Clinic";
             return {
               ...cur,
-              ...parsed.formData,
+              ...(restoredHasPatientDetails ? parsed.formData : {}),
               visitPath: restoredVisitPath,
-              type: restoredVisitPath === "Procedure" ? "Clinic" : nextType,
-              service: parsed.formData?.service ?? getDefaultServiceForType(nextType),
+              type: restoredHasPatientDetails ? restoredType : cur.type,
+              service: restoredHasPatientDetails
+                ? parsed.formData?.service ?? getDefaultServiceForType(restoredType)
+                : cur.service,
             };
           });
         }
@@ -558,8 +468,63 @@ export default function BookAppointmentPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (authLoading || !accessToken) return;
+    let active = true;
+    setIsLoadingPaymentAccounts(true);
+    (async () => {
+      try {
+        const res = await fetch("/api/settings", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) throw new Error("Failed to load payment methods.");
+        const payload = (await res.json()) as { data: SystemSettings };
+        if (active) setOnlinePaymentAccounts(payload.data.onlinePaymentAccounts ?? []);
+      } catch (settingsError) {
+        if (active) {
+          setOnlinePaymentAccounts([]);
+          setFeedback({
+            message: settingsError instanceof Error ? settingsError.message : "Failed to load payment methods.",
+            type: "error",
+          });
+        }
+      } finally {
+        if (active) setIsLoadingPaymentAccounts(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, authLoading]);
+
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/v2/pricing/booking", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load booking prices.");
+        const payload = (await res.json()) as { pricing?: PricingItem[] };
+        if (active) setBookingPricing(payload.pricing ?? []);
+      } catch {
+        if (active) setBookingPricing([]);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!requiresOnlinePayment || activePaymentAccounts.length === 0) return;
+    if (activePaymentAccounts.some((account) => account.id === formData.paymentOption)) return;
+    setFormData((current) => ({ ...current, paymentOption: activePaymentAccounts[0].id }));
+  }, [activePaymentAccounts, formData.paymentOption, requiresOnlinePayment]);
+
   // Persist the draft as the user types so it survives tab switches, hard
-  // refreshes, redirects to /login, and the PayMongo round-trip back to the
+  // refreshes, redirects to /login, and the payment verification step back to the
   // app. We only start writing AFTER the restore-from-localStorage effect
   // has run — otherwise the first render would clobber the saved draft with
   // `INITIAL_FORM`. The success/reset paths in handleSubmit explicitly
@@ -642,7 +607,12 @@ export default function BookAppointmentPage() {
     && (!isProcedureBooking || !!formData.reason.trim());
   const datePicked = !!formData.date && !blockedReason;
   const step3Valid = datePicked && !!formData.start;
-  const step4Done = step1Valid && step2Valid && step3Valid && canConfirmProcedure;
+  const step4Done =
+    step1Valid
+    && step2Valid
+    && step3Valid
+    && canConfirmProcedure
+    && (!requiresOnlinePayment || !!selectedPaymentAccount);
 
   function canAccessStep(step: number): boolean {
     if (step === 1) return true;
@@ -776,6 +746,9 @@ export default function BookAppointmentPage() {
     if (!accessToken) {
       throw new Error("Your session expired. Please sign in again.");
     }
+    if (!selectedPaymentAccount) {
+      throw new Error("No online payment method is configured yet. Please contact the clinic.");
+    }
 
     const reservationId = typeof window !== "undefined" ? localStorage.getItem("bookingReservation") : null;
     const buildCheckoutBody = (nextReservationId: string | null) => ({
@@ -790,7 +763,8 @@ export default function BookAppointmentPage() {
       patientStatus: formData.patientStatus,
       service: formData.service,
       reservation_id: nextReservationId ?? undefined,
-      payment_option: formData.paymentOption,
+      payment_option: "bank_transfer",
+      payment_account_id: selectedPaymentAccount?.id,
       procedure_consent: isProcedureBooking
         ? {
           procedureName: formData.service,
@@ -875,7 +849,7 @@ export default function BookAppointmentPage() {
     }
 
     startSubmitTransition(async () => {
-      if (requiresPayMongoCheckout) {
+      if (requiresOnlinePayment) {
         try {
           const paymentStart = await startCheckoutPayment();
           if (paymentStart.checkout_mode === "manual") {
@@ -960,6 +934,8 @@ export default function BookAppointmentPage() {
     });
   }
 
+  const bookingTone = visitPathColorClasses(formData.visitPath);
+
   return (
     <div className="space-y-6 overflow-x-hidden pb-8">
       <div className="rounded-3xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-[0_18px_45px_rgba(17,17,17,0.08)] sm:p-6">
@@ -985,20 +961,20 @@ export default function BookAppointmentPage() {
       {feedback ? (
         <div className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
           feedback.type === "success"
-            ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
-            : "border border-neutral-200 bg-neutral-50 text-neutral-800"
+            ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+            : "border border-red-200 bg-red-50 text-red-800"
         }`}>
           {feedback.type === "success"
-            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
-            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />}
+            ? <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+            : <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />}
           <span>{feedback.message}</span>
         </div>
       ) : null}
       {error ? (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
       {availabilityError ? (
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{availabilityError}</div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{availabilityError}</div>
       ) : null}
 
       <form onSubmit={handleSubmit}>
@@ -1007,6 +983,7 @@ export default function BookAppointmentPage() {
             labels={BOOKING_STEP_LABELS}
             activeStep={activeStep}
             onStepClick={goToStep}
+            visitPath={formData.visitPath}
           >
               <>
                 <VisitPathValue path={formData.visitPath} />
@@ -1102,6 +1079,7 @@ export default function BookAppointmentPage() {
                 <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {BOOKING_VISIT_OPTIONS.map((option) => {
                     const selected = formData.visitPath === option.path;
+                    const colors = visitPathColorClasses(option.path);
                     return (
                       <button
                         key={option.path}
@@ -1110,14 +1088,14 @@ export default function BookAppointmentPage() {
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
-                            ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-neutral-200 ring-offset-1"
-                            : "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
+                            ? colors.cardSelected
+                            : colors.cardIdle
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-neutral-700 shadow-sm" : "bg-neutral-50 text-neutral-700 group-hover:bg-neutral-100"
+                              selected ? colors.iconSelected : colors.iconIdle
                             }`}
                             aria-hidden="true"
                           >
@@ -1127,18 +1105,18 @@ export default function BookAppointmentPage() {
                             <div className="flex items-start justify-between gap-3">
                               <p className={`text-lg font-bold ${selected ? "text-slate-900" : "text-slate-800"}`}>{option.label}</p>
                               {selected ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                                <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${colors.selectedBadge}`}>
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
                               ) : (
-                                <span className="inline-flex shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
+                                <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] ${colors.chooseBadge}`}>
                                   Choose
                                 </span>
                               )}
                             </div>
                             <p className="mt-1.5 text-sm text-slate-600 leading-snug">{option.helper}</p>
-                            <p className="mt-3 inline-flex rounded-full border border-neutral-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-700">
-                              {option.price}
+                            <p className={`mt-3 inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${colors.priceBadge}`}>
+                              {visitPathPriceLabels[option.path]}
                             </p>
                           </div>
                         </div>
@@ -1178,7 +1156,8 @@ export default function BookAppointmentPage() {
 
                     <div className="mt-4 rounded-[1.25rem] border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-sm text-slate-600">
                       <p className="font-semibold text-slate-700">{selectedClinic.label}</p>
-                      <p className="mt-2 text-slate-500">{selectedClinic.note}</p>
+                      <p className="mt-2 text-slate-500">{selectedClinic.schedule}</p>
+                      <p className="mt-1 text-slate-500">{selectedClinic.note}</p>
                     </div>
                   </div>
                 ) : null}
@@ -1206,18 +1185,28 @@ export default function BookAppointmentPage() {
                             aria-pressed={selected}
                             className={`rounded-2xl border px-4 py-3 text-left transition ${
                               selected
-                                ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_24px_rgba(17,17,17,0.12)] ring-2 ring-neutral-100"
+                                ? bookingTone.cardSelected
                                 : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
                             }`}
                           >
-                            <p className="text-sm font-bold text-slate-900">{getClinicConsultKindLabel(kind)}</p>
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm font-bold text-slate-900">{getClinicConsultKindLabel(kind)}</p>
+                              {selected ? (
+                                <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${bookingTone.selectedBadge}`}>
+                                  <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
+                                  Active
+                                </span>
+                              ) : null}
+                            </div>
                             <p className="mt-1 text-xs leading-5 text-slate-600">
                               {kind === "FollowUp"
                                 ? "Returning visit after a prior clinic consultation."
                                 : "First in-clinic consultation before any follow-up rate applies."}
                             </p>
-                            <p className="mt-2 inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
-                              {peso(getClinicConsultKindFee(kind))}
+                            <p className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                              selected ? bookingTone.priceBadge : "border-neutral-200 bg-white text-neutral-700"
+                            }`}>
+                              {peso(getClinicConsultKindFee(kind, bookingPricing))}
                             </p>
                           </button>
                         );
@@ -1246,6 +1235,7 @@ export default function BookAppointmentPage() {
                         formData.visitPath,
                         formData.type,
                         formData.clinicConsultKind,
+                        bookingPricing,
                       );
                       const description = getServiceDescription(service);
                       return (
@@ -1256,16 +1246,26 @@ export default function BookAppointmentPage() {
                           aria-pressed={selected}
                           className={`rounded-2xl border px-4 py-3 text-left transition ${
                             selected
-                              ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_24px_rgba(17,17,17,0.12)] ring-2 ring-neutral-100"
+                              ? bookingTone.cardSelected
                               : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
                           }`}
                         >
-                          <p className="text-sm font-bold text-slate-900">{service}</p>
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-sm font-bold text-slate-900">{service}</p>
+                            {selected ? (
+                              <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${bookingTone.selectedBadge}`}>
+                                <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
+                                Active
+                              </span>
+                            ) : null}
+                          </div>
                           {description ? (
                             <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
                           ) : null}
                           {priceLabel ? (
-                            <p className="mt-2 inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                            <p className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                              selected ? bookingTone.priceBadge : "border-neutral-200 bg-white text-neutral-700"
+                            }`}>
                               {priceLabel}
                             </p>
                           ) : null}
@@ -1275,7 +1275,7 @@ export default function BookAppointmentPage() {
                   </div>
                   {isProcedureBooking ? (
                     <div className="mt-4 rounded-[1.25rem] border border-neutral-200 bg-neutral-50/70 px-4 py-3 text-sm leading-6 text-neutral-800">
-                      Procedure prices depend on the area of concern. A {peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee is required to confirm the schedule and will be deducted from the final bill. Consultation is charged separately.
+                      Procedure prices depend on the area of concern. A {peso(procedureReservationAmount)} reservation fee is required to confirm the schedule and will be deducted from the final bill. Consultation is charged separately.
                     </div>
                   ) : null}
                 </div>
@@ -1423,7 +1423,7 @@ export default function BookAppointmentPage() {
 
           {activeStep === 3 ? (
             <>
-              <section className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_24rem]">
+              <section className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <div className="space-y-5">
                   <div className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] sm:p-6">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1439,9 +1439,9 @@ export default function BookAppointmentPage() {
                             updateForm("date", nextAvailableSlot.date);
                             updateForm("start", nextAvailableSlot.slot.start);
                           }}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100"
+                          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition hover:-translate-y-0.5 ${bookingTone.priceBadge}`}
                         >
-                          <FaBolt className="h-3 w-3 text-neutral-400" aria-hidden="true" />
+                          <FaBolt className="h-3 w-3" aria-hidden="true" />
                           Next: {formatDisplayDate(nextAvailableSlot.date)} {formatRange(nextAvailableSlot.slot.start, nextAvailableSlot.slot.end)}
                         </button>
                       ) : null}
@@ -1490,22 +1490,22 @@ export default function BookAppointmentPage() {
                               aria-pressed={isSelected}
                               className={`relative rounded-xl border px-2.5 py-2.5 text-center transition ${
                                   isSelected
-                                    ? "border-neutral-300 bg-black text-white shadow-[0_10px_22px_rgba(17,17,17,0.22)]"
+                                    ? `${bookingTone.cardSelected} text-slate-950`
                                     : isPast
                                     ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400"
-                                    : "border-neutral-100 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50/70"
+                                    : `${bookingTone.cardIdle} text-slate-900`
                                 }`}
                             >
                                 {isToday && !isSelected ? (
-                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-neutral-300" aria-hidden="true" />
+                                  <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
                                 ) : null}
-                              <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-white/90" : "text-slate-500"}`}>
+                              <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-slate-700" : "text-slate-500"}`}>
                                 {dayLabel}
                               </p>
-                              <p className={`mt-1 text-xl font-black leading-none ${isSelected ? "text-white" : isPast ? "text-slate-400" : "text-slate-900"}`}>
+                              <p className={`mt-1 text-xl font-black leading-none ${isSelected ? "text-slate-950" : isPast ? "text-slate-400" : "text-slate-900"}`}>
                                 {dayNum}
                               </p>
-                              <p className={`mt-1 text-[10px] font-medium ${isSelected ? "text-white/85" : "text-slate-500"}`}>
+                              <p className={`mt-1 text-[10px] font-medium ${isSelected ? "text-slate-700" : "text-slate-500"}`}>
                                 {isToday ? "Today" : monthLabel}
                               </p>
                             </button>
@@ -1527,7 +1527,7 @@ export default function BookAppointmentPage() {
                     </div>
 
                     {blockedReason ? (
-                      <div className="mt-5 rounded-[1.4rem] border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-sm text-neutral-700 shadow-sm font-medium">
+                      <div className="mt-5 rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-800 shadow-sm font-medium">
                         {blockedReason}
                       </div>
                     ) : null}
@@ -1542,7 +1542,7 @@ export default function BookAppointmentPage() {
                   />
                 </div>
 
-                <div className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] h-fit sm:p-5 lg:sticky lg:top-24">
+                <div className="rounded-4xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-4 shadow-[0_20px_45px_rgba(17,17,17,0.08)] h-fit sm:p-5 2xl:sticky 2xl:top-24">
                   <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-700">
                     <FaClipboardList className="h-3 w-3" aria-hidden="true" />
                     Booking Summary
@@ -1569,8 +1569,8 @@ export default function BookAppointmentPage() {
                       </p>
                       <p className="mt-1.5 text-neutral-700">
                         {isProcedureBooking
-                          ? `Medical procedures require a ${peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee to confirm the schedule. It is deducted from the final bill.`
-                          : "Online consultations require payment first. You'll choose QR, card, or bank transfer on the review step."}
+                          ? `Medical procedures require a ${peso(procedureReservationAmount)} reservation fee to confirm the schedule. It is deducted from the final bill.`
+                          : "Virtual consults require payment first. You'll choose QR, card, or bank transfer on the review step."}
                       </p>
                     </div>
                   ) : null}
@@ -1587,7 +1587,7 @@ export default function BookAppointmentPage() {
               <>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-neutral-700">Step 4 of 4</p>
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                    {requiresPayMongoCheckout ? "Review & Proceed to Payment" : "Review & Confirm"}
+                    {requiresOnlinePayment ? "Review & Proceed to Payment" : "Review & Confirm"}
                   </h2>
                   <p className="mt-2 text-sm text-slate-600">Please review your appointment details before confirming</p>
 
@@ -1607,7 +1607,7 @@ export default function BookAppointmentPage() {
                           ) : null}
                           <SummaryRow label="Service" value={formData.service} done={!!formData.service} />
                           {isProcedureBooking ? (
-                            <SummaryRow label="Starting Price" value={getServicePriceLabel(formData.service) ?? "Consultation required"} done />
+                            <SummaryRow label="Starting Price" value={getServicePriceLabel(formData.service, bookingPricing) ?? "Consultation required"} done />
                           ) : null}
                           <SummaryRow label="Doctor" value={selectedDoctor?.name ?? "-"} done />
                           <div className="h-px bg-linear-to-r from-neutral-200 to-transparent" />
@@ -1642,20 +1642,20 @@ export default function BookAppointmentPage() {
                         {!isProcedureBooking ? (
                           <SummaryRow
                             label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
-                            value={getConsultationFeeLabel(formData.type, formData.clinicConsultKind)}
+                            value={getConsultationFeeLabel(formData.type, formData.clinicConsultKind, bookingPricing)}
                             done
                           />
                         ) : null}
-                        {requiresPayMongoCheckout ? (
+                        {requiresOnlinePayment ? (
                           <SummaryRow
                             label="Payment Method"
-                            value={paymentOptionLabel(formData.paymentOption)}
+                            value={paymentOptionLabel(formData.paymentOption, activePaymentAccounts)}
                             done
                           />
                         ) : null}
                         {isProcedureBooking ? (
                           <>
-                            <SummaryRow label="Reservation Fee" value={peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} done />
+                            <SummaryRow label="Reservation Fee" value={peso(procedureReservationAmount)} done />
                             <SummaryRow label="Billing Note" value="Deductible from final procedure bill; consultation charged separately" done />
                           </>
                         ) : null}
@@ -1670,19 +1670,19 @@ export default function BookAppointmentPage() {
 
                       {isProcedureBooking ? (
                         <div className="border-t border-neutral-200 pt-5">
-                          <div className={`rounded-[1.4rem] border p-4 shadow-sm ${hasCompleteProcedureConsent ? "border-emerald-200 bg-emerald-50/60" : "border-amber-200 bg-amber-50/70"}`}>
+                          <div className="rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
-                                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Required before payment</p>
-                                <p className="mt-1 text-sm font-black text-slate-950">Consent & aftercare for {formData.service}</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-600">Review the procedure consent, read the specific aftercare, and sign on screen.</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-600">Required before payment</p>
+                                <p className="mt-1 text-sm font-black text-black">Consent & aftercare for {formData.service}</p>
+                                <p className="mt-1 text-xs leading-5 text-neutral-600">Review the actual procedure consent, read the specific aftercare, and sign on screen.</p>
                               </div>
-                              {hasCompleteProcedureConsent ? <span className="rounded-full bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white">Signed</span> : null}
+                              {hasCompleteProcedureConsent ? <span className="rounded-full bg-black px-3 py-1.5 text-xs font-bold text-white">Signed</span> : null}
                             </div>
-                            <button type="button" onClick={() => setIsProcedureConsentModalOpen(true)} className="mt-4 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800">
+                            <button type="button" onClick={() => setIsProcedureConsentModalOpen(true)} className="mt-4 rounded-full bg-black px-4 py-2.5 text-sm font-bold text-white transition hover:bg-neutral-800">
                               {procedureConsentAccepted ? "Review signed consent" : "Review & sign consent"}
                             </button>
-                            {procedureConsentIssue ? <p className="mt-3 text-xs font-semibold text-amber-800">{procedureConsentIssue}</p> : null}
+                            {procedureConsentIssue ? <p className="mt-3 text-xs font-semibold text-neutral-700">{procedureConsentIssue}</p> : null}
                             {!selectedAftercareGuide ? <p className="mt-3 text-xs font-semibold text-red-700">Procedure-specific aftercare is not available yet. Please choose another service or contact the clinic.</p> : null}
                           </div>
                         </div>
@@ -1691,7 +1691,7 @@ export default function BookAppointmentPage() {
 
                     <div className="rounded-[1.75rem] border-2 border-neutral-300 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
                       <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
-                        {requiresPayMongoCheckout ? (
+                        {requiresOnlinePayment ? (
                           <>
                             <FaCreditCard className="h-3 w-3" aria-hidden="true" />
                             Ready for Payment
@@ -1712,113 +1712,88 @@ export default function BookAppointmentPage() {
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
                         {formData.type === "Online"
-                          ? "You will be redirected to PayMongo's secure checkout to complete the payment."
+                          ? "Choose one of the clinic's configured online payment methods, then wait for staff verification."
                           : isProcedureBooking
-                            ? `A ${peso(PROCEDURE_DOWNPAYMENT_AMOUNT)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
+                            ? `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
                             : selectedSlot
                             ? `Your appointment is confirmed for ${formatRange(selectedSlot.start, selectedSlot.end)}`
                             : "Select a time slot first"}
                       </p>
 
-                      {requiresPayMongoCheckout ? (
+                      {requiresOnlinePayment ? (
                         <div className="mt-4 space-y-3 rounded-[1.4rem] border border-neutral-200 bg-linear-to-b from-neutral-50 to-white px-4 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm">
                             <span className="font-semibold text-neutral-800">Choose Payment Method</span>
                             <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-700 shadow-sm border border-neutral-200">
                               <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
-                              Secure · PayMongo
+                              Staff verified
                             </span>
                           </div>
                           <div className="space-y-2.5">
-                            {ONLINE_PAYMENT_OPTIONS.map((option) => {
-                              const isSelected = formData.paymentOption === option.value;
-                              const isAvailable = option.available;
+                            {isLoadingPaymentAccounts ? (
+                              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center text-sm text-slate-500">
+                                Loading payment methods...
+                              </div>
+                            ) : activePaymentAccounts.length === 0 ? (
+                              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                                No online payment method is configured yet.
+                              </div>
+                            ) : activePaymentAccounts.map((option) => {
+                              const isSelected = formData.paymentOption === option.id;
+                              const tone = paymentAccountTone(option);
                               return (
                                 <button
-                                  key={option.value}
+                                  key={option.id}
                                   type="button"
-                                  disabled={!isAvailable}
-                                  onClick={
-                                    isAvailable
-                                      ? () => updateForm("paymentOption", option.value)
-                                      : undefined
-                                  }
-                                  aria-pressed={isAvailable ? isSelected : undefined}
-                                  aria-disabled={!isAvailable || undefined}
-                                  title={!isAvailable ? option.unavailableNote : undefined}
+                                  onClick={() => updateForm("paymentOption", option.id)}
+                                  aria-pressed={isSelected}
                                   className={`group relative w-full overflow-hidden rounded-2xl border-2 px-3.5 py-3.5 text-left transition-all duration-150 ${
-                                    !isAvailable
-                                      ? "cursor-not-allowed border-dashed border-slate-200 bg-slate-50/70"
-                                      : isSelected
-                                      ? `${option.accent.selectedBorder} ${option.accent.selectedBg} shadow-md ring-2 ${option.accent.ring} ring-offset-1`
+                                    isSelected
+                                      ? "border-neutral-900 bg-white shadow-md ring-2 ring-neutral-200 ring-offset-1"
                                       : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                                   }`}
                                 >
-                                  <div className={`flex items-start gap-3.5 ${!isAvailable ? "opacity-60" : ""}`}>
-                                    {/* Brand logo tile */}
-                                    <div className="shrink-0">{option.logo}</div>
-
-                                    {/* Label + detail + brand chips */}
+                                  <div className="flex items-start gap-3.5">
+                                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border text-lg font-black ${tone}`}>
+                                      {option.qrCodeUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={option.qrCodeUrl} alt={`${paymentOptionLabel(option.id, activePaymentAccounts)} QR code`} className="h-full w-full object-cover" />
+                                      ) : (
+                                        paymentAccountInitial(option)
+                                      )}
+                                    </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-sm font-bold text-slate-900">{option.label}</p>
-                                        {!isAvailable ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-700 border border-neutral-200">
-                                            Not yet available
-                                          </span>
-                                          ) : isSelected ? (
-                                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${option.accent.selectedBadge}`}>
+                                        <p className="text-sm font-bold text-slate-900">{paymentOptionLabel(option.id, activePaymentAccounts)}</p>
+                                        {isSelected ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                                             <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
                                             Selected
                                           </span>
                                         ) : null}
                                       </div>
                                       <p className="mt-1 text-xs text-slate-600 leading-snug">
-                                        {!isAvailable && option.unavailableNote
-                                          ? option.unavailableNote
-                                          : option.detail}
+                                        {paymentAccountDetail(option)}
                                       </p>
                                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                        {option.brands.map((brand) => (
-                                          <Fragment key={brand.key}>{brand.node}</Fragment>
-                                        ))}
+                                        <BrandChip className={tone}>{option.kind}</BrandChip>
+                                        {option.bankName ? <BrandChip className="border border-slate-200 bg-white text-slate-700">{option.bankName}</BrandChip> : null}
+                                        {option.qrCodeUrl ? <BrandChip className="border border-emerald-200 bg-emerald-50 text-emerald-700">QR ready</BrandChip> : null}
                                       </div>
                                     </div>
-
-                                    {/* Radio indicator (hidden for unavailable methods) */}
-                                    {isAvailable ? (
-                                      <span
-                                        className={`mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                                          isSelected
-                                            ? `${option.accent.selectedBorder} bg-white`
-                                            : "border-slate-300 bg-white group-hover:border-slate-400"
-                                        }`}
-                                      >
-                                        {isSelected ? (
-                                          <span
-                                            className={`h-2.5 w-2.5 rounded-full ${option.accent.tileBg}`}
-                                            aria-hidden="true"
-                                          />
-                                        ) : null}
-                                      </span>
-                                    ) : (
-                                      <span
-                                        className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-slate-300 bg-white"
-                                        aria-hidden="true"
-                                      >
-                                        <FaLock className="h-2.5 w-2.5 text-slate-400" />
-                                      </span>
-                                    )}
+                                    <span className={`mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                                      isSelected ? "border-neutral-900 bg-white" : "border-slate-300 bg-white group-hover:border-slate-400"
+                                    }`}>
+                                      {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-neutral-900" aria-hidden="true" /> : null}
+                                    </span>
                                   </div>
                                 </button>
                               );
                             })}
                           </div>
                           <div className="flex items-center justify-center gap-1.5 pt-1 text-[10px] text-slate-500">
-                            <span>Powered by</span>
-                            <span className="font-bold text-slate-700">PayMongo</span>
-                            <span>·</span>
-                            <span>SSL encrypted</span>
+                            <FaCircleCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+                            <span>Payment is checked by clinic staff before confirmation.</span>
                           </div>
                         </div>
                       ) : null}
@@ -1855,7 +1830,7 @@ export default function BookAppointmentPage() {
                     Start Over
                   </button>
                   <button type="submit" disabled={isLoading || isSubmitting || !step4Done || !accessToken} className="rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-7 py-3 text-sm font-semibold text-white shadow-[0_16px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(17,17,17,0.28)] disabled:cursor-not-allowed disabled:opacity-60">
-                    {isSubmitting ? "Processing..." : requiresPayMongoCheckout ? "Proceed to Payment" : "Confirm Appointment"}
+                    {isSubmitting ? "Processing..." : requiresOnlinePayment ? "Proceed to Payment" : "Confirm Appointment"}
                   </button>
                 </div>
               </div>
@@ -1890,13 +1865,34 @@ function HorizontalBookingStepper({
   labels,
   activeStep,
   onStepClick,
+  visitPath,
   children,
 }: {
   labels: readonly string[];
   activeStep: number;
   onStepClick: (step: number) => void;
+  visitPath: BookingVisitPath;
   children?: ReactNode;
 }) {
+  const currentStepAccent =
+    visitPath === "Online"
+      ? "bg-linear-to-br from-sky-500 to-blue-600 text-white shadow-[0_12px_24px_rgba(14,165,233,0.24)]"
+      : visitPath === "Procedure"
+        ? "bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-[0_12px_24px_rgba(245,158,11,0.24)]"
+        : "bg-linear-to-br from-teal-500 to-emerald-600 text-white shadow-[0_12px_24px_rgba(20,184,166,0.24)]";
+  const completeStepAccent =
+    visitPath === "Online"
+      ? "bg-sky-500 text-white shadow-sm"
+      : visitPath === "Procedure"
+        ? "bg-amber-500 text-white shadow-sm"
+        : "bg-teal-500 text-white shadow-sm";
+  const completeStepLine =
+    visitPath === "Online"
+      ? "bg-sky-500"
+      : visitPath === "Procedure"
+        ? "bg-amber-500"
+        : "bg-teal-500";
+
   return (
     <nav aria-label="Booking progress" className="w-full">
       <div className="pb-2">
@@ -1915,7 +1911,7 @@ function HorizontalBookingStepper({
               <Fragment key={label}>
                 {i > 0 ? (
                   <div
-                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? "bg-black" : "bg-neutral-100"} sm:block`}
+                    className={`hidden mt-5 h-0.5 min-w-1.5 flex-1 ${isComplete ? completeStepLine : "bg-neutral-100"} sm:block`}
                     aria-hidden
                   />
                 ) : null}
@@ -1926,9 +1922,9 @@ function HorizontalBookingStepper({
                     title={`Step ${step}: ${label}`}
                     className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 ${
                       isCurrent
-                        ? "bg-[linear-gradient(135deg,#111111,#111111)] text-white shadow-[0_12px_24px_rgba(17,17,17,0.24)]"
+                        ? currentStepAccent
                         : isComplete
-                        ? "bg-neutral-300 text-white shadow-sm"
+                        ? completeStepAccent
                         : "bg-neutral-50 text-neutral-700 ring-2 ring-neutral-200"
                     }`}
                   >

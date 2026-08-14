@@ -72,7 +72,13 @@ function renderProgramLabel(name: string) {
   );
 }
 
-export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?: ProgramSlide[] }) {
+export default function OfferProgramsHero({
+  slides = PROGRAM_SLIDES,
+  featureImageUrl = "/images/SEF_0450.jpeg",
+}: {
+  slides?: ProgramSlide[];
+  featureImageUrl?: string | null;
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const programSlides = slides.length ? slides : PROGRAM_SLIDES;
   const slide = programSlides[activeIndex] ?? programSlides[0];
@@ -92,7 +98,7 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
         <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
           <div className="relative min-h-[38rem] overflow-hidden bg-black lg:min-h-[calc(100svh-4rem)]">
             <Image
-              src="/images/SEF_0450.jpeg"
+              src={featureImageUrl || "/images/SEF_0450.jpeg"}
               alt="Doc Kulot portrait"
               fill
               priority
@@ -134,7 +140,7 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
               <div className="mt-8 flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setActiveIndex((current) => (current - 1 + PROGRAM_SLIDES.length) % PROGRAM_SLIDES.length)}
+                  onClick={() => setActiveIndex((current) => (current - 1 + programSlides.length) % programSlides.length)}
                   className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/45 bg-transparent text-white transition hover:bg-white hover:text-black"
                   aria-label="Previous offer"
                 >
@@ -155,7 +161,7 @@ export default function OfferProgramsHero({ slides = PROGRAM_SLIDES }: { slides?
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveIndex((current) => (current + 1) % PROGRAM_SLIDES.length)}
+                  onClick={() => setActiveIndex((current) => (current + 1) % programSlides.length)}
                   className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white hover:text-black"
                   aria-label="Next offer"
                 >

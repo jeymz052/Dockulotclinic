@@ -50,6 +50,7 @@ import {
   getAppointmentSecondaryReason,
   getDefaultServiceForType,
   getServiceOptionsForType,
+  isProcedureServiceTitle,
   parseAppointmentContext,
   type ClinicConsultKind,
 } from "@/src/lib/appointment-context";
@@ -63,6 +64,7 @@ import {
   type AppointmentType,
 } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 const today = getClinicToday();
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
@@ -71,6 +73,20 @@ type Timeframe = "today" | "upcoming" | "past" | "all";
 type StatusFilter = "all" | AppointmentStatus;
 type TypeFilter = "all" | AppointmentType;
 type AppointmentDraft = AppointmentRecord & { service: string; consultKind?: ClinicConsultKind };
+type RescheduleRequestView = {
+  id: string;
+  appointmentId: string;
+  patientName: string;
+  appointmentType: AppointmentType;
+  currentDate: string;
+  currentStart: string;
+  currentEnd: string;
+  requestedDate: string;
+  requestedStart: string;
+  requestedEnd: string;
+  reason: string;
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
+};
 
 function clinicConsultKindLabel(kind: ClinicConsultKind) {
   return kind === "FollowUp" ? "Follow-up clinic consult" : "First clinic consult";
@@ -85,6 +101,7 @@ export default function AppointmentListPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AppointmentDraft | null>(null);
   const [isUpdating, startUpdateTransition] = useTransition();
+  const [rescheduleRequests, setRescheduleRequests] = useState<RescheduleRequestView[]>([]);
 
   // Filter / search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,15 +188,46 @@ export default function AppointmentListPage() {
     highlightedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [grouped.length, highlightedAppointmentId, timeframe]);
 
+  useEffect(() => {
+    if (!accessToken || !canManage) return;
+    let active = true;
+
+    async function loadRescheduleRequests() {
+      try {
+        const response = await fetch("/api/v2/appointment-reschedule-requests?status=Pending", {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          requests?: RescheduleRequestView[];
+          message?: string;
+        };
+        if (!response.ok) throw new Error(body.message ?? "Could not load reschedule requests.");
+        if (active) setRescheduleRequests(body.requests ?? []);
+      } catch {
+        if (active) setRescheduleRequests([]);
+      }
+    }
+
+    void loadRescheduleRequests();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, canManage]);
+
   const activeDraftDoctorId = primaryDoctor?.slug ?? draft?.doctorId ?? DEFAULT_DOCTOR_ID;
   const activeDraftDate = draft?.date ?? today;
   const activeDraftType = draft?.type ?? "Clinic";
+  const activeDraftSlotMinutes =
+    activeDraftType === "Clinic" && isProcedureServiceTitle(draft?.service)
+      ? PROCEDURE_SLOT_MINUTES
+      : CONSULTATION_SLOT_MINUTES;
   const {
     slotStatuses,
     blockedReason,
     nextAvailableSlot,
     isLoading: isLoadingAvailability,
-  } = useAppointmentAvailability(activeDraftDoctorId, activeDraftDate, activeDraftType);
+  } = useAppointmentAvailability(activeDraftDoctorId, activeDraftDate, activeDraftType, activeDraftSlotMinutes);
 
   function beginEdit(appointment: AppointmentRecord) {
     const parsed = parseAppointmentContext(appointment.reason);
@@ -228,7 +276,7 @@ export default function AppointmentListPage() {
         start: draft.start,
         type: draft.type,
         reason: encodeAppointmentContext(draft.service, draft.reason, draft.type === "Clinic" ? draft.consultKind : undefined),
-        // Only send the override for Online appointments — server ignores it
+        // Only send the override for virtual consult appointments; the server ignores it
         // for Clinic visits, but skipping it here keeps the wire payload tidy.
         meetingLink: draft.type === "Online" ? draft.meetingLink ?? "" : undefined,
       });
@@ -252,6 +300,38 @@ export default function AppointmentListPage() {
       setAppointments(result.appointments);
       setFeedback(result.message);
       setConfirmingDeleteId(null);
+    });
+  }
+
+  function reviewRescheduleRequest(requestId: string, action: "approve" | "reject") {
+    if (!accessToken) {
+      setFeedback("Sign in again to continue.");
+      return;
+    }
+
+    startUpdateTransition(async () => {
+      try {
+        const response = await fetch(`/api/v2/appointment-reschedule-requests/${requestId}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action }),
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          appointments?: AppointmentRecord[];
+          message?: string;
+        };
+        if (!response.ok) throw new Error(body.message ?? "Could not review reschedule request.");
+        if (body.appointments) setAppointments(body.appointments);
+        setRescheduleRequests((current) => current.filter((request) => request.id !== requestId));
+        setFeedback(action === "approve" ? "Reschedule request approved." : "Reschedule request rejected.");
+      } catch (reviewError) {
+        setFeedback(
+          reviewError instanceof Error ? reviewError.message : "Could not review reschedule request.",
+        );
+      }
     });
   }
 
@@ -318,7 +398,7 @@ export default function AppointmentListPage() {
           item.id === appointmentId ? { ...item, status: "In Progress" } : item,
         ),
       );
-      setFeedback("Consultation started. The bill is now ready in POS.");
+      setFeedback("Clinic consultation started. The bill is now ready in POS.");
     });
   }
 
@@ -445,6 +525,15 @@ export default function AppointmentListPage() {
         <Banner tone="error" icon={<FaCircleXmark className="h-4 w-4" />}>
           {error}
         </Banner>
+      ) : null}
+
+      {canManage && rescheduleRequests.length > 0 ? (
+        <RescheduleReviewPanel
+          requests={rescheduleRequests}
+          isUpdating={isUpdating}
+          onApprove={(requestId) => reviewRescheduleRequest(requestId, "approve")}
+          onReject={(requestId) => reviewRescheduleRequest(requestId, "reject")}
+        />
       ) : null}
 
       {/* Filter / search bar */}
@@ -595,7 +684,7 @@ export default function AppointmentListPage() {
                   tone="sky"
                   icon={<FaVideo className="h-2.5 w-2.5" />}
                 >
-                  Online
+                  Virtual
                 </FilterChip>
               </div>
             </div>
@@ -734,7 +823,7 @@ export default function AppointmentListPage() {
                                   type="button"
                                   onClick={() => approveAppointment(appointment.id)}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(135deg,#737373,#737373)] px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-[0_8px_18px_rgba(5,150,105,0.24)] transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
                                   Approve
@@ -756,7 +845,7 @@ export default function AppointmentListPage() {
                               {/* Vitals: available for any Clinic appointment from
                                   Confirmed onward (so the secretary can capture
                                   at check-in, and the doctor can re-take
-                                  during the visit). Online consultations skip
+                                  during the visit). Virtual consults skip
                                   this — vitals require a physical encounter. */}
                               {appointment.type === "Clinic"
                                 && (appointment.status === "Confirmed"
@@ -771,10 +860,8 @@ export default function AppointmentListPage() {
                                   Vitals & History
                                 </button>
                               ) : null}
-                              {/* Start Consultation: Clinic visits need CheckedIn first;
-                                  Online visits skip arrival and start straight from Confirmed. */}
-                              {(appointment.type === "Clinic" && appointment.status === "Checked In")
-                                || (appointment.type === "Online" && appointment.status === "Confirmed") ? (
+                              {/* Start Consultation: clinic visits need CheckedIn first. */}
+                              {appointment.type === "Clinic" && appointment.status === "Checked In" ? (
                                 <button
                                   type="button"
                                   onClick={() => startConsultation(appointment.id)}
@@ -784,6 +871,15 @@ export default function AppointmentListPage() {
                                   <FaPlay className="h-3 w-3" aria-hidden="true" />
                                   Start Consultation
                                 </button>
+                              ) : null}
+                              {appointment.type === "Online" && appointment.status === "Confirmed" ? (
+                                <Link
+                                  href="/consultations"
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                                >
+                                  <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
+                                  Open Charting
+                                </Link>
                               ) : null}
                               {appointment.status === "In Progress" ? (
                                 <button
@@ -799,7 +895,7 @@ export default function AppointmentListPage() {
                               <button
                                 type="button"
                                 onClick={() => beginEdit(appointment)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50"
                               >
                                 <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
                                 Edit
@@ -824,7 +920,7 @@ export default function AppointmentListPage() {
                         </div>
                       </div>
 
-                      {/* Missing meeting-link banner — only for Online without a link */}
+                      {/* Missing meeting-link banner — only for virtual consults without a link */}
                       {appointment.type === "Online" && !appointment.meetingLink && !isEditing ? (
                         <MissingMeetingLinkBanner canManage={canManage} />
                       ) : null}
@@ -921,7 +1017,7 @@ export default function AppointmentListPage() {
                                     className={`${INPUT_CLASS} bg-white`}
                                   >
                                     <option value="Clinic">Clinic</option>
-                                    <option value="Online">Online</option>
+                                    <option value="Online">Virtual Consult</option>
                                   </select>
                                 </FormField>
                                 <FormField label="Date">
@@ -1287,6 +1383,93 @@ const INPUT_CLASS =
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function RescheduleReviewPanel({
+  requests,
+  isUpdating,
+  onApprove,
+  onReject,
+}: {
+  requests: RescheduleRequestView[];
+  isUpdating: boolean;
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
+}) {
+  return (
+    <section className="rounded-[1.75rem] border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+            Doctor / Staff Approval
+          </p>
+          <h2 className="mt-1 text-lg font-black text-slate-900">
+            Reschedule requests
+          </h2>
+        </div>
+        <span className="self-start rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold text-neutral-700 sm:self-auto">
+          {requests.length} pending
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {requests.map((request) => (
+          <article
+            key={request.id}
+            className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+                    {request.appointmentType}
+                  </span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+                    Pending review
+                  </span>
+                </div>
+                <h3 className="mt-2 text-base font-bold text-slate-900">
+                  {request.patientName}
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Current: {formatDisplayDate(request.currentDate)} - {formatRange(request.currentStart, request.currentEnd)}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  Requested: {formatDisplayDate(request.requestedDate)} - {formatRange(request.requestedStart, request.requestedEnd)}
+                </p>
+                {request.reason ? (
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    {request.reason}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onReject(request.id)}
+                  disabled={isUpdating}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaXmark className="h-3 w-3" aria-hidden="true" />
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onApprove(request.id)}
+                  disabled={isUpdating}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
+                  Approve
+                </button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function StatCard({
   label,
   value,
@@ -1302,20 +1485,20 @@ function StatCard({
 }) {
   const toneMap = {
     emerald: {
-      iconBg: "bg-neutral-100 text-neutral-700",
-      number: "text-neutral-700",
+      iconBg: "bg-emerald-100 text-emerald-700",
+      number: "text-emerald-700",
     },
     sky: {
-      iconBg: "bg-neutral-100 text-neutral-700",
-      number: "text-neutral-700",
+      iconBg: "bg-sky-100 text-sky-700",
+      number: "text-sky-700",
     },
     teal: {
-      iconBg: "bg-neutral-100 text-neutral-700",
-      number: "text-neutral-700",
+      iconBg: "bg-teal-100 text-teal-700",
+      number: "text-teal-700",
     },
     amber: {
-      iconBg: "bg-neutral-100 text-neutral-700",
-      number: "text-neutral-700",
+      iconBg: "bg-amber-100 text-amber-700",
+      number: "text-amber-700",
     },
   } as const;
   const t = toneMap[tone];
@@ -1351,10 +1534,10 @@ function FilterChip({
 }) {
   const activeMap = {
     slate: "bg-slate-900 text-white border-slate-900",
-    emerald: "bg-black text-white border-neutral-400",
-    sky: "bg-black text-white border-neutral-400",
-    amber: "bg-neutral-300 text-white border-neutral-300",
-    teal: "bg-black text-white border-neutral-400",
+    emerald: "bg-emerald-600 text-white border-emerald-600",
+    sky: "bg-sky-600 text-white border-sky-600",
+    amber: "bg-amber-500 text-white border-amber-500",
+    teal: "bg-teal-600 text-white border-teal-600",
   } as const;
   return (
     <button
@@ -1384,12 +1567,12 @@ function TimeAnchor({
 }) {
   const accent =
     type === "Online"
-      ? "from-neutral-300 to-neutral-400 text-white"
-      : "from-neutral-300 to-neutral-400 text-white";
+      ? "from-sky-500 to-blue-600 text-white"
+      : "from-teal-500 to-emerald-600 text-white";
   return (
     <div className={`shrink-0 rounded-xl bg-linear-to-br ${accent} px-3 py-2 sm:w-32 sm:px-4`}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-80">
-        {type === "Online" ? "Online" : "Clinic"}
+        {type === "Online" ? "Virtual" : "Clinic"}
       </p>
       <p className="mt-1 text-base font-black leading-tight sm:text-lg">{start}</p>
       <p className="text-[11px] font-medium opacity-90">to {end}</p>
@@ -1401,8 +1584,8 @@ function TimeAnchor({
 }
 
 function Avatar({ name, type }: { name: string; type: AppointmentType }) {
-  const ring = "ring-neutral-200";
-  const bg = type === "Online" ? "bg-neutral-100 text-neutral-700" : "bg-neutral-100 text-neutral-700";
+  const ring = type === "Online" ? "ring-sky-200" : "ring-teal-200";
+  const bg = type === "Online" ? "bg-sky-100 text-sky-700" : "bg-teal-100 text-teal-700";
   return (
     <span
       className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-2 ${ring} ${bg}`}
@@ -1416,14 +1599,14 @@ function Avatar({ name, type }: { name: string; type: AppointmentType }) {
 function TypeBadge({ type }: { type: AppointmentType }) {
   if (type === "Online") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700">
         <FaVideo className="h-2.5 w-2.5" aria-hidden="true" />
-        Online
+        Virtual
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-teal-700">
       <FaHospital className="h-2.5 w-2.5" aria-hidden="true" />
       Clinic
     </span>
@@ -1433,7 +1616,7 @@ function TypeBadge({ type }: { type: AppointmentType }) {
 function StatusBadge({ status }: { status: AppointmentStatus }) {
   if (status === "Pending") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
         <FaClock className="h-2.5 w-2.5" aria-hidden="true" />
         Pending
       </span>
@@ -1441,7 +1624,7 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "Checked In") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-teal-700">
         <FaUserCheck className="h-2.5 w-2.5" aria-hidden="true" />
         Checked In
       </span>
@@ -1449,7 +1632,7 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "In Progress") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700">
         <FaClock className="h-2.5 w-2.5" aria-hidden="true" />
         In Progress
       </span>
@@ -1457,14 +1640,14 @@ function StatusBadge({ status }: { status: AppointmentStatus }) {
   }
   if (status === "Completed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
         <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" />
         Completed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-700">
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
       <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" />
       Confirmed
     </span>
@@ -1506,7 +1689,7 @@ function ConfirmCancelInline({
           type="button"
           onClick={onConfirm}
           disabled={isUpdating}
-          className="rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isUpdating ? "Cancelling…" : "Confirm cancel"}
         </button>
@@ -1534,12 +1717,12 @@ function MissingMeetingLinkBanner({ canManage }: { canManage: boolean }) {
         aria-hidden="true"
       />
       <div className="text-xs text-neutral-800">
-        <p className="font-semibold">No meeting link yet for this online consultation.</p>
+        <p className="font-semibold">No meeting link yet for this virtual consult.</p>
         {canManage ? (
           <p className="mt-0.5">
             Set a clinic-wide default in{" "}
             <Link href="/settings" className="font-semibold underline underline-offset-2 hover:text-neutral-900">
-              Settings → Online Consultation
+              Settings / Virtual Consult
             </Link>
             , or click <span className="font-semibold">Edit</span> on this card to set a unique link for this patient.
           </p>
@@ -1561,9 +1744,9 @@ function Banner({
   children: ReactNode;
 }) {
   const map = {
-    success: "border-neutral-200 bg-neutral-50 text-neutral-700",
-    error: "border-neutral-200 bg-neutral-50 text-neutral-800",
-    info: "border-neutral-200 bg-neutral-50 text-neutral-700",
+    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    error: "border-red-200 bg-red-50 text-red-800",
+    info: "border-sky-200 bg-sky-50 text-sky-800",
   } as const;
   return (
     <div className={`flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium ${map[tone]}`}>

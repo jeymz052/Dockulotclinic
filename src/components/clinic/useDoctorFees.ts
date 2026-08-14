@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import {
-  CLINIC_CONSULTATION_HOURLY_RATE,
-  ONLINE_CONSULTATION_HOURLY_RATE,
+  DEFAULT_CLINIC_CONSULTATION_FEE,
+  DEFAULT_ONLINE_CONSULTATION_FEE,
   normalizeConfiguredClinicConsultationRate,
   normalizeConfiguredOnlineConsultationRate,
 } from "@/src/lib/consultation-pricing";
@@ -15,7 +15,7 @@ export type DoctorFees = {
 };
 
 /**
- * Reads consultation hourly rates for the currently-active doctor.
+ * Reads flat consultation fees for the currently-active doctor.
  * Falls back to the first active doctor returned by the API when no slug is provided.
  */
 export function useDoctorFees(slug?: string): {
@@ -24,8 +24,8 @@ export function useDoctorFees(slug?: string): {
 } {
   const { accessToken, isLoading: authLoading } = useRole();
   const [fees, setFees] = useState<DoctorFees>({
-    clinic: CLINIC_CONSULTATION_HOURLY_RATE,
-    online: ONLINE_CONSULTATION_HOURLY_RATE,
+    clinic: DEFAULT_CLINIC_CONSULTATION_FEE,
+    online: DEFAULT_ONLINE_CONSULTATION_FEE,
   });
   const [loading, setLoading] = useState(true);
 

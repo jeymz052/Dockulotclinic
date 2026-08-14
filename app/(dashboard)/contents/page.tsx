@@ -16,8 +16,23 @@ import {
   FaUserDoctor,
 } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import type { LandingContent, LandingHighlight, LandingProgramSlide, LandingService, LandingTestimonial } from "@/src/lib/db/types";
-import { clinicServices, contentCategories, faqCategories } from "@/src/lib/healthcare-content";
+import type {
+  LandingBeforeAfterResult,
+  LandingContent,
+  LandingHeroSlide,
+  LandingHighlight,
+  LandingProgramSlide,
+  LandingService,
+  LandingTestimonial,
+} from "@/src/lib/db/types";
+import { beforeAfterResults, contentCategories, faqCategories } from "@/src/lib/healthcare-content";
+import {
+  DEFAULT_FOOTER_HOURS,
+  DEFAULT_LANDING_SERVICES,
+  DEFAULT_PROGRAM_SLIDES,
+  DEFAULT_RX_HERO_SLIDES,
+  DEFAULT_TESTIMONIALS,
+} from "@/src/lib/landing-defaults";
 
 type Tab = "home" | "programs" | "services" | "about" | "results" | "booking" | "blog" | "videos" | "live" | "testimonials" | "faq" | "contact" | "footer";
 type Feedback = { kind: "ok" | "err"; msg: string } | null;
@@ -32,6 +47,11 @@ type Faq = {
 
 const DEFAULT_HERO = "/images/dockulotbgs.png";
 const DEFAULT_DOCTOR = "/images/SEF_0442.jpeg";
+const DEFAULT_PROGRAM_FEATURE_IMAGE = "/images/SEF_0450.jpeg";
+const DEFAULT_RESULTS_BOARD_TITLE = "GlowRx Results";
+const DEFAULT_RESULTS_BOARD_SUBTITLE = "Medical weight-loss progress and aesthetic transformations";
+const DEFAULT_RESULTS_BOARD_LABEL = "Results Board";
+const DEFAULT_RESULT_ITEMS: LandingBeforeAfterResult[] = beforeAfterResults.map((item) => ({ ...item }));
 const DEFAULT_ABOUT_HIGHLIGHTS: LandingHighlight[] = [
   { title: "Specialty", body: "Family Medicine and Aesthetic Medicine" },
   { title: "Medical School", body: "Silliman University Medical School, 2017" },
@@ -142,6 +162,27 @@ export default function ContentsManagerPage() {
     setFeedback(null);
   }
 
+  function addHeroSlide() {
+    patchArray("hero_slides", (current) => [
+      ...ensureHeroSlides(current as LandingHeroSlide[]),
+      { key: "hero", image: DEFAULT_RX_HERO_SLIDES[0]?.image ?? DEFAULT_HERO, title: "", subtitle: "" },
+    ] as LandingContent["hero_slides"]);
+  }
+
+  function updateHeroSlide(index: number, patch: Partial<LandingHeroSlide>) {
+    patchArray("hero_slides", (current) => {
+      const next = ensureHeroSlides(current as LandingHeroSlide[]).slice();
+      next[index] = { ...next[index], ...patch };
+      return next as LandingContent["hero_slides"];
+    });
+  }
+
+  function removeHeroSlide(index: number) {
+    patchArray("hero_slides", (current) =>
+      ensureHeroSlides(current as LandingHeroSlide[]).filter((_, itemIndex) => itemIndex !== index) as LandingContent["hero_slides"],
+    );
+  }
+
   function updateAboutHighlight(index: number, patch: Partial<LandingHighlight>) {
     patchArray("about_highlights", (current) => {
       const next = [...ensureAboutHighlights(current as LandingHighlight[])];
@@ -203,6 +244,27 @@ export default function ContentsManagerPage() {
     );
   }
 
+  function addResultItem() {
+    patchArray("results_items", (current) => [
+      ...ensureResultItems(current as LandingBeforeAfterResult[]),
+      { title: "", program: "GlowRx", caption: "", image: "" },
+    ] as LandingContent["results_items"]);
+  }
+
+  function updateResultItem(index: number, patch: Partial<LandingBeforeAfterResult>) {
+    patchArray("results_items", (current) => {
+      const next = ensureResultItems(current as LandingBeforeAfterResult[]).slice();
+      next[index] = { ...next[index], ...patch };
+      return next as LandingContent["results_items"];
+    });
+  }
+
+  function removeResultItem(index: number) {
+    patchArray("results_items", (current) =>
+      ensureResultItems(current as LandingBeforeAfterResult[]).filter((_, itemIndex) => itemIndex !== index) as LandingContent["results_items"],
+    );
+  }
+
   function addTestimonial() {
     patchArray("testimonials", (current) => [
       ...ensureTestimonials(current as LandingTestimonial[]),
@@ -253,6 +315,7 @@ export default function ContentsManagerPage() {
         hero_cta_primary: content.hero_cta_primary,
         hero_cta_secondary: content.hero_cta_secondary,
         hero_background_url: content.hero_background_url,
+        hero_slides: content.hero_slides,
         about_eyebrow: content.about_eyebrow,
         about_title: content.about_title,
         about_subtitle: content.about_subtitle,
@@ -261,6 +324,7 @@ export default function ContentsManagerPage() {
         doctor_photo_url: content.doctor_photo_url,
         about_highlights: content.about_highlights,
         program_slides: content.program_slides,
+        program_feature_image_url: content.program_feature_image_url,
         services_eyebrow: content.services_eyebrow,
         services_title: content.services_title,
         services_subtitle: content.services_subtitle,
@@ -283,6 +347,10 @@ export default function ContentsManagerPage() {
         results_eyebrow: content.results_eyebrow,
         results_title: content.results_title,
         results_subtitle: content.results_subtitle,
+        results_board_title: content.results_board_title,
+        results_board_subtitle: content.results_board_subtitle,
+        results_board_label: content.results_board_label,
+        results_items: content.results_items,
         testimonials_eyebrow: content.testimonials_eyebrow,
         testimonials_title: content.testimonials_title,
         testimonials_subtitle: content.testimonials_subtitle,
@@ -423,8 +491,9 @@ export default function ContentsManagerPage() {
             Edit only the landing-page sections
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
-            This editor now follows the landing page navigation only: Home, About, Services, Blog, Videos, and FAQ.
-            Actual blogs, vlogs, and live schedule entries are still created in the Content Creator workspace.
+            This editor follows the current landing page: Home, Programs, Services, About, Results, Booking, Blog,
+            Videos, Live, Testimonials, FAQ, Contact, and Footer. Actual blog posts, vlogs, and live event entries
+            are still created in the Content Creation workspace.
           </p>
           <div className="mt-6">
             <Link
@@ -480,52 +549,55 @@ export default function ContentsManagerPage() {
       </div>
 
       {activeTab === "home" ? (
-        <EditorSection title="Home / Hero" note="This is the Home section from the landing page navigation.">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="space-y-4">
-              <Field label="Eyebrow" value={content.hero_eyebrow ?? ""} onChange={(value) => update("hero_eyebrow", value)} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Title line 1" value={content.hero_title_line1 ?? ""} onChange={(value) => update("hero_title_line1", value)} />
-                <Field label="Title line 2" value={content.hero_title_line2 ?? ""} onChange={(value) => update("hero_title_line2", value)} />
-              </div>
-              <Textarea label="Subtitle" rows={4} value={content.hero_subtitle ?? ""} onChange={(value) => update("hero_subtitle", value)} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Primary CTA label" value={content.hero_cta_primary ?? ""} onChange={(value) => update("hero_cta_primary", value)} />
-                <Field label="Secondary CTA label" value={content.hero_cta_secondary ?? ""} onChange={(value) => update("hero_cta_secondary", value)} />
-              </div>
-              <ImageUploader
-                kind="hero-bg"
-                label="Hero background image"
-                hint="This is the full landing-page Home background."
-                currentUrl={content.hero_background_url}
-                defaultUrl={DEFAULT_HERO}
-                accessToken={accessToken}
-                onChange={(url) => update("hero_background_url", url)}
-                onError={(msg) => setFeedback({ kind: "err", msg })}
-              />
+        <EditorSection
+          title="Home / Rx Hero"
+          note="These controls match the current first-screen carousel: heading label, button label, slide copy, and slide images."
+          action={
+            <button
+              type="button"
+              onClick={addHeroSlide}
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-100"
+            >
+              <FaPlus className="h-3 w-3" aria-hidden="true" />
+              Add hero slide
+            </button>
+          }
+        >
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Hero eyebrow" value={content.hero_eyebrow ?? ""} onChange={(value) => update("hero_eyebrow", value)} />
+              <Field label="Hero button label" value={content.hero_cta_primary ?? ""} onChange={(value) => update("hero_cta_primary", value)} />
             </div>
-
-            <PreviewCard title="Home Preview">
-              <div className="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-black">
-                <div className="relative min-h-[320px]">
-                  <Image src={content.hero_background_url || DEFAULT_HERO} alt="Hero preview" fill unoptimized className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-slate-950/35 to-neutral-800/20" />
-                  <div className="relative flex min-h-[320px] flex-col justify-end px-5 py-6 text-white">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-200">{content.hero_eyebrow}</p>
-                    <h3 className="mt-3 text-3xl font-black leading-tight">
-                      {content.hero_title_line1}
-                      <br />
-                      {content.hero_title_line2}
-                    </h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-200">{content.hero_subtitle}</p>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-neutral-300 px-4 py-2 text-xs font-bold text-white">{content.hero_cta_primary}</span>
-                      <span className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-bold text-white">{content.hero_cta_secondary}</span>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {ensureHeroSlides(content.hero_slides).map((slide, index) => {
+                const fallbackImage = DEFAULT_RX_HERO_SLIDES[index]?.image ?? DEFAULT_RX_HERO_SLIDES[0]?.image ?? DEFAULT_HERO;
+                return (
+                  <div key={`${slide.key}-${index}`} className="rounded-[1.4rem] border border-neutral-100 bg-slate-50/70 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Hero slide {index + 1}</p>
+                      <RemoveButton onClick={() => removeHeroSlide(index)} title="Remove hero slide" compact />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <Field label="Key" value={slide.key} onChange={(value) => updateHeroSlide(index, { key: value })} />
+                        <Field label="Title" value={slide.title} onChange={(value) => updateHeroSlide(index, { title: value })} />
+                      </div>
+                      <Textarea label="Subtitle" rows={3} value={slide.subtitle} onChange={(value) => updateHeroSlide(index, { subtitle: value })} />
+                      <ImageUploader
+                        kind="hero-slide"
+                        label="Slide image"
+                        hint="This image fills the hero carousel background for this slide."
+                        currentUrl={slide.image || null}
+                        defaultUrl={fallbackImage}
+                        accessToken={accessToken}
+                        onChange={(url) => updateHeroSlide(index, { image: url || fallbackImage })}
+                        onError={(msg) => setFeedback({ kind: "err", msg })}
+                      />
                     </div>
                   </div>
-                </div>
-              </div>
-            </PreviewCard>
+                );
+              })}
+            </div>
           </div>
         </EditorSection>
       ) : null}
@@ -545,23 +617,38 @@ export default function ContentsManagerPage() {
             </button>
           }
         >
-          <div className="grid gap-4 xl:grid-cols-2">
-            {ensureProgramSlides(content.program_slides).map((program, index) => (
-              <div key={`${program.key}-${index}`} className="rounded-[1.4rem] border border-neutral-100 bg-slate-50/70 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Program {index + 1}</p>
-                  <RemoveButton onClick={() => removeProgramSlide(index)} title="Remove program" compact />
-                </div>
-                <div className="space-y-3">
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Field label="Key" value={program.key} onChange={(value) => updateProgramSlide(index, { key: value })} />
-                    <Field label="Name" value={program.name} onChange={(value) => updateProgramSlide(index, { name: value })} />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid gap-4 xl:grid-cols-2">
+              {ensureProgramSlides(content.program_slides).map((program, index) => (
+                <div key={`${program.key}-${index}`} className="rounded-[1.4rem] border border-neutral-100 bg-slate-50/70 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Program {index + 1}</p>
+                    <RemoveButton onClick={() => removeProgramSlide(index)} title="Remove program" compact />
                   </div>
-                  <Textarea label="Description" rows={5} value={program.description} onChange={(value) => updateProgramSlide(index, { description: value })} />
-                  <Field label="CTA label" value={program.ctaLabel} onChange={(value) => updateProgramSlide(index, { ctaLabel: value })} />
+                  <div className="space-y-3">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Field label="Key" value={program.key} onChange={(value) => updateProgramSlide(index, { key: value })} />
+                      <Field label="Name" value={program.name} onChange={(value) => updateProgramSlide(index, { name: value })} />
+                    </div>
+                    <Textarea label="Description" rows={5} value={program.description} onChange={(value) => updateProgramSlide(index, { description: value })} />
+                    <Field label="CTA label" value={program.ctaLabel} onChange={(value) => updateProgramSlide(index, { ctaLabel: value })} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <PreviewCard title="Program Image">
+              <ImageUploader
+                kind="program-photo"
+                label="Program feature image"
+                hint="This is the large portrait image on the left side of the Rx programs section."
+                currentUrl={content.program_feature_image_url}
+                defaultUrl={DEFAULT_PROGRAM_FEATURE_IMAGE}
+                accessToken={accessToken}
+                onChange={(url) => update("program_feature_image_url", url)}
+                onError={(msg) => setFeedback({ kind: "err", msg })}
+                aspect="portrait"
+              />
+            </PreviewCard>
           </div>
         </EditorSection>
       ) : null}
@@ -657,18 +744,112 @@ export default function ContentsManagerPage() {
       ) : null}
 
       {activeTab === "results" ? (
-        <EditorSection title="Results" note="This heading appears above the before-and-after carousel on the landing page.">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <EditorSection
+          title="Results"
+          note="This edits the section heading and the before-and-after carousel images shown on the landing page."
+          action={
+            <button
+              type="button"
+              onClick={addResultItem}
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-100"
+            >
+              <FaPlus className="h-3 w-3" aria-hidden="true" />
+              Add result
+            </button>
+          }
+        >
+          <div className="space-y-6">
             <div className="space-y-4">
-              <Field label="Eyebrow" value={content.results_eyebrow ?? ""} onChange={(value) => update("results_eyebrow", value)} />
-              <Field label="Title" value={content.results_title ?? ""} onChange={(value) => update("results_title", value)} />
+              <div className="grid gap-4 md:grid-cols-3">
+                <Field label="Eyebrow" value={content.results_eyebrow ?? ""} onChange={(value) => update("results_eyebrow", value)} />
+                <Field label="Title" value={content.results_title ?? ""} onChange={(value) => update("results_title", value)} />
+                <Field label="Board label" value={content.results_board_label ?? ""} onChange={(value) => update("results_board_label", value)} />
+              </div>
               <Textarea label="Subtitle" rows={4} value={content.results_subtitle ?? ""} onChange={(value) => update("results_subtitle", value)} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Carousel title" value={content.results_board_title ?? ""} onChange={(value) => update("results_board_title", value)} />
+                <Field label="Carousel subtitle" value={content.results_board_subtitle ?? ""} onChange={(value) => update("results_board_subtitle", value)} />
+              </div>
             </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              {ensureResultItems(content.results_items).map((item, index) => (
+                <div key={`${item.title}-${index}`} className="rounded-[1.4rem] border border-neutral-100 bg-slate-50/70 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Result {index + 1}</p>
+                    <RemoveButton onClick={() => removeResultItem(index)} title="Remove result" compact />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Field label="Program" value={item.program} onChange={(value) => updateResultItem(index, { program: value })} />
+                      <Field label="Title" value={item.title} onChange={(value) => updateResultItem(index, { title: value })} />
+                    </div>
+                    <Textarea label="Caption" rows={2} value={item.caption} onChange={(value) => updateResultItem(index, { caption: value })} />
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <ImageUploader
+                        kind="result-before"
+                        label="Before image"
+                        hint="Use this with an after image for split results."
+                        currentUrl={item.beforeImage ?? null}
+                        defaultUrl={DEFAULT_RESULT_ITEMS[index]?.beforeImage ?? DEFAULT_RESULT_ITEMS[0]?.beforeImage ?? DEFAULT_HERO}
+                        accessToken={accessToken}
+                        onChange={(url) => updateResultItem(index, { beforeImage: url || undefined })}
+                        onError={(msg) => setFeedback({ kind: "err", msg })}
+                        compact
+                      />
+                      <ImageUploader
+                        kind="result-after"
+                        label="After image"
+                        hint="Use this with a before image for split results."
+                        currentUrl={item.afterImage ?? null}
+                        defaultUrl={DEFAULT_RESULT_ITEMS[index]?.afterImage ?? DEFAULT_RESULT_ITEMS[0]?.afterImage ?? DEFAULT_HERO}
+                        accessToken={accessToken}
+                        onChange={(url) => updateResultItem(index, { afterImage: url || undefined })}
+                        onError={(msg) => setFeedback({ kind: "err", msg })}
+                        compact
+                      />
+                      <ImageUploader
+                        kind="result-single"
+                        label="Single image"
+                        hint="Use this for one combined before/after image."
+                        currentUrl={item.image ?? null}
+                        defaultUrl={DEFAULT_RESULT_ITEMS[index]?.image ?? DEFAULT_RESULT_ITEMS[0]?.image ?? DEFAULT_HERO}
+                        accessToken={accessToken}
+                        onChange={(url) => updateResultItem(index, { image: url || undefined })}
+                        onError={(msg) => setFeedback({ kind: "err", msg })}
+                        compact
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <PreviewCard title="Results Preview">
               <div className="rounded-[1.6rem] border border-neutral-100 bg-white p-5 shadow-sm">
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-700">{content.results_eyebrow}</p>
                 <h3 className="mt-2 text-2xl font-black tracking-tight text-black">{content.results_title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{content.results_subtitle}</p>
+                <div className="mt-5 border-t border-neutral-100 pt-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-serif text-2xl font-semibold text-black">{content.results_board_title}</p>
+                      <p className="mt-1 font-serif text-sm italic text-neutral-600">{content.results_board_subtitle}</p>
+                    </div>
+                    <span className="border border-neutral-300 bg-white px-3 py-1 text-[10px] font-semibold uppercase text-neutral-700">
+                      {content.results_board_label}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {ensureResultItems(content.results_items).slice(0, 2).map((item, index) => (
+                      <div key={`${item.title}-${index}`} className="rounded-[1rem] border border-neutral-100 bg-neutral-50 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-500">{item.program}</p>
+                        <p className="mt-1 text-sm font-bold text-black">{item.title || "Result title"}</p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-600">{item.caption}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </PreviewCard>
           </div>
@@ -757,7 +938,7 @@ export default function ContentsManagerPage() {
       {activeTab === "blog" ? (
         <EditorSection
           title="Blog"
-          note="Only the landing blog texts and labels are editable here. The actual blog posts stay in the Blog Builder inside Content Creator."
+          note="Only the landing blog texts and labels are editable here. The actual blog posts stay in the Blog Builder inside Content Creation."
           action={
             <Link
               href="/creator-content"
@@ -797,7 +978,7 @@ export default function ContentsManagerPage() {
                       <div className="h-24 rounded-[1rem] bg-neutral-100" />
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Health Tips</p>
-                        <h4 className="mt-2 text-xl font-black tracking-tight text-black">Preview blog title from Content Creator</h4>
+                        <h4 className="mt-2 text-xl font-black tracking-tight text-black">Preview blog title from Content Creation</h4>
                       </div>
                     </div>
                   </div>
@@ -837,13 +1018,13 @@ export default function ContentsManagerPage() {
       {activeTab === "videos" ? (
         <EditorSection
           title="Videos"
-          note="Only the landing texts for vlogs are editable here. The actual videos stay in Content Creator."
+          note="Only the landing texts for vlogs are editable here. The actual videos stay in Content Creation."
           action={
             <Link
               href="/creator-content"
               className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-black"
             >
-              Open Content Creator
+              Open Content Creation
               <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
             </Link>
           }
@@ -868,7 +1049,7 @@ export default function ContentsManagerPage() {
                         <span>Video</span>
                         <span>Health Tips</span>
                       </div>
-                      <h4 className="mt-3 text-xl font-black tracking-tight text-black">Preview vlog title from Content Creator</h4>
+                      <h4 className="mt-3 text-xl font-black tracking-tight text-black">Preview vlog title from Content Creation</h4>
                     </div>
                   </div>
                 </div>
@@ -880,7 +1061,7 @@ export default function ContentsManagerPage() {
       ) : null}
 
       {activeTab === "live" ? (
-        <EditorSection title="Live Schedule" note="Only the landing labels for live events are editable here. Actual event entries stay in Content Creator.">
+        <EditorSection title="Live Schedule" note="Only the landing labels for live events are editable here. Actual event entries stay in Content Creation.">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-4">
               <Field label="Eyebrow" value={content.live_eyebrow ?? "Live Schedule"} onChange={(value) => update("live_eyebrow", value)} />
@@ -1196,16 +1377,13 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
     || content.doctor_title === "Medical Doctor"
     || content.doctor_photo_url?.includes("dockulots-removebg-preview.png");
   const normalizedHighlights = ensureAboutHighlights(content.about_highlights);
+  const normalizedHeroSlides = ensureHeroSlides(content.hero_slides);
   const normalizedProgramSlides = ensureProgramSlides(content.program_slides);
   const normalizedTestimonials = ensureTestimonials(content.testimonials);
-  const normalizedServices = content.services.length
+  const normalizedResultItems = ensureResultItems(content.results_items);
+  const normalizedServices = Array.isArray(content.services) && content.services.length
     ? content.services
-    : clinicServices.map((service, index) => ({
-        kind: index === 1 ? "online" : index === clinicServices.length - 1 ? "wellness" : "clinic",
-        title: service.title,
-        description: service.description,
-        bullets: [],
-      }));
+    : DEFAULT_LANDING_SERVICES;
 
   return {
     ...content,
@@ -1218,12 +1396,19 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
     doctor_title: hasLegacyAboutDefaults ? "Family Medicine | Aesthetic Medicine" : content.doctor_title,
     doctor_photo_url: hasLegacyAboutDefaults ? null : content.doctor_photo_url,
     about_highlights: hasLegacyAboutDefaults ? DEFAULT_ABOUT_HIGHLIGHTS : normalizedHighlights,
+    hero_slides: normalizedHeroSlides,
     program_slides: normalizedProgramSlides,
+    program_feature_image_url: content.program_feature_image_url ?? null,
     testimonials: normalizedTestimonials,
     services: normalizedServices,
+    blog_categories: content.blog_categories?.length ? content.blog_categories : contentCategories,
     results_eyebrow: content.results_eyebrow ?? "Before and After",
     results_title: content.results_title ?? "GlowRx and aesthetic results",
     results_subtitle: content.results_subtitle ?? "Selected GlowRx weight-loss progress and aesthetic before-and-after outcomes.",
+    results_board_title: content.results_board_title ?? DEFAULT_RESULTS_BOARD_TITLE,
+    results_board_subtitle: content.results_board_subtitle ?? DEFAULT_RESULTS_BOARD_SUBTITLE,
+    results_board_label: content.results_board_label ?? DEFAULT_RESULTS_BOARD_LABEL,
+    results_items: normalizedResultItems,
     faq_eyebrow: content.faq_eyebrow ?? "FAQ",
     faq_title: content.faq_title ?? "Quick answers for common questions for Doc Kulot patients",
     faq_subtitle: content.faq_subtitle ?? "Frequently asked questions now live on the landing page instead of a separate page.",
@@ -1231,7 +1416,20 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
     contact_facebook_url: content.contact_facebook_url ?? "https://www.facebook.com/share/1GnJA9tPm2/",
     contact_youtube_label: content.contact_youtube_label ?? "Doc Kulot YouTube",
     contact_youtube_url: content.contact_youtube_url ?? "https://www.youtube.com/@DocKulot",
+    footer_hours: content.footer_hours?.length ? content.footer_hours : DEFAULT_FOOTER_HOURS,
   };
+}
+
+function ensureHeroSlides(slides?: LandingHeroSlide[] | null) {
+  const normalized = (slides ?? [])
+    .map((item, index) => ({
+      key: String(item.key ?? "").trim() || DEFAULT_RX_HERO_SLIDES[index]?.key || "hero",
+      image: String(item.image ?? "").trim() || DEFAULT_RX_HERO_SLIDES[index]?.image || DEFAULT_RX_HERO_SLIDES[0]?.image || DEFAULT_HERO,
+      title: String(item.title ?? "").trim(),
+      subtitle: String(item.subtitle ?? "").trim(),
+    }))
+    .filter((item) => item.image || item.title || item.subtitle);
+  return normalized.length ? normalized : DEFAULT_RX_HERO_SLIDES;
 }
 
 function ensureAboutHighlights(highlights?: LandingHighlight[] | null) {
@@ -1253,30 +1451,38 @@ function ensureProgramSlides(slides?: LandingProgramSlide[] | null) {
       ctaLabel: String(item.ctaLabel ?? "").trim() || "Book a consultation",
     }))
     .filter((item) => item.name || item.description);
-  return normalized.length ? normalized : [
-    {
-      key: "glowrx",
-      name: "GlowRx by Doc Kulot",
-      description: "Medical weight loss and aesthetic wellness programs supervised by Doc Kulot.",
-      ctaLabel: "Book a consultation",
-    },
-    {
-      key: "hormonerx",
-      name: "HormoneRx by Doc Kulot",
-      description: "Personalized care for PCOS, hormonal acne, and women's hormonal health.",
-      ctaLabel: "Book a consultation",
-    },
-  ];
+  return normalized.length ? normalized : DEFAULT_PROGRAM_SLIDES;
 }
 
 function ensureTestimonials(testimonials?: LandingTestimonial[] | null) {
-  return (testimonials ?? [])
+  const normalized = (testimonials ?? [])
     .map((item) => ({
       name: String(item.name ?? "").trim(),
       title: String(item.title ?? "").trim(),
       quote: String(item.quote ?? "").trim(),
     }))
     .filter((item) => item.name || item.quote);
+  return normalized.length ? normalized : DEFAULT_TESTIMONIALS;
+}
+
+function ensureResultItems(items?: LandingBeforeAfterResult[] | null) {
+  const normalized = (items ?? [])
+    .map((item) => {
+      const beforeImage = String(item.beforeImage ?? "").trim();
+      const afterImage = String(item.afterImage ?? "").trim();
+      const image = String(item.image ?? "").trim();
+
+      return {
+        title: String(item.title ?? "").trim(),
+        program: String(item.program ?? "").trim(),
+        caption: String(item.caption ?? "").trim(),
+        ...(beforeImage ? { beforeImage } : {}),
+        ...(afterImage ? { afterImage } : {}),
+        ...(image ? { image } : {}),
+      };
+    })
+    .filter((item) => item.title || item.program || item.caption || item.beforeImage || item.afterImage || item.image);
+  return normalized.length ? normalized : DEFAULT_RESULT_ITEMS;
 }
 
 function EditorSection({
@@ -1372,8 +1578,9 @@ function ImageUploader({
   onChange,
   onError,
   aspect = "landscape",
+  compact = false,
 }: {
-  kind: "hero-bg" | "doctor-photo";
+  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single";
   label: string;
   hint: string;
   currentUrl: string | null;
@@ -1382,6 +1589,7 @@ function ImageUploader({
   onChange: (url: string | null) => void;
   onError: (msg: string) => void;
   aspect?: "landscape" | "portrait";
+  compact?: boolean;
 }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -1413,12 +1621,12 @@ function ImageUploader({
   }
 
   return (
-    <div className="rounded-[1.4rem] border border-neutral-100 bg-neutral-50/60 p-4">
+    <div className={`rounded-[1.4rem] border border-neutral-100 bg-neutral-50/60 ${compact ? "p-3" : "p-4"}`}>
       <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-        {kind === "doctor-photo" ? <FaUserDoctor className="h-3 w-3" aria-hidden="true" /> : <FaNewspaper className="h-3 w-3" aria-hidden="true" />}
+        {kind === "doctor-photo" || kind === "program-photo" ? <FaUserDoctor className="h-3 w-3" aria-hidden="true" /> : <FaNewspaper className="h-3 w-3" aria-hidden="true" />}
         {label}
       </p>
-      <p className="mt-1 text-xs leading-5 text-slate-600">{hint}</p>
+      {!compact ? <p className="mt-1 text-xs leading-5 text-slate-600">{hint}</p> : null}
       <div className={`relative mt-4 overflow-hidden rounded-[1.25rem] border border-neutral-100 bg-white ${aspect === "portrait" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
         <Image src={currentUrl || defaultUrl} alt={label} fill unoptimized className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
       </div>
@@ -1430,7 +1638,7 @@ function ImageUploader({
           className="inline-flex items-center gap-1.5 rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FaCloudArrowUp className="h-3 w-3" aria-hidden="true" />
-          {uploading ? "Uploading..." : currentUrl ? "Replace image" : "Upload image"}
+          {uploading ? "Uploading..." : currentUrl ? "Replace" : "Upload"}
         </button>
         {currentUrl ? (
           <button
@@ -1466,7 +1674,7 @@ function KindSelect({ value, onChange }: { value: string; onChange: (value: stri
         className="mt-1.5 w-full rounded-xl border border-neutral-100 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100"
       >
         <option value="clinic">Clinic</option>
-        <option value="online">Online</option>
+        <option value="online">Virtual Consult</option>
         <option value="wellness">Wellness</option>
         <option value="doctor">Doctor</option>
         <option value="other">Other</option>

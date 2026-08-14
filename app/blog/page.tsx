@@ -7,7 +7,7 @@ import { getPublishedContentPosts } from "@/src/lib/services/content-posts";
 export const metadata: Metadata = {
   title: "Health Articles",
   description:
-    "Read Doc Kulot health articles, patient education posts, clinic updates, lifestyle tips, and online consultation topics.",
+    "Read Doc Kulot health articles, patient education posts, clinic updates, lifestyle tips, and virtual consult topics.",
   alternates: {
     canonical: "/blog",
   },

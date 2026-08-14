@@ -355,7 +355,7 @@ export default function TimeSlotsPage() {
                       : "border-neutral-100 bg-white text-slate-700 hover:bg-neutral-50"
                   }`}
                 >
-                  {type}
+                  {type === "Online" ? "Virtual Consult" : "Clinic / Procedure"}
                 </button>
               ))}
             </div>
@@ -385,12 +385,12 @@ export default function TimeSlotsPage() {
                           available ? "bg-neutral-100 text-neutral-700" : "bg-slate-200 text-slate-700"
                         }`}
                       >
-                        {slot.bookedCount}/5 booked
+                        {slot.bookedCount > 0 ? "Booked" : "Open"}
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-slate-600">
                       {available
-                        ? `Available for ${viewType.toLowerCase()} queue ${slot.nextQueueNumber}.`
+                        ? `Available for ${viewType === "Online" ? "virtual consult" : "clinic/procedure"} booking.`
                         : slot.reason}
                     </p>
                   </div>

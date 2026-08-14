@@ -79,11 +79,11 @@ function inRangeBadge(value: string, ref: { min: number; max: number; unit: stri
   if (Number.isNaN(n)) return null;
   const ok = n >= ref.min && n <= ref.max;
   return ok ? (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-700">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
       <FaCircleCheck className="h-2.5 w-2.5" aria-hidden="true" /> in range
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-700">
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700">
       <FaCircleXmark className="h-2.5 w-2.5" aria-hidden="true" /> out of range
     </span>
   );
@@ -378,10 +378,10 @@ export function VitalSignsForm({ appointmentId, readOnly, onSaved, compact }: Vi
                 <span
                   className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
                     bmiLabel.tone === "emerald"
-                      ? "bg-neutral-100 text-neutral-700"
+                      ? "bg-emerald-100 text-emerald-700"
                       : bmiLabel.tone === "amber"
-                      ? "bg-neutral-100 text-neutral-700"
-                      : "bg-neutral-100 text-neutral-800"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-red-100 text-red-700"
                   }`}
                 >
                   {bmiLabel.label}

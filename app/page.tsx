@@ -3,8 +3,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   FaArrowRight,
+  FaEnvelope,
   FaFacebookF,
   FaStar,
+  FaTiktok,
   FaYoutube,
 } from "react-icons/fa6";
 import InlineArticleBrowser from "@/src/components/blog/InlineArticleBrowser";
@@ -19,9 +21,14 @@ import PublicVideoGallery from "@/src/components/videos/PublicVideoGallery";
 import { BeforeAfterCarousel } from "@/src/components/marketing/BeforeAfterCarousel";
 import {
   beforeAfterResults,
-  clinicLocations,
   contentCategories,
 } from "@/src/lib/healthcare-content";
+import {
+  DEFAULT_FOOTER_HOURS,
+  DEFAULT_RX_HERO_SLIDES,
+  DEFAULT_TESTIMONIALS,
+} from "@/src/lib/landing-defaults";
+import { DOCKULOT_EMAIL, DOCKULOT_TIKTOK_URL, FOOTER_NAV_ITEMS } from "@/src/lib/public-links";
 import { getPublishedContentPosts, getPublishedMediaPosts } from "@/src/lib/services/content-posts";
 import type { LandingContent, LandingTestimonial } from "@/src/lib/db/types";
 import { getPublishedFaqs, type PublicFaq } from "@/src/lib/services/faqs";
@@ -57,45 +64,6 @@ export const metadata: Metadata = {
   },
 };
 
-const FALLBACK_TESTIMONIALS: LandingTestimonial[] = [
-  {
-    name: "GlowRx Patient",
-    title: "Medical weight loss program",
-    quote:
-      "The plan felt realistic from the start. I had structure, regular follow-up, and clear medical guidance that helped me stay consistent and more confident in my progress.",
-  },
-  {
-    name: "HormoneRx Patient",
-    title: "PCOS and hormonal health care",
-    quote:
-      "I finally felt listened to. My concerns were explained clearly, my treatment plan felt personalized, and I could actually understand the next steps for my hormone health.",
-  },
-  {
-    name: "HeartRx Patient",
-    title: "Cardiovascular wellness support",
-    quote:
-      "The consultations helped me take my blood pressure and overall heart health seriously without feeling overwhelmed. Everything was practical, encouraging, and easy to follow.",
-  },
-  {
-    name: "PreventRx Patient",
-    title: "Executive check-up program",
-    quote:
-      "The preventive approach gave me peace of mind. Screenings, risk review, and lifestyle advice all came together in a way that felt proactive and reassuring.",
-  },
-  {
-    name: "MetabolicRx Patient",
-    title: "Metabolic health care",
-    quote:
-      "I appreciated how the guidance connected my lab results, nutrition habits, and long-term health goals. It felt like a complete plan instead of quick advice.",
-  },
-  {
-    name: "Clinic Patient",
-    title: "General consultation experience",
-    quote:
-      "From booking to follow-up, the experience was smooth and professional. I felt respected, informed, and comfortable asking questions throughout the consultation.",
-  },
-];
-
 const PREVIOUS_ABOUT = {
   eyebrow: "About the Doctor",
   title: "Dr. Fatimah Al-Zahra T. Ditti (Doc Kulot) | Injector Queen",
@@ -122,7 +90,7 @@ function getTestimonials(items: LandingTestimonial[]) {
     }))
     .filter((item) => item.name && item.quote);
 
-  return normalized.length ? normalized : FALLBACK_TESTIMONIALS;
+  return normalized.length ? normalized : DEFAULT_TESTIMONIALS;
 }
 
 function getInitials(name: string) {
@@ -172,6 +140,9 @@ export default async function HomePage() {
     = landingContent.blog_subtitle?.trim() || "Articles written by Doc Kulot.";
   const blogCategories = landingContent.blog_categories?.length ? landingContent.blog_categories : contentCategories;
   const testimonials = getTestimonials(landingContent.testimonials);
+  const heroSlides = landingContent.hero_slides?.length ? landingContent.hero_slides : DEFAULT_RX_HERO_SLIDES;
+  const resultItems = landingContent.results_items?.length ? landingContent.results_items : beforeAfterResults;
+  const footerHours = landingContent.footer_hours?.length ? landingContent.footer_hours : DEFAULT_FOOTER_HOURS;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -196,7 +167,9 @@ export default async function HomePage() {
         sameAs: [
           landingContent.contact_facebook_url,
           landingContent.contact_youtube_url,
+          DOCKULOT_TIKTOK_URL,
         ].filter(Boolean),
+        email: DOCKULOT_EMAIL,
       },
       {
         "@type": "MedicalClinic",
@@ -216,6 +189,7 @@ export default async function HomePage() {
         },
         areaServed: "Zamboanga City",
         medicalSpecialty: ["FamilyMedicine", "PrimaryCare", "AestheticMedicine"],
+        email: DOCKULOT_EMAIL,
       },
     ],
   };
@@ -230,11 +204,18 @@ export default async function HomePage() {
       <LandingBookingModal />
 
       <section id="hero" className="bg-white md:pt-16">
-        <RxHeroCarousel />
+        <RxHeroCarousel
+          slides={heroSlides}
+          eyebrow={landingContent.hero_eyebrow || "Doc Kulot Rx Programs"}
+          ctaLabel={landingContent.hero_cta_primary || "Book appointment"}
+        />
       </section>
 
       <ScrollReveal as="section" id="programs" className="bg-white" delayMs={40}>
-        <OfferProgramsHero slides={landingContent.program_slides} />
+        <OfferProgramsHero
+          slides={landingContent.program_slides}
+          featureImageUrl={landingContent.program_feature_image_url}
+        />
       </ScrollReveal>
 
       <ScrollReveal delayMs={80}>
@@ -310,7 +291,12 @@ export default async function HomePage() {
             eyebrowClassName="text-sm font-semibold uppercase tracking-[0.25em] text-[#a98c45]"
           />
           </div>
-          <BeforeAfterCarousel items={beforeAfterResults} />
+          <BeforeAfterCarousel
+            items={resultItems}
+            title={landingContent.results_board_title}
+            subtitle={landingContent.results_board_subtitle}
+            label={landingContent.results_board_label}
+          />
         </div>
       </ScrollReveal>
 
@@ -639,6 +625,15 @@ export default async function HomePage() {
               </Link>
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
+                  href={`mailto:${DOCKULOT_EMAIL}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#a98c45] text-white">
+                    <FaEnvelope className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  {DOCKULOT_EMAIL}
+                </a>
+                <a
                   href={landingContent.contact_facebook_url}
                   target="_blank"
                   rel="noreferrer"
@@ -659,6 +654,17 @@ export default async function HomePage() {
                     <FaYoutube className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   {landingContent.contact_youtube_label}
+                </a>
+                <a
+                  href={DOCKULOT_TIKTOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2.5 text-sm font-bold text-black transition hover:bg-slate-50"
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-white">
+                    <FaTiktok className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  Doc Kulot TikTok
                 </a>
               </div>
             </section>
@@ -713,14 +719,7 @@ export default async function HomePage() {
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.22em] text-black">Quick Links</p>
               <ul className="mt-5 space-y-3 text-sm">
-                {[
-                  { label: "Home", href: "/#hero" },
-                  { label: "About", href: "/#about" },
-                  { label: "Services", href: "/#clinic" },
-                  { label: "Blog", href: "/#blog" },
-                  { label: "Videos", href: "/#videos" },
-                  { label: "FAQ", href: "/#faq" },
-                ].map((item) => (
+                {FOOTER_NAV_ITEMS.map((item) => (
                   <li key={item.label}>
                     <Link href={item.href} className="transition hover:text-slate-950">
                       {item.label}
@@ -740,8 +739,8 @@ export default async function HomePage() {
 
               <p className="mt-6 text-sm font-bold uppercase tracking-[0.22em] text-black">Schedule</p>
               <div className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
-                {clinicLocations.map((location) => (
-                  <p key={location.name}>{location.name}: {location.schedule}</p>
+                {footerHours.map((item) => (
+                  <p key={item}>{item}</p>
                 ))}
               </div>
             </div>
@@ -750,6 +749,15 @@ export default async function HomePage() {
               <p className="text-sm font-bold uppercase tracking-[0.22em] text-black">Contact</p>
               <p className="mt-4 text-sm leading-7 text-slate-700">{landingContent.footer_contact_text}</p>
               <div className="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={`mailto:${DOCKULOT_EMAIL}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-transparent px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white/40"
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#a98c45] text-white shadow-sm">
+                    <FaEnvelope className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  {DOCKULOT_EMAIL}
+                </a>
                 <a
                   href={landingContent.contact_facebook_url}
                   target="_blank"
@@ -771,6 +779,17 @@ export default async function HomePage() {
                     <FaYoutube className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   {landingContent.contact_youtube_label}
+                </a>
+                <a
+                  href={DOCKULOT_TIKTOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-black bg-transparent px-4 py-2.5 text-sm font-bold text-black transition hover:bg-white/40"
+                >
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black text-white shadow-sm">
+                    <FaTiktok className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  Doc Kulot TikTok
                 </a>
               </div>
             </div>

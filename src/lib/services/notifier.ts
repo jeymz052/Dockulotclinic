@@ -6,6 +6,8 @@
  * The worker at /api/v2/notifications/drain calls these.
  */
 
+import { CLINIC_TIME_ZONE } from "@/src/lib/timezone";
+
 export type EmailInput = {
   to: string;
   subject: string;
@@ -24,6 +26,9 @@ export type SmsInput = {
 export async function sendEmail(input: EmailInput): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("RESEND_API_KEY not configured");
+    }
     const attachmentCount = input.attachments?.length ?? 0;
     console.log(
       `[email:stub] to=${input.to} subject="${input.subject}" attachments=${attachmentCount}`,
@@ -55,6 +60,9 @@ export async function sendSms(input: SmsInput): Promise<void> {
   const sender = process.env.SEMAPHORE_SENDER_NAME;
 
   if (!apiKey) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SEMAPHORE_API_KEY not configured");
+    }
     console.log(`[sms:stub] to=${input.to} body="${input.body.slice(0, 60)}"`);
     return;
   }
@@ -101,11 +109,67 @@ function formatPeso(value: unknown) {
   return `PHP ${amount.toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
 }
 
+function clinicTimeZoneLabel() {
+  const configured =
+    process.env.NEXT_PUBLIC_CLINIC_TIME_ZONE_LABEL?.trim()
+    || process.env.CLINIC_TIME_ZONE_LABEL?.trim();
+  if (configured) return configured;
+  if (CLINIC_TIME_ZONE === "Asia/Manila") return "PHT";
+
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: CLINIC_TIME_ZONE,
+    timeZoneName: "shortGeneric",
+  })
+    .formatToParts(new Date(Date.UTC(2026, 0, 1, 12)))
+    .find((part) => part.type === "timeZoneName")?.value ?? CLINIC_TIME_ZONE;
+}
+
+function formatNotificationTime(value: string) {
+  const time = value.trim();
+  if (!time) return "";
+
+  const meridiemMatch = time.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)(?:\s+(.+))?$/i);
+  if (meridiemMatch) {
+    const [, hourText, minuteText = "00", periodText, existingZone] = meridiemMatch;
+    const hour = Number(hourText);
+    const minute = Number(minuteText);
+    if (!Number.isInteger(hour) || hour < 1 || hour > 12 || !Number.isInteger(minute) || minute > 59) {
+      return time;
+    }
+    const period = periodText.toUpperCase();
+    const zone = existingZone?.trim() || clinicTimeZoneLabel();
+    return `${hour}:${minuteText.padStart(2, "0")} ${period} ${zone}`;
+  }
+
+  const clockMatch = time.match(/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+  if (!clockMatch) return time;
+
+  const [, hourText, minuteText] = clockMatch;
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (!Number.isInteger(hour) || hour > 23 || !Number.isInteger(minute) || minute > 59) {
+    return time;
+  }
+
+  const period = hour < 12 ? "AM" : "PM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minuteText} ${period} ${clinicTimeZoneLabel()}`;
+}
+
+function formatScheduleLine(date: string, startTime: string) {
+  const formattedTime = startTime ? formatNotificationTime(startTime) : "";
+  return [date, formattedTime].filter(Boolean).join(" at ");
+}
+
 function appointmentLabel(type: string, service: string, purpose: string) {
   if (purpose === "procedure_downpayment") return `${service || "medical procedure"} reservation`;
-  if (type === "Online") return "teleconsultation";
+  if (type === "Online") return "virtual consult";
   if (service) return service;
   return type === "Clinic" ? "clinic consultation" : "appointment";
+}
+
+function appointmentTypeLabel(type: string) {
+  return type === "Online" ? "Virtual Consult" : type;
 }
 
 export function renderTemplate(
@@ -126,10 +190,10 @@ export function renderTemplate(
   const prescriptionNo = asText(payload.prescription_no);
   const status = asText(payload.status);
   const amount = formatPeso(payload.amount);
-  const scheduleLine = [appointmentDate, startTime].filter(Boolean).join(" at ");
+  const scheduleLine = formatScheduleLine(appointmentDate, startTime);
   const patientLine = patientName ? ` for ${patientName}` : "";
   const label = appointmentLabel(type, service, purpose);
-  const shortLabel = label.charAt(0).toUpperCase() + label.slice(1);
+  const displayType = appointmentTypeLabel(type);
 
   switch (template) {
     case "verify_email":
@@ -142,7 +206,7 @@ export function renderTemplate(
     case "welcome":
       return {
         subject: "Welcome to Doc Kulot",
-        body: "Welcome to Doc Kulot. Your account is active. You can book a teleconsultation, clinic consultation, or medical procedure reservation from the website.",
+        body: "Welcome to Doc Kulot. Your account is active. You can book a virtual consult, clinic consultation, or medical procedure reservation from the website.",
       };
     case "appointment_booked":
       return {
@@ -169,28 +233,35 @@ export function renderTemplate(
       return {
         subject: "New appointment booked",
         body: type
-          ? `A new ${type.toLowerCase()} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} was just booked.`
+          ? `A new ${displayType.toLowerCase()} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} was just booked.`
           : `A new appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} was just booked.`,
       };
     case "appointment_staff_confirmed":
       return {
-        subject: "Online appointment confirmed",
+        subject: type === "Online" ? "Virtual consult confirmed" : "Appointment confirmed",
         body: type
-          ? `${type} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been confirmed and paid.`
+          ? `${displayType} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been confirmed and paid.`
           : `Appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been confirmed and paid.`,
       };
     case "appointment_staff_cancelled":
       return {
         subject: "Appointment cancelled",
         body: type
-          ? `${type} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been cancelled.`
+          ? `${displayType} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been cancelled.`
           : `Appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has been cancelled.`,
+      };
+    case "appointment_staff_reschedule_requested":
+      return {
+        subject: "Reschedule request needs review",
+        body: type
+          ? `${displayType} appointment${patientLine}${appt ? ` (ref ${appt})` : ""} was requested to move${scheduleLine ? ` to ${scheduleLine}` : ""}.`
+          : `Appointment${patientLine}${appt ? ` (ref ${appt})` : ""} was requested to move${scheduleLine ? ` to ${scheduleLine}` : ""}.`,
       };
     case "appointment_staff_rescheduled":
       return {
         subject: "Appointment rescheduled",
         body: type
-          ? `${type} appointment${patientLine}${scheduleLine ? ` is now scheduled for ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""}.`
+          ? `${displayType} appointment${patientLine}${scheduleLine ? ` is now scheduled for ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""}.`
           : `Appointment${patientLine}${scheduleLine ? ` is now scheduled for ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""}.`,
       };
     case "appointment_staff_checked_in":
@@ -210,9 +281,9 @@ export function renderTemplate(
       };
     case "appointment_staff_payment_failed":
       return {
-        subject: "Online payment failed",
+        subject: type === "Online" ? "Virtual consult payment failed" : "Appointment payment failed",
         body: type
-          ? `${type} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has a failed payment that may need follow-up.`
+          ? `${displayType} appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has a failed payment that may need follow-up.`
           : `Appointment${patientLine}${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} has a failed payment that may need follow-up.`,
       };
     case "appointment_confirmed":
@@ -226,6 +297,33 @@ export function renderTemplate(
             link ? `Meeting link: ${link}` : "",
           ].filter(Boolean).join("\n"),
       };
+    case "appointment_reschedule_requested":
+      return {
+        subject: "Reschedule request received",
+        body: [
+          `Your reschedule request${appt ? ` for appointment ${appt}` : ""} was received.`,
+          scheduleLine ? `Requested schedule: ${scheduleLine}` : "",
+          "The clinic or assigned doctor will review it before your appointment is moved.",
+        ].filter(Boolean).join("\n"),
+      };
+    case "appointment_reschedule_approved":
+      return {
+        subject: "Your appointment was rescheduled",
+        body: channel === "sms"
+          ? `Doc Kulot: Your appointment${appt ? ` ${appt}` : ""} was rescheduled${scheduleLine ? ` to ${scheduleLine}` : ""}.`
+          : [
+            `Your appointment${appt ? ` (ref ${appt})` : ""} has been rescheduled.`,
+            scheduleLine ? `New schedule: ${scheduleLine}` : "",
+          ].filter(Boolean).join("\n"),
+      };
+    case "appointment_reschedule_rejected":
+      return {
+        subject: "Reschedule request not approved",
+        body: [
+          `Your reschedule request${appt ? ` for appointment ${appt}` : ""} was not approved.`,
+          "Your original appointment schedule remains unchanged. Please contact the clinic if you need help.",
+        ].join("\n"),
+      };
     case "appointment_payment_success":
       return {
         subject: "Payment successful",
@@ -233,7 +331,7 @@ export function renderTemplate(
       };
     case "online_meeting_link":
       return {
-        subject: "Your online meeting link",
+        subject: "Your virtual consult meeting link",
         body: link
           ? `Your meeting link for appointment ${appt} is ready: ${link}`
           : `Your meeting link for appointment ${appt} is ready in your dashboard.`,
@@ -254,13 +352,13 @@ export function renderTemplate(
         };
       }
       return {
-        subject: "Teleconsultation confirmed",
+        subject: "Virtual consult confirmed",
         body: channel === "sms"
-          ? `Doc Kulot: ${amount || "PHP 800"} received. Your teleconsultation${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} is confirmed.${link ? ` Link: ${link}` : ""}`
+          ? `Doc Kulot: ${amount || "PHP 800"} received. Your virtual consult${scheduleLine ? ` on ${scheduleLine}` : ""}${appt ? ` (ref ${appt})` : ""} is confirmed.${link ? ` Link: ${link}` : ""}`
           : [
-            `Payment received: ${amount || "PHP 800"} for your teleconsultation${appt ? ` (ref ${appt})` : ""}.`,
+            `Payment received: ${amount || "PHP 800"} for your virtual consult${appt ? ` (ref ${appt})` : ""}.`,
             scheduleLine ? `Schedule: ${scheduleLine}` : "",
-            "This includes the first online consult plus one follow-up.",
+            "This includes the first virtual consult plus one follow-up.",
             link ? `Meeting link: ${link}` : "The meeting link will appear in your dashboard or be sent by the clinic once ready.",
           ].filter(Boolean).join("\n"),
       };
@@ -279,10 +377,10 @@ export function renderTemplate(
       return {
         subject: type === "Clinic"
           ? "Reminder: clinic appointment tomorrow"
-          : "Reminder: online consultation tomorrow",
+          : "Reminder: virtual consult tomorrow",
         body: type === "Clinic"
           ? `Doc Kulot reminder: your ${label}${appt ? ` (ref ${appt})` : ""} is tomorrow. Please arrive on time and bring any needed records.`
-          : `Doc Kulot reminder: your teleconsultation${appt ? ` (ref ${appt})` : ""} is tomorrow.${link ? ` Meeting link: ${link}` : " Check your dashboard for the meeting link."}`,
+          : `Doc Kulot reminder: your virtual consult${appt ? ` (ref ${appt})` : ""} is tomorrow.${link ? ` Meeting link: ${link}` : " Check your dashboard for the meeting link."}`,
       };
     case "appointment_reminder_6h":
       return {
@@ -291,7 +389,7 @@ export function renderTemplate(
           : "Reminder: appointment in a few hours",
         body: type === "Clinic"
           ? `Doc Kulot reminder: your ${label}${appt ? ` (ref ${appt})` : ""} is coming up soon.`
-          : `Doc Kulot reminder: your teleconsultation${appt ? ` (ref ${appt})` : ""} is coming up soon.${link ? ` Link: ${link}` : ""}`,
+          : `Doc Kulot reminder: your virtual consult${appt ? ` (ref ${appt})` : ""} is coming up soon.${link ? ` Link: ${link}` : ""}`,
       };
     case "appointment_cancelled":
       return {

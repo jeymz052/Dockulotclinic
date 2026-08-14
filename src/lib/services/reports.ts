@@ -226,7 +226,7 @@ function getServiceName(value: AppointmentRow["clinic_services"], reason: string
   const fromReason = parseAppointmentContext(reason).service.trim();
   if (fromReason) return fromReason;
 
-  return type === "Online" ? "Online Consultation" : "General Consultation";
+  return type === "Online" ? "Virtual Consult" : "General Consultation";
 }
 
 function getMetadataValue(metadata: Record<string, unknown> | null | undefined, key: string) {

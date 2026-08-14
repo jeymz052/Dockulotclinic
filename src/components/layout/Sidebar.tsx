@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { IconType } from "react-icons";
 import {
   FaCalendarCheck,
@@ -14,6 +14,7 @@ import {
   FaCircleCheck,
   FaClock,
   FaClockRotateLeft,
+  FaCloud,
   FaCircleQuestion,
   FaCreditCard,
   FaFileLines,
@@ -25,14 +26,20 @@ import {
   FaUsers,
   FaVideo,
   FaMapLocationDot,
-  FaCloud,
   FaWandMagicSparkles,
   FaInbox,
-  FaPrescriptionBottleMedical,
-  FaShieldHalved,
   FaUserLock,
   FaUserPlus,
 } from "react-icons/fa6";
+import {
+  BOOKING_CLINIC_LOCATIONS,
+  STANDARD_BOOKING_END,
+  STANDARD_BOOKING_START,
+  VIRTUAL_CONSULT_END,
+  VIRTUAL_CONSULT_START,
+  isFirstOrThirdSunday,
+  isVirtualConsultBookingDate,
+} from "@/src/lib/clinic-schedule";
 import type { UserRole } from "@/src/lib/roles";
 
 type NavSubItem = {
@@ -83,7 +90,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       href: "/consultations",
       icon: FaRegMessage,
       subItems: [
-        { label: "Online Consultation", href: "/consultations", icon: FaVideo },
+        { label: "Visit Workspace", href: "/consultations", icon: FaVideo },
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
@@ -96,14 +103,11 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Blocked Dates", href: "/schedules/slots", icon: FaClock },
       ],
     },
-    { label: "Pricing", href: "/pricing", icon: FaCreditCard },
     { label: "Reports", href: "/reports", icon: FaChartLine },
-    { label: "Security", href: "/security", icon: FaShieldHalved },
-    { label: "Prescriptions", href: "/prescriptions", icon: FaPrescriptionBottleMedical },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
     { label: "FAQ Content", href: "/faq-content", icon: FaCircleQuestion },
-    { label: "Content Creator", href: "/creator-content", icon: FaVideo },
+    { label: "Content Creation", href: "/creator-content", icon: FaVideo },
     { label: "Settings", href: "/settings", icon: FaGear },
     { label: "Help Center", href: "/help", icon: FaCircleQuestion },
   ],
@@ -166,7 +170,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       href: "/consultations",
       icon: FaRegMessage,
       subItems: [
-        { label: "Start Online Consultation", href: "/consultations", icon: FaVideo },
+        { label: "Visit Workspace", href: "/consultations", icon: FaVideo },
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
@@ -186,14 +190,11 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
     { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
-    { label: "Pricing", href: "/pricing", icon: FaCreditCard },
     { label: "Reports", href: "/reports", icon: FaChartLine },
-    { label: "Security", href: "/security", icon: FaShieldHalved },
-    { label: "Prescriptions", href: "/prescriptions", icon: FaPrescriptionBottleMedical },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
     { label: "FAQ Content", href: "/faq-content", icon: FaCircleQuestion },
-    { label: "Content Creator", href: "/creator-content", icon: FaVideo },
+    { label: "Content Creation", href: "/creator-content", icon: FaVideo },
     { label: "Settings", href: "/settings", icon: FaGear },
   ],
   PATIENT: [
@@ -219,11 +220,10 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       href: "/consultations",
       icon: FaRegMessage,
       subItems: [
-        { label: "Join Online Consultation", href: "/consultations", icon: FaVideo },
+        { label: "Consultation Lobby", href: "/consultations", icon: FaVideo },
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
-    { label: "Prescriptions", href: "/prescriptions", icon: FaPrescriptionBottleMedical },
     { label: "Medical Files", href: "/profile/files", icon: FaFileLines },
     { label: "Follow-up Inquiries", href: "/profile/inquiries", icon: FaInbox },
     { label: "My Settings", href: "/profile/settings", icon: FaGear },
@@ -239,18 +239,177 @@ type SidebarProps = {
 
 type ExpandedMenus = Record<string, boolean>;
 
+type ClinicWeather = {
+  clinicId: string;
+  condition: string;
+  temperatureC: number;
+};
+
+type WeatherStatus = "idle" | "loading" | "ready" | "error";
+
+const CLINIC_TIME_ZONE = "Asia/Manila";
+
+function formatClinicDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLINIC_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+function getClinicTimeMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLINIC_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+
+  return value("hour") * 60 + value("minute");
+}
+
+function getTimeMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+
+  return hour * 60 + minute;
+}
+
+function formatTimeLabel(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function getTimedStatus(nowMinutes: number, start: string, end: string, availableToday: boolean) {
+  if (!availableToday) return "Closed Today";
+
+  const startMinutes = getTimeMinutes(start);
+  const endMinutes = getTimeMinutes(end);
+
+  if (nowMinutes >= startMinutes && nowMinutes < endMinutes) return "Open Now";
+  if (nowMinutes < startMinutes) return "Opens Today";
+
+  return "Closed Now";
+}
+
+function getTodayClinicStatus(date: Date) {
+  const clinicDateKey = formatClinicDateKey(date);
+  const day = new Date(`${clinicDateKey}T00:00:00Z`).getUTCDay();
+  const clinic =
+    day >= 1 && day <= 5
+      ? BOOKING_CLINIC_LOCATIONS[0]
+      : day === 0 && isFirstOrThirdSunday(clinicDateKey)
+        ? BOOKING_CLINIC_LOCATIONS[1]
+        : null;
+  const nowMinutes = getClinicTimeMinutes(date);
+
+  if (!clinic) {
+    return {
+      clinicId: null,
+      clinicName: "No in-person clinic",
+      scheduleLabel: "Next clinic follows the saved Doc Kulot schedule",
+      statusLabel: getTimedStatus(nowMinutes, STANDARD_BOOKING_START, STANDARD_BOOKING_END, false),
+    };
+  }
+
+  return {
+    clinicId: clinic.value,
+    clinicName: clinic.label,
+    scheduleLabel: clinic.schedule,
+    statusLabel: getTimedStatus(nowMinutes, STANDARD_BOOKING_START, STANDARD_BOOKING_END, true),
+  };
+}
+
+function getTodayVirtualConsultStatus(date: Date) {
+  const clinicDateKey = formatClinicDateKey(date);
+  const nowMinutes = getClinicTimeMinutes(date);
+
+  return getTimedStatus(
+    nowMinutes,
+    VIRTUAL_CONSULT_START,
+    VIRTUAL_CONSULT_END,
+    isVirtualConsultBookingDate(clinicDateKey),
+  );
+}
+
 export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
   const navItems = NAV_BY_ROLE[role];
   const pathname = usePathname();
+  const today = new Date();
   const todayLabel = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLINIC_TIME_ZONE,
     weekday: "long",
     month: "long",
     day: "numeric",
     year: "numeric",
-  }).format(new Date());
+  }).format(today);
+  const todayClinic = getTodayClinicStatus(today);
+  const virtualConsultStatus = getTodayVirtualConsultStatus(today);
+  const clinicHours = `${formatTimeLabel(STANDARD_BOOKING_START)} - ${formatTimeLabel(
+    STANDARD_BOOKING_END,
+  )}`;
+  const virtualConsultHours = `${formatTimeLabel(VIRTUAL_CONSULT_START)} - ${formatTimeLabel(
+    VIRTUAL_CONSULT_END,
+  )}`;
   const [expanded, setExpanded] = useState<ExpandedMenus>(
     Object.fromEntries(navItems.map((item) => [item.label, false])),
   );
+  const [weather, setWeather] = useState<ClinicWeather | null>(null);
+  const [weatherStatus, setWeatherStatus] = useState<WeatherStatus>(
+    todayClinic.clinicId ? "loading" : "idle",
+  );
+
+  useEffect(() => {
+    const clinicId = todayClinic.clinicId;
+
+    if (!clinicId) {
+      setWeather(null);
+      setWeatherStatus("idle");
+      return;
+    }
+
+    const weatherClinicId = clinicId;
+    let ignore = false;
+
+    async function loadWeather() {
+      setWeatherStatus("loading");
+
+      try {
+        const response = await fetch(`/api/weather?clinic=${encodeURIComponent(weatherClinicId)}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Weather unavailable");
+        }
+
+        const data = (await response.json()) as ClinicWeather;
+
+        if (!ignore) {
+          setWeather(data);
+          setWeatherStatus("ready");
+        }
+      } catch {
+        if (!ignore) {
+          setWeather(null);
+          setWeatherStatus("error");
+        }
+      }
+    }
+
+    void loadWeather();
+
+    return () => {
+      ignore = true;
+    };
+  }, [todayClinic.clinicId]);
 
   const toggleExpand = (label: string) => {
     setExpanded((prev) => ({
@@ -388,40 +547,47 @@ export function Sidebar({ role, isOpen, onClose }: SidebarProps) {
             <div className="flex flex-col items-center justify-center gap-1 text-center">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-black/70">
-                  Doc Kulot Today
+                  Available Today
                 </span>
                 <FaCircleCheck className="h-3.5 w-3.5 text-black" aria-hidden="true" />
               </div>
             </div>
 
-            {/* Status */}
-            <div className="mt-1.5 text-center">
-              <p className="text-lg font-semibold leading-none text-neutral-800">Open Today</p>
-            </div>
-
-            {/* Location & Weather Combined */}
+            {/* In-person clinic */}
             <div className="mt-2 rounded-xl border border-black/10 px-3 py-1.5">
-              <div className="flex items-center justify-center gap-2.5 text-xs font-semibold text-black/75">
-                <div className="flex items-center gap-1">
-                  <FaMapLocationDot className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
-                  <span>Zamboanga Sibugay</span>
-                </div>
-                <span className="text-black/20">•</span>
-                <div className="flex items-center gap-1">
-                  <FaCloud className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
-                  <span>28°C</span>
+              <div className="flex items-start justify-center gap-2 text-center text-xs font-semibold text-black/75">
+                <FaMapLocationDot className="mt-0.5 h-3 w-3 shrink-0 text-black" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-[15px] leading-tight text-neutral-900">{todayClinic.clinicName}</p>
+                  <p className="mt-0.5 text-[9px] font-medium leading-tight text-neutral-500">
+                    {todayClinic.statusLabel} - {clinicHours}
+                  </p>
+                  {todayClinic.clinicId ? (
+                    <p className="mt-1 inline-flex items-center justify-center gap-1 text-[10px] font-semibold text-neutral-700">
+                      <FaCloud className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
+                      {weatherStatus === "ready" && weather
+                        ? `${weather.temperatureC}\u00b0C ${weather.condition}`
+                        : weatherStatus === "loading"
+                          ? "Weather loading"
+                          : "Weather unavailable"}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
 
-            {/* Hours */}
+            {/* Virtual consult */}
             <div className="mt-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5">
               <div className="flex items-center justify-center gap-2 text-black/75">
-                <FaClock className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
-                <span className="text-xs font-semibold">8:00 AM - 5:00 PM</span>
+                <FaVideo className="h-3 w-3 shrink-0 text-black" aria-hidden="true" />
+                <span className="text-xs font-semibold">Virtual Consult</span>
               </div>
-              <p className="mt-0.5 text-center text-[9px] text-neutral-600/75">{todayLabel}</p>
+              <p className="mt-0.5 text-center text-[9px] font-medium text-neutral-600/75">
+                {virtualConsultStatus} - {virtualConsultHours}
+              </p>
             </div>
+
+            <p className="mt-1 text-center text-[9px] text-neutral-600/75">{todayLabel}</p>
           </div>
         </div>
       </aside>

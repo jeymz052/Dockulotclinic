@@ -15,7 +15,7 @@ async function authenticate(request: Request) {
   if (!token) return null;
   try {
     return await requireAuthenticatedUser(token);
-  } catch (err) {
+  } catch {
     return null;
   }
 }

@@ -164,10 +164,10 @@ function mergeLiveScheduleParts(datePart: string, timePart: string) {
 }
 
 function statusTone(status: string) {
-  if (status === "Published" || status === "Live") return "border-neutral-200 bg-neutral-50 text-neutral-700";
-  if (status === "Archived" || status === "Cancelled") return "border-neutral-200 bg-neutral-100 text-neutral-700";
-  if (status === "Completed") return "border-neutral-100 bg-neutral-50 text-neutral-700";
-  return "border-neutral-200 bg-neutral-50 text-neutral-700";
+  if (status === "Published" || status === "Live") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "Archived" || status === "Cancelled") return "border-slate-200 bg-slate-100 text-slate-700";
+  if (status === "Completed") return "border-sky-200 bg-sky-50 text-sky-700";
+  return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
 function Surface({
@@ -330,20 +330,20 @@ function TabButton({
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex min-h-[3.75rem] min-w-[200px] flex-1 items-center justify-center gap-3 rounded-[1.2rem] border px-5 py-4 text-center transition ${
+        className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center transition ${
         active
-          ? "border-neutral-300 bg-[linear-gradient(135deg,#111111_0%,#2b2b2b_100%)] text-white shadow-[0_18px_35px_-22px_rgba(17,17,17,0.75)]"
-          : "border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7f7f5_100%)] text-neutral-700 shadow-[0_14px_30px_-24px_rgba(17,17,17,0.22)] hover:border-neutral-300 hover:bg-[linear-gradient(180deg,#ffffff_0%,#f2f2f2_100%)] hover:text-neutral-900"
+          ? "border-black bg-black text-white shadow-sm"
+          : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
       }`}
     >
       <span
-        className={`rounded-full p-2 ${
+        className={`rounded-lg p-1.5 ${
           active ? "bg-white/15 text-white" : "bg-neutral-100 text-neutral-800"
         }`}
       >
         <Icon />
       </span>
-      <span className="text-base font-black tracking-tight">{label}</span>
+      <span className="text-sm font-black tracking-tight">{label}</span>
     </button>
   );
 }
@@ -574,53 +574,28 @@ export default function ContentCreatorStudio() {
   }
 
   return (
-    <div className="min-h-screen space-y-6 bg-[linear-gradient(180deg,#fcf9ef_0%,#ffffff_38%,#f7f7f5_100%)] px-4 pb-10 pt-2 sm:px-6">
-      <section className="relative overflow-hidden rounded-[2.75rem] border border-neutral-200 bg-[radial-gradient(circle_at_0%_0%,rgba(255,255,255,0.24),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(255,255,255,0.12),transparent_22%),linear-gradient(135deg,#111111_0%,#1f1f1f_34%,#2b2b2b_68%,#111111_100%)] px-6 py-8 text-white shadow-[0_40px_90px_-48px_rgba(17,17,17,0.58)] sm:px-8 sm:py-9">
-        <div className="pointer-events-none absolute inset-0 opacity-60">
-          <div className="absolute -left-16 top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute right-10 top-6 h-28 w-28 rounded-full bg-neutral-300/20 blur-2xl" />
-          <div className="absolute bottom-0 left-1/3 h-24 w-56 rounded-full bg-neutral-200/10 blur-2xl" />
-        </div>
-
-        <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-neutral-100/95">Creator workspace</p>
-            <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight sm:text-5xl xl:text-[4.25rem]">
-              Content Creator Platform
-            </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-8 text-neutral-50/90 sm:text-lg">
-              Build blog articles, doctor-vlogger video posts, and live health-talk schedules in one place. Everything
-              published here is meant to surface on the public website and landing-page sections.
+    <div className="min-h-screen space-y-4 bg-neutral-50 px-4 pb-8 pt-3 sm:px-6">
+      <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">Publishing workspace</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-black sm:text-3xl">Content Creation</h1>
+            <p className="mt-1 text-sm leading-6 text-neutral-500">
+              Manage blogs, vlogs, and live schedules for the public website.
             </p>
           </div>
-
-          <div className="w-full max-w-[430px] rounded-[2rem] border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] p-5 shadow-[0_22px_48px_-30px_rgba(17,17,17,0.75)] backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-100">Publishing snapshot</p>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-100">
-                Live sync
-              </span>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4">
-                <p className="text-3xl font-black text-white">{contentPosts.length}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-neutral-100/80">Total content posts</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4">
-                <p className="text-3xl font-black text-white">{liveEvents.length}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-neutral-100/80">Live schedule entries</p>
-              </div>
-            </div>
-
-            <p className="mt-4 text-sm leading-7 text-neutral-50/80">
-              Keep blogs, vlogs, and live sessions aligned so public visitors always see the latest creator activity.
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-600">
+              {contentPosts.length} posts
+            </span>
+            <span className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-600">
+              {liveEvents.length} live events
+            </span>
           </div>
         </div>
       </section>
 
-      <div className="rounded-[2rem] border border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#f7f7f7_100%)] p-2.5 shadow-[0_24px_50px_-34px_rgba(17,17,17,0.22)] backdrop-blur">
+      <div className="rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm">
         <div className="grid gap-2 md:grid-cols-3">
           <TabButton
             active={activeTab === "blog"}

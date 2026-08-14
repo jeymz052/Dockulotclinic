@@ -12,6 +12,8 @@ import {
   enqueueNotification,
   enqueueStaffAppointmentBookedNotifications,
 } from "@/src/lib/services/notification";
+import { recalculateQueueNumbersForSlot } from "@/src/lib/services/maintenance";
+import { MAX_BOOKINGS_PER_SLOT } from "@/src/lib/clinic-schedule";
 
 export type BookingInput = {
   patient_id: string;
@@ -60,6 +62,10 @@ function supportsType(mode: "Clinic" | "Online" | "Both", type: ApptType) {
   return mode === "Both" || mode === type;
 }
 
+function formatAppointmentType(type: ApptType | string) {
+  return type === "Online" ? "Virtual consult" : type;
+}
+
 function overlapsSlot(
   startA: string,
   endA: string,
@@ -71,6 +77,12 @@ function overlapsSlot(
   const bStart = normalizeTime(startB);
   const bEnd = normalizeTime(endB);
   return aStart < bEnd && aEnd > bStart;
+}
+
+function slotMinutesBetween(start: string, end: string) {
+  const [startHours, startMinutes] = normalizeTime(start).split(":").map(Number);
+  const [endHours, endMinutes] = normalizeTime(end).split(":").map(Number);
+  return Math.max(1, endHours * 60 + endMinutes - (startHours * 60 + startMinutes));
 }
 
 export async function reserveAppointment(input: BookingInput, actor: Actor) {
@@ -96,11 +108,14 @@ export async function reserveAppointment(input: BookingInput, actor: Actor) {
   if (input.appointment_type === "Online") {
     throw new HttpError(
       400,
-      "Online consultations require payment first. Use the checkout flow to confirm the slot.",
+      "Virtual consults require payment first. Use the checkout flow to confirm the slot.",
     );
   }
 
-  const schedulableSlots = await getSchedulableSlotsForDate(input.doctor_id, input.appointment_date);
+  const schedulableSlots = await getSchedulableSlotsForDate(input.doctor_id, input.appointment_date, {
+    slotMinutes: slotMinutesBetween(input.start_time, input.end_time),
+    type: input.appointment_type,
+  });
   if (schedulableSlots.length === 0) throw new HttpError(409, "Doctor is not working that day");
   assertMatchesSchedulableSlot(schedulableSlots, input.start_time, input.end_time);
   const exactSlot = schedulableSlots.find(
@@ -141,41 +156,34 @@ export async function reserveAppointment(input: BookingInput, actor: Actor) {
   const overlappingReservations = pendingReservations.filter((r) =>
     overlapsSlot(input.start_time, input.end_time, r.start_time, r.end_time),
   );
-  const conflictingType = overlapping.find(
-    (r) => r.appointment_type !== input.appointment_type,
-  );
+  const conflictingType = overlapping[0] ?? null;
   if (conflictingType || overlappingReservations.length > 0) {
     const next = await findNextAvailableSharedSlot(
       input.doctor_id,
       input.appointment_date,
       input.appointment_type,
       14,
+      { slotMinutes: slotMinutesBetween(input.start_time, input.end_time) },
     );
     const hint = next ? ` Next available: ${next.date} ${next.slot.start}-${next.slot.end}.` : "";
     throw new HttpError(
       409,
-      `Slot conflict: ${(conflictingType?.appointment_type ?? "Online")} booking already exists for this shared time slot.${hint}`,
+      `Slot conflict: ${formatAppointmentType(conflictingType?.appointment_type ?? "Online")} booking already exists for this time slot.${hint}`,
     );
   }
 
-  if (overlapping.length + overlappingReservations.length >= 5) {
+  if (overlapping.length + overlappingReservations.length >= MAX_BOOKINGS_PER_SLOT) {
     const next = await findNextAvailableSharedSlot(
       input.doctor_id,
       input.appointment_date,
       input.appointment_type,
       14,
+      { slotMinutes: slotMinutesBetween(input.start_time, input.end_time) },
     );
     const hint = next ? ` Next available: ${next.date} ${next.slot.start}-${next.slot.end}.` : "";
-    throw new HttpError(409, `Slot is full (max 5/hour).${hint}`);
+    throw new HttpError(409, `Slot is already booked.${hint}`);
   }
-
-  const used = new Set([
-    ...overlapping.map((r) => r.queue_number),
-    ...overlappingReservations.map((r) => r.queue_number),
-  ]);
-  let queue_number = 1;
-  while (queue_number <= 5 && used.has(queue_number)) queue_number++;
-  if (queue_number > 5) throw new HttpError(409, "Slot is full");
+  const queue_number = 1;
 
   const { data: inserted, error } = await supabase
     .from("appointments")
@@ -250,20 +258,43 @@ function assertParticipantOrStaff(appt: Appointment, actor: Actor) {
   throw new HttpError(403, "Forbidden");
 }
 
-export async function cancelAppointment(id: string, actor: Actor) {
+export async function cancelAppointment(id: string, actor: Actor, reason?: string) {
   const appt = await getAppointment(id);
   assertParticipantOrStaff(appt, actor);
   if (appt.status === "Completed") throw new HttpError(400, "Cannot cancel a completed appointment");
   if (appt.status === "Cancelled") return appt;
+  if (
+    actor.profile.role === "patient"
+    && appt.status !== "Pending"
+    && appt.status !== "Confirmed"
+  ) {
+    throw new HttpError(400, "Only pending or confirmed appointments can be cancelled online.");
+  }
+  if (actor.profile.role === "patient" && appt.appointment_date < getClinicToday()) {
+    throw new HttpError(400, "Past appointments cannot be cancelled online.");
+  }
+  if (actor.profile.role === "patient" && isPastInClinicTime(appt.appointment_date, appt.start_time)) {
+    throw new HttpError(400, "Appointments that have already started cannot be cancelled online.");
+  }
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("appointments")
-    .update({ status: "Cancelled" })
+    .update({
+      status: "Cancelled",
+      cancelled_reason: reason?.trim() ? reason.trim().slice(0, 500) : null,
+    })
     .eq("id", id)
     .select()
     .single<Appointment>();
   if (error) throw error;
+
+  await recalculateQueueNumbersForSlot({
+    doctor_id: appt.doctor_id,
+    appointment_date: appt.appointment_date,
+    start_time: appt.start_time,
+    end_time: appt.end_time,
+  });
 
   await enqueueNotification({
     user_id: appt.patient_id,
@@ -286,7 +317,7 @@ export async function cancelAppointment(id: string, actor: Actor) {
 
 export async function markArrived(id: string, actor: Actor) {
   // Allow front-desk staff or the appointment's doctor to mark arrival.
-  // Online visits never check in physically, so they're rejected below.
+  // Virtual consults never check in physically, so they're rejected below.
   const appt = await getAppointment(id);
   const role = actor.profile.role;
   if (!(isStaff(role) || (role === "doctor" && actor.id === appt.doctor_id)))

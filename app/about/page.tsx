@@ -18,9 +18,8 @@ const ABOUT_ITEMS = [
 ] as const;
 
 const EDUCATION_ITEMS = [
-  { label: "Location 1", value: "FamMed Family Clinic, Arquiza Building, Pasobolong, Zamboanga City" },
-  { label: "Location 2", value: "Premier Medical Center, Room 420, Tuesday / Thursday / Saturday" },
-  { label: "Location 3", value: "RT Lim Family Hospital, Room 4, every 1st and 3rd Sunday" },
+  { label: "Location 1", value: "FamMed Family Clinic, Monday-Friday, 9:00 AM-4:00 PM" },
+  { label: "Location 2", value: "RT Lim Family Hospital, Room 4, 1st and 3rd Sundays, 9:00 AM-4:00 PM" },
 ] as const;
 
 export default function AboutPage() {

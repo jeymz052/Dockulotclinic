@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     const supabase = getSupabaseAdmin();
     let q = supabase
       .from("prescriptions")
-      .select("*, prescription_items(*), diagnoses(id, diagnosis_text, treatment_plan, follow_up_date, visible_to_patient), patients(profiles(full_name, email)), doctors(profiles(full_name))")
+      .select("*, prescription_items(*), diagnoses(id, diagnosis_text, treatment_plan, follow_up_date, visible_to_patient), patients(dob, gender, profiles(full_name, email)), doctors(specialty, license_no, profiles(full_name))")
       .order("created_at", { ascending: false });
     if (!isClinicStaff(actor.profile.role)) {
       q = q.eq("patient_id", actor.id).eq("released_to_patient", true);

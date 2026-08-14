@@ -6,7 +6,13 @@ import { FaRegPenToSquare, FaTrashCan } from "react-icons/fa6";
 import { usePatients } from "@/src/components/clinic/useClinicData";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import type { PatientRecordItem } from "@/src/lib/clinic";
-import { GENDER_OPTIONS, validatePatientRegistrationFields } from "@/src/lib/patient-registration";
+import {
+  CIVIL_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+  calculatePatientAge,
+  formatPatientFullName,
+  validatePatientRegistrationFields,
+} from "@/src/lib/patient-registration";
 
 type PatientDraft = PatientRecordItem;
 type PatientFilter = "all" | "registered" | "walk-in";
@@ -42,6 +48,7 @@ export default function PatientsPage() {
     return patients.filter((patient) => {
       const matchesSearch =
         !query ||
+        patient.patientNumber.toLowerCase().includes(query) ||
         patient.fullName.toLowerCase().includes(query) ||
         patient.email.toLowerCase().includes(query) ||
         patient.phone.toLowerCase().includes(query);
@@ -70,7 +77,11 @@ export default function PatientsPage() {
       return;
     }
 
-    const validationError = validatePatientRegistrationFields(draft);
+    const normalizedDraft = {
+      ...draft,
+      fullName: formatPatientFullName(draft),
+    };
+    const validationError = validatePatientRegistrationFields(normalizedDraft);
     if (validationError) {
       setFeedback(validationError);
       return;
@@ -83,7 +94,7 @@ export default function PatientsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(normalizedDraft),
       });
 
       if (!response.ok) {
@@ -220,12 +231,17 @@ export default function PatientsPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
-                <th className="px-4 py-3 font-semibold text-slate-700">Full Name</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Phone</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Date of Birth</th>
-                <th className="px-4 py-3 font-semibold text-slate-700">Gender</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Patient Number</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Family Name</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">First Name</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Age</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Sex</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Civil Status</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Contact Number</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Address</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Religion</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Occupation</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Birth Date</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Patient Pricing</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Type</th>
@@ -235,23 +251,28 @@ export default function PatientsPage() {
             <tbody>
               {filteredPatients.length === 0 && !isLoading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={15} className="px-4 py-10 text-center text-slate-400">
                     No patient records matched the current search and filters.
                   </td>
                 </tr>
               ) : null}
               {filteredPatients.map((patient) => (
                 <tr key={patient.id} className="border-t border-slate-200 align-top hover:bg-neutral-50/30">
-                  <td className="px-4 py-3 text-slate-900">{patient.fullName}</td>
-                  <td className="px-4 py-3 text-slate-600">{patient.email}</td>
-                  <td className="px-4 py-3 text-slate-600">{patient.phone || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{patient.dateOfBirth || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.patientNumber || "-"}</td>
+                  <td className="px-4 py-3 text-slate-900">{patient.lastName || "-"}</td>
+                  <td className="px-4 py-3 text-slate-900">{patient.firstName || patient.fullName}</td>
+                  <td className="px-4 py-3 text-slate-600">{calculatePatientAge(patient.dateOfBirth) ?? "-"}</td>
                   <td className="px-4 py-3 text-slate-600">{patient.gender || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.civilStatus || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.phone || "-"}</td>
                   <td className="px-4 py-3 text-slate-600">{patient.address || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.religion || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.occupation || "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">{patient.dateOfBirth || "-"}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          patient.status === "Active" ? "bg-neutral-100 text-neutral-700" : "bg-slate-100 text-slate-700"
+                          patient.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"
                         }`}
                     >
                       {patient.status}
@@ -266,8 +287,8 @@ export default function PatientsPage() {
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                         patient.isWalkIn
-                          ? "bg-neutral-100 text-neutral-700"
-                          : "bg-neutral-100 text-neutral-700"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-sky-100 text-sky-700"
                       }`}
                     >
                       {patient.isWalkIn ? "Walk-in" : "Registered"}
@@ -390,7 +411,7 @@ function PatientFormModal({
 }: PatientFormModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">{title}</h2>
           <button
@@ -404,13 +425,13 @@ function PatientFormModal({
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Full Name">
+            <Field label="Patient Number">
               <input
                 type="text"
-                value={patient.fullName}
-                onChange={(event) => onChange("fullName", event.target.value)}
+                value={patient.patientNumber}
+                onChange={(event) => onChange("patientNumber", event.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
-                required
+                placeholder="Official patient code"
               />
             </Field>
             <Field label="Email">
@@ -420,6 +441,46 @@ function PatientFormModal({
                 onChange={(event) => onChange("email", event.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
                 required
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="First Name">
+              <input
+                type="text"
+                value={patient.firstName}
+                onChange={(event) => onChange("firstName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+                required
+              />
+            </Field>
+            <Field label="Family Name">
+              <input
+                type="text"
+                value={patient.lastName}
+                onChange={(event) => onChange("lastName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+                required
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Middle Name">
+              <input
+                type="text"
+                value={patient.middleName}
+                onChange={(event) => onChange("middleName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+              />
+            </Field>
+            <Field label="Suffix Name">
+              <input
+                type="text"
+                value={patient.suffixName}
+                onChange={(event) => onChange("suffixName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
               />
             </Field>
           </div>
@@ -462,6 +523,50 @@ function PatientFormModal({
                 ))}
               </select>
             </Field>
+            <Field label="Civil Status (optional)">
+              <select
+                value={patient.civilStatus}
+                onChange={(event) => onChange("civilStatus", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+              >
+                <option value="">Select Civil Status</option>
+                {CIVIL_STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Religion">
+              <input
+                type="text"
+                value={patient.religion}
+                onChange={(event) => onChange("religion", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+              />
+            </Field>
+            <Field label="Occupation">
+              <input
+                type="text"
+                value={patient.occupation}
+                onChange={(event) => onChange("occupation", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Name of Guardian (for peds)">
+              <input
+                type="text"
+                value={patient.guardianName}
+                onChange={(event) => onChange("guardianName", event.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-neutral-400"
+              />
+            </Field>
             {showStatus ? (
               <Field label="Status">
                 <select
@@ -473,9 +578,7 @@ function PatientFormModal({
                   <option value="Inactive">Inactive</option>
                 </select>
               </Field>
-            ) : (
-              <div />
-            )}
+            ) : <div />}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -10,8 +10,6 @@ import {
   FaListUl,
   FaShieldHalved,
   FaStethoscope,
-  FaUsers,
-  FaVideo,
 } from "react-icons/fa6";
 
 const STAFF_TOPICS = [
@@ -33,12 +31,12 @@ const STAFF_TOPICS = [
   {
     question: "How do I update the website content?",
     answer:
-      "Open Website Content to edit the landing page sections. The public blogs, videos, and live posts are created in Content Creator.",
+      "Open Website Content to edit the landing page sections. The public blogs, videos, and live posts are created in Content Creation.",
   },
   {
     question: "How do I review reports and logs?",
     answer:
-      "Use Reports for clinic, sales, POS, content, and traffic analytics. Use Security for activity logs and backup export.",
+      "Use Reports for clinic, sales, POS, content, and traffic analytics. Use Settings > Security for activity logs and backup export.",
   },
 ];
 
@@ -47,7 +45,7 @@ const STAFF_SHORTCUTS = [
   { href: "/payments/pos", label: "POS Billing", icon: <FaFileInvoiceDollar className="h-4 w-4" /> },
   { href: "/reports", label: "Reports", icon: <FaListUl className="h-4 w-4" /> },
   { href: "/contents", label: "Website Content", icon: <FaHeartPulse className="h-4 w-4" /> },
-  { href: "/security", label: "Security", icon: <FaShieldHalved className="h-4 w-4" /> },
+  { href: "/settings?section=security", label: "Security", icon: <FaShieldHalved className="h-4 w-4" /> },
 ];
 
 export default function HelpPage() {
@@ -198,14 +196,14 @@ const MODULE_CARDS = [
     href: "/appointments",
     kicker: "Appointments",
     title: "Booking and queue",
-    description: "Book, approve, and manage clinic or online appointments, then move patients through the queue and calendar.",
+    description: "Book, approve, and manage clinic visits or virtual consults, then move patients through the queue and calendar.",
     icon: <FaCalendarCheck className="h-4 w-4" />,
   },
   {
     href: "/payments",
     kicker: "Billing",
     title: "Payments and receipts",
-    description: "Review payment history, confirm online consult payments, and print receipts from the payment area.",
+    description: "Review payment history, confirm virtual consult payments, and print receipts from the payment area.",
     icon: <FaCreditCard className="h-4 w-4" />,
   },
   {
@@ -223,7 +221,7 @@ const MODULE_CARDS = [
     icon: <FaInbox className="h-4 w-4" />,
   },
   {
-    href: "/security",
+    href: "/settings?section=security",
     kicker: "Security",
     title: "Logs and backups",
     description: "View activity logs, export backups, and review access control and login activity.",

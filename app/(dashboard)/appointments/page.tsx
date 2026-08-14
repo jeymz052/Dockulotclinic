@@ -80,10 +80,13 @@ export default function AppointmentsPage() {
     if (!reservationId) return;
 
     let cancelled = false;
-    setFinalize({ kind: "running" });
 
     (async () => {
       try {
+        await Promise.resolve();
+        if (!cancelled) {
+          setFinalize({ kind: "running" });
+        }
         const res = await fetch("/api/v2/payments/reconcile", {
           method: "POST",
           headers: {
@@ -184,7 +187,7 @@ export default function AppointmentsPage() {
           <div>
             <p className="font-semibold">Booking confirmed!</p>
             <p className="mt-0.5">
-              Your online consultation has been recorded.{" "}
+              Your virtual consult has been recorded.{" "}
               <Link href={manageHref} className="font-semibold underline underline-offset-2 hover:text-neutral-800">
                 View your appointments →
               </Link>

@@ -3,18 +3,33 @@
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react";
 import {
+  FaAddressBook,
   FaArrowUpRightFromSquare,
   FaCalendarDay,
   FaCircleCheck,
-  FaClock,
+  FaCircleInfo,
+  FaEye,
+  FaEyeSlash,
+  FaFileMedical,
   FaFileWaveform,
+  FaFloppyDisk,
   FaHeartPulse,
+  FaLaptopMedical,
+  FaListCheck,
   FaNotesMedical,
+  FaPenToSquare,
   FaPhone,
+  FaPlus,
+  FaPrescriptionBottleMedical,
+  FaStethoscope,
+  FaTrash,
   FaUserDoctor,
+  FaUserGroup,
   FaVideo,
+  FaXmark,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
+import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useConsultationNotes, usePatients } from "@/src/components/clinic/useClinicData";
 import { VitalSignsForm } from "@/src/components/clinic/VitalSignsForm";
 import { useRole } from "@/src/components/layout/RoleProvider";
@@ -25,7 +40,7 @@ import {
   getDoctorById,
   type AppointmentRecord,
 } from "@/src/lib/appointments";
-import type { ConsultationProgress, PatientRecordItem } from "@/src/lib/clinic";
+import type { ConsultationNote, ConsultationProgress, PatientRecordItem } from "@/src/lib/clinic";
 
 type DraftState = {
   diagnosis: string;
@@ -54,40 +69,74 @@ type PatientRecordDraft = {
   emergencyContactPhone: string;
 };
 
+type PrescriptionItemDraft = {
+  medicineName: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+};
+
+type CreatedPrescription = {
+  id: string;
+  prescriptionNo: string;
+};
+
+type QueueFilter = "all" | "ready" | "live" | "completed";
+type ConsultationTab = "intake" | "chart" | "record";
+type BadgeTone = "sky" | "emerald" | "amber" | "rose" | "slate";
+
+const emptyDraft: DraftState = {
+  diagnosis: "",
+  note: "",
+  prescription: "",
+  status: "Ready",
+  visibleToPatient: false,
+};
+
+const emptyPatientRecordDraft: PatientRecordDraft = {
+  familyHistory: "",
+  medicalHistory: "",
+  allergies: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+};
+
+const emptyPrescriptionItem: PrescriptionItemDraft = {
+  medicineName: "",
+  dosage: "",
+  frequency: "",
+  duration: "",
+  instructions: "",
+};
+
 export default function OnlineConsultationPage() {
   const { accessToken, role } = useRole();
   const { appointments, setAppointments } = useAppointments();
+  const { doctors } = useDoctors();
   const { data: notes, setData: setNotes, isLoading, error } = useConsultationNotes();
   const { data: patients, setData: setPatients } = usePatients();
   const [onlineConsultations, setOnlineConsultations] = useState<OnlineConsultationRecord[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<DraftState>({
-    diagnosis: "",
-    note: "",
-    prescription: "",
-    status: "Ready",
-    visibleToPatient: false,
-  });
-  const [patientRecordDraft, setPatientRecordDraft] = useState<PatientRecordDraft>({
-    familyHistory: "",
-    medicalHistory: "",
-    allergies: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-  });
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<ConsultationTab>("intake");
+  const [draft, setDraft] = useState<DraftState>(emptyDraft);
+  const [patientRecordDraft, setPatientRecordDraft] = useState<PatientRecordDraft>(emptyPatientRecordDraft);
+  const [prescriptionItems, setPrescriptionItems] = useState<PrescriptionItemDraft[]>([{ ...emptyPrescriptionItem }]);
+  const [prescriptionInstructions, setPrescriptionInstructions] = useState("");
+  const [prescriptionFollowUpDate, setPrescriptionFollowUpDate] = useState("");
+  const [releasePrescription, setReleasePrescription] = useState(true);
+  const [prescriptionFeedback, setPrescriptionFeedback] = useState<string | null>(null);
+  const [createdPrescription, setCreatedPrescription] = useState<CreatedPrescription | null>(null);
   const [isSaving, startTransition] = useTransition();
-
-  const canManage = role !== "PATIENT";
 
   const eligibleAppointments = useMemo(
     () =>
       appointments
-        .filter(
-          (appointment) =>
-            appointment.status === "Confirmed"
-            || appointment.status === "In Progress"
-            || appointment.status === "Completed",
+        .filter((appointment) =>
+          ["Confirmed", "In Progress", "Completed"].includes(appointment.status),
         )
         .sort((left, right) => {
           const byDateTime = `${left.date} ${left.start}`.localeCompare(
@@ -98,6 +147,33 @@ export default function OnlineConsultationPage() {
         }),
     [appointments],
   );
+
+  const filteredAppointments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return eligibleAppointments.filter((appointment) => {
+      const note = notes.find((item) => item.appointmentId === appointment.id);
+      const status = note?.status ?? appointment.status;
+      const matchesFilter =
+        queueFilter === "all"
+        || (queueFilter === "ready" && (status === "Ready" || status === "Confirmed"))
+        || (queueFilter === "live" && status === "In Progress")
+        || (queueFilter === "completed" && status === "Completed");
+
+      if (!matchesFilter) return false;
+      if (!query) return true;
+
+      return [
+        appointment.patientName,
+        appointment.email,
+        appointment.phone,
+        appointment.reason,
+        getDoctorById(appointment.doctorId)?.name ?? "",
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [eligibleAppointments, notes, queueFilter, searchQuery]);
 
   const activeAppointment = eligibleAppointments.find(
     (appointment) => appointment.id === activeAppointmentId,
@@ -136,10 +212,18 @@ export default function OnlineConsultationPage() {
     };
   }, [accessToken, role]);
 
-  const onlineReady = appointments.filter(
+  const readyCount = eligibleAppointments.filter((appointment) => {
+    const note = notes.find((item) => item.appointmentId === appointment.id);
+    const status = note?.status ?? appointment.status;
+    return status === "Ready" || status === "Confirmed";
+  }).length;
+  const onlineReadyCount = eligibleAppointments.filter(
     (appointment) => appointment.type === "Online" && appointment.status === "Confirmed",
-  );
-  const inProgressCount = appointments.filter((appointment) => appointment.status === "In Progress").length;
+  ).length;
+  const inProgressCount = eligibleAppointments.filter((appointment) => {
+    const note = notes.find((item) => item.appointmentId === appointment.id);
+    return (note?.status ?? appointment.status) === "In Progress";
+  }).length;
   const completedCount = notes.filter((note) => note.status === "Completed").length;
 
   if (role === "PATIENT") {
@@ -148,7 +232,7 @@ export default function OnlineConsultationPage() {
     );
   }
 
-  function openConsultation(appointment: AppointmentRecord) {
+  function selectConsultation(appointment: AppointmentRecord, tab: ConsultationTab = "intake") {
     const existing = notes.find((note) => note.appointmentId === appointment.id);
     const patientRecord = findPatientRecord(patients, appointment);
     const inferredStatus: ConsultationProgress =
@@ -158,7 +242,9 @@ export default function OnlineConsultationPage() {
         : appointment.status === "In Progress"
           ? "In Progress"
           : "Ready");
+
     setActiveAppointmentId(appointment.id);
+    setActiveTab(tab);
     setDraft({
       diagnosis: existing?.diagnosis ?? "",
       note: existing?.note ?? "",
@@ -173,11 +259,13 @@ export default function OnlineConsultationPage() {
       emergencyContactName: patientRecord?.emergencyContactName ?? "",
       emergencyContactPhone: patientRecord?.emergencyContactPhone ?? "",
     });
+    setPrescriptionItems([{ ...emptyPrescriptionItem }]);
+    setPrescriptionInstructions(existing?.prescription ?? "");
+    setPrescriptionFollowUpDate("");
+    setReleasePrescription(true);
+    setPrescriptionFeedback(null);
+    setCreatedPrescription(null);
     setFeedback(null);
-
-    if (appointment.meetingLink) {
-      window.open(appointment.meetingLink, "_blank", "noopener,noreferrer");
-    }
   }
 
   function saveConsultation(appointment: AppointmentRecord) {
@@ -212,7 +300,7 @@ export default function OnlineConsultationPage() {
         return;
       }
 
-      const payload = (await response.json()) as { data: typeof notes };
+      const payload = (await response.json()) as { data: ConsultationNote[] };
       setNotes(payload.data);
       setAppointments((current) =>
         current.map((item) =>
@@ -294,511 +382,593 @@ export default function OnlineConsultationPage() {
     });
   }
 
-  return (
-    <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">
-              Consultations
-            </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Start sessions and document care without losing the queue
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Review who is ready, open the meeting when needed, and keep vitals, family history,
-              notes, and follow-up plans in one focused workspace.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Shortcut href="/consultations/history" label="History" />
-            <Shortcut href="/appointments/my" label="Appointments" />
-            <Shortcut href="/schedules" label="Schedules" />
-          </div>
-        </div>
-      </section>
+  function updatePrescriptionItem(index: number, field: keyof PrescriptionItemDraft, value: string) {
+    setPrescriptionItems((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item,
+      ),
+    );
+    setPrescriptionFeedback(null);
+  }
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+  function addPrescriptionItem() {
+    setPrescriptionItems((current) => [...current, { ...emptyPrescriptionItem }]);
+    setPrescriptionFeedback(null);
+  }
+
+  function removePrescriptionItem(index: number) {
+    setPrescriptionItems((current) =>
+      current.length === 1 ? current : current.filter((_, itemIndex) => itemIndex !== index),
+    );
+    setPrescriptionFeedback(null);
+  }
+
+  function savePrescription(appointment: AppointmentRecord) {
+    if (!accessToken) {
+      setPrescriptionFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (!activePatientRecord) {
+      setPrescriptionFeedback("Match this appointment to a patient record before creating a prescription.");
+      return;
+    }
+
+    const doctor = doctors.find((item) => item.slug === appointment.doctorId || item.id === appointment.doctorId);
+    if (!doctor?.dbId) {
+      setPrescriptionFeedback("Doctor profile is still loading. Try again in a moment.");
+      return;
+    }
+
+    const diagnosis = draft.diagnosis.trim();
+    if (!diagnosis) {
+      setPrescriptionFeedback("Add a diagnosis before creating the prescription.");
+      return;
+    }
+
+    const cleanedItems = prescriptionItems
+      .map((item) => ({
+        medicine_name: item.medicineName.trim(),
+        dosage: item.dosage.trim(),
+        frequency: item.frequency.trim(),
+        duration: item.duration.trim(),
+        instructions: item.instructions.trim(),
+      }))
+      .filter((item) => item.medicine_name);
+
+    if (cleanedItems.length === 0) {
+      setPrescriptionFeedback("Add at least one medicine item.");
+      return;
+    }
+
+    startTransition(async () => {
+      const response = await fetch("/api/v2/prescriptions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          appointment_id: appointment.id,
+          patient_id: activePatientRecord.id,
+          doctor_id: doctor.dbId,
+          diagnosis_text: diagnosis,
+          treatment_plan: draft.note,
+          general_instructions: prescriptionInstructions,
+          follow_up_date: prescriptionFollowUpDate || null,
+          released_to_patient: releasePrescription,
+          items: cleanedItems,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        prescription?: { id?: string; prescription_no?: string };
+      };
+
+      if (!response.ok) {
+        setPrescriptionFeedback(payload.message ?? "Unable to create prescription.");
+        return;
+      }
+
+      setDraft((current) => ({
+        ...current,
+        prescription: prescriptionInstructions || current.prescription,
+        visibleToPatient: current.visibleToPatient || releasePrescription,
+      }));
+      setPrescriptionItems([{ ...emptyPrescriptionItem }]);
+      setPrescriptionInstructions("");
+      setPrescriptionFollowUpDate("");
+      setCreatedPrescription(
+        payload.prescription?.prescription_no && payload.prescription?.id
+          ? {
+              id: payload.prescription.id,
+              prescriptionNo: payload.prescription.prescription_no,
+            }
+          : null,
+      );
+      setPrescriptionFeedback(
+        payload.prescription?.prescription_no
+          ? `Prescription ${payload.prescription.prescription_no} created.`
+          : "Prescription created.",
+      );
+    });
+  }
+
+  async function fetchPrescriptionPdf(prescription: CreatedPrescription) {
+    if (!accessToken) {
+      setPrescriptionFeedback("Your session expired. Please sign in again.");
+      return null;
+    }
+
+    const response = await fetch(`/api/v2/prescriptions/${prescription.id}/pdf`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      setPrescriptionFeedback("Unable to open prescription PDF.");
+      return null;
+    }
+
+    return response.blob();
+  }
+
+  async function downloadCreatedPrescription(prescription: CreatedPrescription) {
+    const blob = await fetchPrescriptionPdf(prescription);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${prescription.prescriptionNo}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  async function printCreatedPrescription(prescription: CreatedPrescription) {
+    const blob = await fetchPrescriptionPdf(prescription);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      setPrescriptionFeedback("Pop-up blocked. Please allow pop-ups to print the prescription.");
+      window.URL.revokeObjectURL(url);
+      return;
+    }
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
+    });
+  }
+
+  return (
+    <div className="pb-8">
+      <div className="mb-5 flex flex-col gap-4 border-b border-neutral-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+            Consultations
+          </p>
+          <h1 className="mt-2 text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
+            Visit workspace
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Move from queue to intake, charting, and patient record updates without leaving the visit.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Shortcut href="/consultations/history" label="History" />
+          <Shortcut href="/appointments/my" label="Appointments" />
+          <Shortcut href="/schedules" label="Schedules" />
+        </div>
+      </div>
+
+      <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Metric
-          label="Ready Online"
-          value={onlineReady.length.toString()}
+          label="Ready"
+          value={readyCount.toString()}
+          hint={`${onlineReadyCount} virtual`}
           tone="sky"
-          icon={<FaVideo className="h-4 w-4" />}
+          icon={<FaListCheck className="h-4 w-4" />}
         />
         <Metric
-          label="In Progress"
+          label="In progress"
           value={inProgressCount.toString()}
+          hint="Active visits"
           tone="amber"
-          icon={<FaClock className="h-4 w-4" />}
+          icon={<FaStethoscope className="h-4 w-4" />}
         />
         <Metric
-          label="Completed Notes"
+          label="Notes done"
           value={completedCount.toString()}
-          tone="sky"
+          hint="Completed charts"
+          tone="emerald"
           icon={<FaCircleCheck className="h-4 w-4" />}
+        />
+        <Metric
+          label="Queue"
+          value={eligibleAppointments.length.toString()}
+          hint="Confirmed visits"
+          tone="slate"
+          icon={<FaUserGroup className="h-4 w-4" />}
         />
       </div>
 
-      {feedback ? (
-        <Banner tone="info">{feedback}</Banner>
-      ) : null}
-      {error ? (
-        <Banner tone="error">{error}</Banner>
-      ) : null}
+      {feedback ? <Banner tone="info">{feedback}</Banner> : null}
+      {error ? <Banner tone="error">{error}</Banner> : null}
+      {isLoading ? <Banner tone="info">Loading consultation notes...</Banner> : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex h-full flex-col overflow-hidden xl:h-[38rem]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Consultation Queue
-              </p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">Patients ready for review</h2>
+      <div className="mt-5 grid min-h-[42rem] gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
+        <aside className="min-h-0 rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                  Queue
+                </p>
+                <h2 className="mt-1 text-lg font-bold text-neutral-950">Select a visit</h2>
+              </div>
+              <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs font-semibold text-neutral-600">
+                {filteredAppointments.length}
+              </span>
             </div>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              {eligibleAppointments.length} total
-            </span>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="mt-4 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100"
+              placeholder="Search patient, contact, reason"
+            />
+            <div className="mt-3 grid grid-cols-4 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+              <FilterButton active={queueFilter === "all"} onClick={() => setQueueFilter("all")}>
+                All
+              </FilterButton>
+              <FilterButton active={queueFilter === "ready"} onClick={() => setQueueFilter("ready")}>
+                Ready
+              </FilterButton>
+              <FilterButton active={queueFilter === "live"} onClick={() => setQueueFilter("live")}>
+                Live
+              </FilterButton>
+              <FilterButton active={queueFilter === "completed"} onClick={() => setQueueFilter("completed")}>
+                Done
+              </FilterButton>
+            </div>
           </div>
 
-          <div className="mt-5 flex min-h-0 flex-1 flex-col overflow-hidden">
-            {eligibleAppointments.length === 0 ? (
-              <EmptyQueue />
+          <div className="max-h-[40rem] space-y-2 overflow-y-auto p-3">
+            {filteredAppointments.length === 0 ? (
+              <EmptyQueue message="No consultations match this view." />
             ) : (
-              <div className="flex-1 space-y-2 overflow-y-auto pr-2">
-                {eligibleAppointments.map((appointment, index) => {
-                const doctor = getDoctorById(appointment.doctorId);
+              filteredAppointments.map((appointment, index) => {
                 const note = notes.find((item) => item.appointmentId === appointment.id);
                 const isActive = activeAppointmentId === appointment.id;
-                const isOnlineReady = appointment.type === "Online" && Boolean(appointment.meetingLink);
-
                 return (
-                  <article
+                  <QueueVisitCard
                     key={appointment.id}
-                    className={`rounded-xl border p-3 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
-                      isActive
-                        ? "border-neutral-400 bg-neutral-50/70 ring-2 ring-neutral-200"
-                        : "border-slate-200 hover:border-neutral-200 hover:bg-neutral-50/40"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-bold text-slate-900">{appointment.patientName}</p>
-                          <QueueFlag
-                            label={appointment.status === "In Progress" ? "Live" : index === 0 ? "Next up" : `Queue #${appointment.queueNumber}`}
-                            tone={appointment.status === "In Progress" ? "amber" : "sky"}
-                          />
-                        </div>
-                        <p className="mt-1 text-sm text-slate-600">
-                          {doctor?.name ?? "Assigned doctor"} • {formatDisplayDate(appointment.date)}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {formatRange(appointment.start, appointment.end)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                                      <Badge tone="sky">{appointment.type}</Badge>
-                        <Badge tone={statusTone(note?.status ?? appointment.status)}>
-                          {note?.status ?? appointment.status}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {appointment.reason ? (
-                      <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                        {getAppointmentPrimaryLabel(appointment.reason, appointment.type)}
-                        {getAppointmentSecondaryReason(appointment.reason)
-                          ? ` • ${getAppointmentSecondaryReason(appointment.reason)}`
-                          : ""}
-                      </p>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openConsultation(appointment)}
-                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.20)] transition hover:-translate-y-0.5"
-                      >
-                        <FaNotesMedical className="h-3.5 w-3.5" aria-hidden="true" />
-                        {appointment.meetingLink ? "Open Workspace" : "Write Notes"}
-                      </button>
-                      {appointment.meetingLink ? (
-                        <a
-                          href={appointment.meetingLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
-                            isOnlineReady
-                              ? "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300"
-                              : "border-slate-200 bg-white text-slate-600"
-                          }`}
-                        >
-                          <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                          Open Meeting
-                        </a>
-                      ) : null}
-                    </div>
-                  </article>
+                    appointment={appointment}
+                    note={note}
+                    isActive={isActive}
+                    label={appointment.status === "In Progress" ? "Live" : index === 0 ? "Next" : `#${appointment.queueNumber}`}
+                    onSelect={() => selectConsultation(appointment)}
+                  />
                 );
-                })}
-              </div>
+              })
             )}
           </div>
-        </section>
+        </aside>
 
-        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex h-full flex-col overflow-hidden xl:h-[38rem]">
+        <section className="min-w-0 rounded-lg border border-neutral-200 bg-white shadow-sm">
           {activeAppointment ? (
-            <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-neutral-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone={activeAppointment.type === "Online" ? "sky" : "emerald"}>
-                      {activeAppointment.type}
-                    </Badge>
-                    <Badge tone={statusTone(draft.status)}>{draft.status}</Badge>
-                  </div>
-                  <h2 className="mt-3 text-2xl font-black text-slate-900">
-                    {activeAppointment.patientName}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {getDoctorById(activeAppointment.doctorId)?.name ?? "Assigned doctor"} •{" "}
-                    {formatDisplayDate(activeAppointment.date)} •{" "}
-                    {formatRange(activeAppointment.start, activeAppointment.end)}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activeAppointment.reason || "No consultation reason recorded."}
-                  </p>
-                </div>
+            <div className="flex h-full min-h-0 flex-col">
+              <VisitHeader
+                appointment={activeAppointment}
+                draft={draft}
+                patientRecord={activePatientRecord}
+                onClose={() => setActiveAppointmentId(null)}
+              />
 
-                <div className="flex flex-wrap gap-2">
-                  {activeAppointment.meetingLink ? (
-                    <a
-                      href={activeAppointment.meetingLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
-                      Launch Meeting
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setActiveAppointmentId(null)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Close
-                  </button>
+              <div className="border-b border-neutral-200 px-4 sm:px-5">
+                <div className="flex gap-1 overflow-x-auto py-3">
+                  <TabButton
+                    active={activeTab === "intake"}
+                    icon={<FaFileWaveform className="h-4 w-4" />}
+                    label="Intake"
+                    onClick={() => setActiveTab("intake")}
+                  />
+                  <TabButton
+                    active={activeTab === "chart"}
+                    icon={<FaPenToSquare className="h-4 w-4" />}
+                    label="Charting"
+                    onClick={() => setActiveTab("chart")}
+                  />
+                  <TabButton
+                    active={activeTab === "record"}
+                    icon={<FaAddressBook className="h-4 w-4" />}
+                    label="Patient record"
+                    onClick={() => setActiveTab("record")}
+                  />
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <SummaryCard
-                  icon={<FaCalendarDay className="h-4 w-4" />}
-                  label="Schedule"
-                  value={formatDisplayDate(activeAppointment.date)}
-                  hint={formatRange(activeAppointment.start, activeAppointment.end)}
-                />
-                <SummaryCard
-                  icon={<FaPhone className="h-4 w-4" />}
-                  label="Contact"
-                  value={activeAppointment.phone || activeAppointment.email || "No contact info"}
-                  hint={activeAppointment.email && activeAppointment.phone ? activeAppointment.email : undefined}
-                />
-                <SummaryCard
-                  icon={<FaUserDoctor className="h-4 w-4" />}
-                  label="Patient Record"
-                  value={activePatientRecord ? "Matched" : "Needs review"}
-                  hint={activePatientRecord ? "Medical background can be updated here" : "No patient record match found"}
-                />
-              </div>
-
-              {activeAppointment.type === "Online" ? (
-                <div className="rounded-[1.5rem] border border-neutral-100 bg-neutral-50/50 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaFileWaveform className="h-4 w-4 text-neutral-400" aria-hidden="true" />
-                      Online consultation intake
-                    </p>
-                    {activeOnlineConsultation?.platform ? (
-                      <span className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-700">
-                        {activeOnlineConsultation.platform}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Concern</p>
-                      <p className="mt-2 text-sm text-slate-700">
-                        {activeOnlineConsultation?.concern || activeAppointment.reason || "No concern submitted."}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-neutral-100 bg-white px-4 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Symptoms</p>
-                      <p className="mt-2 text-sm text-slate-700">
-                        {activeOnlineConsultation?.symptoms || "No additional symptoms submitted."}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 rounded-2xl border border-neutral-100 bg-white px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Attached files / photos</p>
-                      <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
-                        {activeOnlineConsultation?.file_urls?.length ?? 0} file{(activeOnlineConsultation?.file_urls?.length ?? 0) === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    {activeOnlineConsultation?.file_urls?.length ? (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {activeOnlineConsultation.file_urls.map((file, index) => {
-                          const normalized = typeof file === "string"
-                            ? { file_name: `Attachment ${index + 1}`, file_url: file, file_type: "attachment" }
-                            : file;
-                          return (
-                            <a
-                              key={`${normalized.file_url ?? "file"}-${index}`}
-                              href={normalized.file_url ?? "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100"
-                            >
-                              {normalized.file_name ?? `Attachment ${index + 1}`}
-                            </a>
-                          );
-                        })}
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                {activeTab === "intake" ? (
+                  <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
+                    <div className="space-y-5">
+                      <SectionHeading
+                        icon={<FaHeartPulse className="h-4 w-4" />}
+                        title="Vitals and visit context"
+                        description="Capture visit-specific measurements before charting."
+                      />
+                      <div className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4">
+                        <VitalSignsForm appointmentId={activeAppointment.id} />
                       </div>
-                    ) : (
-                      <p className="mt-3 text-sm text-slate-500">No files were attached for this online consultation.</p>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
-              {canManage ? (
-                <div className="grid gap-5">
-                  <div className="rounded-[1.5rem] border border-neutral-100 bg-slate-50/70 p-4">
-                    <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <FaHeartPulse className="h-4 w-4 text-neutral-400" aria-hidden="true" />
-                      Vitals and visit context
-                    </p>
-                    <div className="mt-4">
-                      <VitalSignsForm appointmentId={activeAppointment.id} />
+                      {activeAppointment.type === "Online" ? (
+                        <VirtualIntakePanel
+                          appointment={activeAppointment}
+                          consultation={activeOnlineConsultation}
+                        />
+                      ) : null}
                     </div>
-                  </div>
 
-                  <div className="grid gap-5 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-                    <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <label className="block text-sm font-medium text-slate-700">
-                          Emergency Contact Name
-                          <input
-                            value={patientRecordDraft.emergencyContactName}
-                            onChange={(event) =>
-                              setPatientRecordDraft((current) => ({
-                                ...current,
-                                emergencyContactName: event.target.value,
-                              }))
-                            }
-                            className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                            placeholder="Parent, spouse, sibling, or guardian"
-                          />
-                        </label>
-                        <label className="block text-sm font-medium text-slate-700">
-                          Emergency Contact Phone
-                          <input
-                            value={patientRecordDraft.emergencyContactPhone}
-                            onChange={(event) =>
-                              setPatientRecordDraft((current) => ({
-                                ...current,
-                                emergencyContactPhone: event.target.value,
-                              }))
-                            }
-                            className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                            placeholder="+63 9XX XXX XXXX"
-                          />
-                        </label>
-                      </div>
-
-                      <label className="mt-4 block text-sm font-medium text-slate-700">
-                        Medical History
-                        <textarea
-                          value={patientRecordDraft.medicalHistory}
-                          onChange={(event) =>
-                            setPatientRecordDraft((current) => ({
-                              ...current,
-                              medicalHistory: event.target.value,
-                            }))
-                          }
-                          className="mt-2 min-h-28 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                          placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant medical background"
+                    <div className="space-y-4">
+                      <SectionHeading
+                        icon={<FaCircleInfo className="h-4 w-4" />}
+                        title="At a glance"
+                        description="The basics needed before the visit starts."
+                      />
+                      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+                        <DetailTile
+                          icon={<FaCalendarDay className="h-4 w-4" />}
+                          label="Schedule"
+                          value={formatDisplayDate(activeAppointment.date)}
+                          hint={formatRange(activeAppointment.start, activeAppointment.end)}
                         />
-                      </label>
-
-                      <label className="mt-4 block text-sm font-medium text-slate-700">
-                        Allergies
-                        <textarea
-                          value={patientRecordDraft.allergies}
-                          onChange={(event) =>
-                            setPatientRecordDraft((current) => ({
-                              ...current,
-                              allergies: event.target.value,
-                            }))
-                          }
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                          placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies"
+                        <DetailTile
+                          icon={<FaPhone className="h-4 w-4" />}
+                          label="Contact"
+                          value={activeAppointment.phone || activeAppointment.email || "No contact info"}
+                          hint={activeAppointment.email && activeAppointment.phone ? activeAppointment.email : undefined}
                         />
-                      </label>
-
-                      <label className="block text-sm font-medium text-slate-700">
-                        Family History
-                        <textarea
-                          value={patientRecordDraft.familyHistory}
-                          onChange={(event) =>
-                            setPatientRecordDraft((current) => ({
-                              ...current,
-                              familyHistory: event.target.value,
-                            }))
-                          }
-                          className="mt-2 min-h-32 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                          placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
+                        <DetailTile
+                          icon={<FaUserDoctor className="h-4 w-4" />}
+                          label="Doctor"
+                          value={getDoctorById(activeAppointment.doctorId)?.name ?? "Assigned doctor"}
+                          hint={formatAppointmentType(activeAppointment.type)}
                         />
-                        <span className="mt-2 block text-xs leading-5 text-slate-500">
-                          This updates the shared patient record, while vitals remain attached to this specific visit.
-                        </span>
-                      </label>
-
-                      <label className="mt-4 block text-sm font-medium text-slate-700">
-                        Consultation Status
-                        <select
-                          value={draft.status}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              status: event.target.value as ConsultationProgress,
-                            }))
-                          }
-                          className="mt-2 w-full rounded-2xl border border-neutral-100 bg-white px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                        >
-                          <option value="Ready">Ready</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </label>
-
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => savePatientRecord(activeAppointment)}
-                          disabled={isSaving || !activePatientRecord || !patientRecordDirty}
-                          className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {isSaving ? "Saving..." : "Save Patient Record"}
-                        </button>
+                        <DetailTile
+                          icon={<FaFileMedical className="h-4 w-4" />}
+                          label="Patient record"
+                          value={activePatientRecord ? "Matched" : "Needs review"}
+                          hint={activePatientRecord ? activePatientRecord.patientNumber : "No matching record found"}
+                        />
                       </div>
                     </div>
+                  </div>
+                ) : null}
 
-                    <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
-                      <label className="block text-sm font-medium text-slate-700">
-                        Diagnosis
-                        <textarea
+                {activeTab === "chart" ? (
+                  <div className="mx-auto max-w-5xl">
+                    <div className="mb-5 flex flex-col gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-neutral-950">Chart status</p>
+                        <p className="mt-1 text-sm text-neutral-600">
+                          Mark progress as the visit moves from review to completion.
+                        </p>
+                      </div>
+                      <StatusControl
+                        value={draft.status}
+                        onChange={(status) => setDraft((current) => ({ ...current, status }))}
+                      />
+                    </div>
+
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+                      <div className="space-y-4">
+                        <SectionHeading
+                          icon={<FaStethoscope className="h-4 w-4" />}
+                          title="Assessment"
+                          description="Summarize the clinical impression first."
+                        />
+                        <TextAreaField
+                          label="Diagnosis"
                           value={draft.diagnosis}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, diagnosis: event.target.value }))
-                          }
-                          className="mt-2 min-h-24 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
+                          minHeight="min-h-36"
+                          onChange={(value) => setDraft((current) => ({ ...current, diagnosis: value }))}
                           placeholder="Clinical diagnosis, impression, or assessment"
                         />
-                      </label>
+                        <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700">
+                          <input
+                            type="checkbox"
+                            checked={draft.visibleToPatient}
+                            onChange={(event) =>
+                              setDraft((current) => ({
+                                ...current,
+                                visibleToPatient: event.target.checked,
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+                          />
+                          <span className="inline-flex items-center gap-2">
+                            {draft.visibleToPatient ? (
+                              <FaEye className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                            ) : (
+                              <FaEyeSlash className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                            )}
+                            Visible in patient portal
+                          </span>
+                        </label>
+                      </div>
 
-                      <label className="block text-sm font-medium text-slate-700">
-                        Consultation Notes
-                        <textarea
+                      <div className="space-y-4">
+                        <SectionHeading
+                          icon={<FaNotesMedical className="h-4 w-4" />}
+                          title="Consultation note"
+                          description="Document symptoms, decisions, and the follow-up plan."
+                        />
+                        <TextAreaField
+                          label="Consultation notes"
                           value={draft.note}
-                          onChange={(event) =>
-                            setDraft((current) => ({ ...current, note: event.target.value }))
-                          }
-                          className="mt-2 min-h-40 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                          placeholder="Assessment, progress, symptoms, and recommendations"
+                          minHeight="min-h-56"
+                          onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
+                          placeholder="Assessment, progress, symptoms, recommendations, and patient instructions"
                         />
-                      </label>
-
-                      <label className="mt-4 block text-sm font-medium text-slate-700">
-                        Prescription / Plan
-                        <textarea
+                        <TextAreaField
+                          label="Care plan summary"
                           value={draft.prescription}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              prescription: event.target.value,
-                            }))
-                          }
-                          className="mt-2 min-h-28 w-full rounded-2xl border border-neutral-100 px-3 py-2.5 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                          placeholder="Medication, tests, referrals, or follow-up plan"
+                          minHeight="min-h-36"
+                          onChange={(value) => setDraft((current) => ({ ...current, prescription: value }))}
+                          placeholder="Tests, referrals, aftercare, lifestyle plan, or follow-up summary"
                         />
-                      </label>
-
-                      <label className="mt-4 flex items-center gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/50 px-4 py-3 text-sm font-medium text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={draft.visibleToPatient}
-                          onChange={(event) =>
-                            setDraft((current) => ({
-                              ...current,
-                              visibleToPatient: event.target.checked,
-                            }))
-                          }
-                          className="h-4 w-4 rounded border-neutral-300 text-neutral-400 focus:ring-neutral-300"
-                        />
-                        Visible in patient portal
-                      </label>
-
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => saveConsultation(activeAppointment)}
+                        <PrescriptionBuilder
+                          items={prescriptionItems}
+                          instructions={prescriptionInstructions}
+                          followUpDate={prescriptionFollowUpDate}
+                          releaseToPatient={releasePrescription}
+                          feedback={prescriptionFeedback}
+                          createdPrescription={createdPrescription}
                           disabled={isSaving}
-                          className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-slate-400"
-                        >
-                          {isSaving ? "Saving..." : "Save Consultation Note"}
-                        </button>
-                        {activeNote?.updatedAt ? (
-                          <p className="self-center text-xs text-slate-500">
-                            Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
-                          </p>
-                        ) : null}
+                          patientMatched={Boolean(activePatientRecord)}
+                          onItemChange={updatePrescriptionItem}
+                          onAddItem={addPrescriptionItem}
+                          onRemoveItem={removePrescriptionItem}
+                          onInstructionsChange={(value) => {
+                            setPrescriptionInstructions(value);
+                            setPrescriptionFeedback(null);
+                          }}
+                          onFollowUpDateChange={(value) => {
+                            setPrescriptionFollowUpDate(value);
+                            setPrescriptionFeedback(null);
+                          }}
+                          onReleaseChange={(value) => {
+                            setReleasePrescription(value);
+                            setPrescriptionFeedback(null);
+                          }}
+                          onSave={() => savePrescription(activeAppointment)}
+                          onDownloadCreated={() =>
+                            createdPrescription
+                              ? void downloadCreatedPrescription(createdPrescription)
+                              : undefined
+                          }
+                          onPrintCreated={() =>
+                            createdPrescription
+                              ? void printCreatedPrescription(createdPrescription)
+                              : undefined
+                          }
+                        />
+                        <div className="flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                          <button
+                            type="button"
+                            onClick={() => saveConsultation(activeAppointment)}
+                            disabled={isSaving}
+                            className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                          >
+                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                            {isSaving ? "Saving..." : "Save note"}
+                          </button>
+                          {activeNote?.updatedAt ? (
+                            <p className="text-xs text-neutral-500">
+                              Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
+
+                {activeTab === "record" ? (
+                  <div className="mx-auto max-w-5xl">
+                    <div className="mb-5">
+                      <SectionHeading
+                        icon={<FaAddressBook className="h-4 w-4" />}
+                        title="Patient record"
+                        description="Update standing health background separately from this visit note."
+                      />
+                    </div>
+                    {!activePatientRecord ? (
+                      <Banner tone="error">
+                        No matching patient record was found for this appointment. Check the patient name, email, or phone in patient records.
+                      </Banner>
+                    ) : null}
+                    <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                      <div className="space-y-4">
+                        <InputField
+                          label="Emergency contact name"
+                          value={patientRecordDraft.emergencyContactName}
+                          onChange={(value) =>
+                            setPatientRecordDraft((current) => ({
+                              ...current,
+                              emergencyContactName: value,
+                            }))
+                          }
+                          placeholder="Parent, spouse, sibling, or guardian"
+                        />
+                        <InputField
+                          label="Emergency contact phone"
+                          value={patientRecordDraft.emergencyContactPhone}
+                          onChange={(value) =>
+                            setPatientRecordDraft((current) => ({
+                              ...current,
+                              emergencyContactPhone: value,
+                            }))
+                          }
+                          placeholder="+63 9XX XXX XXXX"
+                        />
+                        <TextAreaField
+                          label="Allergies"
+                          value={patientRecordDraft.allergies}
+                          minHeight="min-h-32"
+                          onChange={(value) =>
+                            setPatientRecordDraft((current) => ({ ...current, allergies: value }))
+                          }
+                          placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <TextAreaField
+                          label="Medical history"
+                          value={patientRecordDraft.medicalHistory}
+                          minHeight="min-h-36"
+                          onChange={(value) =>
+                            setPatientRecordDraft((current) => ({ ...current, medicalHistory: value }))
+                          }
+                          placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant medical background"
+                        />
+                        <TextAreaField
+                          label="Family history"
+                          value={patientRecordDraft.familyHistory}
+                          minHeight="min-h-40"
+                          onChange={(value) =>
+                            setPatientRecordDraft((current) => ({ ...current, familyHistory: value }))
+                          }
+                          placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
+                        />
+                        <div className="flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                          <button
+                            type="button"
+                            onClick={() => savePatientRecord(activeAppointment)}
+                            disabled={isSaving || !activePatientRecord || !patientRecordDirty}
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                            {isSaving ? "Saving..." : "Save patient record"}
+                          </button>
+                          <p className="text-xs text-neutral-500">
+                            {patientRecordDirty ? "Unsaved record changes" : "Record is up to date"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-neutral-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-50 text-neutral-400">
-                <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
-              <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-                Select a patient from the queue to open the note-taking workspace, review vitals,
-                update family history, and save the care plan.
-              </p>
-            </div>
+            <EmptyWorkspace />
           )}
         </section>
       </div>
-
-      {isLoading ? <p className="text-sm text-slate-500">Loading consultation notes...</p> : null}
     </div>
   );
-}
-
-function findPatientRecord(patients: PatientRecordItem[], appointment: AppointmentRecord) {
-  return patients.find((patient) => patient.email === appointment.email)
-    ?? patients.find(
-      (patient) =>
-        patient.fullName === appointment.patientName
-        && (patient.phone === appointment.phone || !patient.phone || !appointment.phone),
-    )
-    ?? null;
 }
 
 function PatientConsultationLobby({
@@ -808,7 +978,7 @@ function PatientConsultationLobby({
   error,
 }: {
   appointments: AppointmentRecord[];
-  notes: Awaited<ReturnType<typeof useConsultationNotes>>["data"];
+  notes: ConsultationNote[];
   isLoading: boolean;
   error: string | null;
 }) {
@@ -826,290 +996,711 @@ function PatientConsultationLobby({
     [appointments],
   );
 
-  const activeAppointment = eligible.find((appointment) => appointment.id === activeAppointmentId) ?? null;
+  const activeAppointment = activeAppointmentId === "none"
+    ? null
+    : eligible.find((appointment) => appointment.id === activeAppointmentId) ?? eligible[0] ?? null;
   const activeNote = activeAppointment
     ? notes.find((note) => note.appointmentId === activeAppointment.id) ?? null
     : null;
+  const upcomingCount = eligible.filter((appointment) => appointment.status !== "Completed").length;
 
   return (
-    <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(17,17,17,0.14),transparent_28%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_56%,#f5f5f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)] animate-fade-in-down">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">
-              Consultations
-            </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
-              Join online consultations and review your visit notes
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Open your meeting link, check the consultation details, and keep your visit history in one place.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Shortcut href="/consultations/history" label="History" />
-            <Shortcut href="/appointments/my" label="Appointments" />
-          </div>
+    <div className="pb-8">
+      <div className="mb-5 flex flex-col gap-4 border-b border-neutral-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+            Consultations
+          </p>
+          <h1 className="mt-2 text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
+            Virtual consultation hub
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Join your online appointment and review notes shared by the clinic after the visit.
+          </p>
         </div>
-      </section>
+        <div className="flex flex-wrap gap-2">
+          <Shortcut href="/consultations/history" label="History" />
+          <Shortcut href="/appointments/my" label="Appointments" />
+        </div>
+      </div>
 
       {error ? <Banner tone="error">{error}</Banner> : null}
+      {isLoading ? <Banner tone="info">Loading consultation notes...</Banner> : null}
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:h-[calc(100vh-24rem)]">
-        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1 flex flex-col overflow-hidden">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Available Sessions
-              </p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">Online appointments ready for you</h2>
-            </div>
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              {eligible.length} total
-            </span>
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <Metric
+          label="Upcoming"
+          value={upcomingCount.toString()}
+          hint="Virtual visits"
+          tone="sky"
+          icon={<FaVideo className="h-4 w-4" />}
+        />
+        <Metric
+          label="Completed"
+          value={notes.filter((note) => note.status === "Completed").length.toString()}
+          hint="Shared notes"
+          tone="emerald"
+          icon={<FaCircleCheck className="h-4 w-4" />}
+        />
+        <Metric
+          label="Total"
+          value={eligible.length.toString()}
+          hint="Online consults"
+          tone="slate"
+          icon={<FaLaptopMedical className="h-4 w-4" />}
+        />
+      </div>
+
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]">
+        <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+              Sessions
+            </p>
+            <h2 className="mt-1 text-lg font-bold text-neutral-950">Your online consultations</h2>
           </div>
-
-          <div className="mt-5 flex-1 overflow-hidden flex flex-col">
+          <div className="max-h-[36rem] space-y-2 overflow-y-auto p-3">
             {eligible.length === 0 ? (
-              <EmptyQueue message="No online sessions found yet." />
+              <EmptyQueue message="No virtual consultations found yet." />
             ) : (
-              <div className="overflow-y-auto space-y-3 pr-2 flex-1">
-                {eligible.map((appointment, index) => {
-                  const doctor = getDoctorById(appointment.doctorId);
-                  const note = notes.find((item) => item.appointmentId === appointment.id);
-                  const isActive = activeAppointmentId === appointment.id;
-
-                  return (
-                    <article
-                      key={appointment.id}
-                      className={`rounded-[1.5rem] border p-4 transition-all animate-slide-in-left stagger-${Math.min(index + 1, 6)} ${
-                        isActive
-                          ? "border-neutral-400 bg-neutral-50/70 ring-2 ring-neutral-200"
-                          : "border-slate-200 hover:border-neutral-200 hover:bg-neutral-50/40"
-                      }`}
-                    >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-bold text-slate-900">{appointment.patientName}</p>
-                          <QueueFlag label={appointment.status} tone={appointment.status === "In Progress" ? "amber" : "emerald"} />
-                        </div>
-                        <p className="mt-1 text-sm text-slate-600">
-                          {doctor?.name ?? "Assigned doctor"} • {formatDisplayDate(appointment.date)}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {formatRange(appointment.start, appointment.end)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge tone="sky">Online</Badge>
-                        <Badge tone={statusTone(note?.status ?? appointment.status)}>
-                          {note?.status ?? appointment.status}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {appointment.reason ? (
-                      <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                        {getAppointmentPrimaryLabel(appointment.reason, appointment.type)}
-                        {getAppointmentSecondaryReason(appointment.reason)
-                          ? ` • ${getAppointmentSecondaryReason(appointment.reason)}`
-                          : ""}
-                      </p>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {appointment.meetingLink ? (
-                        <a
-                          href={appointment.meetingLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#111111,#111111)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(17,17,17,0.22)] transition hover:-translate-y-0.5"
-                        >
-                          <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
-                          Join Consultation
-                        </a>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setActiveAppointmentId(isActive ? null : appointment.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
-                      >
-                        Details
-                      </button>
-                    </div>
-                  </article>
+              eligible.map((appointment) => {
+                const note = notes.find((item) => item.appointmentId === appointment.id);
+                const isActive = activeAppointment?.id === appointment.id;
+                return (
+                  <QueueVisitCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    note={note}
+                    isActive={isActive}
+                    label={appointment.status}
+                    onSelect={() => setActiveAppointmentId(appointment.id)}
+                    patientView
+                  />
                 );
-                })}
-              </div>
+              })
             )}
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-neutral-100 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-2 flex flex-col overflow-hidden">
+        <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
           {activeAppointment ? (
-            <div className="space-y-5 overflow-y-auto flex-1">
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-neutral-100 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex flex-col gap-4 border-b border-neutral-200 bg-neutral-50 p-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone="sky">Online</Badge>
+                    <Badge tone="sky">Virtual</Badge>
                     <Badge tone={statusTone(activeNote?.status ?? activeAppointment.status)}>
                       {activeNote?.status ?? activeAppointment.status}
                     </Badge>
                   </div>
-                  <h2 className="mt-3 text-2xl font-black text-slate-900">
-                    {activeAppointment.patientName}
+                  <h2 className="mt-3 text-2xl font-black text-neutral-950">
+                    {formatDisplayDate(activeAppointment.date)}
                   </h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    {getDoctorById(activeAppointment.doctorId)?.name ?? "Assigned doctor"} • {formatDisplayDate(activeAppointment.date)} • {formatRange(activeAppointment.start, activeAppointment.end)}
+                  <p className="mt-2 text-sm text-neutral-600">
+                    {formatRange(activeAppointment.start, activeAppointment.end)} with{" "}
+                    {getDoctorById(activeAppointment.doctorId)?.name ?? "Assigned doctor"}
                   </p>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activeAppointment.reason || "No consultation reason recorded."}
+                  <p className="mt-2 text-sm text-neutral-500">
+                    {formatReason(activeAppointment)}
                   </p>
                 </div>
-
                 <div className="flex flex-wrap gap-2">
                   {activeAppointment.meetingLink ? (
                     <a
                       href={activeAppointment.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
                     >
-                      <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                      Open Meeting
+                      <FaVideo className="h-4 w-4" aria-hidden="true" />
+                      Join meeting
                     </a>
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => setActiveAppointmentId(null)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    onClick={() => setActiveAppointmentId("none")}
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
                   >
+                    <FaXmark className="h-4 w-4" aria-hidden="true" />
                     Close
                   </button>
                 </div>
               </div>
 
-              {activeNote ? (
-                <div className="rounded-[1.5rem] border border-neutral-100 bg-white p-4">
-                  <p className="text-sm font-semibold text-slate-900">Diagnosis</p>
-                  <p className="mt-2 text-sm text-slate-600">{activeNote.diagnosis || "No diagnosis recorded."}</p>
-                  <p className="text-sm font-semibold text-slate-900">Consultation Notes</p>
-                  <p className="mt-2 text-sm text-slate-600">{activeNote.note}</p>
-                  <p className="mt-4 text-sm font-semibold text-slate-900">Prescription / Plan</p>
-                  <p className="mt-2 text-sm text-slate-600">{activeNote.prescription || "No prescription recorded."}</p>
-                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                    {activeNote.visibleToPatient ? "Visible in patient portal" : "Hidden from patient portal"}
-                  </p>
-                  <p className="mt-3 text-xs text-slate-500">
-                    Updated {new Date(activeNote.updatedAt).toLocaleString("en-US")}
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-[1.5rem] border border-dashed border-slate-200 px-6 py-10 text-center text-sm text-slate-500">
-                  No consultation notes saved for this visit yet.
-                </div>
-              )}
+              <div className="p-4 sm:p-5">
+                {activeNote ? (
+                  <div className="space-y-5">
+                    <ReadOnlyNoteBlock title="Diagnosis" value={activeNote.diagnosis || "No diagnosis recorded."} />
+                    <ReadOnlyNoteBlock title="Consultation notes" value={activeNote.note || "No consultation note recorded."} />
+                    <ReadOnlyNoteBlock title="Prescription / plan" value={activeNote.prescription || "No prescription recorded."} />
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 pt-4">
+                      <Badge tone={activeNote.visibleToPatient ? "emerald" : "slate"}>
+                        {activeNote.visibleToPatient ? "Visible in portal" : "Clinic only"}
+                      </Badge>
+                      <p className="text-xs text-neutral-500">
+                        Updated {new Date(activeNote.updatedAt).toLocaleString("en-US")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center">
+                    <FaFileWaveform className="mx-auto h-7 w-7 text-neutral-400" aria-hidden="true" />
+                    <h2 className="mt-4 text-lg font-bold text-neutral-950">No shared notes yet</h2>
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">
+                      Notes and prescriptions will appear here when the clinic shares them with your portal.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-neutral-200 bg-[linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-50 text-neutral-400">
-                <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <h2 className="mt-5 text-2xl font-black text-slate-900">Choose a consultation to begin</h2>
-              <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-                Select an appointment to open the meeting link and review the consultation notes.
-              </p>
-            </div>
+            <EmptyWorkspace compact />
           )}
         </section>
       </div>
-
-      {isLoading ? <p className="text-sm text-slate-500">Loading consultation notes...</p> : null}
     </div>
   );
 }
 
-function statusTone(
-  status: ConsultationProgress | AppointmentRecord["status"],
-): "sky" | "emerald" | "amber" {
-  if (status === "Completed") return "emerald";
-  if (status === "In Progress") return "amber";
-  return "sky";
-}
-
-function EmptyQueue({ message = "No consultations ready yet." }: { message?: string }) {
+function VisitHeader({
+  appointment,
+  draft,
+  patientRecord,
+  onClose,
+}: {
+  appointment: AppointmentRecord;
+  draft: DraftState;
+  patientRecord: PatientRecordItem | null;
+  onClose: () => void;
+}) {
   return (
-    <div className="rounded-[1.5rem] border border-dashed border-slate-200 px-6 py-10 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-        <FaNotesMedical className="h-5 w-5 text-slate-400" aria-hidden="true" />
+    <div className="border-b border-neutral-200 bg-neutral-50 p-4 sm:p-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={appointment.type === "Online" ? "sky" : "emerald"}>
+              {formatAppointmentType(appointment.type)}
+            </Badge>
+            <Badge tone={statusTone(draft.status)}>{draft.status}</Badge>
+            {patientRecord ? <Badge tone="slate">{patientRecord.patientNumber}</Badge> : null}
+          </div>
+          <h2 className="mt-3 truncate text-2xl font-black text-neutral-950">
+            {appointment.patientName}
+          </h2>
+          <p className="mt-2 text-sm text-neutral-600">
+            {getDoctorById(appointment.doctorId)?.name ?? "Assigned doctor"} -{" "}
+            {formatDisplayDate(appointment.date)} - {formatRange(appointment.start, appointment.end)}
+          </p>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-500">{formatReason(appointment)}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {appointment.meetingLink ? (
+            <a
+              href={appointment.meetingLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            >
+              <FaVideo className="h-4 w-4" aria-hidden="true" />
+              Launch meeting
+            </a>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
+          >
+            <FaXmark className="h-4 w-4" aria-hidden="true" />
+            Close
+          </button>
+        </div>
       </div>
-      <p className="mt-3 text-sm text-slate-500">{message}</p>
     </div>
   );
 }
 
-function Metric({
+function QueueVisitCard({
+  appointment,
+  note,
+  isActive,
+  label,
+  onSelect,
+  patientView = false,
+}: {
+  appointment: AppointmentRecord;
+  note: ConsultationNote | undefined;
+  isActive: boolean;
+  label: string;
+  onSelect: () => void;
+  patientView?: boolean;
+}) {
+  const status = note?.status ?? appointment.status;
+  const doctor = getDoctorById(appointment.doctorId);
+
+  return (
+    <article
+      className={`rounded-lg border p-3 transition ${
+        isActive
+          ? "border-neutral-900 bg-neutral-50 shadow-sm"
+          : "border-neutral-200 bg-white hover:border-neutral-400"
+      }`}
+    >
+      <button type="button" onClick={onSelect} className="block w-full text-left">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-sm font-bold text-neutral-950">{appointment.patientName}</p>
+              <QueueFlag label={label} tone={statusTone(status)} />
+            </div>
+            <p className="mt-1 text-xs text-neutral-600">
+              {formatDisplayDate(appointment.date)} - {formatRange(appointment.start, appointment.end)}
+            </p>
+            <p className="mt-1 truncate text-xs text-neutral-500">
+              {patientView ? doctor?.name ?? "Assigned doctor" : formatReason(appointment)}
+            </p>
+          </div>
+          <Badge tone={appointment.type === "Online" ? "sky" : "emerald"}>
+            {formatAppointmentType(appointment.type)}
+          </Badge>
+        </div>
+      </button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-neutral-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800"
+        >
+          <FaNotesMedical className="h-3.5 w-3.5" aria-hidden="true" />
+          {patientView ? (isActive ? "Viewing" : "Details") : "Open"}
+        </button>
+        {appointment.meetingLink ? (
+          <a
+            href={appointment.meetingLink}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
+            aria-label="Open meeting"
+          >
+            <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function VirtualIntakePanel({
+  appointment,
+  consultation,
+}: {
+  appointment: AppointmentRecord;
+  consultation: OnlineConsultationRecord | null;
+}) {
+  const files = consultation?.file_urls ?? [];
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SectionHeading
+          icon={<FaLaptopMedical className="h-4 w-4" />}
+          title="Virtual consult intake"
+          description="Review submitted concern, symptoms, and attachments."
+        />
+        {consultation?.platform ? <Badge tone="slate">{consultation.platform}</Badge> : null}
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <ReadOnlyNoteBlock
+          title="Concern"
+          value={consultation?.concern || appointment.reason || "No concern submitted."}
+          compact
+        />
+        <ReadOnlyNoteBlock
+          title="Symptoms"
+          value={consultation?.symptoms || "No additional symptoms submitted."}
+          compact
+        />
+      </div>
+      <div className="mt-4 border-t border-neutral-200 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
+            Attached files / photos
+          </p>
+          <span className="text-xs font-semibold text-neutral-500">
+            {files.length} file{files.length === 1 ? "" : "s"}
+          </span>
+        </div>
+        {files.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {files.map((file, index) => {
+              const normalized = typeof file === "string"
+                ? { file_name: `Attachment ${index + 1}`, file_url: file }
+                : file;
+              return (
+                <a
+                  key={`${normalized.file_url ?? "file"}-${index}`}
+                  href={normalized.file_url ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-white"
+                >
+                  <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                  {normalized.file_name ?? `Attachment ${index + 1}`}
+                </a>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-neutral-500">No files were attached for this virtual consult.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PrescriptionBuilder({
+  items,
+  instructions,
+  followUpDate,
+  releaseToPatient,
+  feedback,
+  createdPrescription,
+  disabled,
+  patientMatched,
+  onItemChange,
+  onAddItem,
+  onRemoveItem,
+  onInstructionsChange,
+  onFollowUpDateChange,
+  onReleaseChange,
+  onSave,
+  onDownloadCreated,
+  onPrintCreated,
+}: {
+  items: PrescriptionItemDraft[];
+  instructions: string;
+  followUpDate: string;
+  releaseToPatient: boolean;
+  feedback: string | null;
+  createdPrescription: CreatedPrescription | null;
+  disabled: boolean;
+  patientMatched: boolean;
+  onItemChange: (index: number, field: keyof PrescriptionItemDraft, value: string) => void;
+  onAddItem: () => void;
+  onRemoveItem: (index: number) => void;
+  onInstructionsChange: (value: string) => void;
+  onFollowUpDateChange: (value: string) => void;
+  onReleaseChange: (value: boolean) => void;
+  onSave: () => void;
+  onDownloadCreated: () => void;
+  onPrintCreated: () => void;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <SectionHeading
+          icon={<FaPrescriptionBottleMedical className="h-4 w-4" />}
+          title="Prescription"
+          description="Create the patient prescription from this consultation."
+        />
+        <button
+          type="button"
+          onClick={onAddItem}
+          disabled={disabled}
+          className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FaPlus className="h-3 w-3" aria-hidden="true" />
+          Add medicine
+        </button>
+      </div>
+
+      {!patientMatched ? (
+        <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+          Match this visit to a patient record before saving a prescription.
+        </div>
+      ) : null}
+
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => (
+          <div key={`consult-rx-${index}`} className="rounded-md border border-neutral-200 bg-neutral-50/70 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+                Rx item {index + 1}
+              </p>
+              <button
+                type="button"
+                onClick={() => onRemoveItem(index)}
+                disabled={disabled || items.length === 1}
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FaTrash className="h-3 w-3" aria-hidden="true" />
+                Remove
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <InputField
+                label="Medicine"
+                value={item.medicineName}
+                placeholder="Tirzepatide"
+                onChange={(value) => onItemChange(index, "medicineName", value)}
+              />
+              <InputField
+                label="Dosage / formulation"
+                value={item.dosage}
+                placeholder="5 mg/0.6 mL solution for injection #1"
+                onChange={(value) => onItemChange(index, "dosage", value)}
+              />
+              <InputField
+                label="Sig / frequency"
+                value={item.frequency}
+                placeholder="0.6 mL, once a week"
+                onChange={(value) => onItemChange(index, "frequency", value)}
+              />
+              <InputField
+                label="Duration / quantity"
+                value={item.duration}
+                placeholder="Use as instructed"
+                onChange={(value) => onItemChange(index, "duration", value)}
+              />
+            </div>
+            <TextAreaField
+              label="Item instructions"
+              value={item.instructions}
+              minHeight="min-h-24"
+              placeholder="Additional medicine-specific reminders"
+              onChange={(value) => onItemChange(index, "instructions", value)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+        <TextAreaField
+          label="Prescription note"
+          value={instructions}
+          minHeight="min-h-28"
+          placeholder="Insulin syringe x 4 mm - 4 pieces"
+          onChange={onInstructionsChange}
+        />
+        <InputField
+          label="Follow-up date"
+          value={followUpDate}
+          placeholder="YYYY-MM-DD"
+          onChange={onFollowUpDateChange}
+        />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
+          <input
+            type="checkbox"
+            checked={releaseToPatient}
+            onChange={(event) => onReleaseChange(event.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+          />
+          Send to patient portal
+        </label>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={disabled || !patientMatched}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+        >
+          <FaPrescriptionBottleMedical className="h-4 w-4" aria-hidden="true" />
+          {disabled ? "Saving..." : "Create prescription"}
+        </button>
+      </div>
+      {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
+      {createdPrescription ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-emerald-900">
+            {createdPrescription.prescriptionNo} is ready.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onDownloadCreated}
+              className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={onPrintCreated}
+              className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
+            >
+              Print
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function StatusControl({
+  value,
+  onChange,
+}: {
+  value: ConsultationProgress;
+  onChange: (value: ConsultationProgress) => void;
+}) {
+  const statuses: ConsultationProgress[] = ["Ready", "In Progress", "Completed"];
+  return (
+    <div className="grid rounded-md border border-neutral-200 bg-white p-1 sm:grid-cols-3">
+      {statuses.map((status) => (
+        <button
+          key={status}
+          type="button"
+          onClick={() => onChange(status)}
+          className={`rounded px-3 py-2 text-sm font-semibold transition ${
+            value === status
+              ? "bg-neutral-950 text-white shadow-sm"
+              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
+          }`}
+        >
+          {status}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition ${
+        active
+          ? "bg-neutral-950 text-white"
+          : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function FilterButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-2 py-1.5 text-xs font-semibold transition ${
+        active ? "bg-white text-neutral-950 shadow-sm" : "text-neutral-500 hover:text-neutral-900"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SectionHeading({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-sm font-bold text-neutral-950">
+        <span className="text-neutral-500">{icon}</span>
+        {title}
+      </div>
+      <p className="mt-1 text-sm leading-6 text-neutral-500">{description}</p>
+    </div>
+  );
+}
+
+function TextAreaField({
   label,
   value,
-  tone,
-  icon,
+  placeholder,
+  minHeight,
+  onChange,
 }: {
   label: string;
   value: string;
-  tone: "sky" | "emerald" | "amber";
-  icon: ReactNode;
+  placeholder: string;
+  minHeight: string;
+  onChange: (value: string) => void;
 }) {
-  const styles = {
-    sky: "bg-neutral-50 text-neutral-700 border-neutral-100",
-    emerald: "bg-neutral-50 text-neutral-700 border-neutral-100",
-    amber: "bg-neutral-50 text-neutral-700 border-neutral-100",
-  } as const;
-
   return (
-    <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm hover-lift">
-      <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${styles[tone]}`}>
-        {icon}
-      </div>
-      <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-black text-slate-900">{value}</p>
+    <label className="block text-sm font-semibold text-neutral-800">
+      {label}
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`mt-2 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100 ${minHeight}`}
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+function InputField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-sm font-semibold text-neutral-800">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100"
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
+function ReadOnlyNoteBlock({
+  title,
+  value,
+  compact = false,
+}: {
+  title: string;
+  value: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`${compact ? "" : "border-b border-neutral-200 pb-5 last:border-b-0 last:pb-0"}`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{title}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-800">{value}</p>
     </div>
   );
 }
 
-function Badge({
-  children,
-  tone,
-}: {
-  children: ReactNode;
-  tone: "sky" | "emerald" | "amber";
-}) {
-  const styles = {
-    sky: "bg-neutral-100 text-neutral-700",
-    emerald: "bg-neutral-100 text-neutral-700",
-    amber: "bg-neutral-100 text-neutral-700",
-  } as const;
-
-  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles[tone]}`}>{children}</span>;
-}
-
-function QueueFlag({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "sky" | "emerald" | "amber";
-}) {
-  const styles = {
-    sky: "bg-neutral-100 text-neutral-700",
-    emerald: "bg-neutral-100 text-neutral-700",
-    amber: "bg-neutral-100 text-neutral-700",
-  } as const;
-
-  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${styles[tone]}`}>{label}</span>;
-}
-
-function SummaryCard({
+function DetailTile({
   icon,
   label,
   value,
@@ -1121,14 +1712,95 @@ function SummaryCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-4">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-neutral-700 shadow-sm">
-        {icon}
-      </span>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-bold text-slate-900">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-600">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
+          <p className="mt-1 break-words text-sm font-bold text-neutral-950">{value}</p>
+          {hint ? <p className="mt-1 break-words text-xs text-neutral-500">{hint}</p> : null}
+        </div>
+      </div>
     </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  hint,
+  tone,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone: BadgeTone;
+  icon: ReactNode;
+}) {
+  const styles = {
+    sky: "bg-sky-50 text-sky-700 border-sky-100",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    rose: "bg-rose-50 text-rose-700 border-rose-100",
+    slate: "bg-neutral-100 text-neutral-700 border-neutral-200",
+  } as const;
+
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
+          <p className="mt-2 text-3xl font-black text-neutral-950">{value}</p>
+          <p className="mt-1 text-xs text-neutral-500">{hint}</p>
+        </div>
+        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-md border ${styles[tone]}`}>
+          {icon}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Badge({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: BadgeTone;
+}) {
+  const styles = {
+    sky: "bg-sky-100 text-sky-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    amber: "bg-amber-100 text-amber-700",
+    rose: "bg-rose-100 text-rose-700",
+    slate: "bg-neutral-100 text-neutral-700",
+  } as const;
+
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${styles[tone]}`}>{children}</span>;
+}
+
+function QueueFlag({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: BadgeTone;
+}) {
+  const styles = {
+    sky: "bg-sky-100 text-sky-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    amber: "bg-amber-100 text-amber-700",
+    rose: "bg-rose-100 text-rose-700",
+    slate: "bg-neutral-100 text-neutral-700",
+  } as const;
+
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] ${styles[tone]}`}>
+      {label}
+    </span>
   );
 }
 
@@ -1140,20 +1812,75 @@ function Banner({
   tone: "info" | "error";
 }) {
   const styles = {
-    info: "border-slate-200 bg-slate-50 text-slate-700",
-    error: "border-neutral-200 bg-neutral-50 text-neutral-700",
+    info: "border-sky-200 bg-sky-50 text-sky-800",
+    error: "border-rose-200 bg-rose-50 text-rose-800",
   } as const;
-  return <div className={`rounded-2xl border px-4 py-3 text-sm ${styles[tone]}`}>{children}</div>;
+  return <div className={`mb-3 rounded-lg border px-4 py-3 text-sm ${styles[tone]}`}>{children}</div>;
+}
+
+function EmptyQueue({ message = "No consultations ready yet." }: { message?: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-5 py-8 text-center">
+      <FaNotesMedical className="mx-auto h-6 w-6 text-neutral-400" aria-hidden="true" />
+      <p className="mt-3 text-sm text-neutral-500">{message}</p>
+    </div>
+  );
+}
+
+function EmptyWorkspace({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={`flex flex-col items-center justify-center p-8 text-center ${compact ? "min-h-[22rem]" : "min-h-[42rem]"}`}>
+      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400">
+        <FaFileWaveform className="h-7 w-7" aria-hidden="true" />
+      </div>
+      <h2 className="mt-5 text-xl font-black text-neutral-950">Choose a consultation</h2>
+      <p className="mt-3 max-w-md text-sm leading-6 text-neutral-500">
+        Select a visit from the queue to open intake, charting, and patient record tools.
+      </p>
+    </div>
+  );
 }
 
 function Shortcut({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:bg-neutral-50"
+      className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-800 shadow-sm transition hover:border-neutral-500 hover:bg-neutral-50"
     >
       {label}
     </Link>
   );
 }
 
+function statusTone(status: ConsultationProgress | AppointmentRecord["status"]): BadgeTone {
+  if (status === "Completed") return "emerald";
+  if (status === "In Progress") return "amber";
+  if (status === "Pending") return "rose";
+  return "sky";
+}
+
+function findPatientRecord(patients: PatientRecordItem[], appointment: AppointmentRecord) {
+  return patients.find((patient) => patient.email === appointment.email)
+    ?? patients.find(
+      (patient) =>
+        patient.fullName === appointment.patientName
+        && (patient.phone === appointment.phone || !patient.phone || !appointment.phone),
+    )
+    ?? null;
+}
+
+function formatAppointmentType(type: AppointmentRecord["type"]) {
+  return type === "Online" ? "Virtual" : type;
+}
+
+function formatReason(appointment: AppointmentRecord) {
+  if (!appointment.reason) return "No consultation reason recorded.";
+
+  const secondary = getAppointmentSecondaryReason(appointment.reason);
+  return [
+    getAppointmentPrimaryLabel(appointment.reason, appointment.type),
+    secondary,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+}

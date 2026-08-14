@@ -2,8 +2,10 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { HttpError, type Actor } from "@/src/lib/http";
 import type {
   LandingContent,
+  LandingBeforeAfterResult,
   LandingHowToStep,
   LandingHighlight,
+  LandingHeroSlide,
   LandingNavItem,
   LandingProgramSlide,
   LandingService,
@@ -22,8 +24,10 @@ export type LandingContentInput = Partial<
     | "updated_by"
     | "about_highlights"
     | "testimonials"
+    | "hero_slides"
     | "nav_items"
     | "program_slides"
+    | "results_items"
     | "services"
     | "blog_categories"
     | "how_to_steps"
@@ -33,8 +37,10 @@ export type LandingContentInput = Partial<
 > & {
   about_highlights?: LandingHighlight[];
   testimonials?: LandingTestimonial[];
+  hero_slides?: LandingHeroSlide[];
   nav_items?: LandingNavItem[];
   program_slides?: LandingProgramSlide[];
+  results_items?: LandingBeforeAfterResult[];
   services?: LandingService[];
   blog_categories?: string[];
   how_to_steps?: LandingHowToStep[];
@@ -133,6 +139,9 @@ export async function updateLandingContent(
     "results_eyebrow",
     "results_title",
     "results_subtitle",
+    "results_board_title",
+    "results_board_subtitle",
+    "results_board_label",
     "faq_eyebrow",
     "faq_title",
     "faq_subtitle",
@@ -165,7 +174,7 @@ export async function updateLandingContent(
   }
 
   // URL fields — null clears, string sets.
-  for (const f of ["hero_background_url", "doctor_photo_url"] as const) {
+  for (const f of ["hero_background_url", "doctor_photo_url", "program_feature_image_url"] as const) {
     if (f in input) {
       const v = (input as Record<string, unknown>)[f];
       if (v === null || typeof v === "string") patch[f] = v;
@@ -208,6 +217,18 @@ export async function updateLandingContent(
     }));
   }
 
+  if (input.hero_slides !== undefined) {
+    if (!Array.isArray(input.hero_slides)) throw new HttpError(400, "hero_slides must be an array");
+    patch.hero_slides = input.hero_slides
+      .map((s): LandingHeroSlide => ({
+        key: String(s.key ?? "").trim() || "hero",
+        image: String(s.image ?? "").trim(),
+        title: String(s.title ?? "").trim(),
+        subtitle: String(s.subtitle ?? "").trim(),
+      }))
+      .filter((s) => s.image || s.title || s.subtitle);
+  }
+
   if (input.program_slides !== undefined) {
     if (!Array.isArray(input.program_slides)) throw new HttpError(400, "program_slides must be an array");
     patch.program_slides = input.program_slides
@@ -218,6 +239,26 @@ export async function updateLandingContent(
         ctaLabel: String(s.ctaLabel ?? "").trim() || "Book a consultation",
       }))
       .filter((s) => s.name || s.description);
+  }
+
+  if (input.results_items !== undefined) {
+    if (!Array.isArray(input.results_items)) throw new HttpError(400, "results_items must be an array");
+    patch.results_items = input.results_items
+      .map((item): LandingBeforeAfterResult => {
+        const beforeImage = String(item.beforeImage ?? "").trim();
+        const afterImage = String(item.afterImage ?? "").trim();
+        const image = String(item.image ?? "").trim();
+
+        return {
+          title: String(item.title ?? "").trim(),
+          program: String(item.program ?? "").trim(),
+          caption: String(item.caption ?? "").trim(),
+          ...(beforeImage ? { beforeImage } : {}),
+          ...(afterImage ? { afterImage } : {}),
+          ...(image ? { image } : {}),
+        };
+      })
+      .filter((item) => item.title || item.program || item.caption || item.beforeImage || item.afterImage || item.image);
   }
 
   if (input.about_highlights !== undefined) {
@@ -278,7 +319,7 @@ export async function updateLandingContent(
 // — this avoids unbounded disk growth on the bucket and means we don't need
 // to clean up old files on update.
 export async function uploadLandingImage(
-  kind: "hero-bg" | "doctor-photo",
+  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single",
   file: File,
   actor: Actor,
 ): Promise<{ url: string; path: string }> {

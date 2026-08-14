@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasPermission } from "@/src/lib/auth/permissions";
 import { requireAuthenticatedUser } from "@/src/lib/auth/server-auth";
-import { createClinicBilling, addBillingItems, issueBilling } from "@/src/lib/services/pos-billing";
+import { createClinicBilling } from "@/src/lib/services/pos-billing";
 
 /**
  * POST /api/v2/billing/create

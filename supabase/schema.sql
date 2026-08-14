@@ -56,9 +56,19 @@ $$;
 
 create table public.patients (
   id uuid primary key references public.profiles(id) on delete cascade,
+  patient_number text unique,
+  first_name text,
+  middle_name text,
+  last_name text,
+  suffix_name text,
   dob date,
   gender text,
+  civil_status text,
   address text,
+  religion text,
+  occupation text,
+  guardian_name text,
+  doctor_notes text,
   emergency_contact_name text,
   emergency_contact_phone text,
   family_history text,
@@ -99,10 +109,11 @@ create table public.system_settings (
   phone text not null default '',
   address text not null default '',
   online_consultation_fee numeric(12,2) not null default 800,
-  max_patients_per_hour integer not null default 5,
-  clinic_open_time time not null default '08:00',
-  clinic_close_time time not null default '17:00',
+  max_patients_per_hour integer not null default 1,
+  clinic_open_time time not null default '09:00',
+  clinic_close_time time not null default '16:00',
   default_meeting_link text not null default '',
+  online_payment_accounts jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles(id) on delete set null,
   constraint system_settings_singleton check (id)
@@ -154,7 +165,7 @@ create table public.doctor_schedules (
   day_of_week integer not null check (day_of_week between 0 and 6),
   start_time time not null,
   end_time time not null,
-  slot_minutes integer not null default 60 check (slot_minutes > 0),
+  slot_minutes integer not null default 30 check (slot_minutes > 0),
   schedule_mode text not null default 'Both' check (schedule_mode in ('Clinic', 'Online', 'Both')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -198,6 +209,33 @@ create table public.appointments (
 
 create index appointments_patient_idx on public.appointments(patient_id);
 create index appointments_doctor_date_idx on public.appointments(doctor_id, appointment_date);
+
+create table public.appointment_reschedule_requests (
+  id uuid primary key default gen_random_uuid(),
+  appointment_id uuid not null references public.appointments(id) on delete cascade,
+  patient_id uuid not null references public.patients(id) on delete cascade,
+  doctor_id uuid not null references public.doctors(id) on delete restrict,
+  requested_appointment_date date not null,
+  requested_start_time time not null,
+  requested_end_time time not null,
+  requested_appointment_type text not null check (requested_appointment_type in ('Clinic', 'Online')),
+  reason text,
+  status text not null default 'Pending' check (status in ('Pending', 'Approved', 'Rejected', 'Cancelled')),
+  requested_by uuid references public.profiles(id) on delete set null,
+  reviewed_by uuid references public.profiles(id) on delete set null,
+  reviewed_at timestamptz,
+  review_note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (requested_start_time < requested_end_time)
+);
+create index appointment_reschedule_requests_patient_idx
+  on public.appointment_reschedule_requests(patient_id, status);
+create index appointment_reschedule_requests_doctor_idx
+  on public.appointment_reschedule_requests(doctor_id, status);
+create unique index appointment_reschedule_requests_one_pending_idx
+  on public.appointment_reschedule_requests(appointment_id)
+  where status = 'Pending';
 
 create table public.online_booking_reservations (
   id uuid primary key default gen_random_uuid(),
@@ -489,6 +527,13 @@ create table public.landing_content (
   hero_cta_primary text not null default 'Book Appointment',
   hero_cta_secondary text not null default 'View Services',
   hero_background_url text,
+  hero_slides jsonb not null default '[
+    {"key":"glowrx","image":"/images/glowrx bg.png","title":"GlowRx by Doc Kulot","subtitle":"Medical Weight Loss & Aesthetic Wellness"},
+    {"key":"hormonerx","image":"/images/hormonerx bg.png","title":"HormoneRx by Doc Kulot","subtitle":"PCOS, Hormonal Acne & Women''s Hormonal Health"},
+    {"key":"heartrx","image":"/images/heartrx bg.png","title":"HeartRx by Doc Kulot","subtitle":"Hypertension, Cholesterol & Cardiovascular Wellness"},
+    {"key":"metabolicrx","image":"/images/metabolicrx bg.png","title":"MetabolicRx by Doc Kulot","subtitle":"Diabetes, Prediabetes & Fatty Liver Care"},
+    {"key":"preventrx","image":"/images/preventrx bg.png","title":"PreventRx by Doc Kulot","subtitle":"Executive Check-ups & Preventive Health"}
+  ]'::jsonb,
   about_eyebrow text not null default 'About the Doctor',
   about_title text not null default 'Dr. Fatimah Al-Zahra T. Ditti',
   about_subtitle text not null default 'Family Medicine and Aesthetic Medicine doctor focused on telemedicine, women''s health, procedure support, and practical family care.',
@@ -513,10 +558,41 @@ create table public.landing_content (
   cta_button_label text not null default 'Book Appointment',
   testimonials jsonb not null default '[]'::jsonb,
   nav_items jsonb not null default '[]'::jsonb,
+  program_slides jsonb not null default '[]'::jsonb,
+  program_feature_image_url text,
   services_eyebrow text not null default 'Services',
   services_title text not null default 'Clinic and online services',
   services_subtitle text not null default 'Review available services before booking.',
   services jsonb not null default '[]'::jsonb,
+  blog_eyebrow text not null default 'Our Blog',
+  blog_title text not null default 'Learn from Doc Kulot',
+  blog_subtitle text not null default 'Articles written by Doc Kulot.',
+  blog_categories_title text not null default 'Categories',
+  blog_recent_posts_title text not null default 'Recent Posts',
+  blog_categories jsonb not null default '[]'::jsonb,
+  videos_eyebrow text not null default 'Videos',
+  videos_title text not null default 'Doc Kulot vlogs',
+  videos_subtitle text not null default 'Watch health education videos and clinic updates.',
+  live_eyebrow text not null default 'Live Schedule',
+  live_title text not null default 'Upcoming live sessions',
+  live_subtitle text not null default 'Join live talks and replay sessions from Doc Kulot.',
+  live_cta_label text not null default 'Open live schedule page',
+  results_eyebrow text not null default 'Before and After',
+  results_title text not null default 'GlowRx and aesthetic results',
+  results_subtitle text not null default 'Selected GlowRx weight-loss progress and aesthetic before-and-after outcomes.',
+  results_board_title text not null default 'GlowRx Results',
+  results_board_subtitle text not null default 'Medical weight-loss progress and aesthetic transformations',
+  results_board_label text not null default 'Results Board',
+  results_items jsonb not null default '[
+    {"title":"GlowRx weight-management progress 1","program":"GlowRx","beforeImage":"/images/weightloss before1.png","afterImage":"/images/weightloss after1.png","caption":"A steady change with medical guidance, follow-up, and consistency."},
+    {"title":"GlowRx weight-management progress 2","program":"GlowRx","beforeImage":"/images/weightloss before2.png","afterImage":"/images/weightloss after2.png","caption":"A cleaner silhouette after a structured and supervised program."},
+    {"title":"GlowRx weight-management progress 3","program":"GlowRx","beforeImage":"/images/weightloss before3.png","afterImage":"/images/weightloss after3.png","caption":"Visible progress supported by medical care and long-term habits."},
+    {"title":"Botox result","program":"Aesthetic Medicine","image":"/images/botox before and after.jpg","caption":"Softer expression after targeted Botox treatment."},
+    {"title":"Mesolipo double-chin contouring result","program":"Aesthetic Medicine","image":"/images/double chin before and after.jpg","caption":"Double-chin contouring result from an appointment-only aesthetic procedure."}
+  ]'::jsonb,
+  faq_eyebrow text not null default 'FAQ',
+  faq_title text not null default 'Quick answers for common questions for Doc Kulot patients',
+  faq_subtitle text not null default 'Frequently asked questions now live on the landing page instead of a separate page.',
   how_to_eyebrow text not null default 'How to book',
   how_to_title text not null default 'Simple appointment booking',
   how_to_steps jsonb not null default '[]'::jsonb,
@@ -530,6 +606,10 @@ create table public.landing_content (
   contact_subtitle text not null default 'Ask about appointments, services, consultations, or collaborations.',
   contact_info_title text not null default 'Contact Info',
   contact_hours_label text not null default 'Office Hours: Mon - Fri, 8:00 AM - 5:00 PM',
+  contact_facebook_label text not null default 'Doc Kulot Facebook',
+  contact_facebook_url text not null default 'https://www.facebook.com/share/1GnJA9tPm2/',
+  contact_youtube_label text not null default 'Doc Kulot YouTube',
+  contact_youtube_url text not null default 'https://www.youtube.com/@DocKulot',
   footer_brand_blurb text not null default 'Expert healthcare from Dr. Fatimah Al-Zahra T. Ditti.',
   footer_services jsonb not null default '[]'::jsonb,
   footer_hours jsonb not null default '[]'::jsonb,
@@ -653,6 +733,7 @@ create trigger services_updated_at before update on public.clinic_services for e
 create trigger pricing_updated_at before update on public.pricing for each row execute function public.set_updated_at();
 create trigger schedules_updated_at before update on public.doctor_schedules for each row execute function public.set_updated_at();
 create trigger appointments_updated_at before update on public.appointments for each row execute function public.set_updated_at();
+create trigger appointment_reschedule_requests_updated_at before update on public.appointment_reschedule_requests for each row execute function public.set_updated_at();
 create trigger reservations_updated_at before update on public.online_booking_reservations for each row execute function public.set_updated_at();
 create trigger online_consultations_updated_at before update on public.online_consultations for each row execute function public.set_updated_at();
 create trigger vital_signs_updated_at before update on public.vital_signs for each row execute function public.set_updated_at();
@@ -684,6 +765,7 @@ alter table public.pricing enable row level security;
 alter table public.doctor_schedules enable row level security;
 alter table public.doctor_unavailability enable row level security;
 alter table public.appointments enable row level security;
+alter table public.appointment_reschedule_requests enable row level security;
 alter table public.online_booking_reservations enable row level security;
 alter table public.online_consultations enable row level security;
 alter table public.vital_signs enable row level security;
@@ -735,6 +817,18 @@ create policy "appointments_patient_create" on public.appointments
   for insert with check (patient_id = auth.uid() or public.is_clinic_staff());
 create policy "appointments_staff_update" on public.appointments
   for update using (public.is_clinic_staff() or patient_id = auth.uid());
+
+create policy "reschedule_requests_participant_or_staff_read" on public.appointment_reschedule_requests
+  for select using (
+    patient_id = auth.uid()
+    or doctor_id = auth.uid()
+    or public.is_clinic_staff()
+  );
+create policy "reschedule_requests_patient_create" on public.appointment_reschedule_requests
+  for insert with check (patient_id = auth.uid());
+create policy "reschedule_requests_staff_doctor_update" on public.appointment_reschedule_requests
+  for update using (public.is_clinic_staff() or doctor_id = auth.uid())
+  with check (public.is_clinic_staff() or doctor_id = auth.uid());
 
 create policy "patient_or_staff_related_online" on public.online_consultations
   for select using (
@@ -817,8 +911,8 @@ create policy "staff_logs_read" on public.activity_logs for select using (public
 insert into public.landing_content (id) values (true)
 on conflict (id) do nothing;
 
-insert into public.system_settings (id, clinic_name, email, phone, address, online_consultation_fee, max_patients_per_hour)
-values (true, 'Doc Kulot', 'info@dockulot.clinic', '+63 917 154 4754', 'Zamboanga City, Zamboanga del Sur', 800, 5)
+insert into public.system_settings (id, clinic_name, email, phone, address, online_consultation_fee, max_patients_per_hour, clinic_open_time, clinic_close_time)
+values (true, 'Doc Kulot', 'info@dockulot.clinic', '+63 917 154 4754', 'Zamboanga City, Zamboanga del Sur', 800, 1, '09:00', '16:00')
 on conflict (id) do nothing;
 
 insert into public.clinic_services (code, name, category, description, service_mode, base_price, sort_order) values

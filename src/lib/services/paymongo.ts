@@ -142,7 +142,7 @@ export async function createPayMongoCheckoutSession(input: {
               currency: "PHP",
               amount: Math.round(input.amount * 100),
               description: input.description,
-              name: input.lineItemName ?? "Online Consultation",
+              name: input.lineItemName ?? "Virtual Consult",
               quantity: 1,
             },
           ],

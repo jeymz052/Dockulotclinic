@@ -19,25 +19,31 @@ import {
   validateProcedureConsentPayload,
   type ProcedureConsentPayload,
 } from "@/src/lib/services/procedure-consent";
-import { ONLINE_CONSULTATION_FEE, PROCEDURE_DOWNPAYMENT_AMOUNT } from "@/src/lib/consultation-pricing";
+import {
+  resolveProcedureReservationAmount,
+  resolveVirtualConsultAmount,
+} from "@/src/lib/server/booking-pricing-store";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 import { finalizeInventorySaleForBilling } from "@/src/lib/services/billing";
 import { createStripeCheckoutSessionForReservation } from "@/src/lib/services/stripe";
 import { readSystemSettings } from "@/src/lib/server/clinic-store";
+import type { OnlinePaymentAccount } from "@/src/lib/clinic";
 import {
   resolveBookingPatientId,
   resolveAssignedDoctorUuid,
   validateSharedSlotOrThrow,
   type AppointmentCreatePayload,
 } from "@/src/lib/server/appointments-store";
-import { addOneHourSql, normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
+import { normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
+import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 const DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS =
   "Send the transfer to the clinic's bank account, then wait for staff verification. Your appointment stays unconfirmed until payment is marked as paid.";
 const FINALIZATION_WAIT_ATTEMPTS = 12;
 const FINALIZATION_WAIT_MS = 250;
 
-// All online consultation payments are processed by PayMongo:
+// All virtual consult payments are processed by PayMongo:
 //   - paymongo_gcash → QR Ph (currently routes everything via QR Ph; once
 //                      PayMongo activates GCash on the merchant account it
 //                      adds GCash alongside QR Ph — see paymongo.ts)
@@ -68,19 +74,19 @@ export type OnlineCheckoutBookingInput = Pick<
   "patientName" | "email" | "phone" | "doctorId" | "date" | "start" | "reason" | "patientStatus" | "type"
 >;
 
-function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { service?: string }) {
-  if (input.type === "Online") return ONLINE_CONSULTATION_FEE;
+async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { service?: string }) {
+  if (input.type === "Online") return resolveVirtualConsultAmount();
   if (input.type === "Clinic" && isProcedureServiceTitle(input.service)) {
-    return PROCEDURE_DOWNPAYMENT_AMOUNT;
+    return resolveProcedureReservationAmount();
   }
-  throw new HttpError(400, "Only online consultations or clinic procedure bookings can use online checkout.");
+  throw new HttpError(400, "Only virtual consults or clinic procedure bookings can use online checkout.");
 }
 
 function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string }) {
   if (input.type === "Online") {
     return {
-      description: `Online consultation on ${input.date}`,
-      lineItemName: "Online Consultation",
+      description: `Virtual consult on ${input.date}`,
+      lineItemName: "Virtual Consult",
     };
   }
 
@@ -91,7 +97,7 @@ function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string
   };
 }
 
-// Resolve the meeting link for a freshly confirmed Online consultation.
+// Resolve the meeting link for a freshly confirmed virtual consult.
 // Strategy: read the clinic-wide default meeting link saved in
 // system_settings.default_meeting_link. If the doctor hasn't configured one
 // yet, return null — the appointment is still created, but the UI surfaces a
@@ -104,6 +110,35 @@ async function resolveDefaultMeetingLink(): Promise<string | null> {
   const settings = await readSystemSettings();
   const link = settings.defaultMeetingLink?.trim() ?? "";
   return link.length > 0 ? link : null;
+}
+
+async function ensureOnlineAppointmentMeetingLink(
+  appointment: Appointment,
+): Promise<{ appointment: Appointment; meetingLink: string | null }> {
+  if (appointment.appointment_type !== "Online") {
+    return { appointment, meetingLink: null };
+  }
+
+  const existingLink = appointment.meeting_link?.trim() || null;
+  if (existingLink) {
+    return { appointment, meetingLink: existingLink };
+  }
+
+  const meetingLink = await resolveDefaultMeetingLink();
+  if (!meetingLink) {
+    return { appointment, meetingLink: null };
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("appointments")
+    .update({ meeting_link: meetingLink })
+    .eq("id", appointment.id)
+    .select()
+    .single<Appointment>();
+  if (error) throw error;
+
+  return { appointment: data, meetingLink };
 }
 
 function paymentMethodFromProvider(provider: string): PaymentMethod {
@@ -140,8 +175,33 @@ function coerceReservationType(
   };
 }
 
-function getManualTransferInstructions() {
-  return process.env.ONLINE_BANK_TRANSFER_INSTRUCTIONS ?? DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS;
+function formatManualPaymentInstructions(account: OnlinePaymentAccount | null, amount: number) {
+  if (!account) return process.env.ONLINE_BANK_TRANSFER_INSTRUCTIONS ?? DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS;
+
+  const provider = account.kind === "Bank"
+    ? account.bankName || account.label || "Bank transfer"
+    : account.label || account.kind;
+  const details = [
+    `Pay PHP ${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to ${provider}.`,
+    account.accountName ? `Account name: ${account.accountName}.` : "",
+    account.accountNumber ? `Account number: ${account.accountNumber}.` : "",
+    account.qrCodeUrl ? "Scan the QR code shown in the booking payment method." : "",
+    "Use the payment reference below and wait for clinic staff verification before your appointment is confirmed.",
+  ].filter(Boolean);
+
+  return details.join(" ");
+}
+
+async function resolveConfiguredPaymentAccount(accountId: string | undefined): Promise<OnlinePaymentAccount | null> {
+  const settings = await readSystemSettings();
+  const activeAccounts = settings.onlinePaymentAccounts.filter((account) => account.isActive);
+  if (!accountId) return activeAccounts.length === 1 ? activeAccounts[0] : null;
+
+  const account = activeAccounts.find((item) => item.id === accountId);
+  if (!account) {
+    throw new HttpError(400, "Please choose an available online payment method.");
+  }
+  return account;
 }
 
 function sleep(ms: number) {
@@ -220,6 +280,61 @@ function buildPaidBookingNotificationPayload(
   };
 }
 
+function resolveMeetingPlatform(meetingLink: string | null) {
+  if (!meetingLink) return "Video Call";
+  try {
+    const host = new URL(meetingLink).hostname.toLowerCase();
+    if (host.includes("zoom")) return "Zoom";
+    if (host.includes("meet.google") || host.includes("google.com")) return "Google Meet";
+    return "Video Call";
+  } catch {
+    return "Video Call";
+  }
+}
+
+async function ensureVirtualConsultIntake(
+  reservation: OnlineBookingReservation,
+  appointment: Appointment,
+  meetingLink: string | null,
+) {
+  if (appointment.appointment_type !== "Online") return;
+
+  const context = parseAppointmentContext(reservation.reason);
+  const concern = context.reason || context.service || reservation.reason || null;
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error: existingError } = await supabase
+    .from("online_consultations")
+    .select("id")
+    .eq("appointment_id", appointment.id)
+    .maybeSingle<{ id: string }>();
+  if (existingError) throw existingError;
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from("online_consultations")
+      .update({
+        platform: resolveMeetingPlatform(meetingLink),
+        meeting_link: meetingLink,
+        status: "Confirmed",
+      })
+      .eq("id", existing.id);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from("online_consultations")
+    .insert({
+      appointment_id: appointment.id,
+      concern,
+      file_urls: [],
+      platform: resolveMeetingPlatform(meetingLink),
+      meeting_link: meetingLink,
+      status: "Confirmed",
+    });
+  if (error) throw error;
+}
+
 async function notifyPaidBookingConfirmed(
   reservation: OnlineBookingReservation,
   appt: Appointment,
@@ -237,6 +352,7 @@ export async function createOnlineCheckoutSession(
   input: OnlineCheckoutBookingInput & {
     reservationId?: string;
     checkoutOption?: OnlineCheckoutOption;
+    paymentAccountId?: string;
     service?: string;
     procedureConsent?: ProcedureConsentPayload;
   },
@@ -277,10 +393,15 @@ export async function createOnlineCheckoutSession(
     actorUserId: actor.profile.role === "patient" ? actor.id : undefined,
   });
   stage("resolved-patient", { patientId });
-  const start_time = normalizeSqlTime(input.start);
-  const end_time = addOneHourSql(input.start);
+  const slot = await resolveSchedulableSlotForStart(doctorId, input.date, input.start, input.type, {
+    slotMinutes: input.type === "Clinic" && isProcedureServiceTitle(input.service)
+      ? PROCEDURE_SLOT_MINUTES
+      : CONSULTATION_SLOT_MINUTES,
+  });
+  const start_time = normalizeSqlTime(slot.start);
+  const end_time = slot.end;
   await getDoctor(doctorId);
-  const amount = resolveCheckoutAmount(input);
+  const amount = await resolveCheckoutAmount(input);
   const { description, lineItemName } = describeCheckout(input);
   const procedureConsent = input.type === "Clinic" && isProcedureServiceTitle(input.service)
     ? validateProcedureConsentPayload(input.procedureConsent, input.patientName)
@@ -289,13 +410,16 @@ export async function createOnlineCheckoutSession(
 
   const supabase = getSupabaseAdmin();
   const checkoutOption = input.checkoutOption ?? "paymongo_gcash";
+  const configuredPaymentAccount = checkoutOption === "bank_transfer"
+    ? await resolveConfiguredPaymentAccount(input.paymentAccountId)
+    : null;
 
   // Belt-and-suspenders for the activation rollout: the UI already disables
   // every option but `paymongo_gcash`, but a hand-crafted POST could still
   // smuggle in `paymongo_card` / `paymongo_bank` and would then 400 with a
   // confusing message from PayMongo. Reject early with a clear, user-facing
   // error and let the booking page show the "use QR Ph" hint.
-  if (!ENABLED_NEW_BOOKING_OPTIONS.has(checkoutOption)) {
+  if (checkoutOption !== "bank_transfer" && !ENABLED_NEW_BOOKING_OPTIONS.has(checkoutOption)) {
     throw new HttpError(
       400,
       "That payment method isn't available yet. Please choose QR Ph (it accepts GCash, Maya, and bank apps).",
@@ -351,7 +475,7 @@ export async function createOnlineCheckoutSession(
           url: null,
           reservation: coerceReservationType(updated, input.type),
           checkoutMode: "manual",
-          instructions: getManualTransferInstructions(),
+          instructions: formatManualPaymentInstructions(configuredPaymentAccount, normalizedExisting.amount),
           paymentReference,
         };
       }
@@ -446,7 +570,17 @@ export async function createOnlineCheckoutSession(
     .select()
     .single<OnlineBookingReservation>();
   if (isMissingReservationTypeColumn(reservationError) && input.type === "Online") {
-    const { appointment_type: _appointmentType, ...legacyReservationInsert } = reservationInsert;
+    const legacyReservationInsert = {
+      patient_id: reservationInsert.patient_id,
+      doctor_id: reservationInsert.doctor_id,
+      appointment_date: reservationInsert.appointment_date,
+      start_time: reservationInsert.start_time,
+      end_time: reservationInsert.end_time,
+      queue_number: reservationInsert.queue_number,
+      reason: reservationInsert.reason,
+      amount: reservationInsert.amount,
+      status: reservationInsert.status,
+    };
     const retry = await supabase
       .from("online_booking_reservations")
       .insert(legacyReservationInsert)
@@ -501,7 +635,7 @@ export async function createOnlineCheckoutSession(
         url: null,
         reservation: updated,
         checkoutMode: "manual",
-        instructions: getManualTransferInstructions(),
+        instructions: formatManualPaymentInstructions(configuredPaymentAccount, amount),
         paymentReference,
       };
     }
@@ -612,6 +746,7 @@ async function confirmReservationPayment(
 
   if (reservation.appointment_id) {
     const appt = await getAppointment(reservation.appointment_id);
+    const linkedAppointment = await ensureOnlineAppointmentMeetingLink(appt);
     const { data: payment } = await supabase
       .from("payments")
       .select("*")
@@ -620,7 +755,12 @@ async function confirmReservationPayment(
       .eq("provider_ref", reservation.payment_ref ?? "")
       .maybeSingle<Payment>();
     if (!payment) throw new HttpError(404, "Payment not found");
-    return { appointment: appt, payment };
+    await ensureVirtualConsultIntake(
+      reservation,
+      linkedAppointment.appointment,
+      linkedAppointment.meetingLink,
+    );
+    return { appointment: linkedAppointment.appointment, payment };
   }
 
   await validateSharedSlotOrThrow({
@@ -651,21 +791,9 @@ async function confirmReservationPayment(
   if (appointmentError) throw appointmentError;
   await linkProcedureConsentToAppointment(reservation.id, insertedAppointment.id);
 
-  const meetingLink = reservation.appointment_type === "Online"
-    ? await resolveDefaultMeetingLink()
-    : null;
-  const updatedAppointment = meetingLink
-    ? await (async () => {
-      const { data, error: updateAppointmentError } = await supabase
-        .from("appointments")
-        .update({ meeting_link: meetingLink })
-        .eq("id", insertedAppointment.id)
-        .select()
-        .single<Appointment>();
-      if (updateAppointmentError) throw updateAppointmentError;
-      return data;
-    })()
-    : insertedAppointment;
+  const linkedAppointment = await ensureOnlineAppointmentMeetingLink(insertedAppointment);
+  const updatedAppointment = linkedAppointment.appointment;
+  const meetingLink = linkedAppointment.meetingLink;
 
   const { data: payment, error: paymentError } = await supabase
     .from("payments")
@@ -691,6 +819,7 @@ async function confirmReservationPayment(
     .eq("id", reservation.id);
   if (reservationError) throw reservationError;
 
+  await ensureVirtualConsultIntake(reservation, updatedAppointment, meetingLink);
   await notifyPaidBookingConfirmed(reservation, updatedAppointment, meetingLink);
   await enqueueAppointmentTeamNotifications({
     appointment_id: updatedAppointment.id,

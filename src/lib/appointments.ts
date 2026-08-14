@@ -52,7 +52,7 @@ export type SlotStatus = {
 
 export type BlockedDayLookup = Record<string, { reason: string }>;
 
-export const MAX_PATIENTS_PER_HOUR = 5;
+export const MAX_PATIENTS_PER_HOUR = 1;
 
 export const DOCTORS: Doctor[] = [
   { id: "doctora-kulot-md", name: "Dr. Fatimah Al-Zahra T. Ditti", specialty: "Family Medicine and Aesthetic Medicine" },
@@ -60,14 +60,20 @@ export const DOCTORS: Doctor[] = [
 
 export const SLOT_TEMPLATES_BY_DOCTOR: Record<string, SlotTemplate[]> = {
   "doctora-kulot-md": [
-    { start: "08:00", end: "09:00", mode: "Both" },
-    { start: "09:00", end: "10:00", mode: "Both" },
-    { start: "10:00", end: "11:00", mode: "Both" },
-    { start: "11:00", end: "12:00", mode: "Both" },
-    { start: "13:00", end: "14:00", mode: "Both" },
-    { start: "14:00", end: "15:00", mode: "Both" },
-    { start: "15:00", end: "16:00", mode: "Both" },
-    { start: "16:00", end: "17:00", mode: "Both" },
+    { start: "09:00", end: "09:30", mode: "Both" },
+    { start: "09:30", end: "10:00", mode: "Both" },
+    { start: "10:00", end: "10:30", mode: "Both" },
+    { start: "10:30", end: "11:00", mode: "Both" },
+    { start: "11:00", end: "11:30", mode: "Both" },
+    { start: "11:30", end: "12:00", mode: "Both" },
+    { start: "12:00", end: "12:30", mode: "Both" },
+    { start: "12:30", end: "13:00", mode: "Both" },
+    { start: "13:00", end: "13:30", mode: "Both" },
+    { start: "13:30", end: "14:00", mode: "Both" },
+    { start: "14:00", end: "14:30", mode: "Both" },
+    { start: "14:30", end: "15:00", mode: "Both" },
+    { start: "15:00", end: "15:30", mode: "Both" },
+    { start: "15:30", end: "16:00", mode: "Both" },
   ],
 };
 
@@ -87,10 +93,14 @@ export function formatDisplayDate(date: string) {
 }
 
 export function formatDisplayTime(time: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(`2026-01-01T${time}:00`));
+  const [hoursText, minutesText = "00"] = time.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return time;
+
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${String(minutes).padStart(2, "0")} ${period}`;
 }
 
 export function formatRange(start: string, end: string) {
@@ -153,7 +163,7 @@ export function getSlotStatuses(
     } else if (typeConflict) {
       reason = `${activeType} bookings already occupy this shared slot`;
     } else if (isFull) {
-      reason = "Max of 5 patients reached";
+      reason = "Slot already booked";
     }
 
     return {

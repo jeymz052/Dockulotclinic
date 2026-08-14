@@ -44,6 +44,10 @@ function cmpAppt(a: AppointmentRecord, b: AppointmentRecord) {
   return a.queueNumber - b.queueNumber;
 }
 
+function formatAppointmentType(type: AppointmentRecord["type"]) {
+  return type === "Online" ? "Virtual Consult" : type;
+}
+
 export default function DoctorDashboard() {
   const { user, profile } = useRole();
   const name = profile?.full_name ?? user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Doctor";
@@ -83,7 +87,7 @@ export default function DoctorDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard href="/appointments" label="Today's Queue" value={todayQueue.length} helper="Patients waiting or checked in" tone="sky" icon={<FaUsers className="text-2xl" />} />
-        <MetricCard href="/consultations/history" label="Completed Today" value={completedToday} helper="Patients seen and finished" tone="teal" icon={<FaChevronRight className="text-2xl" />} />
+        <MetricCard href="/consultations/history" label="Completed Today" value={completedToday} helper="Patients seen and finished" tone="emerald" icon={<FaChevronRight className="text-2xl" />} />
         <MetricCard href="/consultations" label="Pending Notes" value={pendingNotes} helper="Consultations needing documentation" tone="amber" icon={<FaNotesMedical className="text-2xl" />} />
         <MetricCard href="/consultations/history" label="Total Consultations" value={totalSeen} helper="All completed appointments on record" tone="sky" icon={<FaChartSimple className="text-2xl" />} />
         <MetricCard href="/prescriptions" label="Prescriptions" value="Rx" helper="Create and review prescriptions" tone="cyan" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
@@ -93,22 +97,22 @@ export default function DoctorDashboard() {
       </div>
 
       {nextInQueue ? (
-        <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-neutral-200 bg-linear-to-br from-neutral-50/80 via-neutral-50/40 to-neutral-50/20 p-8 shadow-[0_28px_54px_rgba(17,17,17,0.18)] animate-pop-in transition hover:-translate-y-1">
-          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-neutral-300/25 to-neutral-200/15 blur-3xl" />
-          <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-neutral-200/20 to-neutral-100/10 blur-3xl" />
+          <section className="relative overflow-hidden rounded-[2.5rem] border-2 border-sky-100 bg-linear-to-br from-sky-50/80 via-white to-emerald-50/50 p-8 shadow-[0_28px_54px_rgba(14,165,233,0.14)] animate-pop-in transition hover:-translate-y-1">
+          <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-linear-to-br from-sky-300/25 to-blue-300/15 blur-3xl" />
+          <div className="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-linear-to-r from-emerald-200/20 to-teal-200/10 blur-3xl" />
           <div className="relative">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-4 py-2 mb-4">
-                  <span className="h-3 w-3 rounded-full bg-black animate-pulse" />
-                  <span className="text-xs font-bold text-neutral-700">NEXT IN QUEUE</span>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2">
+                  <span className="h-3 w-3 rounded-full bg-sky-500 animate-pulse" />
+                  <span className="text-xs font-bold text-sky-700">NEXT IN QUEUE</span>
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-neutral-900 mt-3">
                   {nextInQueue.patientName}
                 </h2>
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 font-bold text-neutral-700">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
                       #{nextInQueue.queueNumber}
                     </div>
                     <div>
@@ -117,8 +121,8 @@ export default function DoctorDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-lg">
-                      {nextInQueue.type === "Online" ? <FaVideo className="text-sm text-neutral-700" /> : <FaHospital className="text-sm text-neutral-700" />}
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full text-lg ${nextInQueue.type === "Online" ? "bg-sky-100 text-sky-700" : "bg-teal-100 text-teal-700"}`}>
+                      {nextInQueue.type === "Online" ? <FaVideo className="text-sm" /> : <FaHospital className="text-sm" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-neutral-900">{nextInQueue.start} · {nextInQueue.type}</p>
@@ -141,7 +145,7 @@ export default function DoctorDashboard() {
                     href={nextInQueue.meetingLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-neutral-400 to-neutral-400 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(17,17,17,0.3)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(17,17,17,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(14,165,233,0.28)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(14,165,233,0.36)]"
                   >
                     <FaVideo />
                     Join meeting
@@ -188,11 +192,11 @@ export default function DoctorDashboard() {
                 href={`/consultations`}
                 className={`group relative overflow-hidden flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-neutral-200 hover:bg-neutral-50/60 hover:shadow-[0_12px_28px_rgba(17,17,17,0.12)] animate-slide-in-left stagger-${Math.min(i + 1, 8)}`}
               >
-                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-linear-to-br from-neutral-300/10 to-neutral-200/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-linear-to-br from-sky-300/10 to-emerald-200/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex min-w-0 items-center gap-4">
                   <div
                     className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-base font-bold text-white ${
-                      appt.status === "Completed" ? "bg-linear-to-br from-neutral-300 to-neutral-400" : "bg-linear-to-br from-neutral-300 to-neutral-400"
+                      appt.status === "Completed" ? "bg-linear-to-br from-emerald-400 to-emerald-600" : appt.type === "Online" ? "bg-linear-to-br from-sky-400 to-blue-600" : "bg-linear-to-br from-teal-400 to-emerald-600"
                     }`}
                   >
                     {appt.queueNumber}
@@ -200,7 +204,7 @@ export default function DoctorDashboard() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-neutral-900 truncate">{appt.patientName}</p>
                     <p className="mt-1 text-xs text-neutral-500">
-                      {appt.start} · {appt.type}
+                      {appt.start} · {formatAppointmentType(appt.type)}
                       {appt.reason ? ` • ${getAppointmentPrimaryLabel(appt.reason, appt.type)}` : ""}
                     </p>
                   </div>
@@ -236,13 +240,13 @@ export default function DoctorDashboard() {
                 className={`group flex items-center justify-between gap-4 rounded-[1.25rem] border-2 border-transparent px-5 py-4 transition-all hover:border-neutral-200 hover:bg-neutral-50/60 hover:shadow-[0_8px_20px_rgba(17,17,17,0.08)] animate-slide-in-left stagger-${Math.min(i + 1, 6)}`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-neutral-300 to-neutral-400 text-white font-bold">
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white font-bold ${appt.type === "Online" ? "bg-linear-to-br from-sky-400 to-blue-600" : "bg-linear-to-br from-teal-400 to-emerald-600"}`}>
                     {appt.queueNumber}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-neutral-900 truncate">{appt.patientName}</p>
                     <p className="text-xs text-neutral-500">
-                      {formatDate(appt.date)} at {appt.start} · {appt.type}
+                      {formatDate(appt.date)} at {appt.start} · {formatAppointmentType(appt.type)}
                     </p>
                   </div>
                 </div>
@@ -259,7 +263,7 @@ export default function DoctorDashboard() {
           <ActionCard href="/consultations/history" title="Patient History" description="Review past visits and medical notes." tone="sky" icon={<FaClipboardList className="text-lg" />} />
           <ActionCard href="/schedules" title="Your Schedule" description="See the week and plan your day." tone="sky" icon={<FaCalendarDays className="text-lg" />} />
           <ActionCard href="/schedules/slots" title="Blocked Dates" description="Mark leave, closures, and unavailable days." tone="amber" icon={<FaPause className="text-lg" />} />
-          <ActionCard href="/consultations" title="Online Consultation" description="Start or join active virtual consultation rooms." tone="violet" icon={<FaVideo className="text-lg" />} />
+          <ActionCard href="/consultations" title="Virtual Consult" description="Start or join active virtual consult rooms." tone="violet" icon={<FaVideo className="text-lg" />} />
           <ActionCard href="/creator-content" title="Content Status" description="Review blog, vlog, and live schedule content." tone="indigo" icon={<FaFilePen className="text-lg" />} />
         </div>
       </SectionCard>

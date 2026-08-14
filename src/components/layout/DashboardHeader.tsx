@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FaArrowRightFromBracket,
   FaBars,
@@ -13,6 +14,7 @@ import {
   FaGear,
   FaInbox,
   FaRegUser,
+  FaXmark,
   FaTriangleExclamation,
   FaWandSparkles,
 } from "react-icons/fa6";
@@ -33,6 +35,7 @@ type NotificationItem = {
   id: string;
   channels: Array<"email" | "sms">;
   template: string;
+  payload: Record<string, unknown>;
   status: "queued" | "sent" | "failed";
   created_at: string;
   send_at: string;
@@ -197,22 +200,22 @@ function getNotificationTone(item: NotificationItem) {
   if (item.status === "failed") {
     return {
       card:
-        "border-transparent bg-transparent hover:bg-neutral-50",
-      label: "text-neutral-700",
-      iconWrap: "border-black/10 bg-white text-black",
-      action: "text-neutral-700 hover:text-neutral-900",
-      status: "text-neutral-700",
+        "border-transparent bg-transparent hover:bg-red-50",
+      label: "text-red-700",
+      iconWrap: "border-red-100 bg-red-50 text-red-700",
+      action: "text-red-700 hover:text-red-800",
+      status: "text-red-700",
     };
   }
 
   if (!item.is_read) {
     return {
       card:
-        "border-transparent bg-transparent hover:bg-neutral-50",
-      label: "text-neutral-700",
-      iconWrap: "border-black/10 bg-white text-black",
-      action: "text-neutral-700 hover:text-neutral-900",
-      status: "text-neutral-700",
+        "border-transparent bg-transparent hover:bg-sky-50",
+      label: "text-sky-700",
+      iconWrap: "border-sky-100 bg-sky-50 text-sky-700",
+      action: "text-sky-700 hover:text-sky-800",
+      status: "text-sky-700",
     };
   }
 
@@ -238,8 +241,10 @@ export function DashboardHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [notifPulse, setNotifPulse] = useState(false);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
   const notificationIdsRef = useRef<Set<string>>(new Set());
@@ -290,9 +295,7 @@ export function DashboardHeader({
     }
     setIsNotifOpen(false);
     setNotifPulse(false);
-    if (item.href) {
-      router.push(item.href);
-    }
+    setSelectedNotification({ ...item, is_read: true });
   }
 
   async function markAllRead() {
@@ -373,6 +376,10 @@ export function DashboardHeader({
   );
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       const target = event.target as Node;
       if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
@@ -421,6 +428,7 @@ export function DashboardHeader({
   }
 
   return (
+    <>
     <header className="sticky top-0 z-20 border-b border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8f8f7_72%)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
@@ -550,7 +558,18 @@ export function DashboardHeader({
                         return (
                           <div
                             key={item.id}
-                            className={`group flex gap-2.5 border-b border-neutral-100 py-2.5 last:border-b-0 ${tone.card}`}
+                            className={`group flex cursor-pointer gap-2.5 border-b border-neutral-100 py-2.5 last:border-b-0 ${tone.card}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
+                              void openNotification(item);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                void openNotification(item);
+                              }
+                            }}
                           >
                                 <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${tone.iconWrap}`}>
                                   <Icon className="h-3 w-3" />
@@ -615,6 +634,16 @@ export function DashboardHeader({
                                           Open
                                         </button>
                                       ) : null}
+                                      <button
+                                        type="button"
+                                        className="text-neutral-900 transition hover:text-neutral-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void openNotification(item);
+                                        }}
+                                      >
+                                        View
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
@@ -710,5 +739,173 @@ export function DashboardHeader({
         </div>
       </div>
     </header>
+    {isMounted && selectedNotification
+      ? createPortal(
+        <NotificationDetailsModal
+          item={selectedNotification}
+          onClose={() => setSelectedNotification(null)}
+          onOpenLink={(href) => {
+            setSelectedNotification(null);
+            router.push(href);
+          }}
+        />,
+        document.body,
+      )
+      : null}
+    </>
+  );
+}
+
+function formatFullDate(input: string | null) {
+  if (!input) return "Not set";
+  return new Date(input).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatPayloadValue(value: unknown) {
+  if (value == null || value === "") return "Not set";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return JSON.stringify(value);
+}
+
+function payloadLabel(key: string) {
+  const labels: Record<string, string> = {
+    appointment_id: "Appointment ref",
+    appointment_type: "Visit type",
+    appointment_date: "Date",
+    start_time: "Time",
+    patient_name: "Patient",
+    status: "Status",
+    amount: "Amount",
+    billing_id: "Billing ref",
+    prescription_id: "Prescription ref",
+    meeting_link: "Meeting link",
+  };
+  return labels[key] ?? key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function notificationDetailEntries(payload: Record<string, unknown>) {
+  const preferredOrder = [
+    "appointment_date",
+    "start_time",
+    "appointment_type",
+    "patient_name",
+    "status",
+    "amount",
+    "appointment_id",
+    "billing_id",
+    "prescription_id",
+    "meeting_link",
+  ];
+  const entries = Object.entries(payload).filter(([, value]) => value !== undefined && value !== null && value !== "");
+  return entries.sort(([left], [right]) => {
+    const leftIndex = preferredOrder.indexOf(left);
+    const rightIndex = preferredOrder.indexOf(right);
+    if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right);
+    if (leftIndex === -1) return 1;
+    if (rightIndex === -1) return -1;
+    return leftIndex - rightIndex;
+  });
+}
+
+function NotificationDetailsModal({
+  item,
+  onClose,
+  onOpenLink,
+}: {
+  item: NotificationItem;
+  onClose: () => void;
+  onOpenLink: (href: string) => void;
+}) {
+  const payloadEntries = notificationDetailEntries(item.payload ?? {}).slice(0, 5);
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+              {mapTemplateToLabel(item.template)}
+            </p>
+            <h2 className="mt-1 text-base font-black leading-snug text-neutral-950">
+              {item.subject}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition hover:bg-neutral-50"
+            aria-label="Close notification details"
+          >
+            <FaXmark className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="max-h-[18rem] overflow-y-auto px-4 py-2">
+          <div className="rounded-xl bg-neutral-50 px-3.5 py-3">
+            <p className="whitespace-pre-wrap text-sm leading-6 text-neutral-800">
+              {item.body}
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-semibold">
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-700">
+              {formatStatusLabel(item.status)}
+            </span>
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-700">
+              {formatChannels(item.channels)}
+            </span>
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-700">
+              {formatFullDate(item.created_at)}
+            </span>
+          </div>
+
+          {payloadEntries.length > 0 ? (
+            <div className="mt-3 rounded-xl bg-white ring-1 ring-neutral-100">
+              <div className="grid gap-1 px-3 py-2.5">
+                {payloadEntries.map(([key, value]) => (
+                  <div key={key} className="flex items-start justify-between gap-3 text-xs">
+                    <span className="shrink-0 font-bold text-neutral-400">{payloadLabel(key)}</span>
+                    <span className="min-w-0 break-words text-right font-semibold text-neutral-800">{formatPayloadValue(value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-4 pb-4 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+          >
+            Close
+          </button>
+          {item.href ? (
+            <button
+              type="button"
+              onClick={() => onOpenLink(item.href as string)}
+              className="rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800"
+            >
+              Open Related
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }

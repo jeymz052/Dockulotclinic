@@ -23,7 +23,8 @@ export async function DELETE(req: Request, { params }: Ctx) {
   try {
     const actor = await requireActor(req);
     const { id } = await params;
-    const appt = await cancelAppointment(id, actor);
+    const body = await req.json().catch(() => ({})) as { reason?: string };
+    const appt = await cancelAppointment(id, actor, body.reason);
     return ok({ appointment: appt });
   } catch (e) {
     return httpError(e);

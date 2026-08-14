@@ -172,7 +172,7 @@ export default function PatientProfileSettingsPage() {
             </div>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-50/85">
               <li>Use the same email address you use for bookings to avoid missed updates.</li>
-              <li>Review your appointment details before joining an online consultation.</li>
+              <li>Review your appointment details before joining a virtual consult.</li>
               <li>Contact clinic staff if your name, email, or mobile number needs to be corrected.</li>
             </ul>
           </div>

@@ -34,7 +34,7 @@ export const ROLE_PROFILES: RoleProfile[] = [
     role: "PATIENT",
     label: "Patient",
     shortLabel: "PT",
-    description: "Register, book, and pay for online consultations",
+    description: "Register, book, and pay for virtual consults",
   },
 ];
 

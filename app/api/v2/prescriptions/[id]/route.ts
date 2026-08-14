@@ -150,7 +150,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("prescriptions")
-      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(profiles(full_name,email)), doctors(profiles(full_name))")
+      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(dob, gender, profiles(full_name,email)), doctors(specialty, license_no, profiles(full_name))")
       .eq("id", id)
       .maybeSingle<
         PrescriptionPdfRow & {

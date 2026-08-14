@@ -6,6 +6,17 @@ import type {
   ScheduleMode,
 } from "@/src/lib/db/types";
 import { HttpError } from "@/src/lib/http";
+import {
+  CONSULTATION_SLOT_MINUTES,
+  MAX_BOOKINGS_PER_SLOT,
+  PROCEDURE_SLOT_MINUTES,
+  STANDARD_BOOKING_END,
+  STANDARD_BOOKING_START,
+  VIRTUAL_CONSULT_END,
+  VIRTUAL_CONSULT_START,
+  isClinicProcedureBookingDate,
+  isVirtualConsultBookingDate,
+} from "@/src/lib/clinic-schedule";
 
 export type Slot = {
   start: string;
@@ -33,30 +44,30 @@ const WEEKDAY_NAMES = [
 
 const BOOKING_RULES = {
   Clinic: {
-    days: [2, 4, 6, 5, 0],
-    start: "09:00",
-    end: "15:00",
-    label: "Clinic visits are available on Tuesday, Thursday, Saturday, Friday, and select Sundays from 9:00 AM to 3:00 PM.",
+    days: [0, 1, 2, 3, 4, 5],
+    start: STANDARD_BOOKING_START,
+    end: STANDARD_BOOKING_END,
+    label: "Clinic visits are available at FamMed Monday to Friday and RT Lim on 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
   },
   Online: {
     weekday: {
       days: [1, 2, 3, 4, 5],
-      start: "10:00",
-      end: "20:00",
-      label: "Telemedicine is available Monday to Friday from 10:00 AM to 8:00 PM.",
+      start: VIRTUAL_CONSULT_START,
+      end: VIRTUAL_CONSULT_END,
+      label: "Virtual consults are available from 8:00 AM to 8:00 PM on their own schedule.",
     },
     weekend: {
       days: [0, 6],
-      start: "10:00",
-      end: "18:00",
-      label: "Telemedicine is available Saturday and Sunday from 10:00 AM to 6:00 PM.",
+      start: VIRTUAL_CONSULT_START,
+      end: VIRTUAL_CONSULT_END,
+      label: "Virtual consults are available from 8:00 AM to 8:00 PM on their own schedule.",
     },
   },
   Both: {
-    days: [0, 6],
-    start: "10:00",
-    end: "15:00",
-    label: "Combined clinic and virtual slots are only available on limited weekend clinic days.",
+    days: [0, 1, 2, 3, 4, 5],
+    start: STANDARD_BOOKING_START,
+    end: STANDARD_BOOKING_END,
+    label: "Combined clinic and virtual slots follow Doc Kulot hours: Monday to Friday and 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
   },
 } as const;
 
@@ -140,18 +151,25 @@ function mergeScheduleModes(left: ScheduleMode, right: ScheduleMode): ScheduleMo
   return "Both";
 }
 
+function modeSupportsType(mode: ScheduleMode, type: "Clinic" | "Online") {
+  return mode === type;
+}
+
 export async function getSchedulableSlotsForDate(
   doctorId: string,
   date: string,
+  options: { slotMinutes?: number; type?: "Clinic" | "Online" } = {},
 ): Promise<SchedulableSlot[]> {
-  const schedules = await getDoctorSchedulesForDate(doctorId, date);
+  const schedules = await getDoctorSchedulesForDate(doctorId, date, {
+    type: options.type,
+  });
   if (schedules.length) {
     const bySlot = new Map<string, SchedulableSlot>();
     for (const schedule of schedules) {
       const slots = expandSlots(
         schedule.start_time,
         schedule.end_time,
-        schedule.slot_minutes,
+        options.slotMinutes ?? schedule.slot_minutes,
         schedule.schedule_mode ?? "Both",
       );
       for (const slot of slots) {
@@ -172,10 +190,38 @@ export async function getSchedulableSlotsForDate(
   return [];
 }
 
+export async function resolveSchedulableSlotForStart(
+  doctorId: string,
+  date: string,
+  start: string,
+  type: "Clinic" | "Online",
+  options: { slotMinutes?: number } = {},
+): Promise<SchedulableSlot> {
+  const normalizedStart = start.length === 5 ? `${start}:00` : start;
+  const slots = await getSchedulableSlotsForDate(doctorId, date, { ...options, type });
+  const slot = slots.find((candidate) => candidate.start === normalizedStart);
+  if (!slot) {
+    throw new HttpError(409, "Selected time is outside the saved schedule.");
+  }
+  if (!modeSupportsType(slot.mode, type)) {
+    throw new HttpError(409, `${slot.mode} schedule only`);
+  }
+  return slot;
+}
+
 export async function getDoctorSchedulesForDate(
   doctorId: string,
   date: string,
+  options: { type?: "Clinic" | "Online" } = {},
 ): Promise<DoctorSchedule[]> {
+  if (options.type === "Online") {
+    if (!isVirtualConsultBookingDate(date)) return [];
+  } else if (options.type === "Clinic") {
+    if (!isClinicProcedureBookingDate(date)) return [];
+  } else if (!isClinicProcedureBookingDate(date) && !isVirtualConsultBookingDate(date)) {
+    return [];
+  }
+
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("doctor_schedules")
@@ -185,7 +231,15 @@ export async function getDoctorSchedulesForDate(
     .eq("is_active", true)
     .order("start_time", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  const schedules = (data ?? []).filter(
+    (schedule) => schedule.schedule_mode === "Clinic" || schedule.schedule_mode === "Online",
+  );
+
+  const requestedType = options.type;
+  if (requestedType) {
+    return schedules.filter((schedule) => modeSupportsType(schedule.schedule_mode, requestedType));
+  }
+  return schedules;
 }
 
 export async function getUnavailabilityForDate(
@@ -243,11 +297,11 @@ export async function getAvailability(doctorId: string, date: string): Promise<S
     const past = isPastInClinicTime(date, s.start);
     const blocked = overlapsUnavailable(date, s.start, s.end, blocks);
     const taken = byStart.get(s.start) ?? 0;
-    const full = taken >= 5;
+    const full = taken >= MAX_BOOKINGS_PER_SLOT;
     return {
       start: s.start,
       end: s.end,
-      remaining: blocked || past ? 0 : Math.max(0, 5 - taken),
+      remaining: blocked || past ? 0 : Math.max(0, MAX_BOOKINGS_PER_SLOT - taken),
       disabled: past || blocked || full,
       reason: past ? "past" : blocked ? "blocked" : full ? "full" : undefined,
     };
@@ -271,6 +325,12 @@ export async function upsertSchedule(input: {
     throw new HttpError(400, "day_of_week must be 0..6");
   if (input.start_time >= input.end_time)
     throw new HttpError(400, "start_time must be before end_time");
+  if (![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes ?? CONSULTATION_SLOT_MINUTES)) {
+    throw new HttpError(400, "Slot minutes must be 30 for consultations or 60 for procedures.");
+  }
+  if (input.schedule_mode !== "Online" && !BOOKING_RULES.Both.days.includes(input.day_of_week as 0 | 1 | 2 | 3 | 4 | 5)) {
+    throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Friday and Sunday.");
+  }
   assertScheduleWithinPolicy(
     input.day_of_week,
     input.schedule_mode ?? "Both",
@@ -294,7 +354,7 @@ export async function upsertSchedule(input: {
       .update({
         start_time: input.start_time,
         end_time: input.end_time,
-        slot_minutes: input.slot_minutes ?? 60,
+        slot_minutes: input.slot_minutes ?? CONSULTATION_SLOT_MINUTES,
         schedule_mode: input.schedule_mode ?? "Both",
         is_active: input.is_active ?? true,
       })
@@ -312,7 +372,7 @@ export async function upsertSchedule(input: {
       day_of_week: input.day_of_week,
       start_time: input.start_time,
       end_time: input.end_time,
-      slot_minutes: input.slot_minutes ?? 60,
+      slot_minutes: input.slot_minutes ?? CONSULTATION_SLOT_MINUTES,
       schedule_mode: input.schedule_mode ?? "Both",
       is_active: input.is_active ?? true,
     })
@@ -353,6 +413,9 @@ export async function updateSchedule(
 
   if (nextStart && nextEnd && nextStart >= nextEnd) {
     throw new HttpError(400, "start_time must be before end_time");
+  }
+  if (input.slot_minutes && ![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes)) {
+    throw new HttpError(400, "Slot minutes must be 30 for consultations or 60 for procedures.");
   }
   if (nextStart && nextEnd) {
     assertScheduleWithinPolicy(effectiveDay, effectiveMode, nextStart, nextEnd);

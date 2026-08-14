@@ -175,7 +175,7 @@ export default function CalendarViewPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9f832e]">Calendar</p>
             <h1 className="mt-3 text-3xl font-black text-neutral-900">Shared weekly availability at a glance</h1>
             <p className="mt-3 text-sm leading-6 text-neutral-600">
-              Clinic visits follow the active clinic location schedule. Telemedicine runs Monday to Friday from 10:00 AM to 8:00 PM and weekends from 10:00 AM to 6:00 PM.
+              Booking follows the saved schedules: clinic/procedure visits use FamMed Monday-Friday and RT Lim 1st/3rd Sundays from 9:00 AM-4:00 PM, while virtual consults use a separate 8:00 AM-8:00 PM schedule.
             </p>
           </div>
 
@@ -297,10 +297,10 @@ export default function CalendarViewPage() {
         )}
 
         <div className="mt-6 flex flex-wrap gap-4 text-sm text-neutral-600">
-          <Legend color="bg-black" label="Clinic slot in use" />
-          <Legend color="bg-neutral-700" label="Online slot in use" />
-          <Legend color="bg-white border border-neutral-400" label="Open shared slot" />
-          <Legend color="bg-neutral-400" label="Unavailable or blocked" />
+          <Legend color="bg-orange-500" label="Clinic slot in use" />
+          <Legend color="bg-sky-500" label="Virtual consult slot in use" />
+          <Legend color="bg-green-500" label="Open shared slot" />
+          <Legend color="bg-red-500" label="Unavailable or blocked" />
         </div>
 
         {doctorsLoading || isLoading ? <p className="mt-4 text-sm text-neutral-500">Loading live calendar...</p> : null}
@@ -316,29 +316,29 @@ function CalendarCell({
 }) {
   if (!slot) {
     return (
-      <div className="rounded-[1.25rem] bg-neutral-50 px-3 py-3 text-neutral-800 shadow-sm ring-1 ring-inset ring-neutral-200">
+      <div className="rounded-[1.25rem] bg-slate-50 px-3 py-3 text-slate-600 shadow-sm ring-1 ring-inset ring-slate-200">
         <p className="text-xs font-semibold uppercase tracking-[0.16em]">Closed</p>
         <p className="mt-2 text-xs">No saved schedule for this day.</p>
       </div>
     );
   }
 
-  let classes = "bg-white text-neutral-700 border border-neutral-200";
+  let classes = "border border-green-600 bg-green-500 text-white";
   let summary = "Open";
-  let detail = slot.mode === "Both" ? "Available for clinic or online" : `${slot.mode} schedule`;
+  let detail = slot.mode === "Both" ? "Available for clinic or virtual consult" : `${formatSlotMode(slot.mode)} schedule`;
 
   if (slot.activeType === "Clinic") {
-    classes = "bg-neutral-100 text-neutral-900";
-    summary = `Clinic ${slot.bookedCount}/5`;
+    classes = "border border-orange-200 bg-orange-50 text-orange-800";
+    summary = "Clinic booked";
     detail = `Queue ${slot.queueNumbers.join(", ")}`;
   } else if (slot.activeType === "Online") {
-    classes = "bg-neutral-50 text-neutral-800 border border-neutral-300";
-    summary = `Online ${slot.bookedCount}/5`;
+    classes = "border border-sky-200 bg-sky-50 text-sky-800";
+    summary = "Virtual booked";
     detail = `Queue ${slot.queueNumbers.join(", ")}`;
   } else if (!slot.available) {
-    classes = "bg-neutral-200 text-neutral-500";
+    classes = "border border-red-200 bg-red-50 text-red-800";
     summary = slot.reason;
-    detail = slot.mode === "Both" ? "No booking allowed for this slot" : `${slot.mode} schedule`;
+    detail = slot.mode === "Both" ? "No booking allowed for this slot" : `${formatSlotMode(slot.mode)} schedule`;
   }
 
   return (
@@ -356,6 +356,10 @@ function Legend({ color, label }: { color: string; label: string }) {
       <span>{label}</span>
     </div>
   );
+}
+
+function formatSlotMode(mode: CalendarSlot["mode"]) {
+  return mode === "Online" ? "Virtual consult" : mode;
 }
 
 function shiftDate(date: string, days: number) {

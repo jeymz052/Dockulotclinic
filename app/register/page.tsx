@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import {
+  CIVIL_STATUS_OPTIONS,
   GENDER_OPTIONS,
+  calculatePatientAge,
+  formatPatientFullName,
+  splitPatientFullName,
   type PatientSignupFields,
   validatePatientSignupFields,
 } from "@/src/lib/patient-registration";
@@ -18,12 +22,20 @@ type PolicyModal = "terms" | "cancellation" | null;
 
 const INITIAL_FORM: AuthForm = {
   fullName: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  suffixName: "",
   email: "",
   password: "",
   phone: "",
   dateOfBirth: "",
   gender: "",
+  civilStatus: "",
   address: "",
+  religion: "",
+  occupation: "",
+  guardianName: "",
 };
 
 const INITIAL_CONSENTS: Record<ConsentKey, boolean> = {
@@ -134,9 +146,12 @@ export default function RegisterPage() {
         }>;
       };
       queueMicrotask(() => {
+        const nameParts = splitPatientFullName(parsed.formData?.patientName || "");
         setFormData((current) => ({
           ...current,
           fullName: current.fullName || parsed.formData?.patientName || "",
+          firstName: current.firstName || nameParts.firstName,
+          lastName: current.lastName || nameParts.lastName,
           email: current.email || parsed.formData?.email || "",
           phone: current.phone || parsed.formData?.phone || "",
         }));
@@ -160,7 +175,7 @@ export default function RegisterPage() {
 
   function validateSignupFields(values: AuthForm) {
     const errors: Partial<Record<keyof AuthForm | ConsentKey, string>> = {};
-    const normalizedName = values.fullName.trim();
+    const normalizedName = formatPatientFullName(values);
     const normalizedEmail = values.email.trim().toLowerCase();
     const normalizedPhone = values.phone.replace(/[\s()-]/g, "");
     const normalizedPassword = values.password;
@@ -168,6 +183,12 @@ export default function RegisterPage() {
 
     if (!/^[A-Za-z][A-Za-z\s'.-]{1,79}$/.test(normalizedName)) {
       errors.fullName = "Name should contain letters, spaces, apostrophes, dots, and hyphens only.";
+    }
+    if (!values.firstName.trim()) {
+      errors.firstName = "First name is required.";
+    }
+    if (!values.lastName.trim()) {
+      errors.lastName = "Family name is required.";
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       errors.email = "Enter a valid email address.";
@@ -190,6 +211,10 @@ export default function RegisterPage() {
     if (normalizedAddress.length < 8) {
       errors.address = "Address should be at least 8 characters.";
     }
+    const age = calculatePatientAge(values.dateOfBirth);
+    if (age != null && age < 18 && values.guardianName.trim().length < 2) {
+      errors.guardianName = "Guardian name is required for pediatric patients.";
+    }
     if (!consents.termsAccepted) {
       errors.termsAccepted = "You must agree to the terms and conditions.";
     }
@@ -204,9 +229,11 @@ export default function RegisterPage() {
     event.preventDefault();
 
     const normalizedEmail = formData.email.trim().toLowerCase();
+    const normalizedFullName = formatPatientFullName(formData);
 
     const signupFieldErrors = validateSignupFields({
       ...formData,
+      fullName: normalizedFullName,
       email: normalizedEmail,
     });
     if (Object.keys(signupFieldErrors).length > 0) {
@@ -217,6 +244,7 @@ export default function RegisterPage() {
 
     const signupError = validatePatientSignupFields({
       ...formData,
+      fullName: normalizedFullName,
       email: normalizedEmail,
     });
     if (signupError) {
@@ -237,11 +265,19 @@ export default function RegisterPage() {
             `/login?next=${encodeURIComponent(nextPath)}`,
           )}&verified=1`,
           data: {
-            full_name: formData.fullName,
+            full_name: normalizedFullName,
+            first_name: formData.firstName,
+            middle_name: formData.middleName,
+            last_name: formData.lastName,
+            suffix_name: formData.suffixName,
             phone: formData.phone,
             dob: formData.dateOfBirth,
             gender: formData.gender,
+            civil_status: formData.civilStatus,
             address: formData.address,
+            religion: formData.religion,
+            occupation: formData.occupation,
+            guardian_name: formData.guardianName,
           },
         },
       });
@@ -262,12 +298,20 @@ export default function RegisterPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fullName: formData.fullName,
+          fullName: normalizedFullName,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          suffixName: formData.suffixName,
           email: normalizedEmail,
           phone: formData.phone,
           dateOfBirth: formData.dateOfBirth,
           gender: formData.gender,
+          civilStatus: formData.civilStatus,
           address: formData.address,
+          religion: formData.religion,
+          occupation: formData.occupation,
+          guardianName: formData.guardianName,
         }),
       });
 
@@ -303,7 +347,7 @@ export default function RegisterPage() {
       />
       <div className="absolute inset-0 bg-black/60" />
 
-      <section className="relative z-10 w-full max-w-[400px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
+      <section className="relative z-10 my-4 w-full max-w-[560px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
         <div className="relative z-10">
           <div className="flex justify-center mb-2">
             <Image
@@ -322,22 +366,88 @@ export default function RegisterPage() {
             <p className="text-lg font-extrabold text-black">Create Account</p>
           </div>
 
-          <form className="space-y-1.5" onSubmit={handleSubmit}>
-            <Field label="Full Name">
-              <input
-                type="text"
-                value={formData.fullName}
-                onChange={(event) => updateField("fullName", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                placeholder="Juan Dela Cruz"
-                minLength={2}
-                maxLength={80}
-                pattern="[A-Za-z][A-Za-z\s'.-]{1,79}"
-                title="Use letters, spaces, apostrophes, dots, and hyphens only."
-                required
-              />
-              {fieldErrors.fullName ? <FieldError message={fieldErrors.fullName} /> : null}
-            </Field>
+          <form className="max-h-[72vh] space-y-1.5 overflow-y-auto pr-1" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <Field label="First Name">
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(event) => {
+                    const firstName = event.target.value;
+                    setFormData((current) => ({
+                      ...current,
+                      firstName,
+                      fullName: formatPatientFullName({ ...current, firstName }),
+                    }));
+                    setFieldErrors((current) => ({ ...current, firstName: undefined, fullName: undefined }));
+                    setFeedback(null);
+                  }}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Juan"
+                  required
+                />
+                {fieldErrors.firstName ? <FieldError message={fieldErrors.firstName} /> : null}
+              </Field>
+
+              <Field label="Family Name">
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(event) => {
+                    const lastName = event.target.value;
+                    setFormData((current) => ({
+                      ...current,
+                      lastName,
+                      fullName: formatPatientFullName({ ...current, lastName }),
+                    }));
+                    setFieldErrors((current) => ({ ...current, lastName: undefined, fullName: undefined }));
+                    setFeedback(null);
+                  }}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Dela Cruz"
+                  required
+                />
+                {fieldErrors.lastName ? <FieldError message={fieldErrors.lastName} /> : null}
+              </Field>
+
+              <Field label="Middle Name (optional)">
+                <input
+                  type="text"
+                  value={formData.middleName}
+                  onChange={(event) => {
+                    const middleName = event.target.value;
+                    setFormData((current) => ({
+                      ...current,
+                      middleName,
+                      fullName: formatPatientFullName({ ...current, middleName }),
+                    }));
+                    setFieldErrors((current) => ({ ...current, middleName: undefined, fullName: undefined }));
+                    setFeedback(null);
+                  }}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Middle name"
+                />
+              </Field>
+
+              <Field label="Suffix Name (optional)">
+                <input
+                  type="text"
+                  value={formData.suffixName}
+                  onChange={(event) => {
+                    const suffixName = event.target.value;
+                    setFormData((current) => ({
+                      ...current,
+                      suffixName,
+                      fullName: formatPatientFullName({ ...current, suffixName }),
+                    }));
+                    setFieldErrors((current) => ({ ...current, suffixName: undefined, fullName: undefined }));
+                    setFeedback(null);
+                  }}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Jr., III, optional"
+                />
+              </Field>
+            </div>
 
             <Field label="Phone">
               <div className="relative mt-0.5">
@@ -450,6 +560,37 @@ export default function RegisterPage() {
                 </div>
                 {fieldErrors.gender ? <FieldError message={fieldErrors.gender} /> : null}
               </Field>
+
+              <Field label="Civil Status (optional)">
+                <div className="relative mt-0.5">
+                  <select
+                    value={formData.civilStatus}
+                    onChange={(event) => updateField("civilStatus", event.target.value)}
+                    className={`w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 ${
+                      formData.civilStatus ? "text-black" : "text-black/35"
+                    }`}
+                  >
+                    <option value="" className="bg-white text-black">
+                      Select Civil Status
+                    </option>
+                    {CIVIL_STATUS_OPTIONS.map((option) => (
+                      <option key={option} value={option} className="bg-white text-black">
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {fieldErrors.civilStatus ? <FieldError message={fieldErrors.civilStatus} /> : null}
+              </Field>
             </div>
 
             <Field label="Address">
@@ -462,6 +603,39 @@ export default function RegisterPage() {
                 required
               />
               {fieldErrors.address ? <FieldError message={fieldErrors.address} /> : null}
+            </Field>
+
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <Field label="Religion (optional)">
+                <input
+                  type="text"
+                  value={formData.religion}
+                  onChange={(event) => updateField("religion", event.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Religion"
+                />
+              </Field>
+
+              <Field label="Occupation (optional)">
+                <input
+                  type="text"
+                  value={formData.occupation}
+                  onChange={(event) => updateField("occupation", event.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Occupation"
+                />
+              </Field>
+            </div>
+
+            <Field label="Name of Guardian (required for peds)">
+              <input
+                type="text"
+                value={formData.guardianName}
+                onChange={(event) => updateField("guardianName", event.target.value)}
+                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                placeholder="Parent or guardian name"
+              />
+              {fieldErrors.guardianName ? <FieldError message={fieldErrors.guardianName} /> : null}
             </Field>
 
             <div className="space-y-1.5 pt-0.5">

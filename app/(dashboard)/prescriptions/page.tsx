@@ -11,6 +11,7 @@ import {
   FaPaperPlane,
   FaPrint,
   FaPrescriptionBottleMedical,
+  FaQrcode,
   FaTrash,
   FaXmark,
 } from "react-icons/fa6";
@@ -36,8 +37,8 @@ type Prescription = {
   created_at: string;
   prescription_items?: Array<{ id?: string; medicine_name: string; dosage: string | null; frequency: string | null; duration: string | null; instructions: string | null; sort_order?: number | null }>;
   diagnoses?: DiagnosisRecord | null;
-  doctors?: { profiles?: { full_name?: string | null } | null } | null;
-  patients?: { profiles?: { full_name?: string; email?: string } | null } | null;
+  doctors?: { specialty?: string | null; license_no?: string | null; profiles?: { full_name?: string | null } | null } | null;
+  patients?: { dob?: string | null; gender?: string | null; profiles?: { full_name?: string; email?: string } | null } | null;
 };
 
 type PrescriptionItemDraft = {
@@ -526,79 +527,104 @@ function CapabilityCard({ icon, title, text }: { icon: ReactNode; title: string;
 
 function PrescriptionSheet({ prescription }: { prescription: Prescription }) {
   const medicines = prescription.prescription_items ?? [];
+  const prescribedAt = new Date(prescription.created_at);
+  const age = calculateAge(prescription.patients?.dob, prescribedAt);
+  const doctorName = prescription.doctors?.profiles?.full_name ?? "Dr. Fatimah Al-Zahra T. Ditti";
+  const doctorSpecialty = prescription.doctors?.specialty ?? "Family Medicine";
+  const prcNo = prescription.doctors?.license_no ?? "0141185";
+  const followUp = prescription.follow_up_date ?? prescription.diagnoses?.follow_up_date ?? "";
 
   return (
-    <div className="mt-5 overflow-hidden rounded-[2rem] border border-neutral-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
-      <div className="mx-auto max-w-4xl rounded-[1.75rem] border border-neutral-300 bg-white p-6 shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
-        <div className="flex items-start justify-between gap-4 border-b border-neutral-200 pb-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Doc Kulot</p>
-            <h3 className="mt-2 text-2xl font-black tracking-tight text-black">Prescription</h3>
-            <p className="mt-1 text-sm text-neutral-600">Family Medicine | Aesthetic Medicine</p>
+    <div className="mt-5 overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-100 p-4 shadow-sm">
+      <div className="mx-auto min-h-[62rem] w-full max-w-3xl bg-white px-8 py-7 text-black shadow-sm sm:px-11">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 place-items-center border-2 border-green-700 text-[10px] font-black leading-tight text-green-700">
+              PPD<br />Clinic
+            </div>
+            <p className="text-sm font-bold leading-tight text-green-700">
+              Connecting<br />Healthcare<br />to Everyone
+            </p>
           </div>
-          <div className="text-right text-sm text-neutral-600">
-            <p className="font-semibold text-black">{prescription.prescription_no}</p>
-            <p>{new Date(prescription.created_at).toLocaleDateString()}</p>
-            <p>{prescription.released_to_patient ? "Released to patient" : "For clinic use only"}</p>
+          <div className="flex items-center gap-2 text-right">
+            <div className="grid h-11 w-11 place-items-center bg-blue-700 text-lg font-black text-white">
+              TFD
+            </div>
+            <p className="text-xl font-black text-blue-800">TheFilipinoDoctor</p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <DetailBlock label="Patient" value={prescription.patients?.profiles?.full_name ?? "Patient"} />
-          <DetailBlock label="Doctor" value={prescription.doctors?.profiles?.full_name ?? "Dr. Fatimah Al-Zahra T. Ditti"} />
-          <DetailBlock label="Diagnosis" value={prescription.diagnoses?.diagnosis_text ?? "Not set"} />
-          <DetailBlock label="Treatment Plan" value={prescription.diagnoses?.treatment_plan ?? "Not set"} />
+        <div className="mt-8 text-center">
+          <div className="mx-auto grid h-28 w-28 place-items-center border-2 border-black bg-[linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%),linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%)] bg-[length:16px_16px] bg-[position:0_0,8px_8px] text-white">
+            <FaQrcode className="h-12 w-12 drop-shadow-[0_1px_0_rgba(0,0,0,1)]" aria-hidden="true" />
+          </div>
+          <p className="mt-2 text-xs font-semibold">(Scan QR code to validate)</p>
+          <p className="mt-1 text-sm font-bold">PRESCRIPTION ID: {prescription.prescription_no}</p>
+          <h3 className="mt-5 text-2xl font-black">{doctorName}</h3>
+          <p className="mt-1 text-base">{doctorSpecialty}</p>
+          <p className="mt-4 text-xl font-black">Doc Kulot Online Clinic</p>
+          <p className="mt-1 text-base">Zamboanga City, Zamboanga Del Sur</p>
         </div>
 
-        <div className="mt-6 rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Medicines</p>
-          <div className="mt-4 space-y-3">
-            {medicines.length > 0 ? (
-              medicines.map((rx, index) => (
-                <div key={`${prescription.id}-${rx.medicine_name}-${index}`} className="rounded-[1.25rem] border border-neutral-200 bg-white p-4">
-                  <p className="font-bold text-black">
-                    {index + 1}. {rx.medicine_name}
-                  </p>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    {[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(" | ") || "Dosage to be advised"}
-                  </p>
-                  {rx.instructions ? <p className="mt-3 text-sm leading-6 text-neutral-600">{rx.instructions}</p> : null}
+        <div className="mt-8 border-t border-neutral-300 pt-5">
+          <p className="text-right text-sm font-semibold">
+            Prescribed on: {formatPrescriptionDateTime(prescribedAt)}
+          </p>
+          <div className="mt-4">
+            <p className="text-lg">
+              Patient: <span className="font-black">{prescription.patients?.profiles?.full_name ?? "Patient"}</span>
+            </p>
+            <p className="mt-1 text-base">Age: {age != null ? `${age} years old` : "Not recorded"}</p>
+            <p className="mt-1 text-base">Gender: {prescription.patients?.gender ?? "Not recorded"}</p>
+          </div>
+        </div>
+
+        <div className="mt-7">
+          <p className="text-2xl font-black">Rx</p>
+          <div className="mt-5 space-y-6">
+            {medicines.length > 0 ? medicines.map((rx, index) => {
+              const formulation = [rx.dosage, rx.duration].filter(Boolean).join(" ");
+              const sig = [rx.frequency, rx.instructions].filter(Boolean).join(" ");
+              return (
+                <div key={`${prescription.id}-${rx.medicine_name}-${index}`} className="pl-4">
+                  <p className="text-xl font-black">{rx.medicine_name}</p>
+                  {formulation ? <p className="mt-1 text-base">{formulation}</p> : null}
+                  {sig ? <p className="mt-1 pl-8 text-base">Sig. {sig}</p> : null}
                 </div>
-              ))
-            ) : (
-              <div className="rounded-[1.25rem] border border-dashed border-neutral-300 bg-white px-4 py-6 text-sm text-neutral-500">
-                No medicine items added yet.
-              </div>
+              );
+            }) : (
+              <p className="pl-4 text-sm text-neutral-500">No medicine items added yet.</p>
             )}
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">General Instructions</p>
-            <p className="mt-2 text-sm leading-6 text-neutral-700">
-              {prescription.general_instructions ?? "No general instructions provided."}
-            </p>
-          </div>
-          <div className="rounded-[1.5rem] border border-neutral-200 bg-neutral-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Follow-up</p>
-            <p className="mt-2 text-sm leading-6 text-neutral-700">
-              {prescription.follow_up_date ?? prescription.diagnoses?.follow_up_date ?? "No follow-up date set."}
-            </p>
+        <div className="mt-10">
+          <p className="text-base font-bold italic">Note:</p>
+          <p className="mt-2 whitespace-pre-wrap text-base leading-7">
+            {[
+              prescription.general_instructions ?? "",
+              followUp ? `Follow-up: ${followUp}` : "",
+            ].filter(Boolean).join("\n") || "No additional notes."}
+          </p>
+        </div>
+
+        <div className="mt-20 flex justify-end">
+          <div className="w-72 text-center">
+            <div className="mx-auto h-12 border-b border-neutral-400" />
+            <p className="mt-2 text-base">Physician&apos;s Signature</p>
+            <p className="mt-1 text-base">PRC No.: {prcNo}</p>
           </div>
         </div>
 
-        <div className="mt-8 flex items-end justify-between gap-6 border-t border-dashed border-neutral-300 pt-6">
-          <div className="text-sm text-neutral-600">
-            <p className="font-semibold text-black">Physician signature</p>
-            <div className="mt-6 h-px w-64 bg-neutral-400" />
-            <p className="mt-2 font-semibold text-black">Dr. Fatimah Al-Zahra T. Ditti</p>
-            <p className="text-xs uppercase tracking-[0.16em] text-neutral-500">Doc Kulot</p>
-          </div>
-          <div className="text-right text-xs leading-5 text-neutral-500">
-            <p>Downloadable PDF format</p>
-            <p>Patient portal ready</p>
-            <p>Email release available from staff</p>
+        <div className="mt-10 text-center text-sm font-semibold">(End of Prescription)</div>
+
+        <div className="mt-6 border-t border-neutral-300 pt-4 text-[11px] leading-5 text-neutral-700">
+          <p>
+            <span className="font-bold">Note to User:</span> The information contained in this electronic prescription is provided by the prescriber. If any information is suspected to be altered, verify the original prescription record before dispensing.
+          </p>
+          <div className="mt-4 border-t border-neutral-300 pt-3 text-center">
+            <p className="font-bold">Powered by The Filipino Doctor</p>
+            <p className="mt-1 font-semibold">For Philippines use only.</p>
           </div>
         </div>
       </div>
@@ -606,12 +632,27 @@ function PrescriptionSheet({ prescription }: { prescription: Prescription }) {
   );
 }
 
-function DetailBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.25rem] border border-neutral-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-neutral-900">{value}</p>
-    </div>
-  );
+function calculateAge(dob?: string | null, at = new Date()) {
+  if (!dob) return null;
+  const birthDate = new Date(`${dob}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  let age = at.getFullYear() - birthDate.getFullYear();
+  const birthdayThisYear = new Date(at.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+  if (at < birthdayThisYear) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+function formatPrescriptionDateTime(date: Date) {
+  if (Number.isNaN(date.getTime())) return "Not recorded";
+  return `${date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })} ${date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  })} PHT`;
 }
 

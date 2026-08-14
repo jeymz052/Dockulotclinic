@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { FaCheck, FaClipboardCheck, FaFileSignature, FaPenNib, FaRotateLeft, FaTriangleExclamation } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
 
 type Consent = {
@@ -14,6 +15,7 @@ type Consent = {
   physician_name: string | null;
   physician_signature: string | null;
   physician_signed_at: string | null;
+  consent_snapshot?: Record<string, unknown> | null;
   aftercare_guide_title: string | null;
   signed_at: string;
 };
@@ -30,9 +32,92 @@ type StaffSignaturePadProps = {
   onSubmit: (signature: string) => void;
 };
 
-function formatDate(value: string | null | undefined) {
+const FALLBACK_CONSENT_POINTS = [
+  "The procedure, purpose, expected benefits, possible risks, side effects, complications, and possible alternatives were explained to the patient in a language they understand.",
+  "The patient understands that results vary and that no exact result, cosmetic outcome, or medical response can be guaranteed.",
+  "The patient understands that no medical or aesthetic procedure is completely risk-free, even when proper care is provided.",
+  "The patient had the opportunity to ask questions and confirms that their questions were answered before signing.",
+  "The patient signs voluntarily and authorizes Doc Kulot, Family Medicine Specialist and Aesthetic Medicine, to perform the selected procedure.",
+];
+
+function formatDate(value: string | null | undefined, options?: Intl.DateTimeFormatOptions) {
   if (!value) return "";
-  return new Date(value).toLocaleString("en-PH");
+  return new Date(value).toLocaleString("en-PH", options);
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
+function readSnapshotText(snapshot: Record<string, unknown> | null | undefined, key: string) {
+  const value = snapshot?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function SignatureImage({ src, alt, tall = false }: { src: string; alt: string; tall?: boolean }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`mt-2 w-full rounded-md border border-neutral-300 bg-white object-contain object-left ${tall ? "h-24" : "h-20"}`}
+    />
+  );
+}
+
+function StatusPill({ done, label }: { done: boolean; label: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.68rem] font-black uppercase tracking-[0.1em] ${done ? "border-black bg-black text-white" : "border-neutral-300 bg-white text-neutral-600"}`}>
+      {done ? <FaCheck className="h-3 w-3" /> : <span className="h-2 w-2 rounded-full border border-current" />}
+      {label}
+    </span>
+  );
+}
+
+function getConsentStatus(consent: Consent) {
+  if (!consent.witness_signature) return "Needs witness";
+  if (!consent.physician_signature) return "Needs physician";
+  return "Complete";
+}
+
+function getConsentProgress(consent: Consent) {
+  return [true, Boolean(consent.witness_signature), Boolean(consent.physician_signature)].filter(Boolean).length;
+}
+
+function ConsentQueueItem({
+  consent,
+  selected,
+  onSelect,
+}: {
+  consent: Consent;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const status = getConsentStatus(consent);
+  const progress = getConsentProgress(consent);
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-lg border p-3 text-left transition ${selected ? "border-black bg-black text-white shadow-sm" : "border-neutral-300 bg-white text-black hover:border-black hover:bg-neutral-50"}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`truncate text-sm font-black ${selected ? "text-white" : "text-black"}`}>{consent.patient_name}</p>
+          <p className={`mt-1 truncate text-xs font-semibold ${selected ? "text-neutral-200" : "text-neutral-600"}`}>{consent.procedure_name}</p>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-[0.08em] ${selected ? "border-white/40 text-white" : "border-neutral-300 text-neutral-700"}`}>
+          {progress}/3
+        </span>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className={`text-[0.68rem] font-black uppercase tracking-[0.1em] ${selected ? "text-neutral-200" : "text-neutral-600"}`}>{status}</span>
+        <span className={`text-[0.68rem] font-semibold ${selected ? "text-neutral-300" : "text-neutral-500"}`}>
+          {formatDate(consent.signed_at, { month: "short", day: "numeric" })}
+        </span>
+      </div>
+    </button>
+  );
 }
 
 function StaffSignaturePad({
@@ -59,7 +144,7 @@ function StaffSignaturePad({
     if (!context) return;
     context.lineCap = "round";
     context.lineJoin = "round";
-    context.strokeStyle = "#111827";
+    context.strokeStyle = "#000000";
     context.lineWidth = 2.4 * ratio;
   }
 
@@ -127,23 +212,25 @@ function StaffSignaturePad({
 
   if (completedSignature) {
     return (
-      <div className="rounded-[0.85rem] border border-[#d9af72] bg-white p-3">
-        <h3 className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#9a5f19]">{label}</h3>
-        <img src={completedSignature} alt={`${label} signature`} className="mt-2 h-20 w-full rounded-md border border-[#ead6b6] object-contain object-left" />
-        <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Printed Name: {completedName}</p>
-        <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Date: {formatDate(completedAt)}</p>
+      <div className="border border-neutral-300 bg-white p-4">
+        <h3 className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-black">{label}</h3>
+        <SignatureImage src={completedSignature} alt={`${label} signature`} />
+        <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Printed Name: {completedName}</p>
+        <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Date: {formatDate(completedAt)}</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-[0.85rem] border border-[#d9af72] bg-white p-3">
+    <div className="border border-neutral-300 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#9a5f19]">{label}</h3>
-          <p className="mt-1 text-[0.72rem] font-semibold leading-5 text-slate-500">{helper}</p>
+          <h3 className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-black">{label}</h3>
+          <p className="mt-1 text-[0.74rem] font-semibold leading-5 text-neutral-600">{helper}</p>
         </div>
-        <button type="button" onClick={clearSignature} disabled={disabled || !hasSignature} className="rounded-full border border-slate-300 px-3 py-1 text-[0.68rem] font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45">Clear</button>
+        <button type="button" onClick={clearSignature} disabled={disabled || !hasSignature} aria-label={`Clear ${label.toLowerCase()}`} title={`Clear ${label.toLowerCase()}`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-neutral-300 text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40">
+          <FaRotateLeft className="h-3.5 w-3.5" />
+        </button>
       </div>
       <canvas
         ref={canvasRef}
@@ -153,24 +240,176 @@ function StaffSignaturePad({
         onPointerUp={endSignature}
         onPointerCancel={endSignature}
         onPointerLeave={endSignature}
-        className="mt-2 h-24 w-full touch-none rounded-md border border-dashed border-[#d7b98d] bg-white"
+        className="mt-3 h-24 w-full touch-none rounded-md border border-dashed border-neutral-400 bg-white"
       />
-      <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Printed Name: {printedName || "Signed-in staff"}</p>
-      <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Date: {new Date().toLocaleDateString("en-PH")}</p>
-      <button type="button" disabled={disabled || saving || !hasSignature} onClick={submitSignature} className="mt-3 w-full rounded-full bg-slate-950 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300">
-        {saving ? "Saving..." : `Save ${label.toLowerCase()}`}
+      <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Printed Name: {printedName || "Signed-in staff"}</p>
+      <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Date: {new Date().toLocaleDateString("en-PH")}</p>
+      <button type="button" disabled={disabled || saving || !hasSignature} onClick={submitSignature} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300">
+        <FaPenNib className="h-3.5 w-3.5" />
+        {saving ? "Saving..." : `Complete ${label.toLowerCase()}`}
       </button>
     </div>
+  );
+}
+
+function ConsentDocument({
+  consent,
+  printedName,
+  isDoctor,
+  saving,
+  onSign,
+}: {
+  consent: Consent;
+  printedName: string;
+  isDoctor: boolean;
+  saving: boolean;
+  onSign: (signature: string) => void;
+}) {
+  const snapshot = consent.consent_snapshot ?? {};
+  const consentTitle = readSnapshotText(snapshot, "consentTitle") || "Patient Consent Form";
+  const consentSummary = readSnapshotText(snapshot, "consentSummary") || "Procedure patients must complete and sign the consent form before treatment.";
+  const consentPoints = asStringArray(snapshot.consentBullets).length ? asStringArray(snapshot.consentBullets) : FALLBACK_CONSENT_POINTS;
+  const signatureName = readSnapshotText(snapshot, "signatureName") || consent.patient_name;
+  const isWitnessDone = Boolean(consent.witness_signature);
+  const isPhysicianDone = Boolean(consent.physician_signature);
+
+  return (
+    <article className="overflow-hidden rounded-lg border border-neutral-300 bg-white shadow-sm">
+      <div className="border-b border-neutral-300 bg-white p-4 sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[0.68rem] font-black uppercase tracking-[0.24em] text-neutral-600">Informed Procedure Consent</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-black">{consent.patient_name}</h2>
+            <p className="mt-1 text-sm font-semibold text-neutral-700">{consent.procedure_name}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <StatusPill done label="Patient signed" />
+            <StatusPill done={isWitnessDone} label="Witness" />
+            <StatusPill done={isPhysicianDone} label="Physician" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr),20rem]">
+        <div className="p-4 sm:p-6">
+          <div className="mx-auto max-w-3xl border border-neutral-400 bg-white p-5 text-black sm:p-7">
+            <div className="border-b-2 border-black pb-4 text-center">
+              <p className="text-2xl font-black uppercase tracking-[0.08em]">{consentTitle}</p>
+              <p className="mt-2 text-[0.72rem] font-black uppercase tracking-[0.18em] text-neutral-700">Informed consent for medical / aesthetic procedure</p>
+            </div>
+
+            <section className="mt-5 grid gap-3 border-b border-neutral-300 pb-5 text-[0.82rem] leading-6 text-neutral-800 sm:grid-cols-2">
+              <p><span className="font-black text-black">Patient:</span> {consent.patient_name}</p>
+              <p><span className="font-black text-black">Procedure:</span> {consent.procedure_name}</p>
+              <p><span className="font-black text-black">Date signed:</span> {formatDate(consent.signed_at, { month: "short", day: "numeric", year: "numeric" })}</p>
+              <p><span className="font-black text-black">Aftercare:</span> {consent.aftercare_guide_title ?? "Not attached"}</p>
+            </section>
+
+            <section className="mt-5">
+              <h3 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Consent Statement</h3>
+              <p className="mt-3 text-[0.84rem] leading-6 text-neutral-800">
+                I, <span className="font-black text-black">{consent.patient_name}</span>, voluntarily give consent to undergo <span className="font-black text-black">{consent.procedure_name}</span> to be performed by Doc Kulot, Family Medicine Specialist and Aesthetic Medicine.
+              </p>
+              <p className="mt-3 text-[0.84rem] leading-6 text-neutral-800">{consentSummary}</p>
+            </section>
+
+            <section className="mt-5">
+              <h3 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Patient Acknowledgements</h3>
+              <ol className="mt-3 space-y-2 text-[0.82rem] leading-6 text-neutral-800">
+                {consentPoints.map((point, index) => (
+                  <li key={`${point}-${index}`} className="grid grid-cols-[1.4rem,1fr] gap-2">
+                    <span className="font-black text-black">{index + 1}.</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {consent.aftercare_guide_title ? (
+              <section className="mt-5 border border-neutral-300 p-3">
+                <h3 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Aftercare Acknowledgement</h3>
+                <p className="mt-2 text-[0.82rem] leading-6 text-neutral-800">The patient reviewed and acknowledged the procedure-specific aftercare guide: <span className="font-black text-black">{consent.aftercare_guide_title}</span>.</p>
+              </section>
+            ) : null}
+
+            <section className="mt-6 grid gap-3 border-t-2 border-black pt-5 lg:grid-cols-3">
+              <div className="border border-neutral-300 p-3">
+                <h3 className="text-[0.68rem] font-black uppercase tracking-[0.16em]">Patient Signature</h3>
+                <SignatureImage src={consent.patient_signature} alt={`${consent.patient_name} patient signature`} tall />
+                <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Printed Name: {signatureName}</p>
+                <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Date: {formatDate(consent.signed_at)}</p>
+              </div>
+
+              <StaffSignaturePad
+                label="Witness Signature"
+                helper={isDoctor ? "Pending clinic secretary / witness completion." : "Review the consent statement, then sign as clinic witness."}
+                printedName={printedName}
+                completedName={consent.witness_name}
+                completedSignature={consent.witness_signature}
+                completedAt={consent.witness_signed_at}
+                disabled={isDoctor}
+                saving={saving}
+                onSubmit={onSign}
+              />
+
+              <StaffSignaturePad
+                label="Physician Signature"
+                helper={isDoctor ? "Review the full consent, then complete the physician section." : "Pending Doc Kulot / attending physician completion."}
+                printedName={printedName}
+                completedName={consent.physician_name}
+                completedSignature={consent.physician_signature}
+                completedAt={consent.physician_signed_at}
+                disabled={!isDoctor}
+                saving={saving}
+                onSubmit={onSign}
+              />
+            </section>
+          </div>
+        </div>
+
+        <aside className="border-t border-neutral-300 bg-neutral-50 p-4 lg:border-l lg:border-t-0">
+          <h3 className="flex items-center gap-2 text-[0.72rem] font-black uppercase tracking-[0.16em] text-black">
+            <FaClipboardCheck className="h-4 w-4" />
+            Completion Flow
+          </h3>
+          <div className="mt-4 space-y-3">
+            <div className="border border-neutral-300 bg-white p-3">
+              <p className="text-sm font-black text-black">1. Patient consent</p>
+              <p className="mt-1 text-xs leading-5 text-neutral-600">Patient reviewed the consent statement, aftercare, and signed on booking.</p>
+            </div>
+            <div className={`border p-3 ${isWitnessDone ? "border-black bg-white" : "border-neutral-300 bg-white"}`}>
+              <p className="text-sm font-black text-black">2. Witness review</p>
+              <p className="mt-1 text-xs leading-5 text-neutral-600">{isWitnessDone ? `${consent.witness_name} signed ${formatDate(consent.witness_signed_at)}.` : "Clinic witness confirms the patient consent is complete."}</p>
+            </div>
+            <div className={`border p-3 ${isPhysicianDone ? "border-black bg-white" : "border-neutral-300 bg-white"}`}>
+              <p className="text-sm font-black text-black">3. Physician completion</p>
+              <p className="mt-1 text-xs leading-5 text-neutral-600">{isPhysicianDone ? `${consent.physician_name} signed ${formatDate(consent.physician_signed_at)}.` : "Physician reviews the signed consent before procedure completion."}</p>
+            </div>
+          </div>
+          {isDoctor && !isWitnessDone ? (
+            <p className="mt-4 flex gap-2 border border-neutral-300 bg-white p-3 text-xs font-semibold leading-5 text-neutral-700">
+              <FaTriangleExclamation className="mt-0.5 h-4 w-4 shrink-0 text-black" />
+              Witness signature is still pending. The physician can review the consent here, but the witness section must also be completed.
+            </p>
+          ) : null}
+        </aside>
+      </div>
+    </article>
   );
 }
 
 export default function ProcedureConsentRegister() {
   const { accessToken, role, profile } = useRole();
   const [consents, setConsents] = useState<Consent[]>([]);
+  const [selectedConsentId, setSelectedConsentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const isDoctor = role === "DOCTOR";
   const printedName = profile?.full_name ?? "";
+  const selectedConsent =
+    consents.find((consent) => consent.id === selectedConsentId)
+    ?? consents[0]
+    ?? null;
 
   useEffect(() => {
     if (!accessToken) return;
@@ -184,7 +423,11 @@ export default function ProcedureConsentRegister() {
         });
         const payload = await response.json().catch(() => ({})) as { consents?: Consent[]; message?: string };
         if (!response.ok) throw new Error(payload.message ?? "Unable to load procedure consents.");
-        if (active) setConsents(payload.consents ?? []);
+        if (active) {
+          const nextConsents = payload.consents ?? [];
+          setConsents(nextConsents);
+          setSelectedConsentId((current) => current && nextConsents.some((consent) => consent.id === current) ? current : nextConsents[0]?.id ?? null);
+        }
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : "Unable to load procedure consents.");
       }
@@ -209,6 +452,7 @@ export default function ProcedureConsentRegister() {
       const payload = await response.json().catch(() => ({})) as { consent?: Consent; message?: string };
       if (!response.ok || !payload.consent) throw new Error(payload.message ?? "Unable to save signature.");
       setConsents((current) => current.map((item) => item.id === consent.id ? payload.consent! : item));
+      setSelectedConsentId(consent.id);
     } catch (signError) {
       setError(signError instanceof Error ? signError.message : "Unable to save signature.");
     } finally {
@@ -217,65 +461,59 @@ export default function ProcedureConsentRegister() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 pb-8">
-      <section className="rounded-[1.4rem] border border-[#e5c999] bg-[#fff8ec] p-5 shadow-sm">
-        <p className="text-[0.68rem] font-black uppercase tracking-[0.24em] text-[#8a3b07]">Clinic Documents</p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Procedure Consent Register</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Open each signed patient consent and complete the matching witness or physician section.</p>
+    <div className="mx-auto max-w-6xl space-y-5 pb-8">
+      <section className="rounded-lg border border-neutral-300 bg-white p-5 shadow-sm">
+        <p className="text-[0.68rem] font-black uppercase tracking-[0.24em] text-neutral-600">Clinic Documents</p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-black">Procedure Consent Register</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">Select one patient consent from the queue, review the full document, then complete the witness or physician signature section.</p>
+          </div>
+          <span className="inline-flex w-max items-center gap-2 rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-neutral-700">
+            <FaFileSignature className="h-3.5 w-3.5" />
+            {consents.length} record{consents.length === 1 ? "" : "s"}
+          </span>
+        </div>
       </section>
 
-      {error ? <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p> : null}
+      {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p> : null}
 
-      <div className="space-y-4">
-        {consents.map((consent) => (
-          <article key={consent.id} className="rounded-[1.2rem] border border-[#e5c999] bg-[#fff8ec] p-4 shadow-sm">
-            <div className="flex flex-col gap-1 border-b border-[#ead6b6] pb-3 sm:flex-row sm:items-end sm:justify-between">
+      {consents.length ? (
+        <div className="grid gap-5 lg:grid-cols-[20rem,minmax(0,1fr)]">
+          <aside className="h-fit rounded-lg border border-neutral-300 bg-neutral-50 p-3 lg:sticky lg:top-24">
+            <div className="flex items-center justify-between gap-3 px-1 pb-3">
               <div>
-                <p className="text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#8a3b07]">{consent.procedure_name}</p>
-                <h2 className="mt-1 text-xl font-black text-slate-950">{consent.patient_name}</h2>
+                <h2 className="text-sm font-black text-black">Consent Queue</h2>
+                <p className="mt-1 text-xs font-semibold text-neutral-500">Only the selected form opens.</p>
               </div>
-              <p className="text-xs font-semibold text-slate-500">Patient signed {formatDate(consent.signed_at)}</p>
+              <span className="rounded-full border border-neutral-300 bg-white px-2.5 py-1 text-[0.68rem] font-black text-neutral-700">{consents.length}</span>
             </div>
-
-            {consent.aftercare_guide_title ? <p className="mt-3 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-slate-600">Aftercare acknowledged: {consent.aftercare_guide_title}</p> : null}
-
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
-              <div className="rounded-[0.85rem] border border-[#d9af72] bg-white p-3">
-                <h3 className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#9a5f19]">Patient Signature</h3>
-                <img src={consent.patient_signature} alt={`${consent.patient_name} patient signature`} className="mt-2 h-24 w-full rounded-md border border-[#ead6b6] object-contain object-left" />
-                <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Printed Name: {consent.patient_name}</p>
-                <p className="mt-2 border-b border-slate-300 pb-1 text-[0.72rem] font-semibold text-slate-700">Date: {formatDate(consent.signed_at)}</p>
-              </div>
-
-              <StaffSignaturePad
-                label="Witness Signature"
-                helper={isDoctor ? "To be completed by the clinic secretary or witness." : "Sign this box as the clinic secretary / witness."}
-                printedName={printedName}
-                completedName={consent.witness_name}
-                completedSignature={consent.witness_signature}
-                completedAt={consent.witness_signed_at}
-                disabled={isDoctor}
-                saving={savingId === consent.id}
-                onSubmit={(signature) => sign(consent, signature)}
-              />
-
-              <StaffSignaturePad
-                label="Physician Signature"
-                helper={isDoctor ? "Sign this box as Doc Kulot / attending physician." : "To be completed by Doc Kulot."}
-                printedName={printedName}
-                completedName={consent.physician_name}
-                completedSignature={consent.physician_signature}
-                completedAt={consent.physician_signed_at}
-                disabled={!isDoctor}
-                saving={savingId === consent.id}
-                onSubmit={(signature) => sign(consent, signature)}
-              />
+            <div className="max-h-[34rem] space-y-2 overflow-y-auto pr-1">
+              {consents.map((consent) => (
+                <ConsentQueueItem
+                  key={consent.id}
+                  consent={consent}
+                  selected={selectedConsent?.id === consent.id}
+                  onSelect={() => setSelectedConsentId(consent.id)}
+                />
+              ))}
             </div>
-          </article>
-        ))}
-      </div>
+          </aside>
 
-      {!consents.length ? <div className="rounded-[1.2rem] border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">No procedure consent records are waiting for review.</div> : null}
+          {selectedConsent ? (
+            <ConsentDocument
+              key={selectedConsent.id}
+              consent={selectedConsent}
+              printedName={printedName}
+              isDoctor={isDoctor}
+              saving={savingId === selectedConsent.id}
+              onSign={(signature) => sign(selectedConsent, signature)}
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center text-sm text-neutral-500">No procedure consent records are waiting for review.</div>
+      )}
     </div>
   );
 }

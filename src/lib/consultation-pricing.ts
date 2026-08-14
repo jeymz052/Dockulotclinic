@@ -12,19 +12,19 @@ export const FOLLOW_UP_CLINIC_CONSULTATION_FEE = 300;
 export const ONLINE_CONSULTATION_FEE = 800;
 export const PROCEDURE_DOWNPAYMENT_AMOUNT = 1000;
 
-export const CLINIC_CONSULTATION_HOURLY_RATE = NEW_PATIENT_CLINIC_CONSULTATION_FEE;
-export const ONLINE_CONSULTATION_HOURLY_RATE = ONLINE_CONSULTATION_FEE;
+export const DEFAULT_CLINIC_CONSULTATION_FEE = NEW_PATIENT_CLINIC_CONSULTATION_FEE;
+export const DEFAULT_ONLINE_CONSULTATION_FEE = ONLINE_CONSULTATION_FEE;
 
 export function normalizeConfiguredClinicConsultationRate(value: number) {
   return Number.isFinite(value) && value > 0
     ? value
-    : CLINIC_CONSULTATION_HOURLY_RATE;
+    : DEFAULT_CLINIC_CONSULTATION_FEE;
 }
 
 export function normalizeConfiguredOnlineConsultationRate(value: number) {
   return Number.isFinite(value) && value > 0
     ? value
-    : ONLINE_CONSULTATION_HOURLY_RATE;
+    : DEFAULT_ONLINE_CONSULTATION_FEE;
 }
 
 export function resolveClinicConsultationFee(input: {
@@ -39,6 +39,12 @@ export function resolveClinicConsultationFee(input: {
   if (input.consultKind === "FirstConsult") {
     return NEW_PATIENT_CLINIC_CONSULTATION_FEE;
   }
+  if (input.patientCategory === "Regular" || input.patientCategory === "OldRecord") {
+    return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  }
+  if (input.patientStatus === "Existing") {
+    return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  }
   if (input.hasPriorClinicConsultation) {
     return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
   }
@@ -51,11 +57,6 @@ export function getAppointmentDurationMinutes(start: string, end: string) {
 
 export function getAppointmentDurationHours(start: string, end: string) {
   return getAppointmentDurationMinutes(start, end) / 60;
-}
-
-export function calculateConsultationCharge(hourlyRate: number, start: string, end: string) {
-  const hours = getAppointmentDurationHours(start, end);
-  return Math.round(hourlyRate * hours * 100) / 100;
 }
 
 export function calculateOnlineConsultationCharge(start: string, end: string) {

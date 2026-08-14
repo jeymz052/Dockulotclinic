@@ -9,16 +9,12 @@ import type {
   Payment,
   PaymentMethod,
 } from "@/src/lib/db/types";
-import { getAppointment, getDoctor } from "@/src/lib/services/booking";
+import { getAppointment } from "@/src/lib/services/booking";
 import { enqueueNotification } from "@/src/lib/services/notification";
 import {
   FOLLOW_UP_CLINIC_CONSULTATION_FEE,
-  NEW_PATIENT_CLINIC_CONSULTATION_FEE,
-  formatDurationLabel,
-  normalizeConfiguredClinicConsultationRate,
   resolveClinicConsultationFee,
 } from "@/src/lib/consultation-pricing";
-import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 
 export type BillingItemInput = {
   pricing_id?: string | null;
@@ -31,14 +27,8 @@ export type BillingItemInput = {
 const ALLOWED_BILLING_STATUSES = new Set<BillingStatus>(["Draft", "Issued", "Paid", "Void"]);
 const ALLOWED_DISCOUNT_KINDS = new Set<DiscountKind>(["None", "Manual", "SeniorCitizen", "PWD"]);
 
-const POS_ALLOWED_CATEGORIES = new Set(["Consultation", "Lab", "Medicine", "Procedure", "Other"]);
-const POS_ALLOWED_METHODS = new Set<PaymentMethod>(["Cash", "QR", "Card", "BankTransfer"]);
-
-export type PosCheckoutOption = "paymongo_qr" | "paymongo_card" | "paymongo_bank";
-
-const ENABLED_POS_CHECKOUT_OPTIONS: ReadonlySet<PosCheckoutOption> = new Set([
-  "paymongo_qr",
-]);
+const POS_ALLOWED_CATEGORIES = new Set(["Lab", "Medicine", "Procedure", "Other"]);
+const POS_ALLOWED_METHODS = new Set<PaymentMethod>(["Cash"]);
 
 // RA 9994 / RA 10754: Senior Citizens and PWDs receive a 20% discount and
 // are exempt from VAT on the same transaction. We round to centavos.
@@ -46,18 +36,6 @@ const SC_PWD_DISCOUNT_RATE = 0.2;
 
 function round2(value: number) {
   return Math.round(value * 100) / 100;
-}
-
-function posMethodFromCheckoutOption(option: PosCheckoutOption): PaymentMethod {
-  if (option === "paymongo_card") return "Card";
-  if (option === "paymongo_bank") return "BankTransfer";
-  return "QR";
-}
-
-function posPaymongoMethodGroup(option: PosCheckoutOption): "gcash" | "card" | "bank" {
-  if (option === "paymongo_card") return "card";
-  if (option === "paymongo_bank") return "bank";
-  return "gcash";
 }
 
 export async function finalizeInventorySaleForBilling(billingId: string, actorId: string | null) {
@@ -275,13 +253,22 @@ export async function issueBilling(input: {
       unit_price: Number(product.selling_price),
     };
   });
-  const doctor = await getDoctor(appt.doctor_id);
+  let patientCategory: "New" | "Regular" | "OldRecord" | undefined;
   const { data: patientProfile, error: patientProfileError } = await supabase
     .from("patients")
     .select("patient_category")
     .eq("id", appt.patient_id)
     .maybeSingle<{ patient_category: "New" | "Regular" | "OldRecord" | null }>();
-  if (patientProfileError) throw patientProfileError;
+  if (patientProfileError) {
+    if (
+      patientProfileError.code !== "42703"
+      || !/patient_category/i.test(patientProfileError.message ?? "")
+    ) {
+      throw patientProfileError;
+    }
+  } else {
+    patientCategory = patientProfile?.patient_category ?? undefined;
+  }
   const { data: priorClinicAppointments, error: priorClinicAppointmentsError } = await supabase
     .from("appointments")
     .select("id")
@@ -292,23 +279,18 @@ export async function issueBilling(input: {
     .limit(1);
   if (priorClinicAppointmentsError) throw priorClinicAppointmentsError;
 
-  const newPatientClinicRate = normalizeConfiguredClinicConsultationRate(
-    Number(doctor.consultation_fee_clinic),
-  );
   const consultationFee = resolveClinicConsultationFee({
-    patientCategory: patientProfile?.patient_category ?? "New",
+    patientCategory: patientCategory ?? "New",
     consultKind: getAppointmentConsultKind(appt.reason),
     hasPriorClinicConsultation: (priorClinicAppointments?.length ?? 0) > 0,
-  }) === NEW_PATIENT_CLINIC_CONSULTATION_FEE
-    ? newPatientClinicRate
-    : FOLLOW_UP_CLINIC_CONSULTATION_FEE;
+  });
   const consultationLabel = consultationFee === FOLLOW_UP_CLINIC_CONSULTATION_FEE
     ? "Clinic consultation - Follow-up"
     : "Clinic consultation - First-time";
   const consultationLine = {
     pricing_id: null,
     product_id: null,
-    description: `${consultationLabel} (${formatDurationLabel(appt.start_time, appt.end_time)})`,
+    description: consultationLabel,
     quantity: 1,
     unit_price: consultationFee,
   };
@@ -397,7 +379,7 @@ export async function recordBillingPayment(
   if (!isStaff(actor.profile.role) && actor.profile.role !== "doctor")
     throw new HttpError(403, "Only clinic staff or doctors can record POS payments");
   if (!POS_ALLOWED_METHODS.has(method))
-    throw new HttpError(400, "POS only accepts Cash, QR, Transfer, or Card payments");
+    throw new HttpError(400, "POS only accepts cash payments");
 
   const supabase = getSupabaseAdmin();
   const { data: billing, error } = await supabase
@@ -416,14 +398,10 @@ export async function recordBillingPayment(
   }
 
   const normalizedProviderRef = providerRef?.trim() || null;
-  if (method !== "Cash" && !normalizedProviderRef) {
-    throw new HttpError(400, `${method === "Card" ? "Card" : "Transfer"} reference is required.`);
-  }
 
-  // Tendered amount only applies to cash. For Card/Transfer the patient
-  // tendered exactly the total — anything else would be a card mistake.
+  // POS accepts cash only, so tendered_amount is what the cashier received.
   let normalizedTendered: number | null = null;
-  if (method === "Cash" && tenderedAmount != null) {
+  if (tenderedAmount != null) {
     if (!Number.isFinite(tenderedAmount) || tenderedAmount < billing.total) {
       throw new HttpError(400, `Tendered amount must be at least ${billing.total.toFixed(2)}.`);
     }
@@ -468,105 +446,24 @@ export async function recordBillingPayment(
   return { billing: updated, payment };
 }
 
-export async function startPosPayMongoCheckout(
-  billingId: string,
-  checkoutOption: PosCheckoutOption,
-  actor: Actor,
-): Promise<{ billing: Billing; payment: Payment; checkoutUrl: string }> {
-  if (!isStaff(actor.profile.role) && actor.profile.role !== "doctor") {
-    throw new HttpError(403, "Only clinic staff or doctors can start POS PayMongo checkout.");
-  }
-  if (!ENABLED_POS_CHECKOUT_OPTIONS.has(checkoutOption)) {
-    throw new HttpError(
-      400,
-      checkoutOption === "paymongo_card"
-        ? "Card payments are not yet activated on PayMongo. Please use QR Ph for now."
-        : checkoutOption === "paymongo_bank"
-          ? "Bank transfer is not yet activated on PayMongo. Please use QR Ph for now."
-          : "This PayMongo POS option is not available yet.",
-    );
-  }
-
+export async function listBillings(actor: Actor, filters: { patient_id?: string; status?: string; appointment_type?: "Clinic" | "Online" }) {
   const supabase = getSupabaseAdmin();
-  const { data: billing, error } = await supabase
-    .from("billings")
-    .select("*")
-    .eq("id", billingId)
-    .single<Billing>();
-  if (error) throw new HttpError(404, "Billing not found");
-  if (billing.status === "Paid") throw new HttpError(400, "Billing already paid");
-  if (billing.status === "Void") throw new HttpError(400, "Billing is void");
-  if (billing.status !== "Issued") throw new HttpError(400, "Issue the bill before starting PayMongo checkout.");
-  if (!billing.appointment_id) throw new HttpError(400, "POS payment requires a clinic appointment billing.");
-
-  const appt = await getAppointment(billing.appointment_id);
-  if (appt.appointment_type !== "Clinic") {
-    throw new HttpError(400, "POS PayMongo checkout is clinic-only.");
+  let appointmentIds: string[] | null = null;
+  if (filters.appointment_type) {
+    const { data: appointments, error: appointmentError } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("appointment_type", filters.appointment_type);
+    if (appointmentError) throw appointmentError;
+    appointmentIds = (appointments ?? []).map((appointment) => appointment.id);
+    if (appointmentIds.length === 0) return [];
   }
 
-  const { data: patient, error: patientError } = await supabase
-    .from("profiles")
-    .select("full_name, email, phone")
-    .eq("id", billing.patient_id)
-    .single<{ full_name: string; email: string; phone: string | null }>();
-  if (patientError || !patient) {
-    throw new HttpError(404, "Patient profile not found.");
-  }
-
-  await supabase
-    .from("payments")
-    .update({ status: "Failed" })
-    .eq("billing_id", billing.id)
-    .eq("provider", "paymongo")
-    .eq("status", "Pending");
-
-  const checkout = await createPayMongoCheckoutSession({
-    description: `Clinic POS billing ${billing.id.slice(0, 8).toUpperCase()}`,
-    amount: billing.total,
-    customerEmail: patient.email,
-    customerName: patient.full_name,
-    customerPhone: patient.phone ?? undefined,
-    paymentMethods: mapCheckoutMethods(posPaymongoMethodGroup(checkoutOption)),
-    successPath: `/payments/pos?billing_paid=${encodeURIComponent(billing.id)}`,
-    lineItemName: "Clinic POS Billing",
-    metadata: {
-      scope: "clinic_pos",
-      billing_id: billing.id,
-      appointment_id: billing.appointment_id,
-      checkout_option: checkoutOption,
-      intended_method: posMethodFromCheckoutOption(checkoutOption),
-    },
-  });
-
-  const method = posMethodFromCheckoutOption(checkoutOption);
-  const { data: payment, error: paymentError } = await supabase
-    .from("payments")
-    .insert({
-      billing_id: billing.id,
-      appointment_id: billing.appointment_id,
-      amount: billing.total,
-      method,
-      status: "Pending",
-      provider: "paymongo",
-      provider_ref: checkout.sessionId,
-    })
-    .select()
-    .single<Payment>();
-  if (paymentError) throw paymentError;
-
-  return {
-    billing,
-    payment,
-    checkoutUrl: checkout.checkoutUrl,
-  };
-}
-
-export async function listBillings(actor: Actor, filters: { patient_id?: string; status?: string }) {
-  const supabase = getSupabaseAdmin();
   let q = supabase.from("billings").select("*");
   if (actor.profile.role === "patient") q = q.eq("patient_id", actor.id);
   else if (filters.patient_id) q = q.eq("patient_id", filters.patient_id);
   if (filters.status) q = q.eq("status", filters.status);
+  if (appointmentIds) q = q.in("appointment_id", appointmentIds);
   const { data, error } = await q.order("created_at", { ascending: false });
   if (error) throw error;
   return data as Billing[];

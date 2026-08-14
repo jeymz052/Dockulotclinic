@@ -199,10 +199,8 @@ function Surface({
   className?: string;
 }) {
   return (
-    <section
-      className={`rounded-[2rem] border border-neutral-200 bg-white/95 p-5 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:p-6 ${className}`.trim()}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className={`rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6 ${className}`.trim()}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
           {description ? <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">{description}</p> : null}
@@ -214,26 +212,35 @@ function Surface({
   );
 }
 
-function StatCard({ label, value, tone = "slate" }: { label: string; value: ReactNode; tone?: "slate" | "sky" | "teal" }) {
-  const toneClass =
-    tone === "sky"
-      ? "border-neutral-200 bg-neutral-50 text-neutral-800"
-      : tone === "teal"
-        ? "border-neutral-100 bg-neutral-50 text-neutral-800"
-        : "border-neutral-200 bg-white text-black";
-
+function BuilderSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
   return (
-    <div className={`rounded-[1.5rem] border px-4 py-4 ${toneClass}`}>
-      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-500">{label}</p>
-      <div className="mt-2 text-2xl font-black tracking-tight">{value}</div>
+    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-neutral-500">{step}</p>
+          <h3 className="mt-1 text-base font-black tracking-tight text-black">{title}</h3>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-600">{description}</p>
+        </div>
+      </div>
+      {children}
     </div>
   );
 }
 
 function toneForStatus(status: string) {
-  if (status === "Published") return "border-neutral-200 bg-neutral-50 text-neutral-700";
+  if (status === "Published") return "border-emerald-200 bg-emerald-50 text-emerald-700";
   if (status === "Archived") return "border-neutral-200 bg-neutral-100 text-neutral-600";
-  return "border-neutral-100 bg-neutral-50 text-neutral-700";
+  return "border-amber-200 bg-amber-50 text-amber-700";
 }
 
 function HeroImageUploader({
@@ -712,77 +719,10 @@ export default function BlogPostStudio() {
   }
 
   return (
-    <div className="space-y-6 pb-10">
-      <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.22),_transparent_28%),radial-gradient(circle_at_90%_12%,_rgba(59,130,246,0.14),_transparent_24%),linear-gradient(135deg,#fcf9ef_0%,#ffffff_45%,#f7f7f5_100%)] p-6 shadow-[0_30px_80px_-40px_rgba(17,17,17,0.45)] sm:p-8">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-neutral-700">Internal publishing workspace</p>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">Blog Builder</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-neutral-600 sm:text-base">
-            Build the landing-page card, write the full article, and manage publishing in one workspace. Preview opens
-            in a dedicated full-page view so you can inspect it like the public blog.
-          </p>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {["Landing card", "Article hero", "Story blocks", "Appointment CTA", "Health advisory"].map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-neutral-200 bg-white/85 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-neutral-700"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Builder progress" value={`${completionPercent}%`} tone="sky" />
-            <StatCard label="Story blocks" value={draft.blocks.length} tone="teal" />
-            <StatCard label="Saved posts" value={databasePosts.length} />
-            <StatCard
-              label="Current mode"
-              value={
-                <span className="text-sm font-bold text-black">
-                  {isTemplateDraft ? "Starter template" : draft.id ? "Editing live entry" : "New story draft"}
-                </span>
-              }
-            />
-          </div>
-
-          <div className="mt-6 rounded-[1.75rem] border border-white/80 bg-white/80 p-5 backdrop-blur">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-500">Publishing readiness</p>
-                <p className="mt-1 text-sm text-neutral-600">
-                  Complete the essentials below and the builder will mirror the public blog page more cleanly.
-                </p>
-              </div>
-              <div className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700">
-                {completionCount}/{readyChecks.length} ready
-              </div>
-            </div>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full rounded-full bg-[linear-gradient(90deg,#67490c_0%,#2563eb_100%)]" style={{ width: `${completionPercent}%` }} />
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              {readyChecks.map((item) => (
-                <div
-                  key={item.label}
-                  className={`rounded-2xl border px-3 py-3 text-sm font-semibold ${
-                    item.complete
-                      ? "border-neutral-200 bg-neutral-50 text-neutral-700"
-                      : "border-neutral-200 bg-white text-neutral-500"
-                  }`}
-                >
-                  {item.complete ? "Ready" : "Needed"}: {item.label}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
+    <div className="space-y-5 pb-8">
       <Surface
-        title={draft.id ? "Blog Builder" : "Start a new article"}
-        description="Write the card content, shape the article, and manage blog publishing from one full-page workspace."
+        title={draft.id ? "Editing Blog Post" : "New Blog Post"}
+        description="Follow the editor from setup, to media and publishing, to the article body. Preview when the essentials are ready."
         action={
           <div className="flex flex-wrap gap-2">
             <button
@@ -809,22 +749,6 @@ export default function BlogPostStudio() {
               <FaFloppyDisk />
               {isTemplateDraft ? "Create from starter" : draft.id ? "Save changes" : "Save draft"}
             </button>
-            <button
-              type="button"
-              onClick={() => startTransition(() => void savePost({ status: "Published" }))}
-              disabled={isPending || !draft.title.trim()}
-              className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Publish
-            </button>
-            <button
-              type="button"
-              onClick={() => startTransition(() => void savePost({ status: "Archived" }))}
-              disabled={isPending || !draft.title.trim()}
-              className="rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Archive
-            </button>
           </div>
         }
       >
@@ -840,8 +764,14 @@ export default function BlogPostStudio() {
           </div>
         ) : null}
 
-        <div className="mt-4">
-          <div className="space-y-6">
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_310px]">
+          <div className="space-y-5">
+            <BuilderSection
+              step="Step 1"
+              title="Article Setup"
+              description="Set the title, URL, category, and short public summary before building the full article."
+            >
+              <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Blog title">
                 <input
@@ -907,7 +837,15 @@ export default function BlogPostStudio() {
                 className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </Field>
+              </div>
+            </BuilderSection>
 
+            <BuilderSection
+              step="Step 2"
+              title="Media And Publishing"
+              description="Attach the hero image, optional embed, public status, featured setting, and plain-text fallback."
+            >
+              <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <HeroImageUploader
                 accessToken={accessToken}
@@ -963,29 +901,35 @@ export default function BlogPostStudio() {
                 className="w-full rounded-2xl border border-neutral-200 px-4 py-3 font-normal text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
               />
             </Field>
+              </div>
+            </BuilderSection>
 
-            <div className="rounded-[1.6rem] border border-neutral-200 bg-[linear-gradient(180deg,#fcf9ef_0%,#ffffff_100%)] p-4">
+            <BuilderSection
+              step="Step 3"
+              title="Story Blocks"
+              description="Build the article body in reading order with headings, paragraphs, images, FAQs, and calls to action."
+            >
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-lg font-black tracking-tight text-black">Story builder</p>
-                  <p className="mt-1 text-sm text-neutral-500">Compose the article in the same reading order the public blog page will render.</p>
+                  <p className="text-base font-black tracking-tight text-black">Add content blocks</p>
+                  <p className="mt-1 text-sm text-neutral-500">Choose a block, then edit it below in reading order.</p>
                 </div>
-                <div className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700">
+                <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-600">
                   {draft.blocks.length} block{draft.blocks.length === 1 ? "" : "s"}
                 </div>
               </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-4 space-y-3">
                 {blockInsertGroups.map((group) => (
-                  <div key={group.label} className="rounded-[1.35rem] border border-neutral-200 bg-white p-4">
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">{group.label}</p>
-                    <p className="mt-2 text-sm leading-6 text-neutral-600">{group.description}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
+                  <div key={group.label} className="grid gap-2 sm:grid-cols-[110px_minmax(0,1fr)] sm:items-start">
+                    <p className="pt-2 text-[11px] font-black uppercase tracking-[0.16em] text-neutral-500">{group.label}</p>
+                    <div className="flex flex-wrap gap-2">
                       {group.types.map((type) => (
                         <button
                           key={type}
                           type="button"
                           onClick={() => addBlock(type)}
-                          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-neutral-700 transition hover:bg-neutral-100"
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-100"
                         >
                           <FaPlus />
                           {blockTypeLabels[type]}
@@ -1144,14 +1088,100 @@ export default function BlogPostStudio() {
                 </div>
               ))}
             </div>
+            </BuilderSection>
           </div>
+
+          <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">Readiness</p>
+                  <p className="mt-1 text-2xl font-black text-black">{completionPercent}%</p>
+                </div>
+                <span className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700">
+                  {completionCount}/{readyChecks.length}
+                </span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                <div className="h-full rounded-full bg-black" style={{ width: `${completionPercent}%` }} />
+              </div>
+              <div className="mt-4 space-y-2">
+                {readyChecks.map((item) => (
+                  <div
+                    key={item.label}
+                    className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${
+                      item.complete
+                        ? "border-emerald-100 bg-white text-neutral-800"
+                        : "border-neutral-200 bg-white text-neutral-500"
+                    }`}
+                  >
+                    <span className="font-semibold">{item.label}</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.12em]">
+                      {item.complete ? "Ready" : "Missing"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">Current Draft</p>
+              <h3 className="mt-2 line-clamp-3 text-lg font-black leading-6 text-black">
+                {draft.title.trim() || "Untitled blog post"}
+              </h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${toneForStatus(draft.status)}`}>
+                  {draft.status}
+                </span>
+                <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-600">
+                  {draft.category}
+                </span>
+              </div>
+              <p className="mt-3 truncate text-xs font-semibold text-neutral-500">/blog/{draft.slug || "your-slug"}</p>
+              <div className="mt-4 grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewMode(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50"
+                >
+                  <FaEye />
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startTransition(() => void savePost())}
+                  disabled={isPending || !draft.title.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:bg-neutral-300"
+                >
+                  <FaFloppyDisk />
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startTransition(() => void savePost({ status: "Published" }))}
+                  disabled={isPending || !draft.title.trim()}
+                  className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Publish
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startTransition(() => void savePost({ status: "Archived" }))}
+                  disabled={isPending || !draft.title.trim()}
+                  className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Archive
+                </button>
+              </div>
+            </div>
+          </aside>
         </div>
       </Surface>
 
       <div className="grid gap-6">
         <Surface
-          title="Recent blogs"
-          description="Manage your saved blogs with larger image cards and quick publishing actions."
+          title="Blog Library"
+          description="Find saved articles quickly, load one into the builder, or change its publishing state."
           action={
             <button
               type="button"
@@ -1170,23 +1200,21 @@ export default function BlogPostStudio() {
             className="w-full rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
           />
 
-          <div className="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
             {filteredLibraryPosts.map((post) => (
-              <div key={post.id} className="overflow-hidden rounded-[1.6rem] border border-neutral-200 bg-white shadow-sm">
-                <div>
+              <div key={post.id} className="grid gap-4 border-b border-neutral-100 p-4 last:border-b-0 lg:grid-cols-[72px_minmax(0,1fr)_auto] lg:items-center">
+                <div className="h-16 w-20 overflow-hidden rounded-xl bg-neutral-100">
                   {post.thumbnail_url ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={post.thumbnail_url} alt={post.title} className="h-48 w-full object-cover" />
-                    </>
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={post.thumbnail_url} alt={post.title} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-48 w-full items-center justify-center bg-neutral-100 text-sm font-bold uppercase text-neutral-500">
-                      No image yet
+                    <div className="flex h-full items-center justify-center text-[10px] font-bold uppercase text-neutral-500">
+                      Blog
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-4 p-4">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${toneForStatus(post.status)}`}>
                       {post.status}
@@ -1194,15 +1222,15 @@ export default function BlogPostStudio() {
                     <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
                       {formatDate(post.published_at ?? post.created_at)}
                     </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+                      {post.category}
+                    </span>
                   </div>
+                  <p className="mt-2 line-clamp-2 text-base font-black tracking-tight text-black">{post.title}</p>
+                  <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">/{post.slug}</p>
+                </div>
 
-                  <div>
-                    <p className="line-clamp-2 text-lg font-black tracking-tight text-black">{post.title}</p>
-                    <p className="mt-2 text-sm font-medium text-neutral-500">{post.category}</p>
-                    <p className="mt-2 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">/{post.slug}</p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 lg:justify-end">
                     <button
                       type="button"
                       onClick={() => loadDraft(post)}
@@ -1238,13 +1266,12 @@ export default function BlogPostStudio() {
                     >
                       Delete
                     </button>
-                  </div>
                 </div>
               </div>
             ))}
 
             {!filteredLibraryPosts.length ? (
-              <div className="rounded-[1.5rem] border border-dashed border-neutral-300 px-5 py-8 text-center text-sm text-neutral-500 md:col-span-2 xl:col-span-3">
+              <div className="px-5 py-8 text-center text-sm text-neutral-500">
                 {databasePosts.length ? "No posts match that search yet." : "No saved posts yet. Publish your first article to build the library."}
               </div>
             ) : null}

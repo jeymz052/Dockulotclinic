@@ -3,6 +3,7 @@ import { HttpError, httpError, ok } from "@/src/lib/http";
 import { assertTrustedOrigin, enforceRateLimit } from "@/src/lib/security";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { logActivity } from "@/src/lib/services/activity-log";
+import { formatPatientFullName } from "@/src/lib/patient-registration";
 
 type LoginPayload = {
   email?: string;
@@ -44,6 +45,17 @@ function getSupabaseAnonClient() {
   });
 }
 
+function isMissingOfficialPatientColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === "object"
+      && "code" in error
+      && (error as { code?: string }).code === "42703"
+      && "message" in error
+      && /first_name|middle_name|last_name|suffix_name|civil_status|religion|occupation|guardian_name/i.test(String((error as { message?: unknown }).message ?? "")),
+  );
+}
+
 function readPatientSignupMetadata(user: {
   email?: string | null;
   user_metadata?: Record<string, unknown> | null;
@@ -51,17 +63,29 @@ function readPatientSignupMetadata(user: {
   const metadata = user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
   const email = user.email?.trim().toLowerCase() ?? "";
   const fullName =
-    typeof metadata.full_name === "string" && metadata.full_name.trim()
-      ? metadata.full_name.trim()
-      : email.split("@")[0] || "Patient";
+    formatPatientFullName({
+      firstName: typeof metadata.first_name === "string" ? metadata.first_name : null,
+      middleName: typeof metadata.middle_name === "string" ? metadata.middle_name : null,
+      lastName: typeof metadata.last_name === "string" ? metadata.last_name : null,
+      suffixName: typeof metadata.suffix_name === "string" ? metadata.suffix_name : null,
+      fullName: typeof metadata.full_name === "string" ? metadata.full_name : null,
+    }) || email.split("@")[0] || "Patient";
 
   return {
     email,
     fullName,
+    firstName: typeof metadata.first_name === "string" && metadata.first_name.trim() ? metadata.first_name.trim() : null,
+    middleName: typeof metadata.middle_name === "string" && metadata.middle_name.trim() ? metadata.middle_name.trim() : null,
+    lastName: typeof metadata.last_name === "string" && metadata.last_name.trim() ? metadata.last_name.trim() : null,
+    suffixName: typeof metadata.suffix_name === "string" && metadata.suffix_name.trim() ? metadata.suffix_name.trim() : null,
     phone: typeof metadata.phone === "string" && metadata.phone.trim() ? metadata.phone.trim() : null,
     dob: typeof metadata.dob === "string" && metadata.dob.trim() ? metadata.dob.trim() : null,
     gender: typeof metadata.gender === "string" && metadata.gender.trim() ? metadata.gender.trim() : null,
+    civilStatus: typeof metadata.civil_status === "string" && metadata.civil_status.trim() ? metadata.civil_status.trim() : null,
     address: typeof metadata.address === "string" && metadata.address.trim() ? metadata.address.trim() : null,
+    religion: typeof metadata.religion === "string" && metadata.religion.trim() ? metadata.religion.trim() : null,
+    occupation: typeof metadata.occupation === "string" && metadata.occupation.trim() ? metadata.occupation.trim() : null,
+    guardianName: typeof metadata.guardian_name === "string" && metadata.guardian_name.trim() ? metadata.guardian_name.trim() : null,
   };
 }
 
@@ -114,13 +138,32 @@ export async function POST(req: Request) {
       });
       if (profileSetupError) throw profileSetupError;
 
-      const { error: patientSetupError } = await admin.from("patients").upsert({
+      const patientSetup = {
         id: data.user.id,
+        first_name: registration.firstName,
+        middle_name: registration.middleName,
+        last_name: registration.lastName,
+        suffix_name: registration.suffixName,
         dob: registration.dob,
         gender: registration.gender,
+        civil_status: registration.civilStatus,
         address: registration.address,
-      });
-      if (patientSetupError) throw patientSetupError;
+        religion: registration.religion,
+        occupation: registration.occupation,
+        guardian_name: registration.guardianName,
+      };
+      const { error: patientSetupError } = await admin.from("patients").upsert(patientSetup);
+      if (isMissingOfficialPatientColumn(patientSetupError)) {
+        const { error: legacyPatientSetupError } = await admin.from("patients").upsert({
+          id: data.user.id,
+          dob: registration.dob,
+          gender: registration.gender,
+          address: registration.address,
+        });
+        if (legacyPatientSetupError) throw legacyPatientSetupError;
+      } else if (patientSetupError) {
+        throw patientSetupError;
+      }
     }
 
     const { data: activeProfile, error: activeProfileError } = await admin

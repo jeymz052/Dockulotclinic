@@ -54,6 +54,10 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+function formatAppointmentType(type: AppointmentRecord["type"]) {
+  return type === "Online" ? "Virtual Consult" : type;
+}
+
 function ChartContainer({
   className,
   minHeight,
@@ -126,7 +130,7 @@ function buildAppointmentTrends(appointments: AppointmentRecord[]) {
 function buildAppointmentTypeData(appointments: AppointmentRecord[]) {
   return [
     { name: "Clinic", value: appointments.filter((a) => a.type === "Clinic").length },
-    { name: "Online", value: appointments.filter((a) => a.type === "Online").length },
+    { name: "Virtual Consult", value: appointments.filter((a) => a.type === "Online").length },
   ];
 }
 
@@ -262,7 +266,7 @@ function ActivityDetails({ appointments }: { appointments: AppointmentRecord[] }
                     appt.type === "Online" ? "bg-neutral-50 text-neutral-400" : "bg-neutral-50 text-neutral-400"
                   }`}
                 >
-                  {appt.type}
+                  {formatAppointmentType(appt.type)}
                 </span>
               </div>
             );
@@ -385,7 +389,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(17,17,17,0.16),_transparent_34%),linear-gradient(135deg,_#ffffff,_#fcf9ef_52%,_#f8efd0)] p-6 shadow-[0_28px_70px_rgba(17,17,17,0.12)] animate-fade-in-down">
+      <div className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-white p-6 shadow-[0_28px_58px_rgba(17,17,17,0.12)] animate-fade-in-down">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Clinic Overview</p>
@@ -401,7 +405,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Link href="/patients" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-neutral-400 to-neutral-300 p-5 shadow-md text-white transition-all duration-300 hover:shadow-xl hover:scale-[1.03] animate-fade-in-up stagger-1">
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 p-5 shadow-md text-white transition-all duration-300 hover:shadow-xl hover:scale-[1.03] animate-fade-in-up stagger-1">
           <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-white/10 animate-float-slow" />
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Total Patients</p>
@@ -415,25 +419,25 @@ export default function AdminDashboard() {
         </Link>
 
         <Link href="/appointments" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-2">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-sky-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-sky-200 animate-fade-in-up stagger-2">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-sky-300 opacity-10" />
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Appointments</p>
-            <span className="text-xs font-semibold text-neutral-400">today</span>
+            <p className="text-xs font-semibold uppercase tracking-wider text-sky-600">Appointments</p>
+            <span className="text-xs font-semibold text-sky-500">today</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{todayAppointments.length}</p>
           <p className="text-xs text-neutral-400 mt-1">Scheduled for today</p>
-          <MiniSparkline data={sparkAppts.length ? sparkAppts : [0]} color="#111111" />
-          <ProgressBar value={todayAppointments.length} max={25} color="#111111" />
+          <MiniSparkline data={sparkAppts.length ? sparkAppts : [0]} color="#0284c7" />
+          <ProgressBar value={todayAppointments.length} max={25} color="#0284c7" />
           </div>
         </Link>
 
         <Link href="/appointments?filter=online" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-3">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-cyan-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-cyan-200 animate-fade-in-up stagger-3">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-cyan-300 opacity-10" />
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Online Consults</p>
-            <span className="text-xs font-semibold text-neutral-400">today</span>
+            <p className="text-xs font-semibold uppercase tracking-wider text-cyan-600">Virtual Consults</p>
+            <span className="text-xs font-semibold text-cyan-500">today</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{onlineConsultsToday}</p>
           <p className="text-xs text-neutral-400 mt-1">Virtual consultations today</p>
@@ -446,11 +450,11 @@ export default function AdminDashboard() {
         </Link>
 
         <Link href="/payments/pos" className="block no-underline">
-          <div className="relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-neutral-300 animate-fade-in-up stagger-4">
-          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-neutral-300 opacity-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.03] hover:border-amber-200 animate-fade-in-up stagger-4">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-amber-300 opacity-10" />
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Ready For POS</p>
-            <span className="text-xs font-semibold text-neutral-400">all time</span>
+            <p className="text-xs font-semibold uppercase tracking-wider text-amber-600">Ready For POS</p>
+            <span className="text-xs font-semibold text-amber-500">all time</span>
           </div>
           <p className="text-3xl font-bold text-neutral-900 mt-2">{readyForPos}</p>
           <p className="text-xs text-neutral-400 mt-1">Clinic consultations ready for billing</p>
@@ -517,7 +521,7 @@ export default function AdminDashboard() {
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "13px" }} />
                 <Legend wrapperStyle={{ fontSize: "13px" }} />
                 <Bar dataKey="Clinic" fill="#111111" radius={[6, 6, 0, 0]} barSize={20} />
-                <Bar dataKey="Online" fill="#d9ad2f" radius={[6, 6, 0, 0]} barSize={20} />
+                <Bar dataKey="Online" name="Virtual Consult" fill="#d9ad2f" radius={[6, 6, 0, 0]} barSize={20} />
               </BarChart>
           </ChartContainer>
         </div>

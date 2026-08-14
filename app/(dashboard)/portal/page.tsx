@@ -287,7 +287,7 @@ export default function PatientPortalPage() {
           icon={<FaCalendarCheck />}
         >
           <p className="text-sm leading-6 text-neutral-600">
-            Schedule a clinic visit or online consultation from your portal account.
+            Schedule a clinic visit or virtual consult from your portal account.
           </p>
           <Link className="mt-4 inline-flex rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white" href="/appointments">
             Book appointment

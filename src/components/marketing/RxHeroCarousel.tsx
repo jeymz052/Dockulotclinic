@@ -4,67 +4,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
-
-type RxSlide = {
-  key: string;
-  image: string;
-  title: string;
-  subtitle: string;
-};
-
-const RX_SLIDES: RxSlide[] = [
-  {
-    key: "glowrx",
-    image: "/images/glowrx bg.png",
-    title: "GlowRx by Doc Kulot",
-    subtitle: "Medical Weight Loss & Aesthetic Wellness",
-  },
-  {
-    key: "hormonerx",
-    image: "/images/hormonerx bg.png",
-    title: "HormoneRx by Doc Kulot",
-    subtitle: "PCOS, Hormonal Acne & Women's Hormonal Health",
-  },
-  {
-    key: "heartrx",
-    image: "/images/heartrx bg.png",
-    title: "HeartRx by Doc Kulot",
-    subtitle: "Hypertension, Cholesterol & Cardiovascular Wellness",
-  },
-  {
-    key: "metabolicrx",
-    image: "/images/metabolicrx bg.png",
-    title: "MetabolicRx by Doc Kulot",
-    subtitle: "Diabetes, Prediabetes & Fatty Liver Care",
-  },
-  {
-    key: "preventrx",
-    image: "/images/preventrx bg.png",
-    title: "PreventRx by Doc Kulot",
-    subtitle: "Executive Check-ups & Preventive Health",
-  },
-];
+import type { LandingHeroSlide } from "@/src/lib/db/types";
+import { DEFAULT_RX_HERO_SLIDES } from "@/src/lib/landing-defaults";
 
 function formatRxTitle(title: string) {
   return title.replace(" by Doc Kulot", "\nby Doc Kulot");
 }
 
-export default function RxHeroCarousel() {
+export default function RxHeroCarousel({
+  slides = DEFAULT_RX_HERO_SLIDES,
+  eyebrow = "Doc Kulot Rx Programs",
+  ctaLabel = "Book appointment",
+}: {
+  slides?: LandingHeroSlide[];
+  eyebrow?: string;
+  ctaLabel?: string;
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = RX_SLIDES[activeIndex];
+  const heroSlides = (slides.length ? slides : DEFAULT_RX_HERO_SLIDES).map((slide, index) => ({
+    ...slide,
+    image: slide.image || DEFAULT_RX_HERO_SLIDES[index]?.image || DEFAULT_RX_HERO_SLIDES[0].image,
+    title: slide.title || DEFAULT_RX_HERO_SLIDES[index]?.title || "Doc Kulot",
+    subtitle: slide.subtitle || DEFAULT_RX_HERO_SLIDES[index]?.subtitle || "",
+  }));
+  const activeSlide = heroSlides[activeIndex] ?? heroSlides[0];
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % RX_SLIDES.length);
+      setActiveIndex((current) => (current + 1) % heroSlides.length);
     }, 6500);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   return (
     <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden bg-black text-white">
       <div className="relative min-h-[calc(100svh-4rem)]">
-        {RX_SLIDES.map((slide, index) => (
+        {heroSlides.map((slide, index) => (
           <Image
             key={slide.key}
             src={slide.image}
@@ -85,7 +61,7 @@ export default function RxHeroCarousel() {
         <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center px-4 py-24 sm:px-6 lg:px-8">
           <div className="max-w-xl p-6 text-left sm:max-w-2xl sm:p-8">
             <p className="text-xs font-black uppercase tracking-[0.32em] text-black/70 sm:text-sm">
-              Doc Kulot Rx Programs
+              {eyebrow}
             </p>
             <h1 className="mt-5 whitespace-pre-line text-4xl font-black leading-[1.02] tracking-tight text-black sm:text-6xl lg:text-7xl">
               {formatRxTitle(activeSlide.title)}
@@ -98,21 +74,21 @@ export default function RxHeroCarousel() {
                 href="/#booking"
                 className="inline-flex items-center justify-center rounded-full bg-black px-7 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)] transition hover:bg-neutral-800"
               >
-                Book appointment
+                {ctaLabel}
               </Link>
             </div>
 
             <div className="mt-12 flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setActiveIndex((current) => (current - 1 + RX_SLIDES.length) % RX_SLIDES.length)}
+                onClick={() => setActiveIndex((current) => (current - 1 + heroSlides.length) % heroSlides.length)}
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-black/15 bg-white/70 text-black backdrop-blur transition hover:bg-black hover:text-white"
                 aria-label="Previous Rx program"
               >
                 <FaChevronLeft className="h-4 w-4" />
               </button>
               <div className="flex gap-2">
-                {RX_SLIDES.map((slide, index) => (
+                {heroSlides.map((slide, index) => (
                   <button
                     key={slide.key}
                     type="button"
@@ -126,7 +102,7 @@ export default function RxHeroCarousel() {
               </div>
               <button
                 type="button"
-                onClick={() => setActiveIndex((current) => (current + 1) % RX_SLIDES.length)}
+                onClick={() => setActiveIndex((current) => (current + 1) % heroSlides.length)}
                 className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-black/15 bg-white/70 text-black backdrop-blur transition hover:bg-black hover:text-white"
                 aria-label="Next Rx program"
               >

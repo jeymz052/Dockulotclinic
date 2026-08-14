@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: Ctx) {
 
     const { data, error } = await supabase
       .from("prescriptions")
-      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(profiles(full_name)), doctors(profiles(full_name))")
+      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(dob, gender, profiles(full_name)), doctors(specialty, license_no, profiles(full_name))")
       .eq("id", id)
       .maybeSingle<PrescriptionPdfRow>();
     if (error) throw error;

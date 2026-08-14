@@ -10,12 +10,22 @@ export type DoctorUnavailability = {
 
 export type PatientRecordItem = {
   id: string;
+  patientNumber: string;
   fullName: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  suffixName: string;
   email: string;
   phone: string;
   dateOfBirth: string;
   gender: string;
+  civilStatus: string;
   address: string;
+  religion: string;
+  occupation: string;
+  guardianName: string;
+  doctorNotes: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
   familyHistory: string;
@@ -75,6 +85,19 @@ export type ConsultationNote = {
   updatedAt: string;
 };
 
+export type OnlinePaymentAccountKind = "GCash" | "Maya" | "Bank" | "Other";
+
+export type OnlinePaymentAccount = {
+  id: string;
+  kind: OnlinePaymentAccountKind;
+  label: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  qrCodeUrl: string;
+  isActive: boolean;
+};
+
 export type SystemSettings = {
   clinicName: string;
   email: string;
@@ -85,9 +108,10 @@ export type SystemSettings = {
   clinicOpenTime: string;
   clinicCloseTime: string;
   // Permanent Google Meet (or other web-meeting) link the clinic uses for
-  // every Online consultation. Empty string means "not configured yet" — the
+  // every virtual consult. Empty string means "not configured yet" — the
   // UI surfaces a setup prompt and new bookings ship without a link.
   defaultMeetingLink: string;
+  onlinePaymentAccounts: OnlinePaymentAccount[];
 };
 
 // All clinic data now lives in Supabase. Only INITIAL_SYSTEM_SETTINGS remains
@@ -98,8 +122,9 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   phone: "+63 917 154 4754",
   address: "Zamboanga City, Zamboanga del Sur",
   onlineConsultationFee: 800,
-  maxPatientsPerHour: 5,
-  clinicOpenTime: "08:00",
-  clinicCloseTime: "17:00",
+  maxPatientsPerHour: 1,
+  clinicOpenTime: "09:00",
+  clinicCloseTime: "16:00",
   defaultMeetingLink: "",
+  onlinePaymentAccounts: [],
 };

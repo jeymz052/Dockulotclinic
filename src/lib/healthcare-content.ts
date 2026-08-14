@@ -84,7 +84,7 @@ export type FaqItem = {
 export const faqCategories = [
   "Appointment FAQ",
   "Clinic Services FAQ",
-  "Online Consultation FAQ",
+  "Virtual Consult FAQ",
   "Payment FAQ",
   "Prescription FAQ",
   "Patient Portal FAQ",
@@ -115,10 +115,10 @@ export const clinicServices: ServiceItem[] = [
   },
   {
     title: "Telemedicine Services",
-    description: "Weight loss management, PCOS management, chronic disease review, lab interpretation, and prescription refill. The 800 peso online consult includes the first consult plus one follow-up.",
+    description: "Weight loss management, PCOS management, chronic disease review, lab interpretation, and prescription refill. The 800 peso virtual consult includes the first consult plus one follow-up.",
     icon: FaLaptopMedical,
     modes: ["Online"],
-    priceLabel: "800 online consult",
+    priceLabel: "800 virtual consult",
   },
   {
     title: "Women's Health and Aesthetic Care",
@@ -232,20 +232,14 @@ export const clinicLocations: ClinicLocation[] = [
   {
     name: "FamMed Family Clinic",
     address: "Arquiza Building, Pasobolong, Zamboanga City",
-    schedule: "Every Friday",
-    note: "Book up to 5 procedure clients only.",
-  },
-  {
-    name: "Premier Medical Center",
-    address: "Room 420",
-    schedule: "Tuesday, Thursday, Saturday",
-    note: "Appointment-only medical procedures and consultations.",
+    schedule: "Monday to Friday, 9:00 AM - 4:00 PM",
+    note: "Clinic visits and medical procedures follow this in-person schedule.",
   },
   {
     name: "RT Lim Family Hospital",
     address: "Room 4",
-    schedule: "Every 1st and 3rd Sunday of the month",
-    note: "Limited clinic days for selected visits and procedures.",
+    schedule: "1st and 3rd Sundays, 9:00 AM - 4:00 PM",
+    note: "Limited Sunday schedule for clinic visits and medical procedures.",
   },
 ];
 
@@ -532,7 +526,7 @@ export const contentCategories = [
   "Clinic Updates",
   "Medical Awareness",
   "Patient Education",
-  "Online Consultation Topics",
+  "Virtual Consult Topics",
   "Lifestyle & Wellness",
   "FAQ Videos",
   "Live Replays",
@@ -540,8 +534,8 @@ export const contentCategories = [
 
 export const featuredContent: ContentItem[] = [
   {
-    title: "When to choose online consultation",
-    category: "Online Consultation Topics",
+    title: "When to choose virtual consult",
+    category: "Virtual Consult Topics",
     description: "A practical guide for deciding whether your concern is safe for virtual care.",
     type: "Blog",
   },
@@ -581,7 +575,7 @@ export const liveEvents = [
     linkLabel: "Join waitlist",
   },
   {
-    title: "Live Replay: Online Consultation FAQs",
+    title: "Live Replay: Virtual Consult FAQs",
     date: "Available after stream",
     time: "On demand",
     platform: "YouTube Replay",
@@ -593,7 +587,7 @@ export const faqs: FaqItem[] = [
   {
     category: "Appointment FAQ",
     question: "How to book an appointment?",
-    answer: "Open the booking page, choose clinic visit or online consultation, select a service, date, and time, then submit your patient details.",
+    answer: "Open the booking page, choose clinic visit or virtual consult, select a service, date, and time, then submit your patient details.",
   },
   {
     category: "Clinic Services FAQ",
@@ -611,8 +605,8 @@ export const faqs: FaqItem[] = [
     answer: "Yes. If the doctor has released it to your portal, you can download the PDF or print it for pharmacy use.",
   },
   {
-    category: "Online Consultation FAQ",
-    question: "How do I book an online consultation?",
+    category: "Virtual Consult FAQ",
+    question: "How do I book a virtual consult?",
     answer: "Choose Telemedicine Services during booking, describe your concern, upload supporting files if needed, and wait for confirmation and meeting details.",
   },
   {
@@ -633,7 +627,7 @@ export const faqs: FaqItem[] = [
 ];
 
 export const onlineConsultationSteps = [
-  "Choose online consultation during booking",
+  "Choose virtual consult during booking",
   "Review the 800 peso telemedicine fee, which covers the first consult plus one follow-up, and attach symptoms, concern, photos, or files if needed",
   "Select a preferred schedule",
   "Wait for admin approval and meeting link",
@@ -650,7 +644,7 @@ export const retainedSystemModules = [
   "Admin/staff dashboard",
   "POS and billing",
   "FAQ and inquiry management",
-  "Online consultation",
+  "Virtual consult",
   "Clinic and content reports",
   "Role-based security and activity logs",
 ];

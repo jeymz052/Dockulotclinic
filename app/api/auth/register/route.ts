@@ -18,11 +18,19 @@ function assertRegisterPayload(payload: unknown): RegisterPayload {
   const body = payload as Partial<RegisterPayload>;
   const fields = normalizePatientRegistrationFields({
     fullName: body.fullName ?? "",
+    firstName: body.firstName ?? "",
+    middleName: body.middleName ?? "",
+    lastName: body.lastName ?? "",
+    suffixName: body.suffixName ?? "",
     email: body.email ?? "",
     phone: body.phone ?? "",
     dateOfBirth: body.dateOfBirth ?? "",
     gender: body.gender ?? "",
+    civilStatus: body.civilStatus ?? "",
     address: body.address ?? "",
+    religion: body.religion ?? "",
+    occupation: body.occupation ?? "",
+    guardianName: body.guardianName ?? "",
   });
 
   const validationError = validatePatientRegistrationFields(fields);

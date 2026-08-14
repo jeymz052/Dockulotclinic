@@ -4,9 +4,18 @@ import type { BeforeAfterItem } from "@/src/lib/healthcare-content";
 type BeforeAfterCarouselProps = {
   items: BeforeAfterItem[];
   compact?: boolean;
+  title?: string;
+  subtitle?: string;
+  label?: string;
 };
 
-export function BeforeAfterCarousel({ items, compact = false }: BeforeAfterCarouselProps) {
+export function BeforeAfterCarousel({
+  items,
+  compact = false,
+  title = "GlowRx Results",
+  subtitle = "Medical weight-loss progress and aesthetic transformations",
+  label = "Results Board",
+}: BeforeAfterCarouselProps) {
   if (items.length === 0) return null;
 
   const duration = compact ? 24 : 34;
@@ -17,15 +26,15 @@ export function BeforeAfterCarousel({ items, compact = false }: BeforeAfterCarou
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h3 className="font-serif text-3xl font-semibold text-black sm:text-4xl">
-              GlowRx Results
+              {title}
             </h3>
             <p className="mt-1 font-serif text-sm italic text-neutral-600 sm:text-base">
-              Medical weight-loss progress and aesthetic transformations
+              {subtitle}
             </p>
           </div>
 
           <div className="mt-1 shrink-0 border border-neutral-300 bg-white px-3 py-1 text-[10px] font-semibold uppercase text-neutral-700">
-            Results Board
+            {label}
           </div>
         </div>
       </div>

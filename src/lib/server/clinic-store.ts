@@ -10,11 +10,16 @@ import {
   type AvailabilityReason,
   type ConsultationNote,
   type DoctorUnavailability,
+  type OnlinePaymentAccount,
+  type OnlinePaymentAccountKind,
   type PatientRecordItem,
   type SystemSettings,
 } from "@/src/lib/clinic";
+import { HttpError, type Actor } from "@/src/lib/http";
 import {
+  formatPatientFullName,
   patientRecordToRegistrationFields,
+  splitPatientFullName,
   validatePatientRegistrationFields,
 } from "@/src/lib/patient-registration";
 
@@ -132,16 +137,26 @@ export async function updateDoctorUnavailability(
 
 type PatientJoinRow = {
   id: string;
+  patient_number?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  suffix_name?: string | null;
   dob: string | null;
   gender: string | null;
+  civil_status?: string | null;
   address: string | null;
+  religion?: string | null;
+  occupation?: string | null;
+  guardian_name?: string | null;
+  doctor_notes?: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   family_history: string | null;
   allergies: string | null;
   medical_history: string | null;
   is_walk_in: boolean | null;
-  patient_category: "New" | "Regular" | "OldRecord" | null;
+  patient_category?: "New" | "Regular" | "OldRecord" | null;
   profiles: {
     full_name: string;
     email: string;
@@ -151,15 +166,56 @@ type PatientJoinRow = {
   } | null;
 };
 
+function isMissingPatientColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === "object"
+      && "code" in error
+      && (error as { code?: string }).code === "42703"
+      && "message" in error
+      && /patient_category|patient_number|first_name|middle_name|last_name|suffix_name|civil_status|religion|occupation|guardian_name|doctor_notes/i.test(String((error as { message?: unknown }).message ?? "")),
+  );
+}
+
+const PATIENT_SELECT_WITH_OFFICIAL_FIELDS =
+  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+const PATIENT_SELECT_WITH_CATEGORY =
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+const PATIENT_SELECT_LEGACY =
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)";
+
 function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
+  const legacyParts = splitPatientFullName(row.profiles?.full_name ?? "");
+  const firstName = row.first_name ?? legacyParts.firstName;
+  const middleName = row.middle_name ?? legacyParts.middleName;
+  const lastName = row.last_name ?? legacyParts.lastName;
+  const suffixName = row.suffix_name ?? legacyParts.suffixName;
+  const fullName = formatPatientFullName({
+    firstName,
+    middleName,
+    lastName,
+    suffixName,
+    fullName: row.profiles?.full_name,
+  }) || "Unknown";
+
   return {
     id: row.id,
-    fullName: row.profiles?.full_name ?? "Unknown",
+    patientNumber: row.patient_number ?? row.id.slice(0, 8).toUpperCase(),
+    fullName,
+    firstName,
+    middleName,
+    lastName,
+    suffixName,
     email: row.profiles?.email ?? "",
     phone: row.profiles?.phone ?? "",
     dateOfBirth: row.dob ?? "",
     gender: row.gender ?? "",
+    civilStatus: row.civil_status ?? "",
     address: row.address ?? "",
+    religion: row.religion ?? "",
+    occupation: row.occupation ?? "",
+    guardianName: row.guardian_name ?? "",
+    doctorNotes: row.doctor_notes ?? "",
     emergencyContactName: row.emergency_contact_name ?? "",
     emergencyContactPhone: row.emergency_contact_phone ?? "",
     familyHistory: row.family_history ?? "",
@@ -173,13 +229,54 @@ function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
 
 export async function readPatients(): Promise<PatientRecordItem[]> {
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
+  const initial = await supabase
     .from("patients")
-    .select("id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)")
+    .select(PATIENT_SELECT_WITH_OFFICIAL_FIELDS)
     .eq("profiles.role", "patient")
     .order("id");
+  let data: unknown[] | null = initial.data;
+  let error = initial.error;
+  if (isMissingPatientColumn(error)) {
+    const retryWithCategory = await supabase
+      .from("patients")
+      .select(PATIENT_SELECT_WITH_CATEGORY)
+      .eq("profiles.role", "patient")
+      .order("id");
+    data = retryWithCategory.data;
+    error = retryWithCategory.error;
+  }
+  if (isMissingPatientColumn(error)) {
+    const retry = await supabase
+      .from("patients")
+      .select(PATIENT_SELECT_LEGACY)
+      .eq("profiles.role", "patient")
+      .order("id");
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw error;
   return (data ?? []).map((row) => mapPatientRow(row as unknown as PatientJoinRow));
+}
+
+function formatPatientNumber(value: string) {
+  const numericPart = value.replace(/\D/g, "");
+  return numericPart ? `PAT-${Number(numericPart).toString().padStart(3, "0")}` : "";
+}
+
+async function resolvePatientNumber(patientNumber: string) {
+  const formatted = formatPatientNumber(patientNumber);
+  if (formatted) return formatted;
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("patients").select("patient_number");
+  if (error) throw error;
+
+  const highest = (data ?? []).reduce((max, row) => {
+    const value = formatPatientNumber(String((row as { patient_number?: string | null }).patient_number ?? ""));
+    const numericValue = Number(value.slice(4));
+    return Number.isFinite(numericValue) ? Math.max(max, numericValue) : max;
+  }, 0);
+  return `PAT-${String(highest + 1).padStart(3, "0")}`;
 }
 
 export async function createPatient(
@@ -187,6 +284,7 @@ export async function createPatient(
 ): Promise<PatientRecordItem[]> {
   const supabase = getSupabaseAdmin();
   const normalized = patientRecordToRegistrationFields(payload);
+  const patientNumber = await resolvePatientNumber(payload.patientNumber ?? "");
   assertEmailNotProtectedPatient(normalized.email);
   const validationError = validatePatientRegistrationFields(normalized);
   if (validationError) throw new Error(validationError);
@@ -225,21 +323,49 @@ export async function createPatient(
     })
     .eq("id", userId);
 
-  await supabase
+  const patientInsert = {
+    id: userId,
+    patient_number: patientNumber,
+    first_name: normalized.firstName || null,
+    middle_name: normalized.middleName || null,
+    last_name: normalized.lastName || null,
+    suffix_name: normalized.suffixName || null,
+    dob: normalized.dateOfBirth || null,
+    gender: normalized.gender || null,
+    civil_status: normalized.civilStatus || null,
+    address: normalized.address || null,
+    religion: normalized.religion || null,
+    occupation: normalized.occupation || null,
+    guardian_name: normalized.guardianName || null,
+    doctor_notes: payload.doctorNotes?.trim() || null,
+    emergency_contact_name: payload.emergencyContactName?.trim() || null,
+    emergency_contact_phone: payload.emergencyContactPhone?.trim() || null,
+    family_history: payload.familyHistory?.trim() || null,
+    allergies: payload.allergies?.trim() || null,
+    medical_history: payload.medicalHistory?.trim() || null,
+    is_walk_in: payload.isWalkIn,
+    patient_category: payload.patientCategory ?? "New",
+  };
+  const { error: patientError } = await supabase
     .from("patients")
-    .upsert({
-      id: userId,
-      dob: normalized.dateOfBirth || null,
-      gender: normalized.gender || null,
-      address: normalized.address || null,
-      emergency_contact_name: payload.emergencyContactName?.trim() || null,
-      emergency_contact_phone: payload.emergencyContactPhone?.trim() || null,
-      family_history: payload.familyHistory?.trim() || null,
-      allergies: payload.allergies?.trim() || null,
-      medical_history: payload.medicalHistory?.trim() || null,
-      is_walk_in: payload.isWalkIn,
-      patient_category: payload.patientCategory ?? "New",
+    .upsert(patientInsert);
+  if (isMissingPatientColumn(patientError)) {
+    const { error } = await supabase.from("patients").upsert({
+      id: patientInsert.id,
+      dob: patientInsert.dob,
+      gender: patientInsert.gender,
+      address: patientInsert.address,
+      emergency_contact_name: patientInsert.emergency_contact_name,
+      emergency_contact_phone: patientInsert.emergency_contact_phone,
+      family_history: patientInsert.family_history,
+      allergies: patientInsert.allergies,
+      medical_history: patientInsert.medical_history,
+      is_walk_in: patientInsert.is_walk_in,
     });
+    if (error) throw error;
+  } else if (patientError) {
+    throw patientError;
+  }
 
   return readPatients();
 }
@@ -249,7 +375,8 @@ export async function updatePatient(
 ): Promise<PatientRecordItem[]> {
   const supabase = getSupabaseAdmin();
   const normalized = patientRecordToRegistrationFields(updatedPatient);
-  const validationError = validatePatientRegistrationFields(normalized);
+  const patientNumber = await resolvePatientNumber(updatedPatient.patientNumber);
+  const validationError = validatePatientRegistrationFields(normalized, { requireGuardianForMinors: false });
   if (validationError) throw new Error(validationError);
 
   const profileUpdate = {
@@ -259,21 +386,48 @@ export async function updatePatient(
     is_active: updatedPatient.status !== "Inactive",
   };
   await supabase.from("profiles").update(profileUpdate).eq("id", updatedPatient.id);
-  await supabase
+  const patientUpdate = {
+    patient_number: patientNumber,
+    first_name: normalized.firstName || null,
+    middle_name: normalized.middleName || null,
+    last_name: normalized.lastName || null,
+    suffix_name: normalized.suffixName || null,
+    dob: normalized.dateOfBirth || null,
+    gender: normalized.gender || null,
+    civil_status: normalized.civilStatus || null,
+    address: normalized.address || null,
+    religion: normalized.religion || null,
+    occupation: normalized.occupation || null,
+    guardian_name: normalized.guardianName || null,
+    doctor_notes: updatedPatient.doctorNotes.trim() || null,
+    emergency_contact_name: updatedPatient.emergencyContactName.trim() || null,
+    emergency_contact_phone: updatedPatient.emergencyContactPhone.trim() || null,
+    family_history: updatedPatient.familyHistory.trim() || null,
+    allergies: updatedPatient.allergies.trim() || null,
+    medical_history: updatedPatient.medicalHistory.trim() || null,
+    is_walk_in: updatedPatient.isWalkIn,
+    patient_category: updatedPatient.patientCategory,
+  };
+  const { error: patientError } = await supabase
     .from("patients")
-    .update({
-      dob: normalized.dateOfBirth || null,
-      gender: normalized.gender || null,
-      address: normalized.address || null,
-      emergency_contact_name: updatedPatient.emergencyContactName.trim() || null,
-      emergency_contact_phone: updatedPatient.emergencyContactPhone.trim() || null,
-      family_history: updatedPatient.familyHistory.trim() || null,
-      allergies: updatedPatient.allergies.trim() || null,
-      medical_history: updatedPatient.medicalHistory.trim() || null,
-      is_walk_in: updatedPatient.isWalkIn,
-      patient_category: updatedPatient.patientCategory,
-    })
+    .update(patientUpdate)
     .eq("id", updatedPatient.id);
+  if (isMissingPatientColumn(patientError)) {
+    const { error } = await supabase.from("patients").update({
+      dob: patientUpdate.dob,
+      gender: patientUpdate.gender,
+      address: patientUpdate.address,
+      emergency_contact_name: patientUpdate.emergency_contact_name,
+      emergency_contact_phone: patientUpdate.emergency_contact_phone,
+      family_history: patientUpdate.family_history,
+      allergies: patientUpdate.allergies,
+      medical_history: patientUpdate.medical_history,
+      is_walk_in: patientUpdate.is_walk_in,
+    }).eq("id", updatedPatient.id);
+    if (error) throw error;
+  } else if (patientError) {
+    throw patientError;
+  }
   return readPatients();
 }
 
@@ -425,6 +579,7 @@ export async function readSystemSettings(): Promise<SystemSettings> {
       clinic_open_time?: string | null;
       clinic_close_time?: string | null;
       default_meeting_link?: string | null;
+      online_payment_accounts?: unknown;
     }>();
   if (!data) return INITIAL_SYSTEM_SETTINGS;
   return {
@@ -437,6 +592,7 @@ export async function readSystemSettings(): Promise<SystemSettings> {
     clinicOpenTime: data.clinic_open_time?.slice(0, 5) ?? INITIAL_SYSTEM_SETTINGS.clinicOpenTime,
     clinicCloseTime: data.clinic_close_time?.slice(0, 5) ?? INITIAL_SYSTEM_SETTINGS.clinicCloseTime,
     defaultMeetingLink: data.default_meeting_link ?? "",
+    onlinePaymentAccounts: normalizeOnlinePaymentAccounts(data.online_payment_accounts),
   };
 }
 
@@ -454,9 +610,66 @@ export async function saveSystemSettings(settings: SystemSettings): Promise<Syst
       clinic_open_time: settings.clinicOpenTime,
       clinic_close_time: settings.clinicCloseTime,
       default_meeting_link: (settings.defaultMeetingLink ?? "").trim(),
+      online_payment_accounts: normalizeOnlinePaymentAccounts(settings.onlinePaymentAccounts),
       updated_at: new Date().toISOString(),
     })
     .eq("id", true);
   if (error) throw error;
   return readSystemSettings();
+}
+
+const ONLINE_PAYMENT_KINDS = new Set<OnlinePaymentAccountKind>(["GCash", "Maya", "Bank", "Other"]);
+
+function normalizeOnlinePaymentAccounts(raw: unknown): OnlinePaymentAccount[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 12).map((entry, index) => {
+    const row = (entry && typeof entry === "object" ? entry : {}) as Partial<OnlinePaymentAccount>;
+    const kind = ONLINE_PAYMENT_KINDS.has(row.kind as OnlinePaymentAccountKind)
+      ? row.kind as OnlinePaymentAccountKind
+      : "Other";
+    const fallbackLabel = kind === "Bank" ? "Bank account" : kind;
+    return {
+      id: String(row.id || `payment-${index + 1}`),
+      kind,
+      label: String(row.label ?? fallbackLabel).trim().slice(0, 80),
+      accountName: String(row.accountName ?? "").trim().slice(0, 120),
+      accountNumber: String(row.accountNumber ?? "").trim().slice(0, 80),
+      bankName: String(row.bankName ?? "").trim().slice(0, 120),
+      qrCodeUrl: String(row.qrCodeUrl ?? "").trim().slice(0, 500),
+      isActive: row.isActive !== false,
+    };
+  });
+}
+
+export async function uploadOnlinePaymentQr(
+  file: File,
+  actor: Actor,
+): Promise<{ url: string; path: string }> {
+  const role = actor.profile.role;
+  if (role !== "super_admin" && role !== "admin" && role !== "doctor") {
+    throw new HttpError(403, "Only the doctor or admin can upload online payment QR codes.");
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+  const allowed = ["png", "jpg", "jpeg", "webp"];
+  if (!allowed.includes(ext)) {
+    throw new HttpError(400, `Unsupported QR image type: .${ext}`);
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new HttpError(400, "QR image must be 5 MB or smaller.");
+  }
+
+  const path = `online-payments/${actor.id}/${Date.now()}-qr.${ext}`;
+  const supabase = getSupabaseAdmin();
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { error: uploadError } = await supabase.storage
+    .from("landing-assets")
+    .upload(path, buffer, {
+      contentType: file.type || `image/${ext}`,
+      upsert: true,
+    });
+  if (uploadError) throw uploadError;
+
+  const { data: pub } = supabase.storage.from("landing-assets").getPublicUrl(path);
+  return { url: pub.publicUrl, path };
 }

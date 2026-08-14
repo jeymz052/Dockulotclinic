@@ -5,6 +5,7 @@ import {
   getSchedulableSlotsForDate,
   getUnavailabilityForDate,
 } from "@/src/lib/services/schedule";
+import { MAX_BOOKINGS_PER_SLOT } from "@/src/lib/clinic-schedule";
 
 export type SharedAvailabilitySlot = {
   start: string;
@@ -55,8 +56,8 @@ function overlapsUnavailable(
 function getNextQueueNumber(queueNumbers: number[]) {
   const used = new Set(queueNumbers.filter((value) => Number.isInteger(value)));
   let candidate = 1;
-  while (candidate <= 5 && used.has(candidate)) candidate += 1;
-  return candidate <= 5 ? candidate : null;
+  while (candidate <= MAX_BOOKINGS_PER_SLOT && used.has(candidate)) candidate += 1;
+  return candidate <= MAX_BOOKINGS_PER_SLOT ? candidate : null;
 }
 
 function supportsType(mode: "Clinic" | "Online" | "Both", type: ApptType) {
@@ -67,12 +68,15 @@ export async function buildSharedDayAvailability(
   doctorId: string,
   date: string,
   type: ApptType,
-  options: { ignoreAppointmentId?: string } = {},
+  options: { ignoreAppointmentId?: string; slotMinutes?: number } = {},
 ): Promise<{
   slots: SharedAvailabilitySlot[];
   blockedReason: string | null;
 }> {
-  const schedulableSlots = await getSchedulableSlotsForDate(doctorId, date);
+  const schedulableSlots = await getSchedulableSlotsForDate(doctorId, date, {
+    slotMinutes: options.slotMinutes,
+    type,
+  });
   if (schedulableSlots.length === 0) {
     return { slots: [], blockedReason: "Doctor is not working on this date." };
   }
@@ -134,7 +138,7 @@ export async function buildSharedDayAvailability(
       else if (blocked) reason = blocked.reason ?? "Doctor unavailable";
       else if (!scheduleSupportsType) reason = `${slot.mode} schedule only`;
       else if (typeConflict) reason = `${activeType} booking already occupies this shared slot`;
-      else if (isFull) reason = "Max of 5 patients reached";
+      else if (isFull) reason = "Slot already booked";
 
       return {
         start: slot.start.slice(0, 5),
@@ -166,7 +170,7 @@ export async function findNextAvailableSharedSlot(
   date: string,
   type: ApptType,
   scanDays = 14,
-  options: { ignoreAppointmentId?: string } = {},
+  options: { ignoreAppointmentId?: string; slotMinutes?: number } = {},
 ) {
   for (let offset = 0; offset < Math.max(1, scanDays); offset += 1) {
     const nextDate = addDays(date, offset);

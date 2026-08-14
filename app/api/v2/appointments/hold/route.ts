@@ -2,12 +2,23 @@ import { httpError, ok, getActor } from "@/src/lib/http";
 import { assertTrustedOrigin, enforceRateLimit } from "@/src/lib/security";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { resolveBookingPatientId, validateSharedSlotOrThrow, resolveAssignedDoctorUuid } from "@/src/lib/server/appointments-store";
-import { addOneHourSql, normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
-import {
-  ONLINE_CONSULTATION_FEE,
-  resolveClinicConsultationFee,
-} from "@/src/lib/consultation-pricing";
+import { normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
+import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
+import { CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { parseAppointmentContext } from "@/src/lib/appointment-context";
+import { resolveClinicConsultationAmount, resolveVirtualConsultAmount } from "@/src/lib/server/booking-pricing-store";
 import { enqueueNotification } from "@/src/lib/services/notification";
+
+function isMissingPatientCategoryColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === "object"
+      && "code" in error
+      && (error as { code?: string }).code === "42703"
+      && "message" in error
+      && /patient_category/i.test(String((error as { message?: unknown }).message ?? "")),
+  );
+}
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +32,7 @@ export async function POST(req: Request) {
       patientName,
       email,
       phone,
-      doctorId, // optional, legacy uses assigned doctor
+      doctorId,
       date,
       start,
       type,
@@ -40,8 +51,11 @@ export async function POST(req: Request) {
     };
 
     const doctorUuid = await resolveAssignedDoctorUuid(doctorId);
-    const start_time = normalizeSqlTime(start);
-    const end_time = addOneHourSql(start);
+    const slot = await resolveSchedulableSlotForStart(doctorUuid, date, start, type, {
+      slotMinutes: CONSULTATION_SLOT_MINUTES,
+    });
+    const start_time = normalizeSqlTime(slot.start);
+    const end_time = slot.end;
 
     const patientId = await resolveBookingPatientId({ email, patientName, phone, patientStatus }, {
       actorRole: actor?.profile.role === "patient" ? "PATIENT" : undefined,
@@ -59,13 +73,16 @@ export async function POST(req: Request) {
 
     let amount = 0;
     if (type === "Online") {
-      amount = ONLINE_CONSULTATION_FEE;
+      amount = await resolveVirtualConsultAmount();
     } else {
-      const { data: patientRow } = await getSupabaseAdmin()
+      const { data: patientRow, error: patientCategoryError } = await getSupabaseAdmin()
         .from("patients")
         .select("patient_category")
         .eq("id", patientId)
         .maybeSingle<{ patient_category: "New" | "Regular" | "OldRecord" | null }>();
+      if (patientCategoryError && !isMissingPatientCategoryColumn(patientCategoryError)) {
+        throw patientCategoryError;
+      }
       const { data: priorClinicAppointments } = await getSupabaseAdmin()
         .from("appointments")
         .select("id")
@@ -73,9 +90,10 @@ export async function POST(req: Request) {
         .eq("appointment_type", "Clinic")
         .not("status", "in", '("Cancelled","NoShow")')
         .limit(1);
-      amount = resolveClinicConsultationFee({
-        patientCategory: patientRow?.patient_category ?? undefined,
+      amount = await resolveClinicConsultationAmount({
+        patientCategory: patientCategoryError ? undefined : patientRow?.patient_category ?? undefined,
         patientStatus,
+        consultKind: parseAppointmentContext(reason).consultKind,
         hasPriorClinicConsultation: (priorClinicAppointments?.length ?? 0) > 0,
       });
     }
@@ -99,7 +117,6 @@ export async function POST(req: Request) {
       .single();
     if (error) throw error;
 
-    // Notify patient by email; SMS is reserved for paid confirmations and 24h reminders.
     try {
       await enqueueNotification({
         user_id: patientId,

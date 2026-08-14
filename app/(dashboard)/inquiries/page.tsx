@@ -68,9 +68,9 @@ export default function InquiriesPage() {
     return inquiryType.toLowerCase().includes("consultation") ? "Online" : "Clinic";
   }
 
-  function buildDefaultDraft(inquiry: Inquiry): ConvertDraft {
+  function buildDefaultDraft(inquiry: Inquiry, fallbackDoctorId = doctors[0]?.id ?? ""): ConvertDraft {
     return {
-      doctorId: doctors[0]?.id ?? "",
+      doctorId: fallbackDoctorId,
       date: localDateInput(1),
       startTime: "09:00",
       appointmentType: inferAppointmentType(inquiry.inquiry_type),
@@ -86,9 +86,23 @@ export default function InquiriesPage() {
       fetch("/api/v2/doctors", { headers, cache: "no-store" }),
     ]);
 
+    let nextDoctors = doctors;
+    if (doctorsRes.ok) {
+      const payload = (await doctorsRes.json()) as {
+        doctors?: Array<{ id: string; name?: string; full_name?: string; specialty?: string }>;
+      };
+      nextDoctors = (payload.doctors ?? []).map((doctor) => ({
+        id: doctor.id,
+        name: doctor.name ?? doctor.full_name ?? "Doctor",
+        specialty: doctor.specialty ?? "Family Medicine and Aesthetic Medicine",
+      }));
+      setDoctors(nextDoctors);
+    }
+
     if (inquiriesRes.ok) {
       const payload = (await inquiriesRes.json()) as { inquiries?: Inquiry[] };
       const rows = payload.inquiries ?? [];
+      const fallbackDoctorId = nextDoctors[0]?.id ?? "";
       setInquiries(rows);
       setStatusById(Object.fromEntries(rows.map((item) => [item.id, item.status])));
       setReplyById((current) => {
@@ -101,28 +115,24 @@ export default function InquiriesPage() {
       setConvertDraftById((current) => {
         const next = { ...current };
         for (const item of rows) {
-          if (!(item.id in next)) next[item.id] = buildDefaultDraft(item);
+          if (!(item.id in next)) next[item.id] = buildDefaultDraft(item, fallbackDoctorId);
+          if (!next[item.id]?.doctorId && fallbackDoctorId) {
+            next[item.id] = { ...next[item.id], doctorId: fallbackDoctorId };
+          }
         }
         return next;
       });
     }
-
-    if (doctorsRes.ok) {
-      const payload = (await doctorsRes.json()) as {
-        doctors?: Array<{ id: string; name?: string; full_name?: string; specialty?: string }>;
-      };
-      setDoctors(
-        (payload.doctors ?? []).map((doctor) => ({
-          id: doctor.id,
-          name: doctor.name ?? doctor.full_name ?? "Doctor",
-          specialty: doctor.specialty ?? "Family Medicine and Aesthetic Medicine",
-        })),
-      );
-    }
   }
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void load();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function updateInquiry(id: string, payload: Record<string, unknown>) {
@@ -306,7 +316,7 @@ export default function InquiriesPage() {
                         }
                       >
                         <option value="Clinic">Clinic</option>
-                        <option value="Online">Online</option>
+                        <option value="Online">Virtual Consult</option>
                       </select>
                     </label>
                   </div>
@@ -374,10 +384,10 @@ export default function InquiriesPage() {
 function StatusPill({ status }: { status: InquiryStatus }) {
   const tone =
     status === "Pending"
-      ? "bg-neutral-100 text-neutral-700"
+      ? "bg-amber-100 text-amber-700"
       : status === "Replied"
-        ? "bg-neutral-100 text-neutral-700"
-        : "bg-neutral-100 text-neutral-700";
+        ? "bg-sky-100 text-sky-700"
+        : "bg-emerald-100 text-emerald-700";
 
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone}`}>{status}</span>;
 }
