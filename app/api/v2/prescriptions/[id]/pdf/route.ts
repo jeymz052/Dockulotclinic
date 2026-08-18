@@ -4,6 +4,7 @@ import {
   getPrescriptionPdfFilename,
   type PrescriptionPdfRow,
 } from "@/src/lib/services/prescription-pdf";
+import { readSystemSettings } from "@/src/lib/server/clinic-store";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { DbRole } from "@/src/lib/db/types";
 
@@ -35,7 +36,8 @@ export async function GET(req: Request, { params }: Ctx) {
       throw new HttpError(403, "Forbidden");
     }
 
-    const pdf = createPrescriptionPdf(data);
+    const settings = await readSystemSettings();
+    const pdf = createPrescriptionPdf({ ...data, doctor_signature_data_url: settings.doctorSignatureDataUrl });
     return new Response(pdf, {
       status: 200,
       headers: {

@@ -170,7 +170,7 @@ export default function AppointmentsPage() {
           <div className="flex flex-wrap gap-3">
             <Shortcut href={manageHref} label={manageLabel} />
             <Shortcut href="/patients/records" label="Patient Records" />
-            <Shortcut href="/payments" label="Payments" />
+            <Shortcut href="/payments" label="Online Payments" />
           </div>
         </div>
       </section>

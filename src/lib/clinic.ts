@@ -111,6 +111,7 @@ export type SystemSettings = {
   // every virtual consult. Empty string means "not configured yet" — the
   // UI surfaces a setup prompt and new bookings ship without a link.
   defaultMeetingLink: string;
+  doctorSignatureDataUrl: string;
   onlinePaymentAccounts: OnlinePaymentAccount[];
 };
 
@@ -126,5 +127,6 @@ export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   clinicOpenTime: "09:00",
   clinicCloseTime: "16:00",
   defaultMeetingLink: "",
+  doctorSignatureDataUrl: "",
   onlinePaymentAccounts: [],
 };

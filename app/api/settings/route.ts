@@ -21,9 +21,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await authenticate(request);
-  if (!auth || !hasPermission(auth.role, "settings.read")) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  try {
+    const auth = await authenticate(request);
+    if (!auth || !hasPermission(auth.role, "settings.read")) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ data: await saveSystemSettings(await request.json()) });
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Failed to save settings." },
+      { status: 500 },
+    );
   }
-  return NextResponse.json({ data: await saveSystemSettings(await request.json()) });
 }

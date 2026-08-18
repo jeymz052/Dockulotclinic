@@ -63,14 +63,28 @@ async function upsertPatientCategory(patientId: string, category: "New" | "Regul
       id: patientId,
       patient_category: category,
     });
+
+  if (!error) return;
+
   if (isMissingPatientCategoryColumn(error)) {
     const { error: legacyError } = await supabase
       .from("patients")
       .upsert({ id: patientId });
-    if (legacyError) throw legacyError;
+    if (legacyError) {
+      console.warn("[appointments] patient_category fallback upsert skipped", {
+        patientId,
+        category,
+        error: legacyError instanceof Error ? legacyError.message : legacyError,
+      });
+    }
     return;
   }
-  if (error) throw error;
+
+  console.warn("[appointments] patient_category upsert skipped", {
+    patientId,
+    category,
+    error: error instanceof Error ? error.message : error,
+  });
 }
 
 type AppointmentCreateContext = {
@@ -145,6 +159,15 @@ function resolveSlotMinutesForPayload(payload: Pick<AppointmentCreatePayload, "r
   return isProcedureServiceTitle(parseAppointmentContext(payload.reason).service)
     ? PROCEDURE_SLOT_MINUTES
     : CONSULTATION_SLOT_MINUTES;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return fallback;
 }
 function matchesExactSlot(
   slot: { start: string; end: string },
@@ -491,7 +514,7 @@ export async function createPersistedAppointmentWithContext(
         : await readAppointments(),
     };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Booking failed";
+    const message = getErrorMessage(e, "Booking failed");
     return {
       ok: false as const,
       message,
@@ -610,7 +633,7 @@ export async function updatePersistedAppointment(payload: AppointmentUpdatePaylo
   } catch (e) {
     return {
       ok: false as const,
-      message: e instanceof Error ? e.message : "Update failed",
+      message: getErrorMessage(e, "Update failed"),
       appointments: await readAppointments(),
     };
   }
@@ -761,7 +784,7 @@ export async function approvePersistedAppointment(appointmentId: string, actor?:
   } catch (e) {
     return {
       ok: false as const,
-      message: e instanceof Error ? e.message : "Approval failed",
+      message: getErrorMessage(e, "Approval failed"),
       appointments: await readAppointments(),
     };
   }

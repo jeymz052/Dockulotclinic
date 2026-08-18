@@ -19,13 +19,13 @@ export default function UnauthorizedPage() {
             Go to Dashboard
           </Link>
           <Link
-            href="/payments"
-            className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
-          >
-            Back to Payments
-          </Link>
-        </div>
+          href="/payments"
+          className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        >
+          Back to Online Payments
+        </Link>
       </div>
-    </main>
+    </div>
+  </main>
   );
 }

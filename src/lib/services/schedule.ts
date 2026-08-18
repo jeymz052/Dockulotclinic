@@ -152,7 +152,7 @@ function mergeScheduleModes(left: ScheduleMode, right: ScheduleMode): ScheduleMo
 }
 
 function modeSupportsType(mode: ScheduleMode, type: "Clinic" | "Online") {
-  return mode === type;
+  return mode === "Both" || mode === type;
 }
 
 export async function getSchedulableSlotsForDate(
@@ -232,7 +232,9 @@ export async function getDoctorSchedulesForDate(
     .order("start_time", { ascending: true });
   if (error) throw error;
   const schedules = (data ?? []).filter(
-    (schedule) => schedule.schedule_mode === "Clinic" || schedule.schedule_mode === "Online",
+    (schedule) => schedule.schedule_mode === "Clinic"
+      || schedule.schedule_mode === "Online"
+      || schedule.schedule_mode === "Both",
   );
 
   const requestedType = options.type;

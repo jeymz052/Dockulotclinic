@@ -23,7 +23,7 @@ const PATIENT_TOPICS = [
   },
   {
     question: "Where can I see my files and billing history?",
-    answer: "Use Medical Files for released uploads and Payments to review completed transactions and receipts.",
+    answer: "Use Medical Files for released uploads and Profile to review your contact details, password, and account info.",
   },
 ];
 
@@ -32,7 +32,7 @@ const PATIENT_SHORTCUTS = [
   { href: "/consultations", label: "Consultations", icon: <FaVideo className="h-4 w-4" /> },
   { href: "/prescriptions", label: "Prescriptions", icon: <FaFilePrescription className="h-4 w-4" /> },
   { href: "/profile/files", label: "Medical Files", icon: <FaFolderOpen className="h-4 w-4" /> },
-  { href: "/payments", label: "Payments", icon: <FaCreditCard className="h-4 w-4" /> },
+  { href: "/payments", label: "Online Payments", icon: <FaCreditCard className="h-4 w-4" /> },
 ];
 
 export default function PatientHelpPage() {
@@ -61,7 +61,7 @@ export default function PatientHelpPage() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <StatCard title="Appointments" value="Book, review, and track status" />
           <StatCard title="Portal" value="Prescriptions, notes, and files" />
-          <StatCard title="Payments" value="History, receipts, and status" />
+          <StatCard title="Profile" value="Edit info, password, and contact details" />
         </div>
       </section>
 
@@ -210,16 +210,16 @@ const PATIENT_MODULES = [
   },
   {
     href: "/payments",
-    kicker: "Payments",
+    kicker: "Online payments",
     title: "Check billing history",
     description: "Review paid transactions, receipts, and your virtual consult payment history.",
     icon: <FaCreditCard className="h-4 w-4" />,
   },
   {
-    href: "/profile/settings",
+    href: "/profile",
     kicker: "Profile",
     title: "Keep details updated",
-    description: "Update your contact details so reminders and clinic messages reach the correct account.",
+    description: "Update your contact details and password so reminders and clinic messages reach the correct account.",
     icon: <FaCircleQuestion className="h-4 w-4" />,
   },
 ] as const;

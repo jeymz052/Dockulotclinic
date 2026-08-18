@@ -352,7 +352,7 @@ export function PaymentHistoryModule() {
       <section className="border-b border-neutral-200 pb-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Payments</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">Payment History</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-950">Payment History</h1>
             <p className="mt-2 text-sm leading-6 text-neutral-600">
               {canSeeAllPatients

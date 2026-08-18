@@ -5,21 +5,24 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   FaCalendarCheck,
+  FaChevronRight,
   FaCreditCard,
   FaDownload,
   FaFileMedical,
   FaFileLines,
+  FaFileSignature,
   FaLock,
   FaPaperPlane,
   FaPrescriptionBottleMedical,
   FaPrint,
-  FaRegMessage,
-  FaShieldHalved,
   FaStethoscope,
+  FaVideo,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useConsultationNotes } from "@/src/components/clinic/useClinicData";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { ActionCard, DashboardHero, MetricCard, SectionCard } from "@/src/components/dashboard/dashboard-ui";
+import { getAppointmentPrimaryLabel, getAppointmentSecondaryReason } from "@/src/lib/appointment-context";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
 
@@ -51,6 +54,19 @@ type PatientFile = {
   created_at: string;
 };
 
+type ProcedureConsent = {
+  id: string;
+  procedure_name: string;
+  patient_name: string;
+  consent_form_url: string;
+  aftercare_acknowledged: boolean;
+  aftercare_guide_title: string | null;
+  patient_signature: string;
+  witness_signature: string | null;
+  physician_signature: string | null;
+  signed_at: string;
+};
+
 type BillingRecord = {
   id: string;
   total: number;
@@ -70,6 +86,7 @@ type FollowUpInquiry = {
 type PortalData = {
   prescriptions: Prescription[];
   files: PatientFile[];
+  consents: ProcedureConsent[];
   billings: BillingRecord[];
   inquiries: FollowUpInquiry[];
 };
@@ -77,6 +94,7 @@ type PortalData = {
 const EMPTY_PORTAL_DATA: PortalData = {
   prescriptions: [],
   files: [],
+  consents: [],
   billings: [],
   inquiries: [],
 };
@@ -93,6 +111,15 @@ function dateTime(value: string | null) {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function shortDate(value: string | null) {
+  if (!value) return "Not yet";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   }).format(new Date(value));
 }
 
@@ -115,16 +142,18 @@ export default function PatientPortalPage() {
     const timer = window.setTimeout(async () => {
       try {
         setIsLoading(true);
-        const [prescriptionsRes, filesRes, billingsRes, inquiriesRes] = await Promise.all([
+        const [prescriptionsRes, filesRes, consentsRes, billingsRes, inquiriesRes] = await Promise.all([
           fetch("/api/v2/prescriptions", { cache: "no-store", headers }),
           fetch("/api/v2/patient-files", { cache: "no-store", headers }),
+          fetch("/api/v2/procedure-consents", { cache: "no-store", headers }),
           fetch("/api/v2/billings", { cache: "no-store", headers }),
           fetch("/api/v2/follow-up-inquiries", { cache: "no-store", headers }),
         ]);
 
-        const [prescriptionsPayload, filesPayload, billingsPayload, inquiriesPayload] = await Promise.all([
+        const [prescriptionsPayload, filesPayload, consentsPayload, billingsPayload, inquiriesPayload] = await Promise.all([
           prescriptionsRes.ok ? prescriptionsRes.json() : Promise.resolve({ prescriptions: [] }),
           filesRes.ok ? filesRes.json() : Promise.resolve({ files: [] }),
+          consentsRes.ok ? consentsRes.json() : Promise.resolve({ consents: [] }),
           billingsRes.ok ? billingsRes.json() : Promise.resolve({ billings: [] }),
           inquiriesRes.ok ? inquiriesRes.json() : Promise.resolve({ inquiries: [] }),
         ]);
@@ -133,6 +162,7 @@ export default function PatientPortalPage() {
         setPortalData({
           prescriptions: prescriptionsPayload.prescriptions ?? [],
           files: filesPayload.files ?? [],
+          consents: consentsPayload.consents ?? [],
           billings: billingsPayload.billings ?? [],
           inquiries: inquiriesPayload.inquiries ?? [],
         });
@@ -167,9 +197,18 @@ export default function PatientPortalPage() {
   );
   const latestNote = notes[0] ?? null;
   const latestPrescription = portalData.prescriptions[0] ?? null;
+  const latestConsent = portalData.consents[0] ?? null;
   const latestBilling = portalData.billings[0] ?? null;
   const latestFile = portalData.files[0] ?? null;
   const name = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Patient";
+  const nextAppointment = upcoming[0] ?? null;
+  const completedAppointments = appointments.filter((appointment) => appointment.status === "Completed").length;
+  const clinicVisits = appointments.filter((appointment) => appointment.type === "Clinic").length;
+  const virtualVisits = appointments.filter((appointment) => appointment.type === "Online").length;
+  const documentCount = portalData.prescriptions.length + portalData.consents.length + portalData.files.length;
+  const heroSummary = nextAppointment
+    ? `Next: ${formatDisplayDate(nextAppointment.date)} at ${nextAppointment.start}`
+    : "Everything is up to date";
 
   async function downloadPrescription(item: Prescription) {
     if (!accessToken) return;
@@ -230,26 +269,13 @@ export default function PatientPortalPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.12),transparent_34%),linear-gradient(135deg,#f7f7f5_0%,#ffffff_58%,#f7f7f5_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.12)]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-700">Patient Portal</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-black sm:text-4xl">
-              Your secure clinic account
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-              Hi {name}. Access appointments, released medical notes, prescriptions, billing, files, and follow-up messages from one place.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
-            <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
-              <FaShieldHalved className="text-black" />
-              Secure login active
-            </p>
-            <p className="mt-1 text-xs text-neutral-500">{profile?.email ?? user?.email}</p>
-          </div>
-        </div>
-      </section>
+      <DashboardHero
+        eyebrow="Patient Portal"
+        title={`Welcome, ${name}`}
+        description="Your appointment, records, prescriptions, bills, and messages live here in one clean overview."
+        summary={heroSummary}
+        accent="gold"
+      />
 
       {feedback ? <div className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">{feedback}</div> : null}
 
@@ -257,129 +283,235 @@ export default function PatientPortalPage() {
         <Metric href="/appointments/my" icon={<FaCalendarCheck />} label="Appointments" value={appointments.length} helper={`${upcoming.length} upcoming`} />
         <Metric href="/consultations/history" icon={<FaStethoscope />} label="Released Notes" value={notes.length} helper="Allowed by doctor" />
         <Metric href="/prescriptions" icon={<FaPrescriptionBottleMedical />} label="Prescriptions" value={portalData.prescriptions.length} helper="PDF and print ready" />
+        <Metric href="/profile/files" icon={<FaFileSignature />} label="Documents" value={documentCount} helper="Consents and files" />
         <Metric href="/payments/history" icon={<FaCreditCard />} label="Billing Records" value={portalData.billings.length} helper="Receipts and balances" />
+        <Metric href="/profile/inquiries" icon={<FaPaperPlane />} label="Follow-ups" value={portalData.inquiries.length} helper="Questions and replies" />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
-        <PortalSection
-          title="Appointment History"
-          actionHref="/appointments/my"
-          actionLabel="View all"
-          icon={<FaCalendarCheck />}
-        >
-          <div className="space-y-3">
-            {[...upcoming, ...history].slice(0, 4).map((appointment) => (
-              <Row key={appointment.id} href={`/appointments/my?appointment=${appointment.id}`}>
+      <SectionCard
+        title="Your Next Appointment"
+        description="A single glance to see what comes next."
+        actionHref="/appointments/my"
+        actionLabel="View all appointments"
+      >
+        {nextAppointment ? (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
+            <div className="rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-bold text-black">{formatDisplayDate(appointment.date)} - {formatRange(appointment.start, appointment.end)}</p>
-                  <p className="mt-1 text-sm text-neutral-500">{getDoctorById(appointment.doctorId)?.name ?? "Assigned doctor"} - {appointment.status}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">Upcoming visit</p>
+                  <h2 className="mt-2 text-2xl font-black tracking-tight text-black">{formatDisplayDate(nextAppointment.date)}</h2>
+                  <p className="mt-1 text-sm font-semibold text-neutral-600">{nextAppointment.start} - {nextAppointment.end}</p>
                 </div>
-              </Row>
-            ))}
-            {appointments.length === 0 ? <Empty text="No appointments yet." /> : null}
-          </div>
-        </PortalSection>
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-right">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">Queue</p>
+                  <p className="mt-1 text-2xl font-black text-black">#{nextAppointment.queueNumber}</p>
+                </div>
+              </div>
 
-        <PortalSection
-          title="Book Another Appointment"
-          actionHref="/appointments"
-          actionLabel="Book now"
-          icon={<FaCalendarCheck />}
-        >
-          <p className="text-sm leading-6 text-neutral-600">
-            Schedule a clinic visit or virtual consult from your portal account.
-          </p>
-          <Link className="mt-4 inline-flex rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white" href="/appointments">
-            Book appointment
-          </Link>
-        </PortalSection>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <PortalSection title="Diagnosis & Allowed Notes" actionHref="/consultations/history" actionLabel="Open history" icon={<FaFileLines />}>
-          {latestNote ? (
-            <div className="space-y-3 text-sm text-neutral-700">
-              <p><span className="font-semibold text-black">Diagnosis:</span> {latestNote.diagnosis || "No diagnosis recorded."}</p>
-              <p><span className="font-semibold text-black">Doctor note:</span> {latestNote.note || "No note released."}</p>
-              <p className="rounded-xl bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-700">
-                Only notes marked visible by your doctor are shown here.
-              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-neutral-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Visit type</p>
+                  <p className="mt-1 text-sm font-bold text-black">{nextAppointment.type === "Online" ? "Virtual consult" : "Clinic visit"}</p>
+                </div>
+                <div className="rounded-2xl bg-neutral-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Reason</p>
+                  <p className="mt-1 text-sm font-bold text-black">{getAppointmentPrimaryLabel(nextAppointment.reason, nextAppointment.type)}</p>
+                  <p className="mt-1 text-xs text-neutral-500">{getAppointmentSecondaryReason(nextAppointment.reason) || "No additional note provided."}</p>
+                </div>
+              </div>
             </div>
-          ) : <Empty text="No doctor-released consultation notes yet." />}
-        </PortalSection>
 
-        <PortalSection title="Prescriptions" actionHref="/prescriptions" actionLabel="Open prescriptions" icon={<FaPrescriptionBottleMedical />}>
-          {latestPrescription ? (
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm">
               <div>
-                <p className="text-sm font-bold text-black">{latestPrescription.prescription_no}</p>
-                <p className="mt-1 text-sm text-neutral-500">{latestPrescription.diagnoses?.diagnosis_text ?? "Released prescription"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">Status</p>
+                <p className="mt-2 text-xl font-black text-black">{nextAppointment.status}</p>
               </div>
-              {latestPrescription.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Treatment plan</p>
-                  <p className="mt-1">{latestPrescription.diagnoses.treatment_plan}</p>
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Doctor</p>
+                <p className="mt-1 text-sm font-bold text-black">{getDoctorById(nextAppointment.doctorId)?.name ?? "Assigned doctor"}</p>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Quick action</p>
+                {nextAppointment.type === "Online" && nextAppointment.meetingLink ? (
+                  <a
+                    href={nextAppointment.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white"
+                  >
+                    <FaVideo className="h-4 w-4" />
+                    Join consultation
+                  </a>
+                ) : (
+                  <Link href="/appointments/my" className="mt-2 inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white">
+                    <FaChevronRight className="h-4 w-4" />
+                    Open schedule
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-[1.75rem] border border-dashed border-neutral-300 bg-neutral-50 px-6 py-10 text-center">
+            <p className="text-base font-bold text-black">No upcoming appointments</p>
+            <p className="mt-2 text-sm text-neutral-500">Book your next appointment when you’re ready.</p>
+            <Link href="/appointments" className="mt-5 inline-flex rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">
+              Book appointment
+            </Link>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Quick Actions"
+        description="The common things patients need should never be far away."
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ActionCard href="/appointments" title="Book Appointment" description="Start a clinic or virtual visit booking." tone="emerald" icon={<FaCalendarCheck className="text-lg" />} />
+          <ActionCard href="/appointments/my" title="My Schedule" description="See upcoming and completed visits." tone="teal" icon={<FaCalendarCheck className="text-lg" />} />
+          <ActionCard href="/consultations" title="Virtual Consult" description="Open your consultation lobby when it’s time." tone="sky" icon={<FaVideo className="text-lg" />} />
+          <ActionCard href="/profile/files" title="Medical Documents" description="View consents, files, and released records." tone="indigo" icon={<FaFileSignature className="text-lg" />} />
+          <ActionCard href="/prescriptions" title="Prescriptions" description="Open, print, or download released prescriptions." tone="cyan" icon={<FaPrescriptionBottleMedical className="text-lg" />} />
+          <ActionCard href="/payments/history" title="Payment History" description="Review billing history, payment records, and receipts." tone="gold" icon={<FaCreditCard className="text-lg" />} />
+        </div>
+      </SectionCard>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <SectionCard
+          title="Documents & Notes"
+          description="Recent records are grouped here so the portal stays usable even as it grows."
+          actionHref="/profile/files"
+          actionLabel="Open documents"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <RecordTile
+              title="Latest Prescription"
+              href="/prescriptions"
+              actionLabel="Open prescriptions"
+              emptyLabel="No released prescriptions yet."
+              badge="Prescription"
+              icon={<FaPrescriptionBottleMedical />}
+            >
+              {latestPrescription ? (
+                <div className="space-y-3 text-sm text-neutral-700">
+                  <p className="font-bold text-black">{latestPrescription.prescription_no}</p>
+                  <p>{latestPrescription.diagnoses?.diagnosis_text ?? "Released prescription"}</p>
+                  <p className="text-xs text-neutral-500">Created {dateTime(latestPrescription.created_at)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
+                      <FaDownload className="h-3.5 w-3.5" /> Download
+                    </button>
+                    <button onClick={() => printPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
+                      <FaPrint className="h-3.5 w-3.5" /> Print
+                    </button>
+                  </div>
                 </div>
               ) : null}
-              {latestPrescription.follow_up_date ? (
-                <p className="text-sm text-neutral-600">
-                  <span className="font-semibold text-black">Follow-up date:</span>{" "}
-                  {dateTime(latestPrescription.follow_up_date)}
-                </p>
+            </RecordTile>
+
+            <RecordTile
+              title="Latest Consent"
+              href="/profile/files"
+              actionLabel="Open consent"
+              emptyLabel="No procedure consent records yet."
+              badge="Consent"
+              icon={<FaFileSignature />}
+            >
+              {latestConsent ? (
+                <div className="space-y-3 text-sm text-neutral-700">
+                  <p className="font-bold text-black">{latestConsent.procedure_name}</p>
+                  <p>Signed {shortDate(latestConsent.signed_at)}</p>
+                  <p className="text-xs text-neutral-500">
+                    {latestConsent.aftercare_acknowledged ? "Aftercare acknowledged" : "Aftercare still pending"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href="/profile/files" className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
+                      View consent
+                    </Link>
+                    <a href={latestConsent.consent_form_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
+                      Original image
+                    </a>
+                  </div>
+                </div>
               ) : null}
-              {latestPrescription.general_instructions ? (
-                <p className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm leading-6 text-neutral-600">
-                  <span className="font-semibold text-black">Instructions:</span>{" "}
-                  {latestPrescription.general_instructions}
-                </p>
+            </RecordTile>
+
+            <RecordTile
+              title="Latest Medical File"
+              href="/profile/files"
+              actionLabel="Open files"
+              emptyLabel="No released medical files yet."
+              badge="File"
+              icon={<FaFileMedical />}
+            >
+              {latestFile ? (
+                <div className="space-y-3 text-sm text-neutral-700">
+                  <p className="font-bold text-black">{latestFile.file_name}</p>
+                  <p>{latestFile.file_type || "Medical document"}</p>
+                  <p className="text-xs text-neutral-500">Uploaded {dateTime(latestFile.created_at)}</p>
+                  <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
+                    Open file
+                  </a>
+                </div>
               ) : null}
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => downloadPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
-                  <FaDownload /> Download PDF
-                </button>
-                <button onClick={() => printPrescription(latestPrescription)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
-                  <FaPrint /> Print
-                </button>
-              </div>
-            </div>
-          ) : <Empty text="No released prescriptions yet." />}
-        </PortalSection>
-      </div>
+            </RecordTile>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <PortalSection title="Billing History" actionHref="/payments/history" actionLabel="View bills" icon={<FaCreditCard />}>
-          {latestBilling ? (
-            <div>
-              <p className="text-sm font-bold text-black">{money(Number(latestBilling.total))}</p>
-              <p className="mt-1 text-sm text-neutral-500">{latestBilling.status} - {dateTime(latestBilling.issued_at ?? latestBilling.created_at)}</p>
-            </div>
-          ) : <Empty text="No billing records yet." />}
-        </PortalSection>
+            <RecordTile
+              title="Latest Notes"
+              href="/consultations/history"
+              actionLabel="Open history"
+              emptyLabel="No doctor-released consultation notes yet."
+              badge="Note"
+              icon={<FaFileLines />}
+            >
+              {latestNote ? (
+                <div className="space-y-3 text-sm text-neutral-700">
+                  <p><span className="font-semibold text-black">Diagnosis:</span> {latestNote.diagnosis || "No diagnosis recorded."}</p>
+                  <p><span className="font-semibold text-black">Doctor note:</span> {latestNote.note || "No note released."}</p>
+                  <p className="rounded-xl bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-700">
+                    Only notes marked visible by your doctor are shown here.
+                  </p>
+                </div>
+              ) : <Empty text="No doctor-released consultation notes yet." />}
+            </RecordTile>
+          </div>
+        </SectionCard>
 
-        <PortalSection title="Medical Files" actionHref="/profile/files" actionLabel="Open files" icon={<FaFileMedical />}>
-          {latestFile ? (
-            <a href={latestFile.file_url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-neutral-200 p-4 transition hover:bg-neutral-50">
-              <p className="text-sm font-bold text-black">{latestFile.file_name}</p>
-              <p className="mt-1 text-sm text-neutral-500">{latestFile.file_type || "Medical document"} - {dateTime(latestFile.created_at)}</p>
-            </a>
-          ) : <Empty text="No released medical files yet." />}
-        </PortalSection>
-
-        <PortalSection title="Follow-up Inquiry" actionHref="/profile/inquiries" actionLabel="Send message" icon={<FaRegMessage />}>
-          {portalData.inquiries[0] ? (
-            <div>
-              <p className="text-sm font-bold text-black">{portalData.inquiries[0].status}</p>
-              <p className="mt-1 line-clamp-2 text-sm text-neutral-500">{portalData.inquiries[0].message}</p>
+        <SectionCard
+          title="Billing & Messages"
+          description="The practical stuff lives here too."
+          actionHref="/payments/history"
+          actionLabel="View bills"
+        >
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Billing</p>
+              {latestBilling ? (
+                <div className="mt-2">
+                  <p className="text-sm font-bold text-black">{money(Number(latestBilling.total))}</p>
+                  <p className="mt-1 text-sm text-neutral-500">{latestBilling.status} - {dateTime(latestBilling.issued_at ?? latestBilling.created_at)}</p>
+                </div>
+              ) : <p className="mt-2 text-sm text-neutral-500">No billing records yet.</p>}
             </div>
-          ) : (
-            <div>
-              <Empty text="No follow-up inquiries yet." />
-                <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
-                <FaPaperPlane /> Ask a question
-              </Link>
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Follow-up</p>
+              {portalData.inquiries[0] ? (
+                <div className="mt-2">
+                  <p className="text-sm font-bold text-black">{portalData.inquiries[0].status}</p>
+                  <p className="mt-1 line-clamp-3 text-sm text-neutral-500">{portalData.inquiries[0].message}</p>
+                </div>
+              ) : (
+                <div className="mt-2">
+                  <Empty text="No follow-up inquiries yet." />
+                  <Link href="/profile/inquiries" className="mt-3 inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
+                    <FaPaperPlane /> Ask a question
+                  </Link>
+                </div>
+              )}
             </div>
-          )}
-        </PortalSection>
+          </div>
+        </SectionCard>
       </div>
 
       <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
@@ -425,11 +557,41 @@ function PortalSection({ title, icon, actionHref, actionLabel, children }: { tit
   );
 }
 
-function Row({ href, children }: { href: string; children: ReactNode }) {
+function RecordTile({
+  title,
+  icon,
+  href,
+  actionLabel,
+  badge,
+  emptyLabel,
+  children,
+}: {
+  title: string;
+  icon: ReactNode;
+  href: string;
+  actionLabel: string;
+  badge: string;
+  emptyLabel: string;
+  children: ReactNode | null;
+}) {
   return (
-    <Link href={href} className="block rounded-2xl border border-neutral-200 p-4 transition hover:border-neutral-300 hover:bg-neutral-50">
-      {children}
-    </Link>
+    <div className="rounded-2xl border border-neutral-200 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+            <span className="text-black">{icon}</span>
+            {badge}
+          </p>
+          <h3 className="mt-2 text-sm font-bold text-black">{title}</h3>
+        </div>
+        <Link href={href} className="rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-bold text-neutral-700">
+          {actionLabel}
+        </Link>
+      </div>
+      <div className="mt-3">
+        {children ?? <Empty text={emptyLabel} />}
+      </div>
+    </div>
   );
 }
 

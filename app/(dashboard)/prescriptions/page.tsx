@@ -1,24 +1,17 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   FaDownload,
-  FaFloppyDisk,
   FaEye,
-  FaPenToSquare,
-  FaPlus,
   FaPaperPlane,
   FaPrint,
   FaPrescriptionBottleMedical,
-  FaQrcode,
-  FaTrash,
-  FaXmark,
 } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
 
-type Patient = { id: string; profiles?: { full_name?: string; email?: string } | null };
-type Doctor = { id: string; name: string };
 type DiagnosisRecord = {
   id: string;
   diagnosis_text: string;
@@ -26,6 +19,17 @@ type DiagnosisRecord = {
   follow_up_date: string | null;
   visible_to_patient: boolean;
 };
+
+type PrescriptionItem = {
+  id?: string;
+  medicine_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  duration: string | null;
+  instructions: string | null;
+  sort_order?: number | null;
+};
+
 type Prescription = {
   id: string;
   prescription_no: string;
@@ -35,201 +39,160 @@ type Prescription = {
   follow_up_date: string | null;
   released_to_patient: boolean;
   created_at: string;
-  prescription_items?: Array<{ id?: string; medicine_name: string; dosage: string | null; frequency: string | null; duration: string | null; instructions: string | null; sort_order?: number | null }>;
+  prescription_items?: PrescriptionItem[];
   diagnoses?: DiagnosisRecord | null;
-  doctors?: { specialty?: string | null; license_no?: string | null; profiles?: { full_name?: string | null } | null } | null;
-  patients?: { dob?: string | null; gender?: string | null; profiles?: { full_name?: string; email?: string } | null } | null;
+  doctors?: {
+    specialty?: string | null;
+    license_no?: string | null;
+    profiles?: { full_name?: string | null } | null;
+  } | null;
+  doctor_signature_data_url?: string | null;
+  patients?: {
+    dob?: string | null;
+    gender?: string | null;
+    profiles?: { full_name?: string; email?: string } | null;
+  } | null;
 };
 
-type PrescriptionItemDraft = {
-  medicine_name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  instructions: string;
-};
+function ageFromDob(dob?: string | null) {
+  if (!dob) return null;
+  const birth = new Date(`${dob}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hadBirthdayThisYear =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hadBirthdayThisYear) age -= 1;
+  return age >= 0 ? age : null;
+}
 
-const EMPTY_ITEM: PrescriptionItemDraft = {
-  medicine_name: "",
-  dosage: "",
-  frequency: "",
-  duration: "",
-  instructions: "",
-};
+function formatPrescriptionSpecialty(raw?: string | null) {
+  const specialty = raw?.trim();
+  if (!specialty) return "Family and Aesthetic Medicine Specialist";
+  if (/family medicine specialist/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
+  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
+  return specialty;
+}
+
+async function cropSignatureDataUrl(dataUrl: string) {
+  return await new Promise<string>((resolve) => {
+    const image = document.createElement("img");
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        resolve(dataUrl);
+        return;
+      }
+      context.drawImage(image, 0, 0);
+      const { width, height } = canvas;
+      const pixels = context.getImageData(0, 0, width, height).data;
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const alpha = pixels[(y * width + x) * 4 + 3];
+          if (alpha <= 8) continue;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < 0 || maxY < 0) {
+        resolve(dataUrl);
+        return;
+      }
+      const padding = 18;
+      const leftPadding = Math.max(8, Math.floor(padding * 0.7));
+      const rightPadding = Math.max(8, Math.floor(padding * 0.7));
+      const topPadding = Math.max(padding + 6, 18);
+      const bottomPadding = 0;
+      const cropX = Math.max(0, minX - leftPadding);
+      const cropY = Math.max(0, minY - topPadding);
+      const cropWidth = Math.min(width - cropX, maxX - minX + leftPadding + rightPadding + 1);
+      const cropHeight = Math.min(height - cropY, maxY - minY + topPadding + bottomPadding + 1);
+      const output = document.createElement("canvas");
+      output.width = Math.max(1, cropWidth);
+      output.height = Math.max(1, cropHeight);
+      const outputContext = output.getContext("2d");
+      if (!outputContext) {
+        resolve(dataUrl);
+        return;
+      }
+      outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+      resolve(output.toDataURL("image/png"));
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
+  });
+}
 
 export default function PrescriptionsPage() {
   const { accessToken, role } = useRole();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    patient_id: "",
-    doctor_id: "",
-    diagnosis_text: "",
-    treatment_plan: "",
-    general_instructions: "",
-    follow_up_date: "",
-    released_to_patient: true,
-  });
-  const [items, setItems] = useState<PrescriptionItemDraft[]>([{ ...EMPTY_ITEM }]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [clinicSignatureDataUrl, setClinicSignatureDataUrl] = useState("");
 
-  const canManage = role === "DOCTOR" || role === "SUPER_ADMIN" || role === "SECRETARY";
-
-  const headers = useMemo(() => ({
-    Authorization: `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-  }), [accessToken]);
-
-  async function load() {
-    if (!accessToken) return;
-    const prescriptionRes = await fetch("/api/v2/prescriptions", { headers, cache: "no-store" });
-    if (prescriptionRes.ok) {
-      const rows = ((await prescriptionRes.json()).prescriptions ?? []) as Prescription[];
-      setPrescriptions(rows.map((row) => ({
-        ...row,
-        prescription_items: [...(row.prescription_items ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-      })));
-      setSelectedPreviewId((current) => current ?? rows[0]?.id ?? null);
-    }
-    if (canManage) {
-      const [patientsRes, doctorsRes] = await Promise.all([
-        fetch("/api/v2/patients", { headers, cache: "no-store" }),
-        fetch("/api/v2/doctors", { headers, cache: "no-store" }),
-      ]);
-      if (patientsRes.ok) setPatients((await patientsRes.json()).patients ?? []);
-      if (doctorsRes.ok) setDoctors((await doctorsRes.json()).doctors ?? []);
-    }
-  }
+  const authHeaders = useMemo(
+    () => (accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined),
+    [accessToken],
+  );
+  const canEmail = role === "SUPER_ADMIN" || role === "DOCTOR";
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void load();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [accessToken, role]); // eslint-disable-line react-hooks/exhaustive-deps
+    async function loadPrescriptions() {
+      if (!authHeaders) return;
+      setIsLoading(true);
+      setFeedback("");
+
+      const res = await fetch("/api/v2/prescriptions", {
+        headers: authHeaders,
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setFeedback("Unable to load prescription records.");
+        setIsLoading(false);
+        return;
+      }
+
+      const rows = ((await res.json()).prescriptions ?? []) as Prescription[];
+      const settingsRes = await fetch("/api/settings", {
+        headers: authHeaders,
+        cache: "no-store",
+      });
+      const rawSignatureDataUrl = settingsRes.ok
+        ? (((await settingsRes.json()) as { data?: { doctorSignatureDataUrl?: string } }).data?.doctorSignatureDataUrl ?? "")
+        : "";
+      const signatureDataUrl = rawSignatureDataUrl ? await cropSignatureDataUrl(rawSignatureDataUrl) : "";
+      const sortedRows = rows.map((row) => ({
+        ...row,
+        prescription_items: [...(row.prescription_items ?? [])].sort(
+          (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+        ),
+      }));
+      setPrescriptions(sortedRows);
+      setClinicSignatureDataUrl(signatureDataUrl);
+      setSelectedId((current) => current ?? sortedRows[0]?.id ?? null);
+      setIsLoading(false);
+    }
+
+    void loadPrescriptions();
+  }, [authHeaders]);
 
   const selectedPrescription =
-    prescriptions.find((item) => item.id === selectedPreviewId) ?? prescriptions[0] ?? null;
-
-  function resetEditor() {
-    setEditingId(null);
-    setForm((s) => ({
-      ...s,
-      patient_id: "",
-      doctor_id: "",
-      diagnosis_text: "",
-      treatment_plan: "",
-      general_instructions: "",
-      follow_up_date: "",
-      released_to_patient: true,
-    }));
-    setItems([{ ...EMPTY_ITEM }]);
-  }
-
-  function selectPreview(item: Prescription) {
-    setSelectedPreviewId(item.id);
-  }
-
-  function editPrescription(item: Prescription) {
-    setEditingId(item.id);
-    setForm({
-      patient_id: item.patient_id,
-      doctor_id: item.doctor_id,
-      diagnosis_text: item.diagnoses?.diagnosis_text ?? "",
-      treatment_plan: item.diagnoses?.treatment_plan ?? "",
-      general_instructions: item.general_instructions ?? "",
-      follow_up_date: item.follow_up_date ?? item.diagnoses?.follow_up_date ?? "",
-      released_to_patient: item.released_to_patient,
-    });
-    setItems((item.prescription_items?.length ? item.prescription_items : [{ ...EMPTY_ITEM }]).map((rx) => ({
-      medicine_name: rx.medicine_name,
-      dosage: rx.dosage ?? "",
-      frequency: rx.frequency ?? "",
-      duration: rx.duration ?? "",
-      instructions: rx.instructions ?? "",
-    })));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function updateItem(index: number, field: keyof PrescriptionItemDraft, value: string) {
-    setItems((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, [field]: value } : item,
-      ),
-    );
-  }
-
-  function addItemRow() {
-    setItems((current) => [...current, { ...EMPTY_ITEM }]);
-  }
-
-  function removeItemRow(index: number) {
-    setItems((current) => (current.length === 1 ? current : current.filter((_, itemIndex) => itemIndex !== index)));
-  }
-
-  async function submitPrescription(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!accessToken) return;
-    const cleanedItems = items
-      .map((item) => ({
-        medicine_name: item.medicine_name.trim(),
-        dosage: item.dosage.trim(),
-        frequency: item.frequency.trim(),
-        duration: item.duration.trim(),
-        instructions: item.instructions.trim(),
-      }))
-      .filter((item) => item.medicine_name);
-
-    if (cleanedItems.length === 0) {
-      setFeedback("Add at least one medicine item before saving the prescription.");
-      return;
-    }
-
-    const endpoint = editingId ? `/api/v2/prescriptions/${editingId}` : "/api/v2/prescriptions";
-    const res = await fetch(endpoint, {
-      method: editingId ? "PATCH" : "POST",
-      headers,
-      body: JSON.stringify({
-        patient_id: form.patient_id,
-        doctor_id: form.doctor_id,
-        diagnosis_text: form.diagnosis_text,
-        treatment_plan: form.treatment_plan,
-        general_instructions: form.general_instructions,
-        follow_up_date: form.follow_up_date || null,
-        released_to_patient: form.released_to_patient,
-        items: cleanedItems,
-      }),
-    });
-    if (!res.ok) {
-      setFeedback((await res.json()).message ?? "Unable to save prescription");
-      return;
-    }
-    setFeedback(editingId ? "Prescription history updated." : "Prescription created and saved to history.");
-    resetEditor();
-    await load();
-  }
-
-  async function toggleRelease(item: Prescription) {
-    if (!accessToken) return;
-    const res = await fetch(`/api/v2/prescriptions/${item.id}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ released_to_patient: !item.released_to_patient }),
-    });
-    setFeedback(res.ok
-      ? (!item.released_to_patient ? "Prescription sent to the patient portal." : "Prescription hidden from the patient portal.")
-      : "Unable to update patient portal visibility.");
-    await load();
-  }
+    prescriptions.find((item) => item.id === selectedId) ?? prescriptions[0] ?? null;
 
   async function downloadPdf(item: Prescription) {
-    if (!accessToken) return;
-    const res = await fetch(`/api/v2/prescriptions/${item.id}/pdf`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    if (!authHeaders) return;
+    const res = await fetch(`/api/v2/prescriptions/${item.id}/pdf`, { headers: authHeaders });
     if (!res.ok) {
       setFeedback("Unable to download prescription PDF.");
       return;
@@ -246,24 +209,9 @@ export default function PrescriptionsPage() {
     window.URL.revokeObjectURL(url);
   }
 
-  async function emailPrescription(item: Prescription) {
-    if (!accessToken) return;
-    const res = await fetch(`/api/v2/prescriptions/${item.id}`, {
-      method: "POST",
-      headers,
-    });
-    if (!res.ok) {
-      setFeedback("Unable to email prescription.");
-      return;
-    }
-    setFeedback("Prescription emailed to the patient.");
-  }
-
   async function printPrescription(item: Prescription) {
-    if (!accessToken) return;
-    const res = await fetch(`/api/v2/prescriptions/${item.id}/pdf`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    if (!authHeaders) return;
+    const res = await fetch(`/api/v2/prescriptions/${item.id}/pdf`, { headers: authHeaders });
     if (!res.ok) {
       setFeedback("Unable to open printable prescription.");
       return;
@@ -277,382 +225,333 @@ export default function PrescriptionsPage() {
       window.URL.revokeObjectURL(url);
       return;
     }
-    const revoke = () => window.URL.revokeObjectURL(url);
     printWindow.addEventListener("load", () => {
       printWindow.print();
-      setTimeout(revoke, 5_000);
+      setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
     });
   }
 
+  async function emailPrescription(item: Prescription) {
+    if (!authHeaders) return;
+    const res = await fetch(`/api/v2/prescriptions/${item.id}`, {
+      method: "POST",
+      headers: authHeaders,
+    });
+    setFeedback(
+      res.ok
+        ? `Prescription ${item.prescription_no} was emailed to the patient.`
+        : "Unable to email prescription to the patient.",
+    );
+  }
+
   return (
-    <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-700">Prescription & Diagnosis</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Prescription records</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-          Create prescriptions, release them to patients, and preview the official clinic format before it is downloaded, printed, or emailed.
-        </p>
-      </section>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <CapabilityCard icon={<FaPrescriptionBottleMedical />} title="Clinic format" text="Official header, patient details, medicine list, signature line, and follow-up." />
-        <CapabilityCard icon={<FaEye />} title="Patient view" text="Released prescriptions appear in the portal in the same format." />
-        <CapabilityCard icon={<FaDownload />} title="PDF + Email" text="Download a PDF copy, print it, or email it directly to the patient." />
-      </div>
-
-      <section className="rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-5 pb-8">
+      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600">Prescription overview</p>
+        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Preview</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-black">Prescription format</h2>
-            <p className="mt-2 text-sm text-neutral-600">This is the live clinic layout used for PDF and print output.</p>
-          </div>
-          {selectedPrescription ? (
-            <div className="flex flex-wrap gap-2 print:hidden">
-              <button onClick={() => void downloadPdf(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700">
-                <FaDownload /> Download PDF
-              </button>
-              {canManage ? (
-                <button onClick={() => void emailPrescription(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700">
-                  <FaPaperPlane /> Email to patient
-                </button>
-              ) : null}
-              <button onClick={() => void printPrescription(selectedPrescription)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
-                <FaPrint /> Print
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        {selectedPrescription ? (
-          <PrescriptionSheet prescription={selectedPrescription} />
-        ) : (
-          <div className="mt-5 rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-12 text-center text-sm text-neutral-500">
-            No prescription available to preview yet.
-          </div>
-        )}
-      </section>
-
-      {canManage ? (
-        <form onSubmit={submitPrescription} className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-black">{editingId ? "Edit prescription" : "Create prescription"}</h2>
-              <p className="mt-1 text-xs text-neutral-500">Saved records remain available in prescription history.</p>
-            </div>
-            {editingId ? (
-              <button type="button" onClick={resetEditor} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-600">
-                <FaXmark className="h-3 w-3" />
-                Cancel edit
-              </button>
-            ) : null}
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:bg-neutral-100" value={form.patient_id} onChange={(e) => setForm((s) => ({ ...s, patient_id: e.target.value }))}>
-              <option value="">Select patient</option>
-              {patients.map((p) => <option key={p.id} value={p.id}>{p.profiles?.full_name ?? p.id}</option>)}
-            </select>
-            <select required disabled={Boolean(editingId)} className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100 disabled:bg-neutral-100" value={form.doctor_id} onChange={(e) => setForm((s) => ({ ...s, doctor_id: e.target.value }))}>
-              <option value="">Select doctor</option>
-              {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
-            <input required className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="Diagnosis" value={form.diagnosis_text} onChange={(e) => setForm((s) => ({ ...s, diagnosis_text: e.target.value }))} />
-            <input className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="Treatment plan" value={form.treatment_plan} onChange={(e) => setForm((s) => ({ ...s, treatment_plan: e.target.value }))} />
-            <input type="date" className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" value={form.follow_up_date} onChange={(e) => setForm((s) => ({ ...s, follow_up_date: e.target.value }))} />
-            <label className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-semibold">
-              <input type="checkbox" checked={form.released_to_patient} onChange={(e) => setForm((s) => ({ ...s, released_to_patient: e.target.checked }))} />
-              Send to patient portal
-            </label>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-black">Medicine Items</p>
-                <p className="text-xs text-neutral-500">Add one or more medicines with dosage and usage instructions.</p>
-              </div>
-              <button
-                type="button"
-                onClick={addItemRow}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50"
-              >
-                <FaPlus className="h-3 w-3" />
-                Add medicine
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {items.map((item, index) => (
-                <div key={`item-${index}`} className="rounded-2xl border border-neutral-200 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                      Medicine #{index + 1}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => removeItemRow(index)}
-                      disabled={items.length === 1}
-                      className="inline-flex items-center gap-1 rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-bold text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <FaTrash className="h-3 w-3" />
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <input
-                      required={index === 0}
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-                      placeholder="Medicine name"
-                      value={item.medicine_name}
-                      onChange={(e) => updateItem(index, "medicine_name", e.target.value)}
-                    />
-                    <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-                      placeholder="Dosage"
-                      value={item.dosage}
-                      onChange={(e) => updateItem(index, "dosage", e.target.value)}
-                    />
-                    <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-                      placeholder="Frequency"
-                      value={item.frequency}
-                      onChange={(e) => updateItem(index, "frequency", e.target.value)}
-                    />
-                    <input
-                      className="rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-                      placeholder="Duration"
-                      value={item.duration}
-                      onChange={(e) => updateItem(index, "duration", e.target.value)}
-                    />
-                  </div>
-                  <textarea
-                    className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-                    placeholder="Dosage instructions, reminders, or pharmacy notes"
-                    value={item.instructions}
-                    onChange={(e) => updateItem(index, "instructions", e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <textarea className="mt-3 min-h-24 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100" placeholder="General instructions" value={form.general_instructions} onChange={(e) => setForm((s) => ({ ...s, general_instructions: e.target.value }))} />
-          <button className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white">
-            {editingId ? <FaFloppyDisk /> : <FaPlus />}
-            {editingId ? "Save changes" : "Create prescription"}
-          </button>
-        </form>
-      ) : null}
-
-      {feedback ? <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
-
-      <div className="grid gap-4">
-        {prescriptions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-8 text-center">
-            <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-neutral-300" />
-            <h2 className="mt-3 text-lg font-bold text-black">No prescription history yet</h2>
-            <p className="mt-2 text-sm text-neutral-500">
-              {canManage ? "Create a prescription above to save it here." : "Released prescriptions from your doctor will appear here."}
+            <h1 className="text-2xl font-black tracking-tight text-black">Clinic prescription compilation</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
+              All saved prescriptions are compiled here for clinic review. Creating prescriptions stays inside consultation charting.
             </p>
           </div>
-        ) : null}
-        {prescriptions.map((item) => (
-          <article
-            key={item.id}
-            className={`rounded-2xl border bg-white p-5 shadow-sm print:border-0 print:shadow-none hover:bg-neutral-50 transition ${
-              selectedPrescription?.id === item.id ? "border-neutral-300 ring-2 ring-neutral-100" : "border-neutral-200"
-            }`}
-            onClick={() => selectPreview(item)}
-          >
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-700">{item.prescription_no}</span>
-                <h2 className="mt-2 text-lg font-bold text-black">{item.patients?.profiles?.full_name ?? "Patient"}</h2>
-                <p className="text-sm text-neutral-500">
-                  Created {new Date(item.created_at).toLocaleDateString()}
-                  {item.doctors?.profiles?.full_name ? ` • ${item.doctors.profiles.full_name}` : ""}
-                </p>
-              </div>
-              <div className="flex gap-2 print:hidden">
-                <button onClick={() => selectPreview(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700">
-                  <FaEye /> Preview
-                </button>
-                {canManage ? <button onClick={() => editPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaPenToSquare /> Edit</button> : null}
-                {canManage ? <button onClick={() => toggleRelease(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">{item.released_to_patient ? <FaEye /> : <FaPaperPlane />}{item.released_to_patient ? "Released" : "Send to portal"}</button> : null}
-                <button onClick={() => downloadPdf(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaDownload /> Download PDF</button>
-                {canManage ? <button onClick={() => emailPrescription(item)} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"><FaPaperPlane /> Email</button> : null}
-                <button onClick={() => printPrescription(item)} className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white"><FaPrint /> Print</button>
-              </div>
+          <div className="rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm">
+            <span className="font-black text-black">{prescriptions.length}</span>
+            <span className="ml-2 text-neutral-600">prescription records</span>
+          </div>
+        </div>
+      </section>
+
+      {feedback ? (
+        <p className="rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm">
+          {feedback}
+        </p>
+      ) : null}
+
+      <div className="grid gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
+        <aside className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <div className="border-b border-neutral-200 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-600">Compilation</p>
+            <h2 className="mt-1 text-lg font-black text-black">All prescriptions</h2>
+          </div>
+
+          {isLoading ? <p className="px-4 py-6 text-sm text-neutral-500">Loading prescription records...</p> : null}
+
+          {!isLoading && prescriptions.length === 0 ? (
+            <div className="p-6 text-center">
+              <FaPrescriptionBottleMedical className="mx-auto h-8 w-8 text-neutral-300" />
+              <h3 className="mt-3 text-base font-bold text-black">No prescriptions yet</h3>
+              <p className="mt-2 text-sm leading-6 text-neutral-500">
+                Prescriptions created in consultation charting will appear here.
+              </p>
             </div>
-            <div className="mt-4 grid gap-3">
-              {item.diagnoses?.diagnosis_text ? (
-                <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Diagnosis</p>
-                  <p className="mt-2 text-sm text-neutral-700">{item.diagnoses.diagnosis_text}</p>
-                </div>
-              ) : null}
-              {item.diagnoses?.treatment_plan ? (
-                <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">Treatment Plan</p>
-                  <p className="mt-2 text-sm text-neutral-700">{item.diagnoses.treatment_plan}</p>
-                </div>
-              ) : null}
-              {(item.prescription_items ?? []).map((rx, index) => (
-                <div key={`${item.id}-${index}`} className="rounded-xl border border-neutral-200 p-4">
-                  <p className="font-bold text-black">{rx.medicine_name}</p>
-                  <p className="mt-1 text-sm text-neutral-600">{[rx.dosage, rx.frequency, rx.duration].filter(Boolean).join(" - ")}</p>
-                  {rx.instructions ? <p className="mt-2 text-sm text-neutral-600">{rx.instructions}</p> : null}
-                </div>
-              ))}
+          ) : null}
+
+          <div className="max-h-[calc(100vh-18rem)] overflow-y-auto p-3">
+            {prescriptions.map((item) => (
+              <PrescriptionListItem
+                key={item.id}
+                item={item}
+                selected={selectedPrescription?.id === item.id}
+                onClick={() => setSelectedId(item.id)}
+              />
+            ))}
+          </div>
+        </aside>
+
+        <main className="min-w-0 rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <SelectedHeader
+            prescription={selectedPrescription}
+            canEmail={canEmail}
+            onDownload={downloadPdf}
+            onEmail={emailPrescription}
+            onPrint={printPrescription}
+          />
+          {selectedPrescription ? (
+            <PrescriptionDetails
+              prescription={selectedPrescription}
+              clinicSignatureDataUrl={clinicSignatureDataUrl}
+            />
+          ) : (
+            <div className="mt-5 rounded-md border border-dashed border-neutral-300 bg-neutral-50 px-4 py-12 text-center text-sm text-neutral-500">
+              Select a prescription from the compilation list to view it.
             </div>
-            {item.general_instructions ? <p className="mt-4 text-sm leading-6 text-neutral-700">{item.general_instructions}</p> : null}
-            {item.follow_up_date ? <p className="mt-3 text-sm font-semibold text-neutral-700">Follow-up: {item.follow_up_date}</p> : null}
-          </article>
-        ))}
+          )}
+        </main>
       </div>
     </div>
   );
 }
 
-function CapabilityCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
+function PrescriptionListItem({
+  item,
+  selected,
+  onClick,
+}: {
+  item: Prescription;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
-    <article className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <div className="text-2xl text-neutral-400">{icon}</div>
-      <h2 className="mt-4 text-base font-bold text-black">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-neutral-600">{text}</p>
-    </article>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`mb-3 w-full rounded-md border p-4 text-left transition ${
+        selected
+          ? "border-neutral-950 bg-neutral-950 text-white shadow-sm"
+          : "border-neutral-200 bg-white text-black hover:border-neutral-300 hover:bg-neutral-50"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-xs font-bold uppercase tracking-[0.14em] ${selected ? "text-neutral-300" : "text-neutral-500"}`}>
+            {item.prescription_no}
+          </p>
+          <p className="mt-2 break-words text-base font-black leading-tight">
+            {item.patients?.profiles?.full_name ?? "Patient"}
+          </p>
+        </div>
+        <FaEye className={`mt-1 h-4 w-4 shrink-0 ${selected ? "text-white" : "text-neutral-400"}`} />
+      </div>
+      <p className={`mt-3 text-sm ${selected ? "text-neutral-200" : "text-neutral-600"}`}>
+        {new Date(item.created_at).toLocaleDateString()}
+        {item.doctors?.profiles?.full_name ? ` | ${item.doctors.profiles.full_name}` : ""}
+      </p>
+      <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.12em] ${selected ? "text-neutral-300" : "text-neutral-500"}`}>
+        {item.released_to_patient ? "Shared with patient" : "Clinic record only"}
+      </p>
+    </button>
   );
 }
 
-function PrescriptionSheet({ prescription }: { prescription: Prescription }) {
+function SelectedHeader({
+  prescription,
+  canEmail,
+  onDownload,
+  onEmail,
+  onPrint,
+}: {
+  prescription: Prescription | null;
+  canEmail: boolean;
+  onDownload: (item: Prescription) => void | Promise<void>;
+  onEmail: (item: Prescription) => void | Promise<void>;
+  onPrint: (item: Prescription) => void | Promise<void>;
+}) {
+  return (
+    <div className="flex flex-col gap-4 border-b border-neutral-200 pb-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600">Selected prescription</p>
+        <h2 className="mt-2 text-3xl font-black tracking-tight text-black">
+          {prescription?.prescription_no ?? "No prescription selected"}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-neutral-600">
+          {prescription
+            ? `${prescription.patients?.profiles?.full_name ?? "Patient"} | ${new Date(prescription.created_at).toLocaleDateString()}`
+            : "Choose a prescription from the compilation list to preview it."}
+        </p>
+      </div>
+      {prescription ? (
+        <div className="flex flex-col gap-2 print:hidden">
+          <div className="flex flex-wrap gap-2">
+          <ActionButton icon={<FaDownload />} label="Download PDF" onClick={() => void onDownload(prescription)} />
+          {canEmail ? (
+            <ActionButton icon={<FaPaperPlane />} label="Email to patient" onClick={() => void onEmail(prescription)} />
+          ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => void onPrint(prescription)}
+            className="inline-flex w-fit items-center gap-2 rounded-md bg-black px-4 py-3 text-xs font-bold text-white"
+          >
+            <FaPrint /> Print
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ActionButton({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700"
+    >
+      {icon} {label}
+    </button>
+  );
+}
+
+function PrescriptionDetails({
+  prescription,
+  clinicSignatureDataUrl,
+}: {
+  prescription: Prescription;
+  clinicSignatureDataUrl: string;
+}) {
   const medicines = prescription.prescription_items ?? [];
+  const doctorName = prescription.doctors?.profiles?.full_name ?? "Doctor not recorded";
+  const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
+  const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : doctorName;
+  const clinicHeaderName = doctorNameBase ? `${doctorNameBase} Online Clinic` : "Doc Kulot Online Clinic";
+  const patientName = prescription.patients?.profiles?.full_name ?? "Patient";
   const prescribedAt = new Date(prescription.created_at);
-  const age = calculateAge(prescription.patients?.dob, prescribedAt);
-  const doctorName = prescription.doctors?.profiles?.full_name ?? "Dr. Fatimah Al-Zahra T. Ditti";
-  const doctorSpecialty = prescription.doctors?.specialty ?? "Family Medicine";
+  const prescribedDate = prescribedAt.toLocaleDateString();
+  const prescribedTime = prescribedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+  const specialty = formatPrescriptionSpecialty(prescription.doctors?.specialty);
   const prcNo = prescription.doctors?.license_no ?? "0141185";
-  const followUp = prescription.follow_up_date ?? prescription.diagnoses?.follow_up_date ?? "";
+  const patientAge = ageFromDob(prescription.patients?.dob);
+  const signatureDataUrl = prescription.doctor_signature_data_url ?? clinicSignatureDataUrl;
 
   return (
-    <div className="mt-5 overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-100 p-4 shadow-sm">
-      <div className="mx-auto min-h-[62rem] w-full max-w-3xl bg-white px-8 py-7 text-black shadow-sm sm:px-11">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center border-2 border-green-700 text-[10px] font-black leading-tight text-green-700">
-              PPD<br />Clinic
+    <div className="mt-5 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+      <div className="mx-auto max-w-4xl bg-white px-6 py-8 text-neutral-900 sm:px-10 lg:px-12">
+        <div className="flex items-start justify-between gap-6">
+          <Image
+            src="/images/dockulotslogonobg.png"
+            alt="Doc Kulot logo"
+            width={300}
+            height={168}
+            className="h-auto w-52 max-w-full object-contain sm:w-60"
+            priority
+          />
+          <div className="min-w-[11rem] text-right">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-neutral-500">Prescription ID</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-black">{prescription.prescription_no}</p>
+          </div>
+        </div>
+
+        <div className="mt-7 text-center">
+          <p className="text-lg font-black tracking-tight text-black sm:text-[1.65rem]">{doctorHeaderName}</p>
+          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">{specialty}</p>
+          <p className="mt-1 text-xl font-black tracking-tight text-black sm:text-[1.5rem]">{clinicHeaderName}</p>
+          <p className="mt-1 text-sm text-neutral-700 sm:text-[0.95rem]">Zamboanga City, Zamboanga Del Sur</p>
+        </div>
+
+        <div className="mt-6 border-t border-neutral-200 pt-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-sm leading-6 text-neutral-900">
+                Patient: <span className="font-black text-black">{patientName}</span>
+              </p>
+              <p className="text-sm leading-6 text-neutral-800">
+                Age: {patientAge != null ? `${patientAge} years old` : "Not recorded"}
+              </p>
+              <p className="text-sm leading-6 text-neutral-800">Gender: {prescription.patients?.gender || "Not recorded"}</p>
             </div>
-            <p className="text-sm font-bold leading-tight text-green-700">
-              Connecting<br />Healthcare<br />to Everyone
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-right">
-            <div className="grid h-11 w-11 place-items-center bg-blue-700 text-lg font-black text-white">
-              TFD
+            <div className="text-left sm:text-right">
+              <p className="text-sm leading-6 text-neutral-700">Prescribed on: {prescribedDate}</p>
+              <p className="text-sm leading-6 text-neutral-700">{prescribedTime} PHT</p>
             </div>
-            <p className="text-xl font-black text-blue-800">TheFilipinoDoctor</p>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center">
-          <div className="mx-auto grid h-28 w-28 place-items-center border-2 border-black bg-[linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%),linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%)] bg-[length:16px_16px] bg-[position:0_0,8px_8px] text-white">
-            <FaQrcode className="h-12 w-12 drop-shadow-[0_1px_0_rgba(0,0,0,1)]" aria-hidden="true" />
-          </div>
-          <p className="mt-2 text-xs font-semibold">(Scan QR code to validate)</p>
-          <p className="mt-1 text-sm font-bold">PRESCRIPTION ID: {prescription.prescription_no}</p>
-          <h3 className="mt-5 text-2xl font-black">{doctorName}</h3>
-          <p className="mt-1 text-base">{doctorSpecialty}</p>
-          <p className="mt-4 text-xl font-black">Doc Kulot Online Clinic</p>
-          <p className="mt-1 text-base">Zamboanga City, Zamboanga Del Sur</p>
-        </div>
-
-        <div className="mt-8 border-t border-neutral-300 pt-5">
-          <p className="text-right text-sm font-semibold">
-            Prescribed on: {formatPrescriptionDateTime(prescribedAt)}
-          </p>
-          <div className="mt-4">
-            <p className="text-lg">
-              Patient: <span className="font-black">{prescription.patients?.profiles?.full_name ?? "Patient"}</span>
-            </p>
-            <p className="mt-1 text-base">Age: {age != null ? `${age} years old` : "Not recorded"}</p>
-            <p className="mt-1 text-base">Gender: {prescription.patients?.gender ?? "Not recorded"}</p>
-          </div>
-        </div>
-
-        <div className="mt-7">
-          <p className="text-2xl font-black">Rx</p>
-          <div className="mt-5 space-y-6">
-            {medicines.length > 0 ? medicines.map((rx, index) => {
-              const formulation = [rx.dosage, rx.duration].filter(Boolean).join(" ");
-              const sig = [rx.frequency, rx.instructions].filter(Boolean).join(" ");
-              return (
-                <div key={`${prescription.id}-${rx.medicine_name}-${index}`} className="pl-4">
-                  <p className="text-xl font-black">{rx.medicine_name}</p>
-                  {formulation ? <p className="mt-1 text-base">{formulation}</p> : null}
-                  {sig ? <p className="mt-1 pl-8 text-base">Sig. {sig}</p> : null}
-                </div>
-              );
-            }) : (
-              <p className="pl-4 text-sm text-neutral-500">No medicine items added yet.</p>
-            )}
           </div>
         </div>
 
         <div className="mt-10">
-          <p className="text-base font-bold italic">Note:</p>
-          <p className="mt-2 whitespace-pre-wrap text-base leading-7">
-            {[
-              prescription.general_instructions ?? "",
-              followUp ? `Follow-up: ${followUp}` : "",
-            ].filter(Boolean).join("\n") || "No additional notes."}
-          </p>
-        </div>
+          <div className="flex items-center gap-4">
+            <p className="text-4xl font-black leading-none tracking-tight text-black">Rx</p>
+            <div className="h-px flex-1 bg-neutral-200" />
+          </div>
 
-        <div className="mt-20 flex justify-end">
-          <div className="w-72 text-center">
-            <div className="mx-auto h-12 border-b border-neutral-400" />
-            <p className="mt-2 text-base">Physician&apos;s Signature</p>
-            <p className="mt-1 text-base">PRC No.: {prcNo}</p>
+          <div className="mt-6 space-y-5">
+            {medicines.length > 0 ? (
+              medicines.map((item, index) => (
+                <div key={`${prescription.id}-${item.id ?? index}`} className="pl-4">
+                  <p className="text-[1.55rem] font-black leading-tight tracking-tight text-black">{item.medicine_name}</p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-neutral-800">
+                    {item.dosage || "No dosage recorded"}
+                    {item.frequency ? `, ${item.frequency}` : ""}
+                    {item.duration ? `, ${item.duration}` : ""}
+                  </p>
+                  {item.instructions ? (
+                    <p className="mt-1 text-sm leading-6 text-neutral-700">{item.instructions}</p>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <p className="pl-4 text-sm text-neutral-500">No medicine items recorded.</p>
+            )}
           </div>
         </div>
 
-        <div className="mt-10 text-center text-sm font-semibold">(End of Prescription)</div>
-
-        <div className="mt-6 border-t border-neutral-300 pt-4 text-[11px] leading-5 text-neutral-700">
-          <p>
-            <span className="font-bold">Note to User:</span> The information contained in this electronic prescription is provided by the prescriber. If any information is suspected to be altered, verify the original prescription record before dispensing.
+        <div className="mt-8">
+          <p className="text-sm font-semibold italic text-black">Note:</p>
+          <p className="mt-1 text-sm leading-6 text-neutral-800">
+            {prescription.general_instructions || prescription.diagnoses?.treatment_plan || "No additional instructions recorded."}
           </p>
-          <div className="mt-4 border-t border-neutral-300 pt-3 text-center">
-            <p className="font-bold">Powered by The Filipino Doctor</p>
-            <p className="mt-1 font-semibold">For Philippines use only.</p>
+        </div>
+
+        <div className="mt-16 flex justify-end">
+          <div className="w-72 text-center">
+            {signatureDataUrl ? (
+              <div className="mb-0 flex h-24 items-end justify-center border-b border-black/80 pb-0">
+                <Image
+                  src={signatureDataUrl}
+                  alt="Physician signature"
+                  width={380}
+                  height={160}
+                  className="h-auto max-h-52 w-auto translate-y-10 object-contain sm:translate-y-12"
+                />
+              </div>
+            ) : (
+              <div className="mb-0 h-24 border-b border-black/80" />
+            )}
+            <p className="text-sm text-neutral-700">Physician&apos;s Signature</p>
+            <p className="mt-1 text-sm font-semibold text-neutral-800">PRC No.: {prcNo}</p>
+          </div>
+        </div>
+
+        <div className="mt-14 text-center">
+          <p className="text-sm font-semibold text-neutral-700">(End of Prescription)</p>
+          <p className="mt-6 text-sm leading-6 text-neutral-800">
+            Note to User: The information contained in this electronic prescription is provided by the prescriber and should be verified before dispensing.
+          </p>
+          <div className="mt-6 border-t border-neutral-200 pt-3">
+            <p className="text-sm font-semibold text-neutral-700">Powered by Doc Kulot</p>
+            <p className="text-sm text-neutral-700">For clinic use only.</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-function calculateAge(dob?: string | null, at = new Date()) {
-  if (!dob) return null;
-  const birthDate = new Date(`${dob}T00:00:00`);
-  if (Number.isNaN(birthDate.getTime())) return null;
-  let age = at.getFullYear() - birthDate.getFullYear();
-  const birthdayThisYear = new Date(at.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-  if (at < birthdayThisYear) age -= 1;
-  return age >= 0 ? age : null;
-}
-
-function formatPrescriptionDateTime(date: Date) {
-  if (Number.isNaN(date.getTime())) return "Not recorded";
-  return `${date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })} ${date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  })} PHT`;
-}
-

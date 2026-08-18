@@ -579,6 +579,7 @@ export async function readSystemSettings(): Promise<SystemSettings> {
       clinic_open_time?: string | null;
       clinic_close_time?: string | null;
       default_meeting_link?: string | null;
+      doctor_signature_data_url?: string | null;
       online_payment_accounts?: unknown;
     }>();
   if (!data) return INITIAL_SYSTEM_SETTINGS;
@@ -592,28 +593,42 @@ export async function readSystemSettings(): Promise<SystemSettings> {
     clinicOpenTime: data.clinic_open_time?.slice(0, 5) ?? INITIAL_SYSTEM_SETTINGS.clinicOpenTime,
     clinicCloseTime: data.clinic_close_time?.slice(0, 5) ?? INITIAL_SYSTEM_SETTINGS.clinicCloseTime,
     defaultMeetingLink: data.default_meeting_link ?? "",
+    doctorSignatureDataUrl: data.doctor_signature_data_url ?? "",
     onlinePaymentAccounts: normalizeOnlinePaymentAccounts(data.online_payment_accounts),
   };
 }
 
-export async function saveSystemSettings(settings: SystemSettings): Promise<SystemSettings> {
+export async function saveSystemSettings(settings: Partial<SystemSettings>): Promise<SystemSettings> {
   const supabase = getSupabaseAdmin();
+  const current = await readSystemSettings();
+  const next: SystemSettings = {
+    ...current,
+    ...settings,
+    doctorSignatureDataUrl:
+      typeof settings.doctorSignatureDataUrl === "string"
+        ? settings.doctorSignatureDataUrl
+        : current.doctorSignatureDataUrl,
+    onlinePaymentAccounts: settings.onlinePaymentAccounts ?? current.onlinePaymentAccounts,
+  };
   const { error } = await supabase
     .from("system_settings")
-    .update({
-      clinic_name: settings.clinicName,
-      email: settings.email,
-      phone: settings.phone,
-      address: settings.address,
-      online_consultation_fee: settings.onlineConsultationFee,
-      max_patients_per_hour: settings.maxPatientsPerHour,
-      clinic_open_time: settings.clinicOpenTime,
-      clinic_close_time: settings.clinicCloseTime,
-      default_meeting_link: (settings.defaultMeetingLink ?? "").trim(),
-      online_payment_accounts: normalizeOnlinePaymentAccounts(settings.onlinePaymentAccounts),
+    .upsert({
+      id: true,
+      clinic_name: next.clinicName,
+      email: next.email,
+      phone: next.phone,
+      address: next.address,
+      online_consultation_fee: next.onlineConsultationFee,
+      max_patients_per_hour: next.maxPatientsPerHour,
+      clinic_open_time: next.clinicOpenTime,
+      clinic_close_time: next.clinicCloseTime,
+      default_meeting_link: next.defaultMeetingLink.trim(),
+      doctor_signature_data_url: next.doctorSignatureDataUrl.trim(),
+      online_payment_accounts: normalizeOnlinePaymentAccounts(next.onlinePaymentAccounts),
       updated_at: new Date().toISOString(),
-    })
-    .eq("id", true);
+    }, { onConflict: "id" })
+    .select("clinic_name,email,phone,address,online_consultation_fee,max_patients_per_hour,clinic_open_time,clinic_close_time,default_meeting_link,doctor_signature_data_url,online_payment_accounts")
+    .single();
   if (error) throw error;
   return readSystemSettings();
 }

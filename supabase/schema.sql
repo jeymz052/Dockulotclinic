@@ -113,6 +113,7 @@ create table public.system_settings (
   clinic_open_time time not null default '09:00',
   clinic_close_time time not null default '16:00',
   default_meeting_link text not null default '',
+  doctor_signature_data_url text not null default '',
   online_payment_accounts jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles(id) on delete set null,

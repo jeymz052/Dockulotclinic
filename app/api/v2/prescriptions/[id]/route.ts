@@ -6,6 +6,7 @@ import {
   getPrescriptionPdfFilename,
   type PrescriptionPdfRow,
 } from "@/src/lib/services/prescription-pdf";
+import { readSystemSettings } from "@/src/lib/server/clinic-store";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { DbRole } from "@/src/lib/db/types";
 
@@ -167,7 +168,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "";
     const portalUrl = appUrl ? `${appUrl}/prescriptions` : "/prescriptions";
-    const pdf = createPrescriptionPdf(data);
+    const settings = await readSystemSettings();
+    const pdf = createPrescriptionPdf({ ...data, doctor_signature_data_url: settings.doctorSignatureDataUrl });
     const filename = getPrescriptionPdfFilename(data.prescription_no);
     await sendEmail({
       to: patientEmail,

@@ -423,11 +423,24 @@ export default function BookAppointmentPage() {
   // to read it.
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   useEffect(() => {
+    if (authLoading) return;
+
+    let savedReservationFlow = false;
+
     try {
       const raw = localStorage.getItem("bookingDraft");
       if (raw) {
         const parsed = JSON.parse(raw) as { formData?: Partial<BookingForm>; activeStep?: number };
         if (parsed?.formData) {
+          const savedService = parsed.formData.service ?? "";
+          const savedVisitPath =
+            parsed.formData.visitPath
+            ?? (PROCEDURE_SERVICE_TITLES.has(savedService) ? "Procedure" : parsed.formData.type);
+          savedReservationFlow =
+            savedVisitPath === "Online"
+            || savedVisitPath === "Procedure"
+            || PROCEDURE_SERVICE_TITLES.has(savedService);
+
           setFormData((cur) => {
             const restoredHasPatientDetails =
               Boolean(parsed.formData?.patientName?.trim())
@@ -459,14 +472,23 @@ export default function BookAppointmentPage() {
       }
       const reservationId = localStorage.getItem("bookingReservation");
       if (reservationId) {
-        setFeedback({ message: "We held your selected slot — please sign in to complete booking.", type: "success" });
+        if (savedReservationFlow) {
+          setFeedback({
+            message: accessToken
+              ? "We held your selected slot - you can continue booking now."
+              : "We held your selected slot - please sign in to complete booking.",
+            type: "success",
+          });
+        } else {
+          localStorage.removeItem("bookingReservation");
+        }
       }
     } catch {
       // ignore
     } finally {
       setHasRestoredDraft(true);
     }
-  }, []);
+  }, [accessToken, authLoading]);
 
   useEffect(() => {
     if (authLoading || !accessToken) return;
@@ -474,7 +496,7 @@ export default function BookAppointmentPage() {
     setIsLoadingPaymentAccounts(true);
     (async () => {
       try {
-        const res = await fetch("/api/settings", {
+        const res = await fetch("/api/v2/payment-methods", {
           cache: "no-store",
           headers: { Authorization: `Bearer ${accessToken}` },
         });

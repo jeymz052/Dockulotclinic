@@ -69,7 +69,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/patients/records": "Patient Records",
   "/consultations": "Consultations",
   "/consultations/history": "Consultation History",
-  "/payments": "Payments",
+  "/payments": "Online Payments",
   "/payments/history": "Payment History",
   "/payments/pos": "POS Billing",
   "/pricing": "Pricing",
@@ -78,7 +78,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/schedules/slots": "Blocked Dates",
   "/settings": "Settings",
   "/profile": "Profile",
-  "/profile/settings": "My Settings",
   "/profile/help": "Help Center",
   "/help": "Help Center",
   "/users": "Users",
@@ -259,7 +258,7 @@ export function DashboardHeader({
   const displayEmail = profile?.email ?? "";
   const initials = getInitials(displayName);
   const canSeeSettings = canAccessPath(role, "/settings");
-  const settingsHref = canSeeSettings ? "/settings" : "/profile/settings";
+  const settingsHref = canSeeSettings ? "/settings" : "/profile";
   const notifCount = useMemo(() => items.filter((item) => !item.is_read).length, [items]);
   const hasNotifications = items.length > 0;
 

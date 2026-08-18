@@ -28,6 +28,7 @@ import {
   FaMapLocationDot,
   FaWandMagicSparkles,
   FaInbox,
+  FaRegUser,
   FaUserLock,
   FaUserPlus,
 } from "react-icons/fa6";
@@ -59,15 +60,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   SUPER_ADMIN: [
     { label: "Dashboard", href: "/dashboard", icon: FaHouse },
     { label: "Users Management", href: "/users", icon: FaUsers },
-    {
-      label: "Patients",
-      href: "/patients",
-      icon: FaUsers,
-      subItems: [
-        { label: "All Patients", href: "/patients", icon: FaUsers },
-        { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
-      ],
-    },
+    { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
     {
       label: "Appointments",
       href: "/appointments",
@@ -94,6 +87,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
+    { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
     {
       label: "Schedules",
       href: "/schedules",
@@ -113,16 +107,8 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   ],
   SECRETARY: [
     { label: "Dashboard", href: "/dashboard", icon: FaHouse },
-    {
-      label: "Patients",
-      href: "/patients",
-      icon: FaUsers,
-      subItems: [
-        { label: "All Patients", href: "/patients", icon: FaUsers },
-        { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
-        { label: "Walk-In Patients", href: "/patients/add", icon: FaUserPlus },
-      ],
-    },
+    { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
+    { label: "Walk-In Patients", href: "/patients/add", icon: FaUserPlus },
     {
       label: "Appointments",
       href: "/appointments",
@@ -156,15 +142,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Calendar View", href: "/appointments/calendar", icon: FaCalendarDays },
       ],
     },
-    {
-      label: "Patients",
-      href: "/patients",
-      icon: FaUsers,
-      subItems: [
-        { label: "My Patients", href: "/patients", icon: FaUsers },
-        { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
-      ],
-    },
+    { label: "Patient Records", href: "/patients/records", icon: FaFileLines },
     {
       label: "Consultations",
       href: "/consultations",
@@ -174,6 +152,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
+    { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
     {
       label: "Schedules",
       href: "/schedules",
@@ -198,8 +177,18 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Settings", href: "/settings", icon: FaGear },
   ],
   PATIENT: [
-    { label: "Dashboard", href: "/dashboard", icon: FaHouse },
-    { label: "Patient Portal", href: "/portal", icon: FaUserLock },
+    {
+      label: "Patient Portal",
+      href: "/portal",
+      icon: FaUserLock,
+      subItems: [
+        { label: "Portal Overview", href: "/portal", icon: FaHouse },
+        { label: "Medical Documents", href: "/profile/files", icon: FaFileLines },
+        { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
+        { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
+        { label: "Follow-up Messages", href: "/profile/inquiries", icon: FaInbox },
+      ],
+    },
    {
       label: "Appointments",
       href: "/appointments",
@@ -211,23 +200,31 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       ],
     },
     {
-      label: "Payments",
+      label: "Online Payments",
       href: "/payments",
       icon: FaCreditCard,
+      subItems: [
+        { label: "Pay Online", href: "/payments", icon: FaCreditCard },
+        { label: "Payment History", href: "/payments/history", icon: FaClockRotateLeft },
+      ],
     },
     {
-      label: "Consultations",
+      label: "Virtual Consults",
       href: "/consultations",
       icon: FaRegMessage,
       subItems: [
         { label: "Consultation Lobby", href: "/consultations", icon: FaVideo },
-        { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
-    { label: "Medical Files", href: "/profile/files", icon: FaFileLines },
-    { label: "Follow-up Inquiries", href: "/profile/inquiries", icon: FaInbox },
-    { label: "My Settings", href: "/profile/settings", icon: FaGear },
-    { label: "Help Center", href: "/profile/help", icon: FaCircleQuestion },
+    {
+      label: "Account & Help",
+      href: "/profile",
+      icon: FaGear,
+      subItems: [
+        { label: "Profile", href: "/profile", icon: FaRegUser },
+        { label: "Help Center", href: "/profile/help", icon: FaCircleQuestion },
+      ],
+    },
   ],
 };
 

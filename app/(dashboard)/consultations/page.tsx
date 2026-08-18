@@ -13,7 +13,6 @@ import {
   FaFileMedical,
   FaFileWaveform,
   FaFloppyDisk,
-  FaHeartPulse,
   FaLaptopMedical,
   FaListCheck,
   FaNotesMedical,
@@ -31,7 +30,6 @@ import {
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useConsultationNotes, usePatients } from "@/src/components/clinic/useClinicData";
-import { VitalSignsForm } from "@/src/components/clinic/VitalSignsForm";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { getAppointmentPrimaryLabel, getAppointmentSecondaryReason } from "@/src/lib/appointment-context";
 import {
@@ -41,6 +39,7 @@ import {
   type AppointmentRecord,
 } from "@/src/lib/appointments";
 import type { ConsultationNote, ConsultationProgress, PatientRecordItem } from "@/src/lib/clinic";
+import { calculatePatientAge } from "@/src/lib/patient-registration";
 
 type DraftState = {
   diagnosis: string;
@@ -48,25 +47,6 @@ type DraftState = {
   prescription: string;
   status: ConsultationProgress;
   visibleToPatient: boolean;
-};
-
-type OnlineConsultationRecord = {
-  id: string;
-  appointment_id: string;
-  concern: string | null;
-  symptoms: string | null;
-  file_urls: Array<{ file_name?: string; file_type?: string; file_url?: string } | string>;
-  platform: string | null;
-  meeting_link: string | null;
-  status: string;
-};
-
-type PatientRecordDraft = {
-  familyHistory: string;
-  medicalHistory: string;
-  allergies: string;
-  emergencyContactName: string;
-  emergencyContactPhone: string;
 };
 
 type PrescriptionItemDraft = {
@@ -83,7 +63,7 @@ type CreatedPrescription = {
 };
 
 type QueueFilter = "all" | "ready" | "live" | "completed";
-type ConsultationTab = "intake" | "chart" | "record";
+type ConsultationTab = "record" | "chart";
 type BadgeTone = "sky" | "emerald" | "amber" | "rose" | "slate";
 
 const emptyDraft: DraftState = {
@@ -92,14 +72,6 @@ const emptyDraft: DraftState = {
   prescription: "",
   status: "Ready",
   visibleToPatient: false,
-};
-
-const emptyPatientRecordDraft: PatientRecordDraft = {
-  familyHistory: "",
-  medicalHistory: "",
-  allergies: "",
-  emergencyContactName: "",
-  emergencyContactPhone: "",
 };
 
 const emptyPrescriptionItem: PrescriptionItemDraft = {
@@ -115,15 +87,13 @@ export default function OnlineConsultationPage() {
   const { appointments, setAppointments } = useAppointments();
   const { doctors } = useDoctors();
   const { data: notes, setData: setNotes, isLoading, error } = useConsultationNotes();
-  const { data: patients, setData: setPatients } = usePatients();
-  const [onlineConsultations, setOnlineConsultations] = useState<OnlineConsultationRecord[]>([]);
+  const { data: patients } = usePatients();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<ConsultationTab>("intake");
+  const [activeTab, setActiveTab] = useState<ConsultationTab>("record");
   const [draft, setDraft] = useState<DraftState>(emptyDraft);
-  const [patientRecordDraft, setPatientRecordDraft] = useState<PatientRecordDraft>(emptyPatientRecordDraft);
   const [prescriptionItems, setPrescriptionItems] = useState<PrescriptionItemDraft[]>([{ ...emptyPrescriptionItem }]);
   const [prescriptionInstructions, setPrescriptionInstructions] = useState("");
   const [prescriptionFollowUpDate, setPrescriptionFollowUpDate] = useState("");
@@ -184,33 +154,6 @@ export default function OnlineConsultationPage() {
   const activePatientRecord = activeAppointment
     ? findPatientRecord(patients, activeAppointment)
     : null;
-  const activeOnlineConsultation = activeAppointment
-    ? onlineConsultations.find((item) => item.appointment_id === activeAppointment.id) ?? null
-    : null;
-  const patientRecordDirty =
-    patientRecordDraft.familyHistory !== (activePatientRecord?.familyHistory ?? "")
-    || patientRecordDraft.medicalHistory !== (activePatientRecord?.medicalHistory ?? "")
-    || patientRecordDraft.allergies !== (activePatientRecord?.allergies ?? "")
-    || patientRecordDraft.emergencyContactName !== (activePatientRecord?.emergencyContactName ?? "")
-    || patientRecordDraft.emergencyContactPhone !== (activePatientRecord?.emergencyContactPhone ?? "");
-
-  useEffect(() => {
-    if (!accessToken || role === "PATIENT") return;
-    let active = true;
-    (async () => {
-      const res = await fetch("/api/v2/online-consultations", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      });
-      if (!res.ok) return;
-      const payload = (await res.json()) as { consultations: OnlineConsultationRecord[] };
-      if (active) setOnlineConsultations(payload.consultations ?? []);
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken, role]);
 
   const readyCount = eligibleAppointments.filter((appointment) => {
     const note = notes.find((item) => item.appointmentId === appointment.id);
@@ -232,9 +175,8 @@ export default function OnlineConsultationPage() {
     );
   }
 
-  function selectConsultation(appointment: AppointmentRecord, tab: ConsultationTab = "intake") {
+  function selectConsultation(appointment: AppointmentRecord, tab: ConsultationTab = "record") {
     const existing = notes.find((note) => note.appointmentId === appointment.id);
-    const patientRecord = findPatientRecord(patients, appointment);
     const inferredStatus: ConsultationProgress =
       existing?.status
       ?? (appointment.status === "Completed"
@@ -251,13 +193,6 @@ export default function OnlineConsultationPage() {
       prescription: existing?.prescription ?? "",
       status: inferredStatus,
       visibleToPatient: existing?.visibleToPatient ?? false,
-    });
-    setPatientRecordDraft({
-      familyHistory: patientRecord?.familyHistory ?? "",
-      medicalHistory: patientRecord?.medicalHistory ?? "",
-      allergies: patientRecord?.allergies ?? "",
-      emergencyContactName: patientRecord?.emergencyContactName ?? "",
-      emergencyContactPhone: patientRecord?.emergencyContactPhone ?? "",
     });
     setPrescriptionItems([{ ...emptyPrescriptionItem }]);
     setPrescriptionInstructions(existing?.prescription ?? "");
@@ -318,67 +253,6 @@ export default function OnlineConsultationPage() {
         ),
       );
       setFeedback("Consultation note saved.");
-    });
-  }
-
-  function savePatientRecord(appointment: AppointmentRecord) {
-    if (!accessToken) {
-      setFeedback("Your session expired. Please sign in again.");
-      return;
-    }
-
-    const patientRecord = findPatientRecord(patients, appointment);
-    if (!patientRecord) {
-      setFeedback("Unable to find the matching patient record for this consultation.");
-      return;
-    }
-
-    startTransition(async () => {
-      const response = await fetch("/api/patient-records", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          patientId: patientRecord.id,
-          familyHistory: patientRecordDraft.familyHistory,
-          medicalHistory: patientRecordDraft.medicalHistory,
-          allergies: patientRecordDraft.allergies,
-          emergencyContactName: patientRecordDraft.emergencyContactName,
-          emergencyContactPhone: patientRecordDraft.emergencyContactPhone,
-        }),
-      });
-
-      const payload = (await response.json().catch(() => null)) as
-        | { message?: string }
-        | { ok: true }
-        | null;
-
-      if (!response.ok) {
-        const message =
-          payload && "message" in payload && typeof payload.message === "string"
-            ? payload.message
-            : "Unable to save patient record.";
-        setFeedback(message);
-        return;
-      }
-
-      setPatients((current) =>
-        current.map((patient) =>
-          patient.id === patientRecord.id
-            ? {
-                ...patient,
-                familyHistory: patientRecordDraft.familyHistory.trim(),
-                medicalHistory: patientRecordDraft.medicalHistory.trim(),
-                allergies: patientRecordDraft.allergies.trim(),
-                emergencyContactName: patientRecordDraft.emergencyContactName.trim(),
-                emergencyContactPhone: patientRecordDraft.emergencyContactPhone.trim(),
-              }
-            : patient,
-        ),
-      );
-      setFeedback("Patient record saved.");
     });
   }
 
@@ -554,7 +428,7 @@ export default function OnlineConsultationPage() {
             Visit workspace
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
-            Move from queue to intake, charting, and patient record updates without leaving the visit.
+            Move from queue to patient record, charting, and prescription updates without leaving the visit.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -662,7 +536,6 @@ export default function OnlineConsultationPage() {
             <div className="flex h-full min-h-0 flex-col">
               <VisitHeader
                 appointment={activeAppointment}
-                draft={draft}
                 patientRecord={activePatientRecord}
                 onClose={() => setActiveAppointmentId(null)}
               />
@@ -670,10 +543,10 @@ export default function OnlineConsultationPage() {
               <div className="border-b border-neutral-200 px-4 sm:px-5">
                 <div className="flex gap-1 overflow-x-auto py-3">
                   <TabButton
-                    active={activeTab === "intake"}
-                    icon={<FaFileWaveform className="h-4 w-4" />}
-                    label="Intake"
-                    onClick={() => setActiveTab("intake")}
+                    active={activeTab === "record"}
+                    icon={<FaAddressBook className="h-4 w-4" />}
+                    label="Patient record"
+                    onClick={() => setActiveTab("record")}
                   />
                   <TabButton
                     active={activeTab === "chart"}
@@ -681,283 +554,161 @@ export default function OnlineConsultationPage() {
                     label="Charting"
                     onClick={() => setActiveTab("chart")}
                   />
-                  <TabButton
-                    active={activeTab === "record"}
-                    icon={<FaAddressBook className="h-4 w-4" />}
-                    label="Patient record"
-                    onClick={() => setActiveTab("record")}
-                  />
                 </div>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-                {activeTab === "intake" ? (
-                  <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-                    <div className="space-y-5">
-                      <SectionHeading
-                        icon={<FaHeartPulse className="h-4 w-4" />}
-                        title="Vitals and visit context"
-                        description="Capture visit-specific measurements before charting."
-                      />
-                      <div className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4">
-                        <VitalSignsForm appointmentId={activeAppointment.id} />
-                      </div>
-                      {activeAppointment.type === "Online" ? (
-                        <VirtualIntakePanel
-                          appointment={activeAppointment}
-                          consultation={activeOnlineConsultation}
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-4">
-                      <SectionHeading
-                        icon={<FaCircleInfo className="h-4 w-4" />}
-                        title="At a glance"
-                        description="The basics needed before the visit starts."
-                      />
-                      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
-                        <DetailTile
-                          icon={<FaCalendarDay className="h-4 w-4" />}
-                          label="Schedule"
-                          value={formatDisplayDate(activeAppointment.date)}
-                          hint={formatRange(activeAppointment.start, activeAppointment.end)}
-                        />
-                        <DetailTile
-                          icon={<FaPhone className="h-4 w-4" />}
-                          label="Contact"
-                          value={activeAppointment.phone || activeAppointment.email || "No contact info"}
-                          hint={activeAppointment.email && activeAppointment.phone ? activeAppointment.email : undefined}
-                        />
-                        <DetailTile
-                          icon={<FaUserDoctor className="h-4 w-4" />}
-                          label="Doctor"
-                          value={getDoctorById(activeAppointment.doctorId)?.name ?? "Assigned doctor"}
-                          hint={formatAppointmentType(activeAppointment.type)}
-                        />
-                        <DetailTile
-                          icon={<FaFileMedical className="h-4 w-4" />}
-                          label="Patient record"
-                          value={activePatientRecord ? "Matched" : "Needs review"}
-                          hint={activePatientRecord ? activePatientRecord.patientNumber : "No matching record found"}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                {activeTab === "record" ? (
+                  <PatientRecordSnapshot
+                    appointment={activeAppointment}
+                    patientRecord={activePatientRecord}
+                  />
                 ) : null}
 
                 {activeTab === "chart" ? (
-                  <div className="mx-auto max-w-5xl">
-                    <div className="mb-5 flex flex-col gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-neutral-950">Chart status</p>
-                        <p className="mt-1 text-sm text-neutral-600">
-                          Mark progress as the visit moves from review to completion.
-                        </p>
-                      </div>
-                      <StatusControl
-                        value={draft.status}
-                        onChange={(status) => setDraft((current) => ({ ...current, status }))}
-                      />
-                    </div>
-
-                    <div className="grid gap-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
-                      <div className="space-y-4">
+                  <div className="mx-auto max-w-6xl space-y-5">
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+                      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
                         <SectionHeading
                           icon={<FaStethoscope className="h-4 w-4" />}
                           title="Assessment"
-                          description="Summarize the clinical impression first."
+                          description="Start with the clinical impression, then keep the chart details together below."
                         />
-                        <TextAreaField
-                          label="Diagnosis"
-                          value={draft.diagnosis}
-                          minHeight="min-h-36"
-                          onChange={(value) => setDraft((current) => ({ ...current, diagnosis: value }))}
-                          placeholder="Clinical diagnosis, impression, or assessment"
-                        />
-                        <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700">
-                          <input
-                            type="checkbox"
-                            checked={draft.visibleToPatient}
-                            onChange={(event) =>
-                              setDraft((current) => ({
-                                ...current,
-                                visibleToPatient: event.target.checked,
-                              }))
-                            }
-                            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+                        <div className="mt-4 space-y-4">
+                          <TextAreaField
+                            label="Diagnosis"
+                            value={draft.diagnosis}
+                            minHeight="min-h-40"
+                            onChange={(value) => setDraft((current) => ({ ...current, diagnosis: value }))}
+                            placeholder="Clinical diagnosis, impression, or assessment"
                           />
-                          <span className="inline-flex items-center gap-2">
-                            {draft.visibleToPatient ? (
-                              <FaEye className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                            ) : (
-                              <FaEyeSlash className="h-4 w-4 text-neutral-400" aria-hidden="true" />
-                            )}
-                            Visible in patient portal
-                          </span>
-                        </label>
-                      </div>
+                          <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
+                            <input
+                              type="checkbox"
+                              checked={draft.visibleToPatient}
+                              onChange={(event) =>
+                                setDraft((current) => ({
+                                  ...current,
+                                  visibleToPatient: event.target.checked,
+                                }))
+                              }
+                              className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+                            />
+                            <span className="inline-flex items-center gap-2">
+                              {draft.visibleToPatient ? (
+                                <FaEye className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                              ) : (
+                                <FaEyeSlash className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                              )}
+                              Visible in patient portal
+                            </span>
+                          </label>
+                          <div className="rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
+                            Keep the assessment short and specific. The final chart status is set at the bottom of this page.
+                          </div>
+                        </div>
+                      </section>
 
-                      <div className="space-y-4">
+                      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
                         <SectionHeading
                           icon={<FaNotesMedical className="h-4 w-4" />}
                           title="Consultation note"
-                          description="Document symptoms, decisions, and the follow-up plan."
+                          description="Document symptoms, decisions, and the follow-up plan in one place."
                         />
-                        <TextAreaField
-                          label="Consultation notes"
-                          value={draft.note}
-                          minHeight="min-h-56"
-                          onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
-                          placeholder="Assessment, progress, symptoms, recommendations, and patient instructions"
-                        />
-                        <TextAreaField
-                          label="Care plan summary"
-                          value={draft.prescription}
-                          minHeight="min-h-36"
-                          onChange={(value) => setDraft((current) => ({ ...current, prescription: value }))}
-                          placeholder="Tests, referrals, aftercare, lifestyle plan, or follow-up summary"
-                        />
-                        <PrescriptionBuilder
-                          items={prescriptionItems}
-                          instructions={prescriptionInstructions}
-                          followUpDate={prescriptionFollowUpDate}
-                          releaseToPatient={releasePrescription}
-                          feedback={prescriptionFeedback}
-                          createdPrescription={createdPrescription}
-                          disabled={isSaving}
-                          patientMatched={Boolean(activePatientRecord)}
-                          onItemChange={updatePrescriptionItem}
-                          onAddItem={addPrescriptionItem}
-                          onRemoveItem={removePrescriptionItem}
-                          onInstructionsChange={(value) => {
-                            setPrescriptionInstructions(value);
-                            setPrescriptionFeedback(null);
-                          }}
-                          onFollowUpDateChange={(value) => {
-                            setPrescriptionFollowUpDate(value);
-                            setPrescriptionFeedback(null);
-                          }}
-                          onReleaseChange={(value) => {
-                            setReleasePrescription(value);
-                            setPrescriptionFeedback(null);
-                          }}
-                          onSave={() => savePrescription(activeAppointment)}
-                          onDownloadCreated={() =>
-                            createdPrescription
-                              ? void downloadCreatedPrescription(createdPrescription)
-                              : undefined
-                          }
-                          onPrintCreated={() =>
-                            createdPrescription
-                              ? void printCreatedPrescription(createdPrescription)
-                              : undefined
-                          }
-                        />
-                        <div className="flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                          <button
-                            type="button"
-                            onClick={() => saveConsultation(activeAppointment)}
-                            disabled={isSaving}
-                            className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-                          >
-                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
-                            {isSaving ? "Saving..." : "Save note"}
-                          </button>
-                          {activeNote?.updatedAt ? (
-                            <p className="text-xs text-neutral-500">
-                              Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
-                            </p>
-                          ) : null}
+                        <div className="mt-4 space-y-4">
+                          <TextAreaField
+                            label="Consultation notes"
+                            value={draft.note}
+                            minHeight="min-h-56"
+                            onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
+                            placeholder="Assessment, progress, symptoms, recommendations, and patient instructions"
+                          />
+                          <TextAreaField
+                            label="Care plan summary"
+                            value={draft.prescription}
+                            minHeight="min-h-32"
+                            onChange={(value) => setDraft((current) => ({ ...current, prescription: value }))}
+                            placeholder="Tests, referrals, aftercare, lifestyle plan, or follow-up summary"
+                          />
                         </div>
-                      </div>
+                      </section>
                     </div>
-                  </div>
-                ) : null}
 
-                {activeTab === "record" ? (
-                  <div className="mx-auto max-w-5xl">
-                    <div className="mb-5">
-                      <SectionHeading
-                        icon={<FaAddressBook className="h-4 w-4" />}
-                        title="Patient record"
-                        description="Update standing health background separately from this visit note."
-                      />
-                    </div>
-                    {!activePatientRecord ? (
-                      <Banner tone="error">
-                        No matching patient record was found for this appointment. Check the patient name, email, or phone in patient records.
-                      </Banner>
-                    ) : null}
-                    <div className="mt-4 grid gap-5 lg:grid-cols-2">
-                      <div className="space-y-4">
-                        <InputField
-                          label="Emergency contact name"
-                          value={patientRecordDraft.emergencyContactName}
-                          onChange={(value) =>
-                            setPatientRecordDraft((current) => ({
-                              ...current,
-                              emergencyContactName: value,
-                            }))
-                          }
-                          placeholder="Parent, spouse, sibling, or guardian"
-                        />
-                        <InputField
-                          label="Emergency contact phone"
-                          value={patientRecordDraft.emergencyContactPhone}
-                          onChange={(value) =>
-                            setPatientRecordDraft((current) => ({
-                              ...current,
-                              emergencyContactPhone: value,
-                            }))
-                          }
-                          placeholder="+63 9XX XXX XXXX"
-                        />
-                        <TextAreaField
-                          label="Allergies"
-                          value={patientRecordDraft.allergies}
-                          minHeight="min-h-32"
-                          onChange={(value) =>
-                            setPatientRecordDraft((current) => ({ ...current, allergies: value }))
-                          }
-                          placeholder="Drug allergies, food allergies, latex, skin reactions, or no known allergies"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <TextAreaField
-                          label="Medical history"
-                          value={patientRecordDraft.medicalHistory}
-                          minHeight="min-h-36"
-                          onChange={(value) =>
-                            setPatientRecordDraft((current) => ({ ...current, medicalHistory: value }))
-                          }
-                          placeholder="Past illnesses, surgeries, maintenance medicines, pregnancy history, or other relevant medical background"
-                        />
-                        <TextAreaField
-                          label="Family history"
-                          value={patientRecordDraft.familyHistory}
-                          minHeight="min-h-40"
-                          onChange={(value) =>
-                            setPatientRecordDraft((current) => ({ ...current, familyHistory: value }))
-                          }
-                          placeholder="Relevant illnesses or risks in the family, such as hypertension, diabetes, stroke, asthma, or cancer"
-                        />
-                        <div className="flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                          <button
-                            type="button"
-                            onClick={() => savePatientRecord(activeAppointment)}
-                            disabled={isSaving || !activePatientRecord || !patientRecordDirty}
-                            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
-                            {isSaving ? "Saving..." : "Save patient record"}
-                          </button>
-                          <p className="text-xs text-neutral-500">
-                            {patientRecordDirty ? "Unsaved record changes" : "Record is up to date"}
+                    <PrescriptionBuilder
+                      items={prescriptionItems}
+                      instructions={prescriptionInstructions}
+                      followUpDate={prescriptionFollowUpDate}
+                      releaseToPatient={releasePrescription}
+                      feedback={prescriptionFeedback}
+                      createdPrescription={createdPrescription}
+                      disabled={isSaving}
+                      patientMatched={Boolean(activePatientRecord)}
+                      onItemChange={updatePrescriptionItem}
+                      onAddItem={addPrescriptionItem}
+                      onRemoveItem={removePrescriptionItem}
+                      onInstructionsChange={(value) => {
+                        setPrescriptionInstructions(value);
+                        setPrescriptionFeedback(null);
+                      }}
+                      onFollowUpDateChange={(value) => {
+                        setPrescriptionFollowUpDate(value);
+                        setPrescriptionFeedback(null);
+                      }}
+                      onReleaseChange={(value) => {
+                        setReleasePrescription(value);
+                        setPrescriptionFeedback(null);
+                      }}
+                      onSave={() => savePrescription(activeAppointment)}
+                      onDownloadCreated={() =>
+                        createdPrescription
+                          ? void downloadCreatedPrescription(createdPrescription)
+                          : undefined
+                      }
+                      onPrintCreated={() =>
+                        createdPrescription
+                          ? void printCreatedPrescription(createdPrescription)
+                          : undefined
+                      }
+                    />
+
+                    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-5 shadow-sm">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-2xl">
+                          <p className="text-sm font-bold text-neutral-950">Save and close out</p>
+                          <p className="mt-1 text-sm text-neutral-600">
+                            Save the note first, then set the chart status as the final step so it is harder to miss.
                           </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => saveConsultation(activeAppointment)}
+                          disabled={isSaving}
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                        >
+                          <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                          {isSaving ? "Saving..." : "Save note"}
+                        </button>
                       </div>
-                    </div>
+                      <div className="mt-5 border-t border-neutral-200 pt-5">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                          <div>
+                            <p className="text-sm font-bold text-neutral-950">Chart status</p>
+                            <p className="mt-1 text-sm text-neutral-600">
+                              Set this last, after the assessment, note, and prescription are ready.
+                            </p>
+                          </div>
+                          <StatusControl
+                            value={draft.status}
+                            onChange={(status) => setDraft((current) => ({ ...current, status }))}
+                          />
+                        </div>
+                        {activeNote?.updatedAt ? (
+                          <p className="mt-4 text-xs text-neutral-500">
+                            Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
+                          </p>
+                        ) : null}
+                      </div>
+                    </section>
                   </div>
                 ) : null}
               </div>
@@ -1164,12 +915,10 @@ function PatientConsultationLobby({
 
 function VisitHeader({
   appointment,
-  draft,
   patientRecord,
   onClose,
 }: {
   appointment: AppointmentRecord;
-  draft: DraftState;
   patientRecord: PatientRecordItem | null;
   onClose: () => void;
 }) {
@@ -1181,7 +930,6 @@ function VisitHeader({
             <Badge tone={appointment.type === "Online" ? "sky" : "emerald"}>
               {formatAppointmentType(appointment.type)}
             </Badge>
-            <Badge tone={statusTone(draft.status)}>{draft.status}</Badge>
             {patientRecord ? <Badge tone="slate">{patientRecord.patientNumber}</Badge> : null}
           </div>
           <h2 className="mt-3 truncate text-2xl font-black text-neutral-950">
@@ -1289,69 +1037,144 @@ function QueueVisitCard({
   );
 }
 
-function VirtualIntakePanel({
+function PatientRecordSnapshot({
   appointment,
-  consultation,
+  patientRecord,
 }: {
   appointment: AppointmentRecord;
-  consultation: OnlineConsultationRecord | null;
+  patientRecord: PatientRecordItem | null;
 }) {
-  const files = consultation?.file_urls ?? [];
+  const patientName = patientRecord?.fullName || appointment.patientName;
+  const patientNumber = patientRecord?.patientNumber || "No patient number";
+  const birthDate = patientRecord?.dateOfBirth ? formatDisplayDate(patientRecord.dateOfBirth) : "Not recorded";
+  const recordStatus = patientRecord?.status || "Not recorded";
+  const patientType = patientRecord?.patientCategory || "Not recorded";
+  const openHref = patientRecord ? `/patients/records/${patientRecord.id}` : "/patients/records";
+
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionHeading
-          icon={<FaLaptopMedical className="h-4 w-4" />}
-          title="Virtual consult intake"
-          description="Review submitted concern, symptoms, and attachments."
-        />
-        {consultation?.platform ? <Badge tone="slate">{consultation.platform}</Badge> : null}
-      </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <ReadOnlyNoteBlock
-          title="Concern"
-          value={consultation?.concern || appointment.reason || "No concern submitted."}
-          compact
-        />
-        <ReadOnlyNoteBlock
-          title="Symptoms"
-          value={consultation?.symptoms || "No additional symptoms submitted."}
-          compact
-        />
-      </div>
-      <div className="mt-4 border-t border-neutral-200 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">
-            Attached files / photos
-          </p>
-          <span className="text-xs font-semibold text-neutral-500">
-            {files.length} file{files.length === 1 ? "" : "s"}
-          </span>
-        </div>
-        {files.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {files.map((file, index) => {
-              const normalized = typeof file === "string"
-                ? { file_name: `Attachment ${index + 1}`, file_url: file }
-                : file;
-              return (
-                <a
-                  key={`${normalized.file_url ?? "file"}-${index}`}
-                  href={normalized.file_url ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-white"
-                >
-                  <FaArrowUpRightFromSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                  {normalized.file_name ?? `Attachment ${index + 1}`}
-                </a>
-              );
-            })}
+    <div className="mx-auto max-w-7xl space-y-5">
+      <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="slate">View only</Badge>
+              <Badge tone={patientRecord ? "emerald" : "rose"}>
+                {patientRecord ? "Linked record" : "No linked record"}
+              </Badge>
+            </div>
+            <h2 className="mt-3 truncate text-2xl font-black text-neutral-950">{patientName}</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
+              This is a read-only glimpse of the patient record. Open the full patient record page to edit details.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge tone="slate">{patientNumber}</Badge>
+              <Badge tone="sky">{birthDate}</Badge>
+              <Badge tone="amber">{recordStatus}</Badge>
+              <Badge tone="emerald">{patientType}</Badge>
+            </div>
           </div>
-        ) : (
-          <p className="mt-3 text-sm text-neutral-500">No files were attached for this virtual consult.</p>
-        )}
-      </div>
+          <div className="flex flex-wrap gap-2">
+            <Shortcut href={openHref} label={patientRecord ? "Open full record" : "Open patient records"} />
+          </div>
+        </div>
+      </section>
+
+      {!patientRecord ? (
+        <Banner tone="error">
+          No matching patient record was found for this appointment. Check the patient name, email, or phone in patient records.
+        </Banner>
+      ) : (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="space-y-5">
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
+                icon={<FaAddressBook className="h-4 w-4" />}
+                title="Identity and contact"
+                description="Core fields from the patient records page."
+              />
+              <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <ReadOnlyField label="Patient number" value={patientRecord.patientNumber || "Not recorded"} />
+                <ReadOnlyField label="Full name" value={patientRecord.fullName || "Not recorded"} />
+                <ReadOnlyField label="Birth date" value={birthDate} />
+                <ReadOnlyField label="Gender" value={patientRecord.gender || "Not recorded"} />
+                <ReadOnlyField label="Civil status" value={patientRecord.civilStatus || "Not recorded"} />
+                <ReadOnlyField label="Patient type" value={patientType} />
+                <div className="xl:col-span-3">
+                  <ReadOnlyField label="Address" value={patientRecord.address || "Not recorded"} />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
+                icon={<FaUserGroup className="h-4 w-4" />}
+                title="Contact and emergency"
+                description="Reference information for clinic coordination and aftercare."
+              />
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <ReadOnlyField label="Mobile number" value={patientRecord.phone || "Not recorded"} />
+                <ReadOnlyField label="Email address" value={patientRecord.email || "Not recorded"} />
+                <ReadOnlyField label="Emergency contact name" value={patientRecord.emergencyContactName || "Not recorded"} />
+                <ReadOnlyField label="Emergency contact phone" value={patientRecord.emergencyContactPhone || "Not recorded"} />
+                <ReadOnlyField label="Guardian" value={patientRecord.guardianName || "Not recorded"} />
+                <ReadOnlyField label="Occupation" value={patientRecord.occupation || "Not recorded"} />
+                <div className="md:col-span-2">
+                  <ReadOnlyField label="Religion" value={patientRecord.religion || "Not recorded"} />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-5">
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
+                icon={<FaFileMedical className="h-4 w-4" />}
+                title="Medical background"
+                description="Long-form background that should stay readable without editing it here."
+              />
+              <div className="mt-4 space-y-4">
+                <ReadOnlyNoteBlock
+                  title="Allergies"
+                  value={patientRecord.allergies || "No allergies recorded."}
+                />
+                <ReadOnlyNoteBlock
+                  title="Medical history"
+                  value={patientRecord.medicalHistory || "No medical history recorded."}
+                />
+                <ReadOnlyNoteBlock
+                  title="Family history"
+                  value={patientRecord.familyHistory || "No family history recorded."}
+                />
+                <ReadOnlyNoteBlock
+                  title="Doctor notes"
+                  value={patientRecord.doctorNotes || "No doctor notes recorded."}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
+                icon={<FaFileWaveform className="h-4 w-4" />}
+                title="Visit context"
+                description="Pair the patient snapshot with the current appointment details."
+              />
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <ReadOnlyField label="Appointment date" value={formatDisplayDate(appointment.date)} />
+                <ReadOnlyField label="Visit time" value={formatRange(appointment.start, appointment.end)} />
+                <div className="sm:col-span-2">
+                  <ReadOnlyField
+                    label="Doctor"
+                    value={getDoctorById(appointment.doctorId)?.name ?? "Assigned doctor"}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <ReadOnlyNoteBlock title="Reason for visit" value={formatReason(appointment)} compact />
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1394,18 +1217,18 @@ function PrescriptionBuilder({
   onPrintCreated: () => void;
 }) {
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <SectionHeading
           icon={<FaPrescriptionBottleMedical className="h-4 w-4" />}
           title="Prescription"
-          description="Create the patient prescription from this consultation."
+          description="Build the medicine list first, then add the note, follow-up, and release step."
         />
         <button
           type="button"
           onClick={onAddItem}
           disabled={disabled}
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FaPlus className="h-3 w-3" aria-hidden="true" />
           Add medicine
@@ -1413,14 +1236,14 @@ function PrescriptionBuilder({
       </div>
 
       {!patientMatched ? (
-        <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+        <div className="mt-5 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
           Match this visit to a patient record before saving a prescription.
         </div>
       ) : null}
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-5 space-y-4">
         {items.map((item, index) => (
-          <div key={`consult-rx-${index}`} className="rounded-md border border-neutral-200 bg-neutral-50/70 p-3">
+          <div key={`consult-rx-${index}`} className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
                 Rx item {index + 1}
@@ -1435,7 +1258,7 @@ function PrescriptionBuilder({
                 Remove
               </button>
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <InputField
                 label="Medicine"
                 value={item.medicineName}
@@ -1472,7 +1295,7 @@ function PrescriptionBuilder({
         ))}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
         <TextAreaField
           label="Prescription note"
           value={instructions}
@@ -1488,8 +1311,8 @@ function PrescriptionBuilder({
         />
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-neutral-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-700">
+      <div className="mt-5 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
           <input
             type="checkbox"
             checked={releaseToPatient}
@@ -1510,7 +1333,7 @@ function PrescriptionBuilder({
       </div>
       {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
       {createdPrescription ? (
-        <div className="mt-3 flex flex-col gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-emerald-900">
             {createdPrescription.prescriptionNo} is ready.
           </p>
@@ -1700,29 +1523,17 @@ function ReadOnlyNoteBlock({
   );
 }
 
-function DetailTile({
-  icon,
+function ReadOnlyField({
   label,
   value,
-  hint,
 }: {
-  icon: ReactNode;
   label: string;
   value: string;
-  hint?: string;
 }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-600">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
-          <p className="mt-1 break-words text-sm font-bold text-neutral-950">{value}</p>
-          {hint ? <p className="mt-1 break-words text-xs text-neutral-500">{hint}</p> : null}
-        </div>
-      </div>
+    <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">{label}</p>
+      <p className="mt-2 break-words text-sm font-semibold leading-6 text-neutral-950">{value}</p>
     </div>
   );
 }
@@ -1835,7 +1646,7 @@ function EmptyWorkspace({ compact = false }: { compact?: boolean }) {
       </div>
       <h2 className="mt-5 text-xl font-black text-neutral-950">Choose a consultation</h2>
       <p className="mt-3 max-w-md text-sm leading-6 text-neutral-500">
-        Select a visit from the queue to open intake, charting, and patient record tools.
+        Select a visit from the queue to open patient record and charting tools.
       </p>
     </div>
   );

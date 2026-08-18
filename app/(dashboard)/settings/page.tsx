@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { IconType } from "react-icons";
 import {
   FaBuildingColumns,
@@ -17,6 +17,7 @@ import {
   FaWallet,
 } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { DoctorSignaturePad } from "@/src/components/settings/DoctorSignaturePad";
 import PricingSettingsPanel from "@/src/components/settings/PricingSettingsPanel";
 import SecuritySettingsPanel from "@/src/components/settings/SecuritySettingsPanel";
 import type { OnlinePaymentAccount, OnlinePaymentAccountKind, SystemSettings } from "@/src/lib/clinic";
@@ -41,6 +42,7 @@ const EMPTY: SystemSettings = {
   clinicOpenTime: STANDARD_BOOKING_START,
   clinicCloseTime: STANDARD_BOOKING_END,
   defaultMeetingLink: "",
+  doctorSignatureDataUrl: "",
   onlinePaymentAccounts: [],
 };
 
@@ -124,6 +126,7 @@ export default function SettingsPage() {
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [qrUploadingId, setQrUploadingId] = useState<string | null>(null);
   const [isSaving, startTransition] = useTransition();
+  const signatureDraftRef = useRef(EMPTY.doctorSignatureDataUrl);
 
   const canEdit = role === "SUPER_ADMIN" || role === "DOCTOR";
   const meetingLinkClass = useMemo(
@@ -152,7 +155,10 @@ export default function SettingsPage() {
         });
         if (!res.ok) throw new Error("Failed to load settings");
         const payload = (await res.json()) as { data: SystemSettings };
-        if (active) setSettings(payload.data);
+        if (active) {
+          signatureDraftRef.current = payload.data.doctorSignatureDataUrl ?? "";
+          setSettings(payload.data);
+        }
       } catch (e) {
         if (active) setFeedback({ message: e instanceof Error ? e.message : "Failed to load settings", type: "error" });
       } finally {
@@ -165,6 +171,9 @@ export default function SettingsPage() {
   }, [accessToken, authLoading]);
 
   function updateField<K extends keyof SystemSettings>(field: K, value: SystemSettings[K]) {
+    if (field === "doctorSignatureDataUrl") {
+      signatureDraftRef.current = String(value ?? "");
+    }
     setSettings((current) => ({ ...current, [field]: value }));
     setFeedback(null);
   }
@@ -221,16 +230,23 @@ export default function SettingsPage() {
     event.preventDefault();
     if (!accessToken) return;
     startTransition(async () => {
+      const nextSettings = {
+        ...settings,
+        doctorSignatureDataUrl: signatureDraftRef.current,
+        maxPatientsPerHour: MAX_BOOKINGS_PER_SLOT,
+      };
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ ...settings, maxPatientsPerHour: MAX_BOOKINGS_PER_SLOT }),
+        body: JSON.stringify(nextSettings),
       });
       if (!res.ok) {
-        setFeedback({ message: "Failed to save settings.", type: "error" });
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        setFeedback({ message: body.message ?? "Failed to save settings.", type: "error" });
         return;
       }
       const payload = (await res.json()) as { data: SystemSettings };
+      signatureDraftRef.current = payload.data.doctorSignatureDataUrl ?? "";
       setSettings(payload.data);
       setFeedback({ message: "Settings saved.", type: "success" });
     });
@@ -471,10 +487,16 @@ export default function SettingsPage() {
                       <FaUpRightFromSquare className="h-2.5 w-2.5" aria-hidden="true" />
                       Test the link
                     </a>
-                  ) : null}
+                ) : null}
               </div>
             </div>
           </div>
+
+          <DoctorSignaturePad
+            value={settings.doctorSignatureDataUrl}
+            onChange={(value) => updateField("doctorSignatureDataUrl", value)}
+            disabled={loading || !canEdit || isSaving}
+          />
 
           <div className="border-t border-neutral-100 pt-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

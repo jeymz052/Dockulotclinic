@@ -1,5 +1,6 @@
 import { HttpError, httpError, isClinicStaff, ok, requireActor } from "@/src/lib/http";
 import { enqueueNotification } from "@/src/lib/services/notification";
+import { readSystemSettings } from "@/src/lib/server/clinic-store";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { DbRole } from "@/src/lib/db/types";
 
@@ -32,7 +33,13 @@ export async function GET(req: Request) {
     }
     const { data, error } = await q.limit(200);
     if (error) throw error;
-    return ok({ prescriptions: data ?? [] });
+    const settings = await readSystemSettings();
+    return ok({
+      prescriptions: (data ?? []).map((row) => ({
+        ...row,
+        doctor_signature_data_url: settings.doctorSignatureDataUrl,
+      })),
+    });
   } catch (e) {
     return httpError(e);
   }
