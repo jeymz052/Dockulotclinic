@@ -9,6 +9,17 @@ type BookingCheckoutBody = {
   patientName?: string;
   email?: string;
   phone?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffixName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  civilStatus?: string;
+  address?: string;
+  religion?: string;
+  occupation?: string;
+  guardianName?: string;
   doctorId?: string;
   date?: string;
   start?: string;
@@ -43,6 +54,17 @@ export async function POST(req: Request) {
       patientName: body.patientName,
       email: body.email,
       phone: body.phone,
+      firstName: body.firstName,
+      middleName: body.middleName,
+      lastName: body.lastName,
+      suffixName: body.suffixName,
+      dateOfBirth: body.dateOfBirth,
+      gender: body.gender,
+      civilStatus: body.civilStatus,
+      address: body.address,
+      religion: body.religion,
+      occupation: body.occupation,
+      guardianName: body.guardianName,
       doctorId: body.doctorId,
       date: body.date,
       start: body.start,

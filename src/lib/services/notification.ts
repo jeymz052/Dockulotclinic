@@ -35,6 +35,7 @@ export async function enqueueNotification(input: {
   channels?: NotificationChannel[];
   payload: Record<string, unknown>;
   send_at?: string;
+  autoDispatch?: boolean;
 }) {
   const supabase = getSupabaseAdmin();
   const channels: NotificationChannel[] = input.channels ?? ["email"];
@@ -54,7 +55,7 @@ export async function enqueueNotification(input: {
     rows[0]?.send_at ?? "",
   );
 
-  if (latestSendAt && latestSendAt <= new Date().toISOString()) {
+  if (input.autoDispatch !== false && latestSendAt && latestSendAt <= new Date().toISOString()) {
     try {
       await processDueNotifications();
     } catch (dispatchError) {
@@ -144,7 +145,14 @@ export async function enqueueAppointmentTeamNotifications(input: {
           appointment_date: input.appointment_date,
           start_time: input.start_time,
         },
+        autoDispatch: false,
       }),
     ),
   );
+
+  try {
+    await processDueNotifications();
+  } catch (dispatchError) {
+    console.error("[notifications] team auto-dispatch failed", dispatchError);
+  }
 }

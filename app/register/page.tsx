@@ -1,19 +1,11 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
-import {
-  CIVIL_STATUS_OPTIONS,
-  GENDER_OPTIONS,
-  calculatePatientAge,
-  formatPatientFullName,
-  splitPatientFullName,
-  type PatientSignupFields,
-  validatePatientSignupFields,
-} from "@/src/lib/patient-registration";
+import { type PatientSignupFields, validatePatientSignupFields } from "@/src/lib/patient-registration";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
 
 type AuthForm = PatientSignupFields;
@@ -21,21 +13,9 @@ type ConsentKey = "termsAccepted" | "cancellationAccepted";
 type PolicyModal = "terms" | "cancellation" | null;
 
 const INITIAL_FORM: AuthForm = {
-  fullName: "",
-  firstName: "",
-  middleName: "",
-  lastName: "",
-  suffixName: "",
   email: "",
   password: "",
-  phone: "",
-  dateOfBirth: "",
-  gender: "",
-  civilStatus: "",
-  address: "",
-  religion: "",
-  occupation: "",
-  guardianName: "",
+  confirmPassword: "",
 };
 
 const INITIAL_CONSENTS: Record<ConsentKey, boolean> = {
@@ -138,22 +118,11 @@ export default function RegisterPage() {
       const rawDraft = localStorage.getItem("bookingDraft");
       if (!rawDraft) return;
 
-      const parsed = JSON.parse(rawDraft) as {
-        formData?: Partial<{
-          patientName: string;
-          email: string;
-          phone: string;
-        }>;
-      };
+      const parsed = JSON.parse(rawDraft) as { formData?: Partial<{ email: string }> };
       queueMicrotask(() => {
-        const nameParts = splitPatientFullName(parsed.formData?.patientName || "");
         setFormData((current) => ({
           ...current,
-          fullName: current.fullName || parsed.formData?.patientName || "",
-          firstName: current.firstName || nameParts.firstName,
-          lastName: current.lastName || nameParts.lastName,
           email: current.email || parsed.formData?.email || "",
-          phone: current.phone || parsed.formData?.phone || "",
         }));
       });
     } catch {
@@ -175,45 +144,15 @@ export default function RegisterPage() {
 
   function validateSignupFields(values: AuthForm) {
     const errors: Partial<Record<keyof AuthForm | ConsentKey, string>> = {};
-    const normalizedName = formatPatientFullName(values);
-    const normalizedEmail = values.email.trim().toLowerCase();
-    const normalizedPhone = values.phone.replace(/[\s()-]/g, "");
-    const normalizedPassword = values.password;
-    const normalizedAddress = values.address.trim();
-
-    if (!/^[A-Za-z][A-Za-z\s'.-]{1,79}$/.test(normalizedName)) {
-      errors.fullName = "Name should contain letters, spaces, apostrophes, dots, and hyphens only.";
-    }
-    if (!values.firstName.trim()) {
-      errors.firstName = "First name is required.";
-    }
-    if (!values.lastName.trim()) {
-      errors.lastName = "Family name is required.";
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      errors.email = "Enter a valid email address.";
-    }
-    if (!/^(?:\+639\d{9}|09\d{9}|9\d{9})$/.test(normalizedPhone) && !/^\+\d{8,15}$/.test(normalizedPhone)) {
-      errors.phone = "Use PH number (+639XXXXXXXXX or 09XXXXXXXXX) or international +countrycode.";
-    }
-    if (
-      normalizedPassword.length < 8 ||
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(normalizedPassword)
-    ) {
-      errors.password = "Use 8+ chars with uppercase, lowercase, number, and special character.";
-    }
-    if (!values.dateOfBirth) {
-      errors.dateOfBirth = "Date of birth is required.";
-    }
-    if (!values.gender) {
-      errors.gender = "Please select a gender.";
-    }
-    if (normalizedAddress.length < 8) {
-      errors.address = "Address should be at least 8 characters.";
-    }
-    const age = calculatePatientAge(values.dateOfBirth);
-    if (age != null && age < 18 && values.guardianName.trim().length < 2) {
-      errors.guardianName = "Guardian name is required for pediatric patients.";
+    const signupError = validatePatientSignupFields(values);
+    if (signupError) {
+      if (/email/i.test(signupError)) {
+        errors.email = signupError;
+      } else if (/match/i.test(signupError)) {
+        errors.confirmPassword = signupError;
+      } else {
+        errors.password = signupError;
+      }
     }
     if (!consents.termsAccepted) {
       errors.termsAccepted = "You must agree to the terms and conditions.";
@@ -228,27 +167,10 @@ export default function RegisterPage() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const normalizedEmail = formData.email.trim().toLowerCase();
-    const normalizedFullName = formatPatientFullName(formData);
-
-    const signupFieldErrors = validateSignupFields({
-      ...formData,
-      fullName: normalizedFullName,
-      email: normalizedEmail,
-    });
+    const signupFieldErrors = validateSignupFields(formData);
     if (Object.keys(signupFieldErrors).length > 0) {
       setFieldErrors(signupFieldErrors);
       setFeedback("Please fix the highlighted fields.");
-      return;
-    }
-
-    const signupError = validatePatientSignupFields({
-      ...formData,
-      fullName: normalizedFullName,
-      email: normalizedEmail,
-    });
-    if (signupError) {
-      setFeedback(signupError);
       return;
     }
 
@@ -258,27 +180,12 @@ export default function RegisterPage() {
       const supabase = getSupabaseBrowserClient();
 
       const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(
             `/login?next=${encodeURIComponent(nextPath)}`,
           )}&verified=1`,
-          data: {
-            full_name: normalizedFullName,
-            first_name: formData.firstName,
-            middle_name: formData.middleName,
-            last_name: formData.lastName,
-            suffix_name: formData.suffixName,
-            phone: formData.phone,
-            dob: formData.dateOfBirth,
-            gender: formData.gender,
-            civil_status: formData.civilStatus,
-            address: formData.address,
-            religion: formData.religion,
-            occupation: formData.occupation,
-            guardian_name: formData.guardianName,
-          },
         },
       });
 
@@ -288,36 +195,7 @@ export default function RegisterPage() {
       }
 
       if (!data.user?.id) {
-        setFeedback("Account created, but we could not finish setting up the patient profile.");
-        return;
-      }
-
-      const profileResponse = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fullName: normalizedFullName,
-          firstName: formData.firstName,
-          middleName: formData.middleName,
-          lastName: formData.lastName,
-          suffixName: formData.suffixName,
-          email: normalizedEmail,
-          phone: formData.phone,
-          dateOfBirth: formData.dateOfBirth,
-          gender: formData.gender,
-          civilStatus: formData.civilStatus,
-          address: formData.address,
-          religion: formData.religion,
-          occupation: formData.occupation,
-          guardianName: formData.guardianName,
-        }),
-      });
-
-      if (!profileResponse.ok) {
-        const body = (await profileResponse.json().catch(() => null)) as { message?: string } | null;
-        setFeedback(body?.message ?? "Account created, but we could not save the patient details.");
+        setFeedback("Account created, but we could not finish setting up the account.");
         return;
       }
 
@@ -330,8 +208,6 @@ export default function RegisterPage() {
       );
     });
   }
-
-  const maxBirthDate = new Date().toISOString().slice(0, 10);
 
   return (
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
@@ -347,9 +223,9 @@ export default function RegisterPage() {
       />
       <div className="absolute inset-0 bg-black/60" />
 
-      <section className="relative z-10 my-4 w-full max-w-[560px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
+      <section className="relative z-10 w-full max-w-[390px] rounded-2xl border border-black/10 bg-white/95 p-5 shadow-xl backdrop-blur-sm overflow-hidden">
         <div className="relative z-10">
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-2 overflow-hidden">
             <Image
               src="/images/dockulotslogonobg.png"
               alt="Doc Kulot Logo"
@@ -357,120 +233,16 @@ export default function RegisterPage() {
               height={373}
               priority
               quality={100}
-              style={{ width: "220px", height: "auto" }}
-              className="object-contain drop-shadow-md"
+              style={{ width: "230px", height: "auto" }}
+              className="object-contain drop-shadow-lg mt-0 mb-2"
             />
           </div>
 
-          <div className="mb-1 text-center" style={{ fontFamily: "Inter, Segoe UI, Arial, sans-serif" }}>
+          <div className="text-center mb-2" style={{ fontFamily: "Inter, Segoe UI, Arial, sans-serif" }}>
             <p className="text-lg font-extrabold text-black">Create Account</p>
           </div>
 
-          <form className="max-h-[72vh] space-y-1.5 overflow-y-auto pr-1" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              <Field label="First Name">
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(event) => {
-                    const firstName = event.target.value;
-                    setFormData((current) => ({
-                      ...current,
-                      firstName,
-                      fullName: formatPatientFullName({ ...current, firstName }),
-                    }));
-                    setFieldErrors((current) => ({ ...current, firstName: undefined, fullName: undefined }));
-                    setFeedback(null);
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Juan"
-                  required
-                />
-                {fieldErrors.firstName ? <FieldError message={fieldErrors.firstName} /> : null}
-              </Field>
-
-              <Field label="Family Name">
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(event) => {
-                    const lastName = event.target.value;
-                    setFormData((current) => ({
-                      ...current,
-                      lastName,
-                      fullName: formatPatientFullName({ ...current, lastName }),
-                    }));
-                    setFieldErrors((current) => ({ ...current, lastName: undefined, fullName: undefined }));
-                    setFeedback(null);
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Dela Cruz"
-                  required
-                />
-                {fieldErrors.lastName ? <FieldError message={fieldErrors.lastName} /> : null}
-              </Field>
-
-              <Field label="Middle Name (optional)">
-                <input
-                  type="text"
-                  value={formData.middleName}
-                  onChange={(event) => {
-                    const middleName = event.target.value;
-                    setFormData((current) => ({
-                      ...current,
-                      middleName,
-                      fullName: formatPatientFullName({ ...current, middleName }),
-                    }));
-                    setFieldErrors((current) => ({ ...current, middleName: undefined, fullName: undefined }));
-                    setFeedback(null);
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Middle name"
-                />
-              </Field>
-
-              <Field label="Suffix Name (optional)">
-                <input
-                  type="text"
-                  value={formData.suffixName}
-                  onChange={(event) => {
-                    const suffixName = event.target.value;
-                    setFormData((current) => ({
-                      ...current,
-                      suffixName,
-                      fullName: formatPatientFullName({ ...current, suffixName }),
-                    }));
-                    setFieldErrors((current) => ({ ...current, suffixName: undefined, fullName: undefined }));
-                    setFeedback(null);
-                  }}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Jr., III, optional"
-                />
-              </Field>
-            </div>
-
-            <Field label="Phone">
-              <div className="relative mt-0.5">
-                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-black/60">
-                  <div className="flex h-5 w-7 items-center justify-center overflow-hidden rounded-[3px] border border-black/15 shadow-sm">
-                    <PhilippineFlagIcon />
-                  </div>
-                  <span className="text-sm font-medium">+63</span>
-                </div>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
-                  className="w-full rounded-lg border border-black/10 bg-white py-2 pl-24 pr-3 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="912 345 6789"
-                  inputMode="tel"
-                  title="Use PH format (+639XXXXXXXXX or 09XXXXXXXXX) or international +countrycode."
-                  required
-                />
-              </div>
-              {fieldErrors.phone ? <FieldError message={fieldErrors.phone} /> : null}
-            </Field>
-
+          <form className="space-y-2" onSubmit={handleSubmit}>
             <Field label="Email">
               <input
                 type="email"
@@ -516,126 +288,35 @@ export default function RegisterPage() {
               {fieldErrors.password ? <FieldError message={fieldErrors.password} /> : null}
             </Field>
 
-            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              <Field label="Date of Birth">
+            <Field label="Confirm Password">
+              <div className="relative mt-0.5">
                 <input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(event) => updateField("dateOfBirth", event.target.value)}
-                  max={maxBirthDate}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(event) => updateField("confirmPassword", event.target.value)}
+                  className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 pr-11 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
+                  placeholder="Re-enter your password"
+                  minLength={8}
                   required
                 />
-                {fieldErrors.dateOfBirth ? <FieldError message={fieldErrors.dateOfBirth} /> : null}
-              </Field>
-
-              <Field label="Gender">
-                <div className="relative mt-0.5">
-                  <select
-                    value={formData.gender}
-                    onChange={(event) => updateField("gender", event.target.value)}
-                     className={`w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 ${
-                       formData.gender ? "text-black" : "text-black/35"
-                     }`}
-                    required
-                  >
-                    <option value="" className="bg-white text-black">
-                      Select Gender
-                    </option>
-                    {GENDER_OPTIONS.map((option) => (
-                        <option key={option} value={option} className="bg-white text-black">
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {fieldErrors.gender ? <FieldError message={fieldErrors.gender} /> : null}
-              </Field>
-
-              <Field label="Civil Status (optional)">
-                <div className="relative mt-0.5">
-                  <select
-                    value={formData.civilStatus}
-                    onChange={(event) => updateField("civilStatus", event.target.value)}
-                    className={`w-full appearance-none rounded-lg border border-black/10 bg-white px-3 py-2 pr-8 text-sm text-black outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100 ${
-                      formData.civilStatus ? "text-black" : "text-black/35"
-                    }`}
-                  >
-                    <option value="" className="bg-white text-black">
-                      Select Civil Status
-                    </option>
-                    {CIVIL_STATUS_OPTIONS.map((option) => (
-                      <option key={option} value={option} className="bg-white text-black">
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {fieldErrors.civilStatus ? <FieldError message={fieldErrors.civilStatus} /> : null}
-              </Field>
-            </div>
-
-            <Field label="Address">
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(event) => updateField("address", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                placeholder="123 Main Street, City"
-                required
-              />
-              {fieldErrors.address ? <FieldError message={fieldErrors.address} /> : null}
-            </Field>
-
-            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              <Field label="Religion (optional)">
-                <input
-                  type="text"
-                  value={formData.religion}
-                  onChange={(event) => updateField("religion", event.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Religion"
-                />
-              </Field>
-
-              <Field label="Occupation (optional)">
-                <input
-                  type="text"
-                  value={formData.occupation}
-                  onChange={(event) => updateField("occupation", event.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                  placeholder="Occupation"
-                />
-              </Field>
-            </div>
-
-            <Field label="Name of Guardian (required for peds)">
-              <input
-                type="text"
-                value={formData.guardianName}
-                onChange={(event) => updateField("guardianName", event.target.value)}
-                className="mt-0.5 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-100"
-                placeholder="Parent or guardian name"
-              />
-              {fieldErrors.guardianName ? <FieldError message={fieldErrors.guardianName} /> : null}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-black/60 hover:text-black"
+                  aria-label={showPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path d="M3.53 2.47a.75.75 0 10-1.06 1.06l2.31 2.31C2.8 7.33 1.55 9.24 1.09 10.04a1.97 1.97 0 000 1.92C2 13.57 5.3 18.5 12 18.5c2.36 0 4.38-.61 6.08-1.57l2.39 2.39a.75.75 0 101.06-1.06L3.53 2.47zM12 6.5c4.84 0 7.47 3.57 8.6 5.5a.47.47 0 010 .5c-.41.7-1.08 1.73-2.05 2.69l-2.28-2.28a4.5 4.5 0 00-6.18-6.18L7.9 4.54A11.33 11.33 0 0112 6.5zm2.75 6.72l-3.97-3.97a3 3 0 003.97 3.97zm-5.57-2.39l3.18 3.18a3 3 0 01-3.18-3.18z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                      <path d="M12 5.75c-6.7 0-10 4.93-10.91 6.54a1.97 1.97 0 000 1.92C2 15.83 5.3 20.75 12 20.75s10-4.92 10.91-6.54a1.97 1.97 0 000-1.92C22 10.68 18.7 5.75 12 5.75zm0 12.5a6.5 6.5 0 110-13 6.5 6.5 0 010 13zm0-10.5a4 4 0 100 8 4 4 0 000-8z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {fieldErrors.confirmPassword ? <FieldError message={fieldErrors.confirmPassword} /> : null}
             </Field>
 
             <div className="space-y-1.5 pt-0.5">
@@ -736,20 +417,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {label}
       {children}
     </label>
-  );
-}
-
-function PhilippineFlagIcon() {
-  return (
-    <svg viewBox="0 0 28 20" className="h-full w-full" aria-hidden="true">
-      <rect width="28" height="10" fill="#0038A8" />
-      <rect y="10" width="28" height="10" fill="#CE1126" />
-      <polygon points="0,0 12,10 0,20" fill="#FFFFFF" />
-      <circle cx="4.4" cy="10" r="2.3" fill="#FCD116" />
-      <circle cx="2.2" cy="2.7" r="1" fill="#FCD116" />
-      <circle cx="2.2" cy="17.3" r="1" fill="#FCD116" />
-      <circle cx="9.2" cy="10" r="1" fill="#FCD116" />
-    </svg>
   );
 }
 

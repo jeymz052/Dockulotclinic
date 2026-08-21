@@ -1,14 +1,9 @@
 import { HttpError, httpError, ok } from "@/src/lib/http";
-import {
-  normalizePatientRegistrationFields,
-  validatePatientRegistrationFields,
-  type PatientRegistrationFields,
-} from "@/src/lib/patient-registration";
 import { isProtectedSuperAdminEmail } from "@/src/lib/auth/protected-accounts";
+import { validatePatientSignupFields, type PatientSignupFields } from "@/src/lib/patient-registration";
 import { assertTrustedOrigin, enforceRateLimit } from "@/src/lib/security";
 
-type RegisterPayload = PatientRegistrationFields & {
-};
+type RegisterPayload = PatientSignupFields;
 
 function assertRegisterPayload(payload: unknown): RegisterPayload {
   if (!payload || typeof payload !== "object") {
@@ -16,24 +11,13 @@ function assertRegisterPayload(payload: unknown): RegisterPayload {
   }
 
   const body = payload as Partial<RegisterPayload>;
-  const fields = normalizePatientRegistrationFields({
-    fullName: body.fullName ?? "",
-    firstName: body.firstName ?? "",
-    middleName: body.middleName ?? "",
-    lastName: body.lastName ?? "",
-    suffixName: body.suffixName ?? "",
+  const fields: RegisterPayload = {
     email: body.email ?? "",
-    phone: body.phone ?? "",
-    dateOfBirth: body.dateOfBirth ?? "",
-    gender: body.gender ?? "",
-    civilStatus: body.civilStatus ?? "",
-    address: body.address ?? "",
-    religion: body.religion ?? "",
-    occupation: body.occupation ?? "",
-    guardianName: body.guardianName ?? "",
-  });
+    password: body.password ?? "",
+    confirmPassword: body.confirmPassword ?? "",
+  };
 
-  const validationError = validatePatientRegistrationFields(fields);
+  const validationError = validatePatientSignupFields(fields);
   if (validationError) {
     throw new HttpError(400, validationError);
   }
@@ -41,9 +25,7 @@ function assertRegisterPayload(payload: unknown): RegisterPayload {
     throw new HttpError(400, "This email is reserved for the super admin account.");
   }
 
-  return {
-    ...fields,
-  };
+  return fields;
 }
 
 export async function POST(req: Request) {
@@ -57,7 +39,6 @@ export async function POST(req: Request) {
       message: "Account created in pending state. Please verify your email to finish registration.",
       patient: {
         email: body.email,
-        fullName: body.fullName,
       },
     }, 201);
   } catch (e) {

@@ -60,6 +60,12 @@ import {
   CONSULTATION_SLOT_MINUTES,
   PROCEDURE_SLOT_MINUTES,
 } from "@/src/lib/clinic-schedule";
+import {
+  CIVIL_STATUS_OPTIONS,
+  GENDER_OPTIONS,
+  calculatePatientAge,
+  validatePatientRegistrationFields,
+} from "@/src/lib/patient-registration";
 
 type BookingForm = {
   visitPath: BookingVisitPath;
@@ -70,6 +76,13 @@ type BookingForm = {
   patientName: string;
   email: string;
   phone: string;
+  dateOfBirth: string;
+  gender: string;
+  civilStatus: string;
+  address: string;
+  religion: string;
+  occupation: string;
+  guardianName: string;
   doctorId: string;
   date: string;
   start: string;
@@ -135,6 +148,13 @@ const INITIAL_FORM: BookingForm = {
   patientName: "",
   email: "",
   phone: "",
+  dateOfBirth: "",
+  gender: "",
+  civilStatus: "",
+  address: "",
+  religion: "",
+  occupation: "",
+  guardianName: "",
   doctorId: DEFAULT_DOCTOR_ID,
   date: today,
   start: "",
@@ -446,6 +466,13 @@ export default function BookAppointmentPage() {
               Boolean(parsed.formData?.patientName?.trim())
               || Boolean(parsed.formData?.email?.trim())
               || Boolean(parsed.formData?.phone?.trim())
+              || Boolean(parsed.formData?.dateOfBirth?.trim())
+              || Boolean(parsed.formData?.gender?.trim())
+              || Boolean(parsed.formData?.civilStatus?.trim())
+              || Boolean(parsed.formData?.address?.trim())
+              || Boolean(parsed.formData?.religion?.trim())
+              || Boolean(parsed.formData?.occupation?.trim())
+              || Boolean(parsed.formData?.guardianName?.trim())
               || Boolean(parsed.formData?.reason?.trim())
               || Boolean(parsed.formData?.start);
             const nextType = parsed.formData?.type ?? cur.type;
@@ -561,6 +588,13 @@ export default function BookAppointmentPage() {
         !formData.patientName.trim()
         && !formData.email.trim()
         && !formData.phone.trim()
+        && !formData.dateOfBirth
+        && !formData.gender
+        && !formData.civilStatus
+        && !formData.address.trim()
+        && !formData.religion.trim()
+        && !formData.occupation.trim()
+        && !formData.guardianName.trim()
         && !formData.start
         && !formData.reason.trim();
       if (isEmptyDraft && activeStep === 1) {
@@ -599,6 +633,40 @@ export default function BookAppointmentPage() {
     formData.patientStatus === "Existing" && role === "PATIENT"
       ? formData.phone || patientDefaults.phone
       : formData.phone;
+  const patientAge = calculatePatientAge(formData.dateOfBirth);
+  const guardianRequired = patientAge != null && patientAge < 18;
+  const patientDetailsError = useMemo(
+    () =>
+      validatePatientRegistrationFields({
+        fullName: effectivePatientName,
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        suffixName: "",
+        email: effectivePatientEmail,
+        phone: effectivePatientPhone,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        civilStatus: formData.civilStatus,
+        address: formData.address,
+        religion: formData.religion,
+        occupation: formData.occupation,
+        guardianName: formData.guardianName,
+      }),
+    [
+      effectivePatientName,
+      effectivePatientEmail,
+      effectivePatientPhone,
+      formData.address,
+      formData.civilStatus,
+      formData.dateOfBirth,
+      formData.gender,
+      formData.guardianName,
+      formData.occupation,
+      formData.religion,
+    ],
+  );
+  const maxBirthDate = new Date().toISOString().slice(0, 10);
   const selectedClinic = BOOKING_CLINICS.find((clinic) => clinic.value === formData.clinicId) ?? BOOKING_CLINICS[0];
   const hasProcedureSignatureImage = procedureConsentSignature.startsWith("data:image/png;base64,");
   const consentSignatureMatches =
@@ -626,6 +694,7 @@ export default function BookAppointmentPage() {
     && !!effectivePatientName.trim()
     && !!effectivePatientEmail.trim()
     && !!effectivePatientPhone.trim()
+    && !patientDetailsError
     && (!isProcedureBooking || !!formData.reason.trim());
   const datePicked = !!formData.date && !blockedReason;
   const step3Valid = datePicked && !!formData.start;
@@ -653,6 +722,12 @@ export default function BookAppointmentPage() {
   function goNext() {
     if (activeStep === 1 && step1Valid) goToStep(2);
     else if (activeStep === 2 && step2Valid) goToStep(3);
+    else if (activeStep === 2) {
+      setFeedback({
+        message: patientDetailsError ?? "Please complete the patient record details before continuing.",
+        type: "error",
+      });
+    }
     else if (activeStep === 3 && step3Valid) {
       goToStep(4);
     }
@@ -777,6 +852,17 @@ export default function BookAppointmentPage() {
       patientName: effectivePatientName,
       email: effectivePatientEmail,
       phone: effectivePatientPhone,
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      suffixName: "",
+      dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender,
+      civilStatus: formData.civilStatus,
+      address: formData.address,
+      religion: formData.religion,
+      occupation: formData.occupation,
+      guardianName: formData.guardianName,
       doctorId: activeDoctorId,
       date: formData.date,
       start: formData.start,
@@ -916,6 +1002,17 @@ export default function BookAppointmentPage() {
         patientName: effectivePatientName,
         email: effectivePatientEmail,
         phone: effectivePatientPhone,
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        suffixName: "",
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        civilStatus: formData.civilStatus,
+        address: formData.address,
+        religion: formData.religion,
+        occupation: formData.occupation,
+        guardianName: formData.guardianName,
         doctorId: activeDoctorId,
         date: formData.date,
         start: formData.start,
@@ -1337,6 +1434,141 @@ export default function BookAppointmentPage() {
                       placeholder="+63 912 345 6789" 
                       autoComplete="tel" 
                     />
+                  </div>
+                  <div className="lg:col-span-3 sm:col-span-2 rounded-[1.4rem] border border-neutral-200 bg-neutral-50/80 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-700">Patient record details</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          These details are used to create or update the patient record when the booking is submitted.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                        Required
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <label htmlFor="dob" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Date of Birth *</label>
+                        <input
+                          id="dob"
+                          type="date"
+                          value={formData.dateOfBirth}
+                          max={maxBirthDate}
+                          onChange={(e) => updateForm("dateOfBirth", e.target.value)}
+                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="gender" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Gender *</label>
+                        <div className="relative">
+                          <select
+                            id="gender"
+                            value={formData.gender}
+                            onChange={(e) => updateForm("gender", e.target.value)}
+                            className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
+                              formData.gender ? "text-slate-900" : "text-slate-400"
+                            }`}
+                            required
+                          >
+                            <option value="">Select gender</option>
+                            {GENDER_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                            aria-hidden="true"
+                          >
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="civil-status" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Civil Status</label>
+                        <div className="relative">
+                          <select
+                            id="civil-status"
+                            value={formData.civilStatus}
+                            onChange={(e) => updateForm("civilStatus", e.target.value)}
+                            className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
+                              formData.civilStatus ? "text-slate-900" : "text-slate-400"
+                            }`}
+                          >
+                            <option value="">Select civil status</option>
+                            {CIVIL_STATUS_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                            aria-hidden="true"
+                          >
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="address" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Address *</label>
+                        <input
+                          id="address"
+                          type="text"
+                          value={formData.address}
+                          onChange={(e) => updateForm("address", e.target.value)}
+                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                          placeholder="Street, city, province"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="religion" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Religion</label>
+                        <input
+                          id="religion"
+                          type="text"
+                          value={formData.religion}
+                          onChange={(e) => updateForm("religion", e.target.value)}
+                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="occupation" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Occupation</label>
+                        <input
+                          id="occupation"
+                          type="text"
+                          value={formData.occupation}
+                          onChange={(e) => updateForm("occupation", e.target.value)}
+                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                          placeholder="Optional"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label htmlFor="guardian" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+                          Guardian name {guardianRequired ? "*" : ""}
+                        </label>
+                        <input
+                          id="guardian"
+                          type="text"
+                          value={formData.guardianName}
+                          onChange={(e) => updateForm("guardianName", e.target.value)}
+                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                          placeholder="Parent or guardian"
+                          required={guardianRequired}
+                        />
+                        <p className="mt-2 text-xs text-slate-500">Required for patients under 18.</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="lg:col-span-3 sm:col-span-2">
                     <label htmlFor="reason" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
@@ -1900,19 +2132,19 @@ function HorizontalBookingStepper({
     visitPath === "Online"
       ? "bg-linear-to-br from-sky-500 to-blue-600 text-white shadow-[0_12px_24px_rgba(14,165,233,0.24)]"
       : visitPath === "Procedure"
-        ? "bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-[0_12px_24px_rgba(245,158,11,0.24)]"
+        ? "bg-[linear-gradient(135deg,#f6d76a,#c99700)] text-white shadow-[0_12px_24px_rgba(201,151,0,0.28)]"
         : "bg-linear-to-br from-teal-500 to-emerald-600 text-white shadow-[0_12px_24px_rgba(20,184,166,0.24)]";
   const completeStepAccent =
     visitPath === "Online"
       ? "bg-sky-500 text-white shadow-sm"
       : visitPath === "Procedure"
-        ? "bg-amber-500 text-white shadow-sm"
+        ? "bg-[linear-gradient(135deg,#e4bf52,#b8870b)] text-white shadow-sm"
         : "bg-teal-500 text-white shadow-sm";
   const completeStepLine =
     visitPath === "Online"
       ? "bg-sky-500"
       : visitPath === "Procedure"
-        ? "bg-amber-500"
+        ? "bg-[#c99700]"
         : "bg-teal-500";
 
   return (

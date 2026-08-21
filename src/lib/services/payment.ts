@@ -71,7 +71,26 @@ const ENABLED_NEW_BOOKING_OPTIONS: ReadonlySet<OnlineCheckoutOption> = new Set([
 
 export type OnlineCheckoutBookingInput = Pick<
   AppointmentCreatePayload,
-  "patientName" | "email" | "phone" | "doctorId" | "date" | "start" | "reason" | "patientStatus" | "type"
+  | "patientName"
+  | "email"
+  | "phone"
+  | "doctorId"
+  | "date"
+  | "start"
+  | "reason"
+  | "patientStatus"
+  | "type"
+  | "firstName"
+  | "middleName"
+  | "lastName"
+  | "suffixName"
+  | "dateOfBirth"
+  | "gender"
+  | "civilStatus"
+  | "address"
+  | "religion"
+  | "occupation"
+  | "guardianName"
 >;
 
 async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { service?: string }) {
@@ -1009,7 +1028,12 @@ export async function failPaymentByRef(provider: string, provider_ref: string): 
         user_id: appt.patient_id,
         template: "appointment_payment_failed",
         channels: ["email"],
-        payload: { appointment_id: appt.id },
+        payload: {
+          appointment_id: appt.id,
+          appointment_type: appt.appointment_type,
+          appointment_date: appt.appointment_date,
+          start_time: appt.start_time,
+        },
       });
       await enqueueAppointmentTeamNotifications({
         appointment_id: appt.id,

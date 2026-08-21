@@ -27,6 +27,11 @@ import {
   enqueueNotification,
 } from "@/src/lib/services/notification";
 import { recalculateQueueNumbersForSlot } from "@/src/lib/services/maintenance";
+import {
+  normalizePatientRegistrationFields,
+  splitPatientFullName,
+  validatePatientRegistrationFields,
+} from "@/src/lib/patient-registration";
 
 export type AppointmentCreatePayload = {
   patientName: string;
@@ -38,6 +43,17 @@ export type AppointmentCreatePayload = {
   type: AppointmentType;
   reason: string;
   patientStatus?: "New" | "Existing";
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffixName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  civilStatus?: string;
+  address?: string;
+  religion?: string;
+  occupation?: string;
+  guardianName?: string;
 };
 
 function isMissingPatientCategoryColumn(error: unknown) {
@@ -297,25 +313,55 @@ export async function validateSharedSlotOrThrow(input: {
 }
 
 export async function resolveBookingPatientId(
-  payload: Pick<AppointmentCreatePayload, "email" | "patientName" | "phone" | "patientStatus">,
+  payload: BookingPatientPayload,
   options: { actorRole?: AuthenticatedUser["role"]; actorUserId?: string } = {},
 ) {
   const supabase = getSupabaseAdmin();
   const resolvedCategory = payload.patientStatus === "Existing" ? "Regular" : "New";
-  if (options.actorRole === "PATIENT" && options.actorUserId) {
-    const patientUuid = options.actorUserId;
-    await supabase
+
+  const syncPatientDetails = async (patientUuid: string) => {
+    const { error: profileError } = await supabase
       .from("profiles")
       .update({
-        full_name: payload.patientName,
-        phone: payload.phone,
+        full_name: payload.patientName.trim(),
+        phone: payload.phone.trim(),
         role: "patient",
         is_active: true,
       })
       .eq("id", patientUuid);
+    if (profileError) throw profileError;
 
+    if (!hasBookingPatientDetails(payload)) {
+      return;
+    }
+
+    const fields = buildBookingPatientFields(payload);
+    const validationError = validatePatientRegistrationFields(fields);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const { error: patientError } = await supabase.from("patients").upsert({
+      id: patientUuid,
+      first_name: fields.firstName || null,
+      middle_name: fields.middleName || null,
+      last_name: fields.lastName || null,
+      suffix_name: fields.suffixName || null,
+      dob: fields.dateOfBirth || null,
+      gender: fields.gender || null,
+      civil_status: fields.civilStatus || null,
+      address: fields.address || null,
+      religion: fields.religion || null,
+      occupation: fields.occupation || null,
+      guardian_name: fields.guardianName || null,
+    });
+    if (patientError) throw patientError;
+  };
+
+  if (options.actorRole === "PATIENT" && options.actorUserId) {
+    const patientUuid = options.actorUserId;
+    await syncPatientDetails(patientUuid);
     await upsertPatientCategory(patientUuid, resolvedCategory);
-
     return patientUuid;
   }
 
@@ -325,6 +371,7 @@ export async function resolveBookingPatientId(
     payload.phone,
   );
 
+  await syncPatientDetails(patientUuid);
   await upsertPatientCategory(patientUuid, resolvedCategory);
 
   return patientUuid;
@@ -524,6 +571,62 @@ export async function createPersistedAppointmentWithContext(
           : await readAppointments(),
     };
   }
+}
+
+export type BookingPatientDetails = {
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffixName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  civilStatus?: string;
+  address?: string;
+  religion?: string;
+  occupation?: string;
+  guardianName?: string;
+};
+
+export type BookingPatientPayload = Pick<
+  AppointmentCreatePayload,
+  "email" | "patientName" | "phone" | "patientStatus"
+> & BookingPatientDetails;
+
+function hasBookingPatientDetails(payload: BookingPatientDetails) {
+  return Boolean(
+    payload.firstName?.trim()
+    || payload.middleName?.trim()
+    || payload.lastName?.trim()
+    || payload.suffixName?.trim()
+    || payload.dateOfBirth?.trim()
+    || payload.gender?.trim()
+    || payload.civilStatus?.trim()
+    || payload.address?.trim()
+    || payload.religion?.trim()
+    || payload.occupation?.trim()
+    || payload.guardianName?.trim(),
+  );
+}
+
+function buildBookingPatientFields(payload: BookingPatientPayload) {
+  const fullName = payload.patientName.trim();
+  const legacyParts = splitPatientFullName(fullName);
+  return normalizePatientRegistrationFields({
+    fullName,
+    firstName: payload.firstName ?? legacyParts.firstName,
+    middleName: payload.middleName ?? legacyParts.middleName,
+    lastName: payload.lastName ?? legacyParts.lastName,
+    suffixName: payload.suffixName ?? legacyParts.suffixName,
+    email: payload.email,
+    phone: payload.phone,
+    dateOfBirth: payload.dateOfBirth ?? "",
+    gender: payload.gender ?? "",
+    civilStatus: payload.civilStatus ?? "",
+    address: payload.address ?? "",
+    religion: payload.religion ?? "",
+    occupation: payload.occupation ?? "",
+    guardianName: payload.guardianName ?? "",
+  });
 }
 
 export async function updatePersistedAppointment(payload: AppointmentUpdatePayload) {

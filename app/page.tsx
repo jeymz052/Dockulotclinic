@@ -692,10 +692,6 @@ export default async function HomePage() {
                     unoptimized
                   />
                 </div>
-                <div>
-                  <p className="text-xl font-black tracking-tight text-slate-950">Doc Kulot</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.28em] text-black">Family Medicine</p>
-                </div>
               </div>
 
               <p className="mt-4 text-sm leading-7 text-slate-700">{landingContent.footer_brand_blurb}</p>

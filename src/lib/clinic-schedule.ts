@@ -85,6 +85,22 @@ export function isVirtualConsultBookingDate(date?: string) {
   return true;
 }
 
+export function resolveClinicLocationForDate(date: string) {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  if (day >= 1 && day <= 5) return BOOKING_CLINIC_LOCATIONS[0];
+  if (day === 0 && isFirstOrThirdSunday(date)) return BOOKING_CLINIC_LOCATIONS[1];
+  return null;
+}
+
+export function resolveAppointmentLocationLabel(
+  date: string | undefined,
+  type: "Clinic" | "Online",
+) {
+  if (type === "Online") return "Virtual Consult";
+  if (!date) return "Doc Kulot Clinic";
+  return resolveClinicLocationForDate(date)?.label ?? "Doc Kulot Clinic";
+}
+
 export function standardBookingDateMessage(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
   if (day === 0) {

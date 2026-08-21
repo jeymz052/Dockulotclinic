@@ -21,8 +21,10 @@ export type PatientRegistrationFields = {
   guardianName: string;
 };
 
-export type PatientSignupFields = PatientRegistrationFields & {
+export type PatientSignupFields = {
+  email: string;
   password: string;
+  confirmPassword: string;
 };
 
 export function patientRecordToRegistrationFields(fields: PatientRegistrationFields) {
@@ -184,14 +186,19 @@ export function validatePatientRegistrationFields(
 }
 
 export function validatePatientSignupFields(fields: PatientSignupFields) {
-  const registrationError = validatePatientRegistrationFields(fields);
-  if (registrationError) return registrationError;
+  const email = fields.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    return "Please enter a valid email address.";
+  }
 
   if (fields.password.length < 8) {
     return "Password must be at least 8 characters.";
   }
   if (!PASSWORD_RE.test(fields.password)) {
     return "Password must include uppercase, lowercase, number, and special character.";
+  }
+  if (fields.password !== fields.confirmPassword) {
+    return "Passwords do not match.";
   }
 
   return null;

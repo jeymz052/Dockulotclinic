@@ -300,7 +300,12 @@ export async function cancelAppointment(id: string, actor: Actor, reason?: strin
     user_id: appt.patient_id,
     template: "appointment_cancelled",
     channels: ["email"],
-    payload: { appointment_id: id },
+    payload: {
+      appointment_id: id,
+      appointment_type: appt.appointment_type,
+      appointment_date: appt.appointment_date,
+      start_time: appt.start_time,
+    },
   });
   await enqueueAppointmentTeamNotifications({
     appointment_id: id,

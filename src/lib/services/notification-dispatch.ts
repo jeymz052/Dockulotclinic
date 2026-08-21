@@ -49,7 +49,7 @@ export async function processDueNotifications(limit = 100) {
         const body = rendered.body;
 
         if (row.channel === "email") {
-          await sendEmail({ to: profile.email, subject, body });
+          await sendEmail({ to: profile.email, subject, body, html: rendered.html });
         } else {
           if (!profile.phone) throw new Error("No phone on profile");
           await sendSms({ to: profile.phone, body });
