@@ -3,6 +3,7 @@ import type { UserRole } from "@/src/lib/roles";
 
 const PROTECTED_SUPER_ADMIN_EMAILS = new Set([
   "superadmin@gmail.com",
+  "estebanjames67@gmail.com",
 ]);
 
 function normalizeEmail(email: string | null | undefined) {
