@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     error = result.error;
     verifiedUserId = result.data.user?.id ?? null;
   } else if (verified === "1") {
-    redirectUrl.searchParams.set("message", "Email verified. You can now sign in.");
+    redirectUrl.searchParams.set("message", "Email verified successfully. You can now sign in.");
     return NextResponse.redirect(redirectUrl);
   } else {
     redirectUrl.searchParams.set(
@@ -207,6 +207,6 @@ export async function GET(request: Request) {
     }
   }
 
-  redirectUrl.searchParams.set("message", "Email verified. You can now sign in.");
+  redirectUrl.searchParams.set("message", "Email verified successfully. You can now sign in.");
   return NextResponse.redirect(redirectUrl);
 }
