@@ -52,7 +52,7 @@ export function EmailActionLanding({
   const primaryHref = actionUrl ?? fallbackHref;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 py-8">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-100 px-4 py-8">
       <Image
         src="/images/dockulotbgs.png"
         alt="Doc Kulot consultation background"
@@ -60,11 +60,11 @@ export function EmailActionLanding({
         priority
         quality={100}
         sizes="100vw"
-        className="object-cover object-center opacity-75"
+        className="object-cover object-center opacity-55"
       />
-      <div className="absolute inset-0 bg-black/65" />
+      <div className="absolute inset-0 bg-white/55" />
 
-      <section className="relative z-10 w-full max-w-md rounded-[28px] border border-white/15 bg-black/80 p-6 text-white shadow-2xl backdrop-blur-md sm:p-7">
+      <section className="relative z-10 w-full max-w-md rounded-[28px] border border-black/10 bg-white/95 p-6 text-black shadow-2xl backdrop-blur-md sm:p-7">
         <div className="flex justify-center">
           <Image
             src="/images/dockulotslogonobg.png"
@@ -79,9 +79,9 @@ export function EmailActionLanding({
         </div>
 
         <div className="mt-2 space-y-2 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60">{badge}</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">{title}</h1>
-          <p className="text-sm leading-6 text-white/75">{description}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-black/55">{badge}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-black">{title}</h1>
+          <p className="text-sm leading-6 text-black/70">{description}</p>
         </div>
 
         <div className="mt-6 space-y-3">
@@ -91,24 +91,24 @@ export function EmailActionLanding({
             rel="noreferrer"
             className={`flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99] ${
               actionUrl
-                ? "bg-white text-black hover:bg-neutral-200"
-                : "bg-white/85 text-black/70"
+                ? "bg-black text-white hover:bg-neutral-800"
+                : "bg-black/85 text-white/80"
             }`}
           >
             {buttonLabel}
           </a>
 
-          <p className="text-center text-xs leading-5 text-white/65">{note}</p>
+          <p className="text-center text-xs leading-5 text-black/65">{note}</p>
 
           {!actionUrl ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs leading-5 text-white/70">
+            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/70">
               We could not find the secure verification link on this page. Open the email again, or go back to the login page and request a new link.
             </div>
           ) : null}
 
           <a
             href={fallbackHref}
-            className="block text-center text-xs font-semibold text-white/70 underline underline-offset-4 transition hover:text-white"
+            className="block text-center text-xs font-semibold text-black/65 underline underline-offset-4 transition hover:text-black"
           >
             {fallbackLabel}
           </a>
