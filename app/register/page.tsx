@@ -202,9 +202,7 @@ export default function RegisterPage() {
       await supabase.auth.signOut();
 
       router.push(
-        `/login?next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
-          "Account created in pending state. Check your email to verify and finish registration.",
-        )}`,
+        `/auth/verify-email?email=${encodeURIComponent(formData.email.trim().toLowerCase())}&next=${encodeURIComponent(nextPath)}`,
       );
     });
   }
