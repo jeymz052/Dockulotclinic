@@ -96,7 +96,7 @@ export default function VerifyEmailPage() {
       />
       <div className="absolute inset-0 bg-black/65" />
 
-      <section className="relative z-10 w-full max-w-md rounded-[28px] border border-white/15 bg-black/80 p-6 text-white shadow-2xl backdrop-blur-md sm:p-7">
+      <section className="relative z-10 w-full max-w-md rounded-[28px] border border-black/10 bg-white/95 p-6 text-black shadow-2xl backdrop-blur-md sm:p-7">
         <div className="flex justify-center">
           <Image
             src="/images/dockulotslogonobg.png"
@@ -111,13 +111,13 @@ export default function VerifyEmailPage() {
         </div>
 
         <div className="mt-2 space-y-2 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-black/55">
             Verify account
           </p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl font-extrabold tracking-tight text-black">
             Check your email
           </h1>
-          <p className="text-sm leading-6 text-white/75">
+          <p className="text-sm leading-6 text-black/70">
             We sent a verification link to your email address. If it expired or you did not receive it,
             resend a fresh one below.
           </p>
@@ -125,7 +125,7 @@ export default function VerifyEmailPage() {
 
         <div className="mt-6 space-y-3">
           <label className="block text-left">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-black/55">
               Email address
             </span>
             <input
@@ -134,7 +134,7 @@ export default function VerifyEmailPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="name@example.com"
               autoComplete="email"
-              className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/45 outline-none transition focus:border-white/40 focus:ring-2 focus:ring-white/15"
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-black placeholder:text-black/35 outline-none transition focus:border-black/30 focus:ring-2 focus:ring-black/10"
             />
           </label>
 
@@ -142,24 +142,24 @@ export default function VerifyEmailPage() {
             type="button"
             onClick={resendVerificationEmail}
             disabled={isPending || isCoolingDown || !emailLooksValid}
-            className="flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/50"
+            className="flex w-full items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-black/40"
           >
             {isCoolingDown ? "Verification Email Sent" : isPending ? "Sending..." : "Resend verification email"}
           </button>
 
           {feedback ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs leading-5 text-white/75">
+            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/75">
               {feedback}
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs leading-5 text-white/65">
+            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/65">
               Use the same email you used during sign up. After verifying, you can sign in from the login page.
             </div>
           )}
 
           <Link
             href={loginHref}
-            className="block text-center text-xs font-semibold text-white/70 underline underline-offset-4 transition hover:text-white"
+            className="block text-center text-xs font-semibold text-black/65 underline underline-offset-4 transition hover:text-black"
           >
             Go to login
           </Link>
