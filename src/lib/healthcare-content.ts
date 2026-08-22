@@ -232,7 +232,7 @@ export const clinicLocations: ClinicLocation[] = [
   {
     name: "FamMed Family Clinic",
     address: "Arquiza Building, Pasobolong, Zamboanga City",
-    schedule: "Monday to Friday, 9:00 AM - 4:00 PM",
+    schedule: "Monday to Saturday, 9:00 AM - 4:00 PM",
     note: "Clinic visits and medical procedures follow this in-person schedule.",
   },
   {

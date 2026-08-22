@@ -1394,7 +1394,7 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
       : content.about_subtitle,
     doctor_name: hasLegacyAboutDefaults ? "Dr. Fatimah Al-Zahra T. Ditti" : content.doctor_name,
     doctor_title: hasLegacyAboutDefaults ? "Family Medicine | Aesthetic Medicine" : content.doctor_title,
-    doctor_photo_url: hasLegacyAboutDefaults ? null : content.doctor_photo_url,
+    doctor_photo_url: content.doctor_photo_url ?? null,
     about_highlights: hasLegacyAboutDefaults ? DEFAULT_ABOUT_HIGHLIGHTS : normalizedHighlights,
     hero_slides: normalizedHeroSlides,
     program_slides: normalizedProgramSlides,

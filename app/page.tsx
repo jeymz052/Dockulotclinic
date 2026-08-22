@@ -115,7 +115,7 @@ function getAboutProfile(content: LandingContent) {
     subtitle: hasLegacyDefaults ? PREVIOUS_ABOUT.subtitle : content.about_subtitle,
     name: hasLegacyDefaults ? PREVIOUS_ABOUT.name : content.doctor_name,
     titleLabel: hasLegacyDefaults ? PREVIOUS_ABOUT.titleLabel : content.doctor_title,
-    photo: hasLegacyDefaults ? PREVIOUS_ABOUT.photo : content.doctor_photo_url || PREVIOUS_ABOUT.photo,
+    photo: content.doctor_photo_url || PREVIOUS_ABOUT.photo,
     highlights: hasLegacyDefaults || !content.about_highlights?.length
       ? PREVIOUS_ABOUT.highlights
       : content.about_highlights,

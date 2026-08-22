@@ -32,6 +32,10 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setEmail(params.get("email")?.trim().toLowerCase() ?? "");
+    const message = params.get("message")?.trim();
+    if (message) {
+      setFeedback(message);
+    }
   }, []);
 
   useEffect(() => {

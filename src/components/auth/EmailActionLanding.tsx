@@ -11,6 +11,7 @@ type EmailActionLandingProps = {
   note: string;
   fallbackHref: string;
   fallbackLabel: string;
+  autoProceed?: boolean;
 };
 
 function readActionUrl() {
@@ -42,12 +43,21 @@ export function EmailActionLanding({
   note,
   fallbackHref,
   fallbackLabel,
+  autoProceed = false,
 }: EmailActionLandingProps) {
   const [actionUrl, setActionUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setActionUrl(readActionUrl());
   }, []);
+
+  useEffect(() => {
+    if (!autoProceed || !actionUrl) {
+      return;
+    }
+
+    window.location.replace(actionUrl);
+  }, [actionUrl, autoProceed]);
 
   const primaryHref = actionUrl ?? fallbackHref;
 
@@ -85,18 +95,24 @@ export function EmailActionLanding({
         </div>
 
         <div className="mt-6 space-y-3">
-          <a
-            href={primaryHref}
-            target="_self"
-            rel="noreferrer"
-            className={`flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99] ${
-              actionUrl
-                ? "bg-black text-white hover:bg-neutral-800"
-                : "bg-black/85 text-white/80"
-            }`}
-          >
-            {buttonLabel}
-          </a>
+          {autoProceed && actionUrl ? (
+            <div className="flex w-full items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-black">
+              Verifying your email now...
+            </div>
+          ) : (
+            <a
+              href={primaryHref}
+              target="_self"
+              rel="noreferrer"
+              className={`flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99] ${
+                actionUrl
+                  ? "bg-black text-white hover:bg-neutral-800"
+                  : "bg-black/85 text-white/80"
+              }`}
+            >
+              {buttonLabel}
+            </a>
+          )}
 
           <p className="text-center text-xs leading-5 text-black/65">{note}</p>
 

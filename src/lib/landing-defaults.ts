@@ -165,6 +165,6 @@ export const DEFAULT_TESTIMONIALS: LandingTestimonial[] = [
 ];
 
 export const DEFAULT_FOOTER_HOURS = [
-  "FamMed Family Clinic: Monday to Friday, 9:00 AM - 4:00 PM",
+  "FamMed Family Clinic: Monday to Saturday, 9:00 AM - 4:00 PM",
   "RT Lim Family Hospital: 1st and 3rd Sundays, 9:00 AM - 4:00 PM",
 ];

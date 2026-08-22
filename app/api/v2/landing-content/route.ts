@@ -1,4 +1,5 @@
 import { httpError, ok, requireActor } from "@/src/lib/http";
+import { revalidatePath } from "next/cache";
 import {
   getLandingContent,
   updateLandingContent,
@@ -24,6 +25,7 @@ export async function PATCH(req: Request) {
     const actor = await requireActor(req);
     const body = (await req.json()) as LandingContentInput;
     const content = await updateLandingContent(body, actor);
+    revalidatePath("/");
     return ok({ content });
   } catch (e) {
     return httpError(e);

@@ -44,10 +44,10 @@ const WEEKDAY_NAMES = [
 
 const BOOKING_RULES = {
   Clinic: {
-    days: [0, 1, 2, 3, 4, 5],
+    days: [0, 1, 2, 3, 4, 5, 6],
     start: STANDARD_BOOKING_START,
     end: STANDARD_BOOKING_END,
-    label: "Clinic visits are available at FamMed Monday to Friday and RT Lim on 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
+    label: "Clinic visits are available at FamMed Monday to Saturday and RT Lim on 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
   },
   Online: {
     weekday: {
@@ -64,10 +64,10 @@ const BOOKING_RULES = {
     },
   },
   Both: {
-    days: [0, 1, 2, 3, 4, 5],
+    days: [0, 1, 2, 3, 4, 5, 6],
     start: STANDARD_BOOKING_START,
     end: STANDARD_BOOKING_END,
-    label: "Combined clinic and virtual slots follow Doc Kulot hours: Monday to Friday and 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
+    label: "Combined clinic and virtual slots follow Doc Kulot hours: Monday to Saturday and 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
   },
 } as const;
 
@@ -330,8 +330,8 @@ export async function upsertSchedule(input: {
   if (![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes ?? CONSULTATION_SLOT_MINUTES)) {
     throw new HttpError(400, "Slot minutes must be 30 for consultations or 60 for procedures.");
   }
-  if (input.schedule_mode !== "Online" && !BOOKING_RULES.Both.days.includes(input.day_of_week as 0 | 1 | 2 | 3 | 4 | 5)) {
-    throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Friday and Sunday.");
+  if (input.schedule_mode !== "Online" && !(BOOKING_RULES.Both.days as readonly number[]).includes(input.day_of_week)) {
+    throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Saturday and Sunday.");
   }
   assertScheduleWithinPolicy(
     input.day_of_week,

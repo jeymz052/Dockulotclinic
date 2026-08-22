@@ -90,6 +90,17 @@ function sanitizeTestimonials(items: LandingTestimonial[]): LandingTestimonial[]
     .filter((t) => t.name && t.quote);
 }
 
+function extractMissingLandingContentColumn(error: unknown): string | null {
+  if (!error || typeof error !== "object") return null;
+
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  if (code !== "PGRST204") return null;
+
+  const match = message.match(/Could not find the '([^']+)' column of 'landing_content' in the schema cache/i);
+  return match?.[1] ?? null;
+}
+
 export async function updateLandingContent(
   input: LandingContentInput,
   actor: Actor,
@@ -310,7 +321,24 @@ export async function updateLandingContent(
     .eq("id", true)
     .select("*")
     .single<LandingContent>();
-  if (error) throw error;
+  if (error) {
+    const missingColumn = extractMissingLandingContentColumn(error);
+    if (missingColumn && missingColumn in patch) {
+      const retryPatch = { ...patch };
+      delete retryPatch[missingColumn];
+
+      const retry = await supabase
+        .from("landing_content")
+        .update(retryPatch)
+        .eq("id", true)
+        .select("*")
+        .single<LandingContent>();
+      if (retry.error) throw retry.error;
+      return retry.data;
+    }
+
+    throw error;
+  }
   return data;
 }
 

@@ -175,7 +175,7 @@ export default function CalendarViewPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9f832e]">Calendar</p>
             <h1 className="mt-3 text-3xl font-black text-neutral-900">Shared weekly availability at a glance</h1>
             <p className="mt-3 text-sm leading-6 text-neutral-600">
-              Booking follows the saved schedules: clinic/procedure visits use FamMed Monday-Friday and RT Lim 1st/3rd Sundays from 9:00 AM-4:00 PM, while virtual consults use a separate 8:00 AM-8:00 PM schedule.
+              Booking follows the saved schedules: clinic/procedure visits use FamMed Monday-Saturday and RT Lim 1st/3rd Sundays from 9:00 AM-4:00 PM, while virtual consults use a separate 8:00 AM-8:00 PM schedule.
             </p>
           </div>
 

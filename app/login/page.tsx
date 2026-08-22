@@ -139,7 +139,11 @@ export default function LoginPage() {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         const message = payload?.message ?? "Invalid credentials.";
         if (/verify your email|email.*confirm|confirm.*email|not confirmed/i.test(message)) {
-          setFeedback("Please verify your email before signing in.");
+          router.replace(
+            `/auth/verify-email?email=${encodeURIComponent(normalizedEmail)}&next=${encodeURIComponent(nextPath)}&message=${encodeURIComponent(
+              "Your email is not verified yet. Resend the verification email below.",
+            )}`,
+          );
           return;
         }
         if (/inactive/i.test(message)) {

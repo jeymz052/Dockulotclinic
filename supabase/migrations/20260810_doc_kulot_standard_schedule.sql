@@ -1,5 +1,5 @@
   -- Standard Doc Kulot schedule:
-  -- FamMed Family Clinic: Monday-Friday, 9 AM-4 PM
+  -- FamMed Family Clinic: Monday-Saturday, 9 AM-4 PM
   -- RT Lim Family Hospital: 1st and 3rd Sundays, 9 AM-4 PM
   -- Virtual consults: daily, 8 AM-8 PM
   -- Booking uses 30-minute consultation slots and one patient per slot.
@@ -21,7 +21,7 @@
       return;
     end if;
 
-    foreach day_value in array array[0, 1, 2, 3, 4, 5]
+    foreach day_value in array array[0, 1, 2, 3, 4, 5, 6]
     loop
       update public.doctor_schedules
       set

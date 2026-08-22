@@ -89,6 +89,24 @@ function readPatientSignupMetadata(user: {
   };
 }
 
+async function findAuthUserByEmail(admin: ReturnType<typeof getSupabaseAdmin>, email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const perPage = 1000;
+  const maxPages = 10;
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const user = data.users.find((entry) => entry.email?.trim().toLowerCase() === normalizedEmail);
+    if (user) return user;
+
+    if (data.users.length < perPage) break;
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     assertTrustedOrigin(req);
@@ -96,9 +114,26 @@ export async function POST(req: Request) {
 
     const { email, password } = normalizeLoginPayload(await req.json().catch(() => null));
     const authClient = getSupabaseAnonClient();
+    const admin = getSupabaseAdmin();
     const { data, error } = await authClient.auth.signInWithPassword({ email, password });
 
     if (error || !data.session || !data.user) {
+      let authUser: Awaited<ReturnType<typeof findAuthUserByEmail>> = null;
+      try {
+        authUser = await findAuthUserByEmail(admin, email);
+      } catch (lookupError) {
+        console.error("[auth.login] Failed to inspect auth user for email verification", lookupError);
+      }
+
+      if (authUser && !authUser.email_confirmed_at) {
+        await logActivity({
+          action: "auth.login_failed",
+          entity_table: "profiles",
+          metadata: { email, reason: "unverified_email" },
+        });
+        throw new HttpError(403, "Please verify your email before signing in.");
+      }
+
       await logActivity({
         action: "auth.login_failed",
         entity_table: "profiles",
@@ -112,7 +147,6 @@ export async function POST(req: Request) {
       throw new HttpError(403, "Please verify your email before signing in.");
     }
 
-    const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("id, is_active, role, email")

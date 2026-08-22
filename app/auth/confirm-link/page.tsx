@@ -5,11 +5,12 @@ export default function ConfirmLinkPage() {
     <EmailActionLanding
       badge="Secure verification"
       title="Confirm your Doc Kulot account"
-      description="Open the button below to verify your email address. The extra click protects you from automated email scanners consuming the link before you do."
+      description="Verifying your email now. If the browser does not continue automatically, use the button below."
       buttonLabel="Confirm email address"
       note="After verification, you will return to Doc Kulot to finish signing in."
       fallbackHref="/login"
       fallbackLabel="Back to login"
+      autoProceed
     />
   );
 }

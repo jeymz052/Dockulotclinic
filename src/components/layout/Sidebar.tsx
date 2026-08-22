@@ -300,7 +300,7 @@ function getTodayClinicStatus(date: Date) {
   const clinicDateKey = formatClinicDateKey(date);
   const day = new Date(`${clinicDateKey}T00:00:00Z`).getUTCDay();
   const clinic =
-    day >= 1 && day <= 5
+    day >= 1 && day <= 6
       ? BOOKING_CLINIC_LOCATIONS[0]
       : day === 0 && isFirstOrThirdSunday(clinicDateKey)
         ? BOOKING_CLINIC_LOCATIONS[1]

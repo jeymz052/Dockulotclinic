@@ -21,7 +21,7 @@ export const BOOKING_CLINIC_LOCATIONS: BookingClinicLocation[] = [
   {
     value: "fammed-family-clinic",
     label: "FamMed Family Clinic",
-    schedule: "Monday to Friday, 9:00 AM - 4:00 PM",
+    schedule: "Monday to Saturday, 9:00 AM - 4:00 PM",
     note: "Clinic visits and medical procedures follow this in-person schedule.",
     coordinates: {
       latitude: 6.962453,
@@ -46,6 +46,7 @@ export const STANDARD_CLINIC_SCHEDULES = [
   { day_of_week: 3, label: "Wednesday", clinic: "FamMed Family Clinic" },
   { day_of_week: 4, label: "Thursday", clinic: "FamMed Family Clinic" },
   { day_of_week: 5, label: "Friday", clinic: "FamMed Family Clinic" },
+  { day_of_week: 6, label: "Saturday", clinic: "FamMed Family Clinic" },
   { day_of_week: 0, label: "1st and 3rd Sunday", clinic: "RT Lim Family Hospital" },
 ] as const;
 
@@ -76,7 +77,7 @@ export function isFirstOrThirdSunday(date: string) {
 
 export function isClinicProcedureBookingDate(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (day >= 1 && day <= 5) return true;
+  if (day >= 1 && day <= 6) return true;
   return day === 0 && isFirstOrThirdSunday(date);
 }
 
@@ -87,7 +88,7 @@ export function isVirtualConsultBookingDate(date?: string) {
 
 export function resolveClinicLocationForDate(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (day >= 1 && day <= 5) return BOOKING_CLINIC_LOCATIONS[0];
+  if (day >= 1 && day <= 6) return BOOKING_CLINIC_LOCATIONS[0];
   if (day === 0 && isFirstOrThirdSunday(date)) return BOOKING_CLINIC_LOCATIONS[1];
   return null;
 }
@@ -106,8 +107,5 @@ export function standardBookingDateMessage(date: string) {
   if (day === 0) {
     return "RT Lim Family Hospital accepts bookings only on the 1st and 3rd Sunday, 9:00 AM - 4:00 PM.";
   }
-  if (day === 6) {
-    return "Saturday is not part of the saved Doc Kulot booking schedule.";
-  }
-  return "FamMed Family Clinic accepts bookings Monday to Friday, 9:00 AM - 4:00 PM.";
+  return "FamMed Family Clinic accepts bookings Monday to Saturday, 9:00 AM - 4:00 PM.";
 }
