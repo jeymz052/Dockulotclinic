@@ -46,6 +46,7 @@ export function EmailActionLanding({
   autoProceed = false,
 }: EmailActionLandingProps) {
   const [actionUrl, setActionUrl] = useState<string | null>(null);
+  const [isAutoProceeding, setIsAutoProceeding] = useState(false);
 
   useEffect(() => {
     setActionUrl(readActionUrl());
@@ -53,10 +54,16 @@ export function EmailActionLanding({
 
   useEffect(() => {
     if (!autoProceed || !actionUrl) {
+      setIsAutoProceeding(false);
       return;
     }
 
-    window.location.replace(actionUrl);
+    setIsAutoProceeding(true);
+    const timer = window.setTimeout(() => {
+      window.location.replace(actionUrl);
+    }, 450);
+
+    return () => window.clearTimeout(timer);
   }, [actionUrl, autoProceed]);
 
   const primaryHref = actionUrl ?? fallbackHref;
@@ -96,8 +103,12 @@ export function EmailActionLanding({
 
         <div className="mt-6 space-y-3">
           {autoProceed && actionUrl ? (
-            <div className="flex w-full items-center justify-center rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-black">
-              Verifying your email now...
+            <div className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-black">
+              <span
+                className={`h-4 w-4 animate-spin rounded-full border-2 border-black/15 border-t-black ${isAutoProceeding ? "" : "opacity-0"}`}
+                aria-hidden="true"
+              />
+              <span>{isAutoProceeding ? "Verifying your email now..." : "Preparing verification..."}</span>
             </div>
           ) : (
             <a
