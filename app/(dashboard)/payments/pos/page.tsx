@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   FaBan,
@@ -11,6 +10,7 @@ import {
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { ReceiptDocument } from "@/src/components/payments/ReceiptDocument";
 import { formatDisplayDate, formatRange, type AppointmentRecord } from "@/src/lib/appointments";
 import { getAppointmentConsultKind, isProcedureServiceTitle, parseAppointmentContext } from "@/src/lib/appointment-context";
 import { FOLLOW_UP_CLINIC_CONSULTATION_FEE, NEW_PATIENT_CLINIC_CONSULTATION_FEE } from "@/src/lib/consultation-pricing";
@@ -41,6 +41,16 @@ type RecentBilling = {
   status: "Draft" | "Issued" | "Paid" | "Void";
   created_at: string;
   issued_at: string | null;
+};
+
+type PaymentSnapshot = {
+  id: string;
+  amount: number;
+  method: string;
+  status: string;
+  paid_at: string | null;
+  provider_ref: string | null;
+  provider?: string | null;
 };
 
 const POS_CATEGORIES = ["Procedure", "Lab", "Medicine", "Other"] as const;
@@ -108,9 +118,11 @@ export default function POSBillingPage() {
   const [issuedBillingStatus, setIssuedBillingStatus] = useState<"Issued" | "Paid" | "Void" | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [recentBillings, setRecentBillings] = useState<RecentBilling[]>([]);
-  const [confirmingIssue, setConfirmingIssue] = useState(false);
   const [confirmingVoid, setConfirmingVoid] = useState(false);
   const [voidReason, setVoidReason] = useState("");
+  const [receiptBillingId, setReceiptBillingId] = useState<string | null>(null);
+  const [receiptPayment, setReceiptPayment] = useState<PaymentSnapshot | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [currentClock, setCurrentClock] = useState(() => formatClock(new Date()));
   const [isWorking, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -209,9 +221,7 @@ export default function POSBillingPage() {
   const total = Math.max(0, subtotal - effectiveDiscount + effectiveTax);
   const tenderedAmount = Number(tenderedInput || 0);
   const changeDue = Math.max(0, tenderedAmount - total);
-  const tenderShortfall = Math.max(0, total - tenderedAmount);
-  const canIssueBill = canUse && !!selectedAppt && !issuedBillingId && total > 0 && discount <= subtotal && (!isStatutoryDiscount || !!discountIdNumber.trim());
-  const canAcceptPayment = !!issuedBillingId && issuedBillingStatus === "Issued" && tenderedAmount >= total && total > 0;
+  const canAcceptPayment = canUse && !!selectedAppt && total > 0 && tenderedAmount >= total && discount <= subtotal && (!isStatutoryDiscount || !!discountIdNumber.trim()) && issuedBillingStatus !== "Paid";
   const shortcutAmounts = useMemo(() => cashShortcuts(total), [total]);
 
   function chooseAppointment(appointment: AppointmentRecord) {
@@ -246,6 +256,18 @@ export default function POSBillingPage() {
     setLines((current) => current.filter((line) => line.tempId !== tempId));
   }
 
+  function openReceiptModal(billingId: string, paymentSnapshot: PaymentSnapshot | null = null) {
+    setReceiptBillingId(billingId);
+    setReceiptPayment(paymentSnapshot);
+    setReceiptModalOpen(true);
+  }
+
+  function closeReceiptModal() {
+    setReceiptModalOpen(false);
+    setReceiptBillingId(null);
+    setReceiptPayment(null);
+  }
+
   function resetSale() {
     setSelectedApptId("");
     setLines([]);
@@ -257,16 +279,13 @@ export default function POSBillingPage() {
     setIssuedBillingId(null);
     setIssuedBillingStatus(null);
     setFeedback(null);
-    setConfirmingIssue(false);
     setConfirmingVoid(false);
     setVoidReason("");
+    closeReceiptModal();
   }
 
-  function openIssueConfirm() {
-    if (!selectedAppt) {
-      setFeedback({ message: "Choose a clinic visit that is in progress or completed.", tone: "error" });
-      return;
-    }
+  function commitSale() {
+    if (!accessToken || !selectedAppt) return;
     if (discount > subtotal) {
       setFeedback({ message: "Discount cannot exceed subtotal.", tone: "error" });
       return;
@@ -275,64 +294,60 @@ export default function POSBillingPage() {
       setFeedback({ message: `${discountKind === "PWD" ? "PWD" : "Senior Citizen"} ID number is required.`, tone: "error" });
       return;
     }
-    setConfirmingIssue(true);
-  }
-
-  function commitIssueBill() {
-    if (!accessToken || !selectedAppt) return;
-    startTransition(async () => {
-      const response = await fetch("/api/v2/billings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          appointment_id: selectedAppt.id,
-          discount: isStatutoryDiscount ? 0 : discount,
-          tax: isStatutoryDiscount ? 0 : tax,
-          discount_kind: discountKind,
-          discount_id_number: isStatutoryDiscount ? discountIdNumber.trim() : null,
-          items: lines.map((line) => ({
-            pricing_id: line.pricing_id,
-            product_id: null,
-            description: line.description,
-            quantity: line.quantity,
-            unit_price: line.unit_price,
-          })),
-        }),
-      });
-      const body = (await response.json().catch(() => ({}))) as { billing?: { id: string }; message?: string };
-      if (!response.ok || !body.billing) {
-        setFeedback({ message: body.message ?? "Failed to issue bill.", tone: "error" });
-        setConfirmingIssue(false);
-        return;
-      }
-      setIssuedBillingId(body.billing.id);
-      setIssuedBillingStatus("Issued");
-      setConfirmingIssue(false);
-      setFeedback({ message: "Bill issued. Enter cash received to close the sale.", tone: "success" });
-      void refreshRecent();
-    });
-  }
-
-  function recordPayment() {
-    if (!accessToken || !issuedBillingId) return;
     if (tenderedAmount < total) {
       setFeedback({ message: `Cash received must be at least ${peso(total)}.`, tone: "error" });
       return;
     }
+
     startTransition(async () => {
-      const response = await fetch(`/api/v2/billings/${issuedBillingId}/pay`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ method: "Cash", provider_ref: null, tendered_amount: tenderedAmount }),
-      });
-      const body = (await response.json().catch(() => ({}))) as { message?: string };
-      if (!response.ok) {
-        setFeedback({ message: body.message ?? "Payment failed.", tone: "error" });
-        return;
+      let billingId = issuedBillingId;
+
+      try {
+        if (!billingId) {
+          const response = await fetch("/api/v2/billings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({
+              appointment_id: selectedAppt.id,
+              discount: isStatutoryDiscount ? 0 : discount,
+              tax: isStatutoryDiscount ? 0 : tax,
+              discount_kind: discountKind,
+              discount_id_number: isStatutoryDiscount ? discountIdNumber.trim() : null,
+              items: lines.map((line) => ({
+                pricing_id: line.pricing_id,
+                product_id: null,
+                description: line.description,
+                quantity: line.quantity,
+                unit_price: line.unit_price,
+              })),
+            }),
+          });
+          const body = (await response.json().catch(() => ({}))) as { billing?: { id: string }; message?: string };
+          if (!response.ok || !body.billing) {
+            throw new Error(body.message ?? "Failed to create the bill.");
+          }
+          billingId = body.billing.id;
+          setIssuedBillingId(billingId);
+          setIssuedBillingStatus("Issued");
+        }
+
+        const payResponse = await fetch(`/api/v2/billings/${billingId}/pay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ method: "Cash", provider_ref: null, tendered_amount: tenderedAmount }),
+        });
+        const payBody = (await payResponse.json().catch(() => ({}))) as { message?: string; payment?: PaymentSnapshot };
+        if (!payResponse.ok) {
+          throw new Error(payBody.message ?? "Payment failed.");
+        }
+
+        setIssuedBillingStatus("Paid");
+        setFeedback({ message: `Sale completed.${changeDue > 0 ? ` Change due: ${peso(changeDue)}.` : ""}`, tone: "success" });
+        void refreshRecent();
+        openReceiptModal(billingId, payBody.payment ?? null);
+      } catch (error) {
+        setFeedback({ message: error instanceof Error ? error.message : "Unable to complete the sale.", tone: "error" });
       }
-      setIssuedBillingStatus("Paid");
-      setFeedback({ message: `Cash accepted.${changeDue > 0 ? ` Change due: ${peso(changeDue)}.` : ""}`, tone: "success" });
-      void refreshRecent();
     });
   }
 
@@ -397,8 +412,8 @@ export default function POSBillingPage() {
           </div>
         </div>
         <div className="grid border-t border-white/10 bg-white/[0.03] text-xs font-bold uppercase tracking-[0.16em] text-slate-300 sm:grid-cols-3">
-          <div className={`px-5 py-3 ${!issuedBillingId ? "bg-emerald-400 text-slate-950" : ""}`}>1. Build Sale</div>
-          <div className={`px-5 py-3 ${issuedBillingId && issuedBillingStatus !== "Paid" ? "bg-emerald-400 text-slate-950" : ""}`}>2. Cash Drawer</div>
+          <div className={`px-5 py-3 ${!issuedBillingId ? "bg-emerald-400 text-slate-950" : ""}`}>1. Build Cart</div>
+          <div className={`px-5 py-3 ${!issuedBillingId || issuedBillingStatus === "Issued" ? "bg-emerald-400 text-slate-950" : ""}`}>2. Pay Cash</div>
           <div className={`px-5 py-3 ${issuedBillingStatus === "Paid" ? "bg-emerald-400 text-slate-950" : ""}`}>3. Receipt</div>
         </div>
       </header>
@@ -572,22 +587,31 @@ export default function POSBillingPage() {
             </div>
 
             <div className="space-y-3 px-4 py-4">
-              {!issuedBillingId ? (
-                <>
-                  <button type="button" onClick={openIssueConfirm} disabled={!canIssueBill || isWorking} className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-                    {isWorking ? "Issuing..." : "Issue Bill"}
-                  </button>
-                  <button type="button" onClick={resetSale} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Clear Sale</button>
-                </>
-              ) : (
+              {!issuedBillingId || issuedBillingStatus === "Issued" ? (
                 <>
                   <label className="block">
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Cash received</span>
-                    <input type="number" min={0} step="0.01" inputMode="decimal" value={tenderedInput} onChange={(event) => setTenderedInput(event.target.value)} placeholder={total.toFixed(2)} disabled={issuedBillingStatus !== "Issued"} className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-3 text-right font-mono text-xl font-black outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500" />
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      inputMode="decimal"
+                      value={tenderedInput}
+                      onChange={(event) => setTenderedInput(event.target.value)}
+                      placeholder={total.toFixed(2)}
+                      disabled={issuedBillingStatus === "Paid"}
+                      className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-3 text-right font-mono text-xl font-black outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
+                    />
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {shortcutAmounts.map((amount, index) => (
-                      <button key={`${amount}-${index}`} type="button" onClick={() => setTenderedInput(amount.toFixed(2))} disabled={issuedBillingStatus !== "Issued"} className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 font-mono text-xs font-black text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50">
+                      <button
+                        key={`${amount}-${index}`}
+                        type="button"
+                        onClick={() => setTenderedInput(amount.toFixed(2))}
+                        disabled={issuedBillingStatus === "Paid"}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 font-mono text-xs font-black text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
                         {index === 0 ? "Exact" : amount.toLocaleString("en-PH")}
                       </button>
                     ))}
@@ -595,25 +619,47 @@ export default function POSBillingPage() {
                   <div className={`rounded-2xl px-4 py-3 ${
                     issuedBillingStatus === "Void"
                       ? "bg-red-50 text-red-800"
-                      : issuedBillingStatus === "Paid" || tenderShortfall <= 0
+                      : issuedBillingStatus === "Paid" || tenderedAmount >= total
                         ? "bg-emerald-50 text-emerald-800"
                         : "bg-amber-50 text-amber-800"
                   }`}>
                     <p className="text-[10px] font-black uppercase tracking-wider">
-                      {issuedBillingStatus === "Void" ? "Voided" : issuedBillingStatus === "Paid" ? "Paid" : tenderShortfall > 0 ? "Short" : "Change"}
+                      {issuedBillingStatus === "Void" ? "Voided" : issuedBillingStatus === "Paid" ? "Paid" : tenderedAmount >= total ? "Change" : "Short"}
                     </p>
                     <p className="mt-1 font-mono text-2xl font-black">
-                      {issuedBillingStatus === "Void" ? "Closed" : issuedBillingStatus === "Paid" ? peso(total) : peso(tenderShortfall > 0 ? tenderShortfall : changeDue)}
+                      {issuedBillingStatus === "Void"
+                        ? "Closed"
+                        : issuedBillingStatus === "Paid"
+                          ? peso(total)
+                          : peso(tenderedAmount >= total ? changeDue : total - tenderedAmount)}
                     </p>
                   </div>
-                  {issuedBillingStatus === "Issued" ? (
-                    <button type="button" onClick={recordPayment} disabled={!canAcceptPayment || isWorking} className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-                      {isWorking ? "Processing..." : "Accept Cash"}
-                    </button>
-                  ) : null}
-                  <Link href={`/payments/receipt/${issuedBillingId}`} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                  <button type="button" onClick={commitSale} disabled={!canAcceptPayment || isWorking} className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
+                    {isWorking ? "Processing..." : issuedBillingId ? "Retry Payment" : "Proceed to Payment"}
+                  </button>
+                  <button type="button" onClick={resetSale} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Clear Sale</button>
+                </>
+              ) : (
+                <>
+                  <div className={`rounded-2xl px-4 py-3 ${
+                    issuedBillingStatus === "Void"
+                      ? "bg-red-50 text-red-800"
+                      : "bg-emerald-50 text-emerald-800"
+                  }`}>
+                    <p className="text-[10px] font-black uppercase tracking-wider">
+                      {issuedBillingStatus === "Void" ? "Voided" : "Paid"}
+                    </p>
+                    <p className="mt-1 font-mono text-2xl font-black">
+                      {issuedBillingStatus === "Void" ? "Closed" : peso(total)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openReceiptModal(issuedBillingId)}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                  >
                     <FaReceipt className="h-3.5 w-3.5" /> Receipt
-                  </Link>
+                  </button>
                   <div className="grid grid-cols-2 gap-2">
                     {canVoid && issuedBillingStatus !== "Void" ? <button type="button" onClick={() => setConfirmingVoid(true)} className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100"><FaBan className="mr-1 inline h-3.5 w-3.5" /> Void</button> : null}
                     <button type="button" onClick={resetSale} className="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">New Sale</button>
@@ -623,23 +669,12 @@ export default function POSBillingPage() {
             </div>
           </section>
 
-          <RecentPanel billings={recentBillings} />
+          <RecentPanel billings={recentBillings} onOpenReceipt={openReceiptModal} />
         </aside>
       </div>
 
-      {confirmingIssue && selectedAppt ? (
-        <ConfirmModal title="Issue this cash bill?" onClose={() => setConfirmingIssue(false)}>
-          <p className="text-sm text-slate-600">
-            This creates the bill for <span className="font-black text-slate-950">{selectedAppt.patientName}</span>. The consultation line is fixed at {peso(consultationFee)}.
-          </p>
-          <div className="mt-4 rounded-2xl bg-slate-50 p-3">
-            <TotalRow label="Total" value={peso(total)} strong />
-          </div>
-          <div className="mt-4 flex justify-end gap-2">
-            <button type="button" onClick={() => setConfirmingIssue(false)} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700">Cancel</button>
-            <button type="button" onClick={commitIssueBill} disabled={isWorking} className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:opacity-60">{isWorking ? "Issuing..." : "Issue Bill"}</button>
-          </div>
-        </ConfirmModal>
+      {receiptModalOpen && receiptBillingId ? (
+        <ReceiptModal billingId={receiptBillingId} paymentSnapshot={receiptPayment} onClose={closeReceiptModal} />
       ) : null}
 
       {confirmingVoid ? (
@@ -770,7 +805,13 @@ function TotalRow({ label, value, strong = false }: { label: string; value: stri
   );
 }
 
-function RecentPanel({ billings }: { billings: RecentBilling[] }) {
+function RecentPanel({
+  billings,
+  onOpenReceipt,
+}: {
+  billings: RecentBilling[];
+  onOpenReceipt: (billingId: string) => void;
+}) {
   return (
     <section id="clinic-transactions" className="scroll-mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
@@ -787,20 +828,66 @@ function RecentPanel({ billings }: { billings: RecentBilling[] }) {
       ) : (
         <div className="mt-3 space-y-2">
           {billings.slice(0, 8).map((bill) => (
-          <Link key={bill.id} href={`/payments/receipt/${bill.id}`} className="block rounded-2xl border border-slate-200 px-3 py-2 text-xs hover:bg-slate-50">
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono font-black">#{bill.id.slice(0, 8).toUpperCase()}</span>
-              <span className="font-mono font-bold">{peso(bill.total)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              <span>{bill.status}</span>
-              <span>{new Date(bill.issued_at ?? bill.created_at).toLocaleDateString("en-PH")}</span>
-            </div>
-          </Link>
+            <button
+              key={bill.id}
+              type="button"
+              onClick={() => onOpenReceipt(bill.id)}
+              className="block w-full rounded-2xl border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-mono font-black">#{bill.id.slice(0, 8).toUpperCase()}</span>
+                <span className="font-mono font-bold">{peso(bill.total)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <span>{bill.status}</span>
+                <span>{new Date(bill.issued_at ?? bill.created_at).toLocaleDateString("en-PH")}</span>
+              </div>
+            </button>
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+function ReceiptModal({
+  billingId,
+  paymentSnapshot,
+  onClose,
+}: {
+  billingId: string;
+  paymentSnapshot: PaymentSnapshot | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-2 py-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[92vh] w-[84mm] max-w-[84mm] overflow-y-auto rounded-[1.25rem] border border-slate-200 bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <ReceiptDocument billingId={billingId} variant="popup" onClose={onClose} paymentSnapshot={paymentSnapshot} />
+      </div>
+    </div>
   );
 }
 

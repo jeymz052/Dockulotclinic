@@ -195,7 +195,7 @@ export function resolveClinicConsultationPriceCode(input: {
 }) {
   if (input.consultKind === "FollowUp") return BOOKING_PRICING_CODES.CLINIC_FOLLOW_UP;
   if (input.consultKind === "FirstConsult") return BOOKING_PRICING_CODES.CLINIC_FIRST_CONSULT;
-  if (input.patientCategory === "Regular" || input.patientCategory === "OldRecord") {
+  if (input.patientCategory === "Existing") {
     return BOOKING_PRICING_CODES.CLINIC_FOLLOW_UP;
   }
   if (input.patientStatus === "Existing") return BOOKING_PRICING_CODES.CLINIC_FOLLOW_UP;

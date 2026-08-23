@@ -3,6 +3,7 @@ import { hasPermission } from "@/src/lib/auth/permissions";
 import { requireAuthenticatedUser } from "@/src/lib/auth/server-auth";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import type { PatientRecordItem, PatientVisitRecord } from "@/src/lib/clinic";
+import { displayClinicEmail } from "@/src/lib/patient-email";
 import { formatPatientFullName, splitPatientFullName } from "@/src/lib/patient-registration";
 
 async function authenticate(request: Request) {
@@ -36,7 +37,7 @@ type PatientRow = {
   allergies: string | null;
   medical_history: string | null;
   is_walk_in: boolean | null;
-  patient_category?: "New" | "Regular" | "OldRecord" | null;
+  patient_category?: string | null;
   profiles: {
     full_name: string;
     email: string;
@@ -58,11 +59,11 @@ function isMissingPatientColumn(error: unknown) {
 }
 
 const PATIENT_SELECT_WITH_OFFICIAL_FIELDS =
-  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_WITH_CATEGORY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_LEGACY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles(full_name, email, phone, is_active, role)";
 
 type VisitRow = {
   id: string;
@@ -124,7 +125,7 @@ function mapPatient(row: PatientRow): PatientRecordItem {
     middleName,
     lastName,
     suffixName,
-    email: row.profiles?.email ?? "",
+    email: displayClinicEmail(row.profiles?.email ?? ""),
     phone: row.profiles?.phone ?? "",
     dateOfBirth: row.dob ?? "",
     gender: row.gender ?? "",
@@ -140,7 +141,7 @@ function mapPatient(row: PatientRow): PatientRecordItem {
     allergies: row.allergies ?? "",
     medicalHistory: row.medical_history ?? "",
     isWalkIn: row.is_walk_in ?? false,
-    patientCategory: row.patient_category === "OldRecord" ? "Regular" : row.patient_category ?? "New",
+    patientCategory: row.patient_category === "New" ? "New" : "Existing",
     status: row.profiles?.is_active === false ? "Inactive" : "Active",
   };
 }
@@ -198,7 +199,6 @@ export async function GET(request: Request) {
     supabase
       .from("patients")
       .select(PATIENT_SELECT_WITH_OFFICIAL_FIELDS)
-      .eq("profiles.role", "patient")
       .order("id"),
     supabase
       .from("appointments")
@@ -231,14 +231,12 @@ export async function GET(request: Request) {
     patientsResult = await supabase
       .from("patients")
       .select(PATIENT_SELECT_WITH_CATEGORY)
-      .eq("profiles.role", "patient")
       .order("id");
   }
   if (isMissingPatientColumn(patientsResult.error)) {
     patientsResult = await supabase
       .from("patients")
       .select(PATIENT_SELECT_LEGACY)
-      .eq("profiles.role", "patient")
       .order("id");
   }
 
@@ -260,7 +258,7 @@ export async function GET(request: Request) {
     patients: (patientsResult.data ?? []).map((row) => {
       const patient = mapPatient(row as unknown as PatientRow);
       return completedPatientIds.has(patient.id) && patient.patientCategory === "New"
-        ? { ...patient, patientCategory: "Regular" as const }
+        ? { ...patient, patientCategory: "Existing" as const }
         : patient;
     }),
     visits,
@@ -276,7 +274,7 @@ export async function PATCH(request: Request) {
   const body = (await request.json().catch(() => null)) as
     | {
         patientId?: string;
-        patientCategory?: "New" | "Regular" | "OldRecord";
+        patientCategory?: "New" | "Existing";
         familyHistory?: string;
         medicalHistory?: string;
         allergies?: string;

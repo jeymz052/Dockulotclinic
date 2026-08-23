@@ -59,12 +59,10 @@ export type OnlineCheckoutOption =
   | "stripe_card"
   | "bank_transfer";
 
-// Source-of-truth list of checkout options patients can pick from the booking
-// flow today. The UI hides the rest behind a "Not yet available" badge — this
-// constant lets the server reject hand-crafted requests early with a clear
-// 400 instead of bubbling a PayMongo 400 ("payment method is not enabled on
-// this account"). Add an option back here once the corresponding PayMongo
-// method is activated on the merchant account.
+// Allowed online-booking checkout options.
+// The public booking flow now sends `paymongo_gcash` only, which maps to
+// PayMongo QR Ph. Keep this list narrow so hand-crafted requests cannot push
+// the online flow back into unsupported or manual payment methods.
 const ENABLED_NEW_BOOKING_OPTIONS: ReadonlySet<OnlineCheckoutOption> = new Set([
   "paymongo_gcash",
 ]);

@@ -135,6 +135,19 @@ function formatPrescriptionSpecialty(raw?: string | null) {
   return specialty;
 }
 
+function fitImageSize(image: PdfImage, maxWidth: number, maxHeight: number) {
+  const ratio = image.width / image.height;
+  let width = maxWidth;
+  let height = width / ratio;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * ratio;
+  }
+
+  return { width, height };
+}
+
 type PdfImage = {
   width: number;
   height: number;
@@ -398,6 +411,7 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
   const ops: string[] = [];
   ops.push("1 1 1 rg");
   rect(ops, 18, 18, 576, 756, "f");
+  ops.push("0 g");
   if (logoImage) {
     ops.push("q");
     ops.push("140 0 0 78 42 700 cm /Im1 Do");
@@ -434,10 +448,16 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
 
   text(ops, "Note:", 42, Math.max(y, 170), { size: 13, font: "F3" });
   wrapped(ops, note, 42, Math.max(y - 18, 152), { size: 11, max: 80, lines: 4, leading: 14 });
-  rule(ops, 390, 90, 545);
+  rule(ops, 390, 90, 437);
+  rule(ops, 499, 90, 545);
   if (signatureImage) {
+    const signatureBox = fitImageSize(signatureImage, 92, 34);
+    const signatureX = 468 - signatureBox.width / 2;
+    const signatureY = 96;
     ops.push("q");
-    ops.push(`320 0 0 152 282 24 cm ${logoImage ? "/Im2" : "/Im1"} Do`);
+    ops.push(
+      `${signatureBox.width.toFixed(2)} 0 0 ${signatureBox.height.toFixed(2)} ${signatureX.toFixed(2)} ${signatureY.toFixed(2)} cm ${logoImage ? "/Im2" : "/Im1"} Do`,
+    );
     ops.push("Q");
   }
   text(ops, "Physician's Signature", 468, 58, { size: 12, align: "center" });

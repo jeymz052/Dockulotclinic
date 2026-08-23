@@ -79,10 +79,16 @@ export async function POST(req: Request) {
         .from("patients")
         .select("patient_category")
         .eq("id", patientId)
-        .maybeSingle<{ patient_category: "New" | "Regular" | "OldRecord" | null }>();
+        .maybeSingle<{ patient_category: string | null }>();
       if (patientCategoryError && !isMissingPatientCategoryColumn(patientCategoryError)) {
         throw patientCategoryError;
       }
+      const hasExistingPatientRecord = patientRow?.patient_category !== "New";
+      const requestedConsultKind = parseAppointmentContext(reason).consultKind;
+      const resolvedConsultKind =
+        patientStatus === "Existing" || hasExistingPatientRecord
+          ? "FirstConsult"
+          : requestedConsultKind;
       const { data: priorClinicAppointments } = await getSupabaseAdmin()
         .from("appointments")
         .select("id")
@@ -91,9 +97,13 @@ export async function POST(req: Request) {
         .not("status", "in", '("Cancelled","NoShow")')
         .limit(1);
       amount = await resolveClinicConsultationAmount({
-        patientCategory: patientCategoryError ? undefined : patientRow?.patient_category ?? undefined,
+        patientCategory: patientCategoryError
+          ? undefined
+          : patientRow?.patient_category === "New"
+            ? "New"
+            : "Existing",
         patientStatus,
-        consultKind: parseAppointmentContext(reason).consultKind,
+        consultKind: resolvedConsultKind,
         hasPriorClinicConsultation: (priorClinicAppointments?.length ?? 0) > 0,
       });
     }

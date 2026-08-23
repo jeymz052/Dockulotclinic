@@ -173,16 +173,16 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
     const filename = getPrescriptionPdfFilename(data.prescription_no);
     await sendEmail({
       to: patientEmail,
-      subject: `Your prescription ${data.prescription_no} is ready`,
+      subject: `Prescription confirmation: ${data.prescription_no}`,
       body: [
         `Hello ${data.patients?.profiles?.full_name ?? "Patient"},`,
         "",
-        `Your prescription ${data.prescription_no} from ${data.doctors?.profiles?.full_name ?? "Doc Kulot"} is ready.`,
-        `Open your patient portal to view, download, or print the PDF: ${portalUrl}`,
+        `This is a confirmation that ${data.doctors?.profiles?.full_name ?? "your doctor"} has emailed your prescription ${data.prescription_no}.`,
+        `A copy of the PDF is attached to this email, and you can also view, download, or print it from your patient portal: ${portalUrl}`,
         "",
         data.released_to_patient
           ? "The prescription is already visible in the portal."
-          : "The prescription is currently not released to the patient portal.",
+          : "The prescription is currently not released to the patient portal yet.",
       ].join("\n"),
       attachments: [
         {
@@ -192,7 +192,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
       ],
     });
 
-    return ok({ message: "Prescription email sent." });
+    return ok({ message: `Confirmation email sent to ${patientEmail}.` });
   } catch (e) {
     return httpError(e);
   }

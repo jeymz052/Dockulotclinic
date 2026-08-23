@@ -76,7 +76,7 @@ create table public.patients (
   medical_history text,
   is_walk_in boolean not null default false,
   patient_category text not null default 'New'
-    check (patient_category in ('New', 'Regular', 'OldRecord')),
+    check (patient_category in ('New', 'Existing')),
   portal_notes_visible boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

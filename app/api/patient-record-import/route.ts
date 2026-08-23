@@ -30,6 +30,8 @@ export async function POST(request: Request) {
     return unauthorized();
   }
 
+  const previewOnly = new URL(request.url).searchParams.get("preview") === "1";
+
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
   if (!(file instanceof File)) {
@@ -57,6 +59,17 @@ export async function POST(request: Request) {
         { message: "No patient rows were found. Check that the sheet has Doc Kulot patient headers." },
         { status: 400 },
       );
+    }
+
+    if (previewOnly) {
+      return NextResponse.json({
+        preview: records.slice(0, 10),
+        summary: {
+          total: records.length,
+          newCount: records.filter((record) => record.patientCategory === "New").length,
+          existingCount: records.filter((record) => record.patientCategory === "Existing").length,
+        },
+      });
     }
 
     const result = await importPatients(records);

@@ -253,12 +253,12 @@ export async function issueBilling(input: {
       unit_price: Number(product.selling_price),
     };
   });
-  let patientCategory: "New" | "Regular" | "OldRecord" | undefined;
+  let patientCategory: "New" | "Existing" | undefined;
   const { data: patientProfile, error: patientProfileError } = await supabase
     .from("patients")
     .select("patient_category")
     .eq("id", appt.patient_id)
-    .maybeSingle<{ patient_category: "New" | "Regular" | "OldRecord" | null }>();
+    .maybeSingle<{ patient_category: string | null }>();
   if (patientProfileError) {
     if (
       patientProfileError.code !== "42703"
@@ -267,7 +267,7 @@ export async function issueBilling(input: {
       throw patientProfileError;
     }
   } else {
-    patientCategory = patientProfile?.patient_category ?? undefined;
+    patientCategory = patientProfile?.patient_category === "New" ? "New" : "Existing";
   }
   const { data: priorClinicAppointments, error: priorClinicAppointmentsError } = await supabase
     .from("appointments")

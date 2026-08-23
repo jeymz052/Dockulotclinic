@@ -872,15 +872,17 @@ export default function AppointmentListPage() {
                                   Start Consultation
                                 </button>
                               ) : null}
-                              {appointment.type === "Online" && appointment.status === "Confirmed" ? (
-                                <Link
-                                  href="/consultations"
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
-                                >
-                                  <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
-                                  Open Charting
-                                </Link>
-                              ) : null}
+                              {appointment.status === "Confirmed"
+                                || appointment.status === "Checked In"
+                                || appointment.status === "In Progress" ? (
+                                  <Link
+                                    href="/consultations"
+                                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                                  >
+                                    <FaPenToSquare className="h-3 w-3" aria-hidden="true" />
+                                    Visit workspace
+                                  </Link>
+                                ) : null}
                               {appointment.status === "In Progress" ? (
                                 <button
                                   type="button"

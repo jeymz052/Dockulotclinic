@@ -32,7 +32,7 @@ export async function resolveDoctorIdBySlug(slug: string): Promise<string> {
     .select("id");
   if (allErr) throw allErr;
   if (!all || all.length === 0) {
-    throw new Error("No doctors found — create a doctor profile first.");
+    throw new Error("No doctors found - create a doctor profile first.");
   }
   if (all.length === 1) {
     const only = all[0] as { id: string };
@@ -137,7 +137,7 @@ export async function findOrCreatePatientByEmail(
 function deriveLegacyStatus(v2: V2Appointment): AppointmentStatus {
   if (v2.status === "Pending") return "Pending";
   if (v2.appointment_type === "Online") {
-    // Online visits never check in physically — collapse CheckedIn (shouldn't
+    // Online visits never check in physically - collapse CheckedIn (shouldn't
     // happen for Online, but be defensive) back to Confirmed for the UI.
     if (v2.status === "Completed") return "Completed";
     if (v2.status === "InProgress") return "In Progress";
@@ -168,7 +168,11 @@ export async function mapV2RowToLegacy(
   row: V2Appointment,
   patient: PatientPair,
   doctorSlug: string,
+  defaultMeetingLink: string | null = null,
 ): Promise<AppointmentRecord> {
+  const meetingLink = sanitizeMeetingLink(row.meeting_link)
+    ?? sanitizeMeetingLink(defaultMeetingLink);
+
   return {
     id: row.id,
     patientName: patient.full_name,
@@ -182,7 +186,7 @@ export async function mapV2RowToLegacy(
     reason: row.reason,
     status: deriveLegacyStatus(row),
     queueNumber: row.queue_number,
-    meetingLink: sanitizeMeetingLink(row.meeting_link),
+    meetingLink: row.appointment_type === "Online" ? meetingLink : null,
   };
 }
 

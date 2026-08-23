@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { inflateRawSync } from "node:zlib";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { formatPatientFullName, splitPatientFullName } from "@/src/lib/patient-registration";
+import { buildClinicPlaceholderEmail, normalizeClinicEmail } from "@/src/lib/patient-email";
 
 export type ImportedPatientInput = {
   patientNumber: string;
@@ -19,12 +20,11 @@ export type ImportedPatientInput = {
   occupation: string;
   guardianName: string;
   doctorNotes: string;
-  patientCategory: "New" | "Regular";
+  patientCategory: "New" | "Existing";
 };
 
 export type ImportResult = {
   created: number;
-  updated: number;
   skipped: number;
   errors: string[];
 };
@@ -35,8 +35,6 @@ type ZipEntry = {
   compressedSize: number;
   localHeaderOffset: number;
 };
-
-const IMPORT_EMAIL_DOMAIN = "imported.dockulot.test";
 
 function normalizeHeader(value: string) {
   return value
@@ -62,6 +60,41 @@ function decodeXml(value: string) {
 
 function stripTags(value: string) {
   return decodeXml(value.replace(/<[^>]+>/g, ""));
+}
+
+function normalizeExcelScalar(value: string) {
+  const raw = stripTags(value).trim();
+  if (!raw) return "";
+
+  const scientific = raw.match(/^([+-]?\d+(?:\.\d+)?)[eE]([+-]?\d+)$/);
+  if (!scientific) return raw;
+
+  const [, mantissaRaw, exponentText] = scientific;
+  let mantissa = mantissaRaw;
+  const exponent = Number(exponentText);
+  const negative = mantissa.startsWith("-");
+  if (mantissa.startsWith("+") || mantissa.startsWith("-")) {
+    mantissa = mantissa.slice(1);
+  }
+
+  const [integerPart, fractionPart = ""] = mantissa.split(".");
+  const digits = `${integerPart}${fractionPart}`;
+  const decimalIndex = integerPart.length + exponent;
+
+  let normalized: string;
+  if (exponent >= 0) {
+    if (fractionPart.length <= exponent) {
+      normalized = `${digits}${"0".repeat(exponent - fractionPart.length)}`;
+    } else {
+      normalized = `${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+    }
+  } else if (decimalIndex > 0) {
+    normalized = `${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+  } else {
+    normalized = `0.${"0".repeat(Math.abs(decimalIndex))}${digits}`;
+  }
+
+  return negative ? `-${normalized}` : normalized;
 }
 
 function parseDate(value: string) {
@@ -103,6 +136,33 @@ function getHeaderValue(row: Record<string, string>, names: string[]) {
     if (value) return value;
   }
   return "";
+}
+
+function normalizeImportedPatientCategory(value: string): "New" | "Existing" | null {
+  const normalized = normalizeHeader(value).replace(/\s+/g, "");
+  if (!normalized) return null;
+  if (normalized.includes("new")) {
+    return "New";
+  }
+  return "Existing";
+}
+
+function getImportedPatientCategory(row: Record<string, string>): "New" | "Existing" {
+  const categoryHeaderNames = [
+    "patient category",
+    "patient type",
+    "patient status",
+    "category",
+    "status",
+  ];
+
+  for (const header of categoryHeaderNames) {
+    const rawValue = row[normalizeHeader(header)];
+    const category = rawValue ? normalizeImportedPatientCategory(rawValue) : null;
+    if (category) return category;
+  }
+
+  return "Existing";
 }
 
 export function mapImportRows(rows: string[][]): ImportedPatientInput[] {
@@ -157,7 +217,7 @@ export function mapImportRows(rows: string[][]): ImportedPatientInput[] {
       occupation: getHeaderValue(keyed, ["occupation"]),
       guardianName: getHeaderValue(keyed, ["name of guardian for peds", "guardian", "guardian name"]),
       doctorNotes: doctorNotes.filter(Boolean).join("\n\n"),
-      patientCategory: "Regular" as const,
+      patientCategory: getImportedPatientCategory(keyed),
     };
   }).filter((row) => formatPatientFullName(row) || row.patientNumber || row.phone);
 }
@@ -241,6 +301,25 @@ function readZipEntry(buffer: Buffer, entry: ZipEntry) {
   throw new Error("Unsupported XLSX compression.");
 }
 
+function parseWorksheetRows(xml: string, sharedStrings: string[]) {
+  const rows: string[][] = [];
+  for (const rowMatch of xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+    const row: string[] = [];
+    for (const cellMatch of rowMatch[1].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
+      const attrs = cellMatch[1];
+      const body = cellMatch[2];
+      const ref = attrs.match(/\br="([^"]+)"/)?.[1] ?? "";
+      const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
+      const targetIndex = ref ? columnIndex(ref) : row.length;
+      const rawValue = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<t\b[^>]*>([\s\S]*?)<\/t>/)?.[1] ?? "";
+      const value = type === "s" ? sharedStrings[Number(rawValue)] ?? "" : normalizeExcelScalar(rawValue);
+      row[targetIndex] = value;
+    }
+    rows.push(row.map((value) => value ?? ""));
+  }
+  return rows.filter((cells) => cells.some((value) => value.trim()));
+}
+
 function parseSharedStrings(xml: string) {
   return [...xml.matchAll(/<si\b[\s\S]*?<\/si>/g)].map((match) => {
     const textParts = [...match[0].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((part) => stripTags(part[1]));
@@ -264,60 +343,90 @@ export function parseXlsx(buffer: Buffer) {
     ? readZipEntry(buffer, byName.get("xl/sharedStrings.xml")!)
     : "";
   const sharedStrings = sharedXml ? parseSharedStrings(sharedXml) : [];
-  const sheetEntry =
-    byName.get("xl/worksheets/sheet1.xml")
-    ?? entries.find((entry) => /^xl\/worksheets\/sheet\d+\.xml$/.test(entry.name));
-  if (!sheetEntry) throw new Error("XLSX workbook has no worksheet.");
-  const sheetXml = readZipEntry(buffer, sheetEntry);
+  const worksheetEntries = entries
+    .filter((entry) => /^xl\/worksheets\/sheet\d+\.xml$/.test(entry.name))
+    .sort((left, right) => left.name.localeCompare(right.name, undefined, { numeric: true }));
+
+  if (!worksheetEntries.length) throw new Error("XLSX workbook has no worksheet.");
 
   const rows: string[][] = [];
-  for (const rowMatch of sheetXml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
-    const row: string[] = [];
-    for (const cellMatch of rowMatch[1].matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)) {
-      const attrs = cellMatch[1];
-      const body = cellMatch[2];
-      const ref = attrs.match(/\br="([^"]+)"/)?.[1] ?? "";
-      const type = attrs.match(/\bt="([^"]+)"/)?.[1] ?? "";
-      const targetIndex = ref ? columnIndex(ref) : row.length;
-      const rawValue = body.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? body.match(/<t\b[^>]*>([\s\S]*?)<\/t>/)?.[1] ?? "";
-      const value = type === "s" ? sharedStrings[Number(rawValue)] ?? "" : stripTags(rawValue);
-      row[targetIndex] = value;
-    }
-    rows.push(row.map((value) => value ?? ""));
+  for (const entry of worksheetEntries) {
+    rows.push(...parseWorksheetRows(readZipEntry(buffer, entry), sharedStrings));
   }
-  return rows.filter((cells) => cells.some((value) => value.trim()));
-}
-
-function placeholderEmail(input: ImportedPatientInput, index: number) {
-  const key = (input.patientNumber || `${input.lastName}-${input.firstName}` || `row-${index + 1}`)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 48) || `row-${index + 1}`;
-  return `${key}-${index + 1}@${IMPORT_EMAIL_DOMAIN}`;
-}
-
-function normalizePhone(value: string) {
-  return value.replace(/[\s()-]/g, "").trim();
+  return rows;
 }
 
 function formatPatientNumber(value: string) {
-  const numericPart = value.replace(/\D/g, "");
+  const raw = value.trim().replace(/,/g, "");
+  if (!raw) return "";
+
+  const numericValue = Number(raw);
+  if (Number.isFinite(numericValue)) {
+    return `PAT-${Math.trunc(numericValue).toString().padStart(3, "0")}`;
+  }
+
+  const numericPart = raw.replace(/\D/g, "");
   return numericPart ? `PAT-${Number(numericPart).toString().padStart(3, "0")}` : "";
 }
 
 export async function importPatients(records: ImportedPatientInput[]): Promise<ImportResult> {
   const supabase = getSupabaseAdmin();
-  const result: ImportResult = { created: 0, updated: 0, skipped: 0, errors: [] };
-  const { data: patientNumbers, error: patientNumberError } = await supabase
-    .from("patients")
-    .select("patient_number");
+  const result: ImportResult = { created: 0, skipped: 0, errors: [] };
+  const [{ data: patientNumbers, error: patientNumberError }, { data: profileEmails, error: profileEmailError }] = await Promise.all([
+    supabase.from("patients").select("patient_number"),
+    supabase.from("profiles").select("email"),
+  ]);
   if (patientNumberError) throw patientNumberError;
-  let nextPatientNumber = (patientNumbers ?? []).reduce((max, row) => {
+  if (profileEmailError) throw profileEmailError;
+
+  const usedPatientNumbers = new Set<string>();
+  let nextPatientNumber = 1;
+  for (const row of patientNumbers ?? []) {
     const formatted = formatPatientNumber(String((row as { patient_number?: string | null }).patient_number ?? ""));
+    if (!formatted) continue;
+    usedPatientNumbers.add(formatted);
     const numericValue = Number(formatted.slice(4));
-    return Number.isFinite(numericValue) ? Math.max(max, numericValue) : max;
-  }, 0) + 1;
+    if (Number.isFinite(numericValue)) {
+      nextPatientNumber = Math.max(nextPatientNumber, numericValue + 1);
+    }
+  }
+
+  const usedEmails = new Set<string>();
+  for (const row of profileEmails ?? []) {
+    const email = normalizeClinicEmail(String((row as { email?: string | null }).email ?? ""));
+    if (email) usedEmails.add(email);
+  }
+
+  function allocatePatientNumber(preferred: string) {
+    const formatted = formatPatientNumber(preferred);
+    if (formatted && !usedPatientNumbers.has(formatted)) {
+      usedPatientNumbers.add(formatted);
+      return formatted;
+    }
+
+    while (usedPatientNumbers.has(`PAT-${String(nextPatientNumber).padStart(3, "0")}`)) {
+      nextPatientNumber += 1;
+    }
+
+    const generated = `PAT-${String(nextPatientNumber++).padStart(3, "0")}`;
+    usedPatientNumbers.add(generated);
+    return generated;
+  }
+
+  function allocateEmail(preferred: string, record: ImportedPatientInput, index: number) {
+    const normalized = normalizeClinicEmail(preferred);
+    if (normalized && !usedEmails.has(normalized)) {
+      usedEmails.add(normalized);
+      return normalized;
+    }
+
+    const generated = buildClinicPlaceholderEmail(
+      `${record.patientNumber || `${record.lastName}-${record.firstName}` || "import"}-${randomUUID()}`,
+      index + 1,
+    );
+    usedEmails.add(generated);
+    return generated;
+  }
 
   for (const [index, record] of records.entries()) {
     try {
@@ -326,61 +435,35 @@ export async function importPatients(records: ImportedPatientInput[]): Promise<I
         result.skipped += 1;
         continue;
       }
-      const email = record.email.trim().toLowerCase() || placeholderEmail(record, index);
+      const suppliedEmail = record.email.trim().toLowerCase();
       const phone = record.phone.trim();
-      const normalizedPhone = normalizePhone(phone);
-      const patientNumber = formatPatientNumber(record.patientNumber) || `PAT-${String(nextPatientNumber++).padStart(3, "0")}`;
+      const patientNumber = allocatePatientNumber(record.patientNumber);
+      const email = allocateEmail(suppliedEmail, record, index);
 
-      const candidateProfiles = [];
-      if (email) candidateProfiles.push(supabase.from("profiles").select("id, role").eq("email", email).maybeSingle<{ id: string; role: string }>());
-      if (normalizedPhone) candidateProfiles.push(supabase.from("profiles").select("id, role").eq("phone", phone).maybeSingle<{ id: string; role: string }>());
-      const profileResults = await Promise.all(candidateProfiles);
-      const existingProfile = profileResults.find((item) => item.data)?.data ?? null;
-      if (existingProfile && existingProfile.role !== "patient") {
-        throw new Error(`Matched ${email || phone} to a non-patient account.`);
-      }
+      const { data: created, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password: randomUUID(),
+        email_confirm: true,
+        user_metadata: { full_name: fullName, imported_patient: true },
+        app_metadata: { role: "patient" },
+      });
+      if (createError || !created.user) throw createError ?? new Error("Unable to create imported patient.");
 
-      let existingByPatientNumber: { id: string } | null = null;
-      if (patientNumber) {
-        const { data } = await supabase
-          .from("patients")
-          .select("id")
-          .eq("patient_number", patientNumber)
-          .maybeSingle<{ id: string }>();
-        existingByPatientNumber = data ?? null;
-      }
-
-      let userId = existingByPatientNumber?.id ?? existingProfile?.id ?? null;
-      if (!userId) {
-        const { data: created, error } = await supabase.auth.admin.createUser({
-          email,
-          password: randomUUID(),
-          email_confirm: true,
-          user_metadata: { full_name: fullName, imported_patient: true },
-          app_metadata: { role: "patient" },
-        });
-        if (error || !created.user) throw error ?? new Error("Unable to create imported patient.");
-        userId = created.user.id;
-        result.created += 1;
-      } else {
-        result.updated += 1;
-      }
+      const userId = created.user.id;
 
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .insert({
+          id: userId,
           email,
           full_name: fullName,
           phone: phone || null,
           role: "patient",
           is_active: true,
-        })
-        .eq("id", userId);
+        });
       if (profileError) throw profileError;
 
-      const { error: patientError } = await supabase
-        .from("patients")
-        .upsert({
+      const patientInsert = {
           id: userId,
           patient_number: patientNumber,
           first_name: record.firstName.trim() || null,
@@ -397,8 +480,14 @@ export async function importPatients(records: ImportedPatientInput[]): Promise<I
           doctor_notes: record.doctorNotes.trim() || null,
           is_walk_in: false,
           patient_category: record.patientCategory,
-        });
+      };
+
+      const { error: patientError } = await supabase
+        .from("patients")
+        .insert(patientInsert);
       if (patientError) throw patientError;
+
+      result.created += 1;
     } catch (error) {
       result.errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : "Import failed."}`);
     }

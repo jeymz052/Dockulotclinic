@@ -16,6 +16,7 @@ import {
   type SystemSettings,
 } from "@/src/lib/clinic";
 import { HttpError, type Actor } from "@/src/lib/http";
+import { buildClinicPlaceholderEmail, displayClinicEmail } from "@/src/lib/patient-email";
 import {
   formatPatientFullName,
   patientRecordToRegistrationFields,
@@ -156,7 +157,7 @@ type PatientJoinRow = {
   allergies: string | null;
   medical_history: string | null;
   is_walk_in: boolean | null;
-  patient_category?: "New" | "Regular" | "OldRecord" | null;
+  patient_category?: string | null;
   profiles: {
     full_name: string;
     email: string;
@@ -165,6 +166,10 @@ type PatientJoinRow = {
     role: string;
   } | null;
 };
+
+function normalizePatientCategory(value: string | null | undefined): PatientRecordItem["patientCategory"] {
+  return value === "New" ? "New" : "Existing";
+}
 
 function isMissingPatientColumn(error: unknown) {
   return Boolean(
@@ -178,11 +183,11 @@ function isMissingPatientColumn(error: unknown) {
 }
 
 const PATIENT_SELECT_WITH_OFFICIAL_FIELDS =
-  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_WITH_CATEGORY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_LEGACY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles(full_name, email, phone, is_active, role)";
 
 function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
   const legacyParts = splitPatientFullName(row.profiles?.full_name ?? "");
@@ -206,7 +211,7 @@ function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
     middleName,
     lastName,
     suffixName,
-    email: row.profiles?.email ?? "",
+    email: displayClinicEmail(row.profiles?.email ?? ""),
     phone: row.profiles?.phone ?? "",
     dateOfBirth: row.dob ?? "",
     gender: row.gender ?? "",
@@ -222,7 +227,7 @@ function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
     allergies: row.allergies ?? "",
     medicalHistory: row.medical_history ?? "",
     isWalkIn: row.is_walk_in ?? false,
-    patientCategory: row.patient_category ?? "New",
+    patientCategory: normalizePatientCategory(row.patient_category),
     status: row.profiles?.is_active === false ? "Inactive" : "Active",
   };
 }
@@ -232,7 +237,6 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
   const initial = await supabase
     .from("patients")
     .select(PATIENT_SELECT_WITH_OFFICIAL_FIELDS)
-    .eq("profiles.role", "patient")
     .order("id");
   let data: unknown[] | null = initial.data;
   let error = initial.error;
@@ -240,7 +244,6 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
     const retryWithCategory = await supabase
       .from("patients")
       .select(PATIENT_SELECT_WITH_CATEGORY)
-      .eq("profiles.role", "patient")
       .order("id");
     data = retryWithCategory.data;
     error = retryWithCategory.error;
@@ -249,7 +252,6 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
     const retry = await supabase
       .from("patients")
       .select(PATIENT_SELECT_LEGACY)
-      .eq("profiles.role", "patient")
       .order("id");
     data = retry.data;
     error = retry.error;
@@ -285,24 +287,36 @@ export async function createPatient(
   const supabase = getSupabaseAdmin();
   const normalized = patientRecordToRegistrationFields(payload);
   const patientNumber = await resolvePatientNumber(payload.patientNumber ?? "");
-  assertEmailNotProtectedPatient(normalized.email);
-  const validationError = validatePatientRegistrationFields(normalized);
+  if (normalized.email) {
+    assertEmailNotProtectedPatient(normalized.email);
+  }
+  const validationError = validatePatientRegistrationFields(normalized, {
+    requireGuardianForMinors: false,
+    requireEmail: false,
+  });
   if (validationError) throw new Error(validationError);
 
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("email", normalized.email)
-    .maybeSingle<{ id: string; role: string }>();
+  let userId: string | null = null;
+  if (normalized.email) {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("email", normalized.email)
+      .maybeSingle<{ id: string; role: string }>();
 
-  if (existing && existing.role !== "patient") {
-    throw new Error("This email is already registered to a non-patient account.");
+    if (existing && existing.role !== "patient") {
+      throw new Error("This email is already registered to a non-patient account.");
+    }
+
+    userId = existing?.id ?? null;
   }
-
-  let userId = existing?.id ?? null;
+  const persistedEmail = normalized.email || buildClinicPlaceholderEmail(
+    `${normalized.fullName || patientNumber || "patient"}-${randomUUID()}`,
+    1,
+  );
   if (!userId) {
     const { data: created, error } = await supabase.auth.admin.createUser({
-      email: normalized.email,
+      email: persistedEmail,
       password: randomUUID(),
       email_confirm: true,
       user_metadata: { full_name: normalized.fullName },
@@ -312,16 +326,18 @@ export async function createPatient(
     userId = created.user.id;
   }
 
-  // Triggers create profile + patient. Patch fields with the values from the form.
-  await supabase
+  // Keep the profile row in sync so patient records always appear in joins.
+  const { error: profileError } = await supabase
     .from("profiles")
-    .update({
+    .upsert({
+      id: userId,
+      email: persistedEmail,
       full_name: normalized.fullName,
       phone: normalized.phone,
       role: "patient",
       is_active: true,
-    })
-    .eq("id", userId);
+    });
+  if (profileError) throw profileError;
 
   const patientInsert = {
     id: userId,
@@ -344,7 +360,7 @@ export async function createPatient(
     allergies: payload.allergies?.trim() || null,
     medical_history: payload.medicalHistory?.trim() || null,
     is_walk_in: payload.isWalkIn,
-    patient_category: payload.patientCategory ?? "New",
+    patient_category: normalizePatientCategory(payload.patientCategory),
   };
   const { error: patientError } = await supabase
     .from("patients")
@@ -376,16 +392,44 @@ export async function updatePatient(
   const supabase = getSupabaseAdmin();
   const normalized = patientRecordToRegistrationFields(updatedPatient);
   const patientNumber = await resolvePatientNumber(updatedPatient.patientNumber);
-  const validationError = validatePatientRegistrationFields(normalized, { requireGuardianForMinors: false });
+  if (normalized.email) {
+    assertEmailNotProtectedPatient(normalized.email);
+  }
+  const validationError = validatePatientRegistrationFields(normalized, {
+    requireGuardianForMinors: false,
+    requireEmail: false,
+  });
   if (validationError) throw new Error(validationError);
+
+  const { data: currentProfile, error: currentProfileError } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", updatedPatient.id)
+    .maybeSingle<{ email: string | null }>();
+  if (currentProfileError) throw currentProfileError;
+
+  const persistedEmail =
+    normalized.email
+    || currentProfile?.email?.trim().toLowerCase()
+    || buildClinicPlaceholderEmail(
+      `${updatedPatient.fullName || patientNumber || updatedPatient.id}-${randomUUID()}`,
+      1,
+    );
 
   const profileUpdate = {
     full_name: normalized.fullName,
-    email: normalized.email,
+    email: persistedEmail,
     phone: normalized.phone,
     is_active: updatedPatient.status !== "Inactive",
   };
-  await supabase.from("profiles").update(profileUpdate).eq("id", updatedPatient.id);
+  const { error: profileUpdateError } = await supabase
+    .from("profiles")
+    .upsert({
+      id: updatedPatient.id,
+      ...profileUpdate,
+      role: "patient",
+    });
+  if (profileUpdateError) throw profileUpdateError;
   const patientUpdate = {
     patient_number: patientNumber,
     first_name: normalized.firstName || null,
@@ -406,7 +450,7 @@ export async function updatePatient(
     allergies: updatedPatient.allergies.trim() || null,
     medical_history: updatedPatient.medicalHistory.trim() || null,
     is_walk_in: updatedPatient.isWalkIn,
-    patient_category: updatedPatient.patientCategory,
+    patient_category: normalizePatientCategory(updatedPatient.patientCategory),
   };
   const { error: patientError } = await supabase
     .from("patients")

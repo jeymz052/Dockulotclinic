@@ -3,7 +3,7 @@ function parseClockToMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
-export type ClinicPatientCategory = "New" | "Regular" | "OldRecord";
+export type ClinicPatientCategory = "New" | "Existing";
 export type BookingPatientStatus = "New" | "Existing";
 export type ClinicConsultKind = "FirstConsult" | "FollowUp";
 
@@ -39,7 +39,7 @@ export function resolveClinicConsultationFee(input: {
   if (input.consultKind === "FirstConsult") {
     return NEW_PATIENT_CLINIC_CONSULTATION_FEE;
   }
-  if (input.patientCategory === "Regular" || input.patientCategory === "OldRecord") {
+  if (input.patientCategory === "Existing") {
     return FOLLOW_UP_CLINIC_CONSULTATION_FEE;
   }
   if (input.patientStatus === "Existing") {

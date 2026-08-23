@@ -129,6 +129,12 @@ function timeValue(value: string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function openReceiptPopup(href: string) {
+  if (typeof window === "undefined") return;
+  const popup = window.open(href, "receipt-popup", "popup=yes,width=540,height=760");
+  popup?.focus();
+}
+
 export function PaymentHistoryModule() {
   const { accessToken, profile, role } = useRole();
   const { appointments, error: appointmentError } = useAppointments();
@@ -527,13 +533,14 @@ function HistoryRows({ rows, loading }: { rows: HistoryRow[]; loading: boolean }
           <td className="px-4 py-4 font-mono text-xs font-semibold text-neutral-500">{row.reference}</td>
           <td className="px-4 py-4 text-right">
             {row.receiptHref ? (
-              <Link
-                href={row.receiptHref}
+              <button
+                type="button"
+                onClick={() => openReceiptPopup(row.receiptHref!)}
                 className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-50"
               >
                 Receipt
                 <FaArrowRight className="h-3 w-3" aria-hidden="true" />
-              </Link>
+              </button>
             ) : null}
           </td>
         </tr>
@@ -564,9 +571,9 @@ function MobileHistoryRow({ row }: { row: HistoryRow }) {
         <div className="flex items-center justify-between gap-3">
           <span className="font-mono text-xs font-semibold text-neutral-500">{row.reference}</span>
           {row.receiptHref ? (
-            <Link href={row.receiptHref} className="inline-flex items-center gap-1 text-xs font-bold text-neutral-800">
+            <button type="button" onClick={() => openReceiptPopup(row.receiptHref!)} className="inline-flex items-center gap-1 text-xs font-bold text-neutral-800">
               Receipt <FaArrowRight className="h-3 w-3" aria-hidden="true" />
-            </Link>
+            </button>
           ) : null}
         </div>
       </div>

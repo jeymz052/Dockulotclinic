@@ -134,7 +134,7 @@ export function normalizePatientRegistrationFields(
 
 export function validatePatientRegistrationFields(
   fields: PatientRegistrationFields,
-  options: { requireGuardianForMinors?: boolean } = {},
+  options: { requireGuardianForMinors?: boolean; requireEmail?: boolean } = {},
 ) {
   const normalized = normalizePatientRegistrationFields(fields);
 
@@ -156,7 +156,7 @@ export function validatePatientRegistrationFields(
   if (normalized.suffixName && !/^[A-Za-z0-9][A-Za-z0-9\s'.-]{0,19}$/.test(normalized.suffixName)) {
     return "Suffix name may only contain letters, numbers, spaces, apostrophes, dots, and hyphens.";
   }
-  if (!EMAIL_RE.test(normalized.email)) {
+  if ((options.requireEmail ?? true) && !EMAIL_RE.test(normalized.email)) {
     return "Please enter a valid email address.";
   }
   const normalizedPhone = normalizePhone(normalized.phone);

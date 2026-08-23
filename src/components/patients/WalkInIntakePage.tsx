@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaArrowLeft,
   FaCalendarDay,
@@ -33,6 +34,11 @@ type IntakeForm = WalkInForm & {
   date: string;
   start: string;
   reason: string;
+};
+
+type WalkInIntakePageProps = {
+  embedded?: boolean;
+  onSuccess?: (message: string) => void;
 };
 
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
@@ -67,8 +73,9 @@ const INITIAL_FORM: IntakeForm = {
   reason: "",
 };
 
-export default function WalkInIntakePage() {
+export default function WalkInIntakePage({ embedded = false, onSuccess }: WalkInIntakePageProps) {
   const { accessToken, role, isLoading: isRoleLoading } = useRole();
+  const router = useRouter();
   const { doctors } = useDoctors();
   const [form, setForm] = useState<IntakeForm>(INITIAL_FORM);
   const [feedback, setFeedback] = useState<{ message: string; tone: "success" | "error" } | null>(null);
@@ -104,7 +111,7 @@ export default function WalkInIntakePage() {
       return;
     }
 
-    const validationError = validatePatientRegistrationFields(form);
+    const validationError = validatePatientRegistrationFields(form, { requireEmail: false });
     if (validationError) {
       setFeedback({ message: validationError, tone: "error" });
       return;
@@ -206,6 +213,13 @@ export default function WalkInIntakePage() {
         message: `${bookingResult.appointment.patientName} is now checked in for ${formatDisplayDate(bookingResult.appointment.date)} at ${formatRange(bookingResult.appointment.start, bookingResult.appointment.end)}. Queue #${bookingResult.appointment.queueNumber}.`,
         tone: "success",
       });
+      if (onSuccess) {
+        onSuccess(`${bookingResult.appointment.patientName} was added successfully.`);
+        return;
+      }
+      if (!embedded) {
+        router.push("/patients/records");
+      }
     });
   }
 
@@ -226,8 +240,9 @@ export default function WalkInIntakePage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[2.5rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(120,53,15,0.12),_transparent_34%),linear-gradient(135deg,_#fcf9ef,_#eff7ff_48%,_#f1de9e)] p-6 shadow-[0_30px_80px_rgba(120,53,15,0.12)]">
+    <div className={embedded ? "space-y-5" : "space-y-6 pb-8"}>
+      {!embedded ? (
+        <section className="overflow-hidden rounded-[2.5rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,_rgba(120,53,15,0.12),_transparent_34%),linear-gradient(135deg,_#fcf9ef,_#eff7ff_48%,_#f1de9e)] p-6 shadow-[0_30px_80px_rgba(120,53,15,0.12)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-700">Walk-In Intake</p>
@@ -245,7 +260,8 @@ export default function WalkInIntakePage() {
             Back to Patients
           </Link>
         </div>
-      </section>
+        </section>
+      ) : null}
 
       {feedback ? (
         <div
@@ -290,7 +306,7 @@ export default function WalkInIntakePage() {
                 <Field label="Family Name"><input type="text" value={form.lastName} onChange={(event) => updateField("lastName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Dela Cruz" required /></Field>
                 <Field label="Middle Name"><input type="text" value={form.middleName} onChange={(event) => updateField("middleName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Middle name" /></Field>
                 <Field label="Suffix Name"><input type="text" value={form.suffixName} onChange={(event) => updateField("suffixName", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="Jr., III, optional" /></Field>
-                <Field label="Email"><input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="juan@example.com" required /></Field>
+                <Field label="Email"><input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="juan@example.com" /></Field>
                 <Field label="Phone"><input type="tel" value={form.phone} onChange={(event) => updateField("phone", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" placeholder="+63 912 345 6789" required /></Field>
                 <Field label="Date of Birth"><input type="date" max={maxBirthDate} value={form.dateOfBirth} onChange={(event) => updateField("dateOfBirth", event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-100 px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" required /></Field>
                 <Field label="Gender">
@@ -313,8 +329,7 @@ export default function WalkInIntakePage() {
                 <Field label="Patient Pricing">
                   <select value={form.patientCategory} onChange={(event) => updateField("patientCategory", event.target.value as IntakeForm["patientCategory"])} className="mt-2 w-full rounded-2xl border border-neutral-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100" required>
                     <option value="New">New patient</option>
-                    <option value="Regular">Regular / follow-up</option>
-                    <option value="OldRecord">Old patient record</option>
+                    <option value="Existing">Existing patient</option>
                   </select>
                 </Field>
               </div>

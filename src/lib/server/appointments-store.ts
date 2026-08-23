@@ -12,6 +12,7 @@ import {
   mapV2RowToLegacy,
   normalizeSqlTime,
 } from "@/src/lib/server/legacy-bridge";
+import { readSystemSettings } from "@/src/lib/server/clinic-store";
 import { resolveDoctorUuid } from "@/src/lib/server/doctor-identity";
 import { getClinicToday, isPastInClinicTime } from "@/src/lib/timezone";
 import {
@@ -71,7 +72,7 @@ function formatAppointmentType(type: AppointmentType | string) {
   return type === "Online" ? "Virtual consult" : type;
 }
 
-async function upsertPatientCategory(patientId: string, category: "New" | "Regular") {
+async function upsertPatientCategory(patientId: string, category: "New" | "Existing") {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("patients")
@@ -101,6 +102,20 @@ async function upsertPatientCategory(patientId: string, category: "New" | "Regul
     category,
     error: error instanceof Error ? error.message : error,
   });
+}
+
+function shouldPromotePatientToExistingAfterCompletion(
+  appt: Pick<V2Appointment, "appointment_type" | "reason">,
+) {
+  if (appt.appointment_type !== "Clinic") return false;
+  return parseAppointmentContext(appt.reason).consultKind === "FollowUp";
+}
+
+async function promotePatientToExistingAfterCompletion(
+  appt: Pick<V2Appointment, "patient_id" | "appointment_type" | "reason">,
+) {
+  if (!shouldPromotePatientToExistingAfterCompletion(appt)) return;
+  await upsertPatientCategory(appt.patient_id, "Existing");
 }
 
 type AppointmentCreateContext = {
@@ -317,7 +332,7 @@ export async function resolveBookingPatientId(
   options: { actorRole?: AuthenticatedUser["role"]; actorUserId?: string } = {},
 ) {
   const supabase = getSupabaseAdmin();
-  const resolvedCategory = payload.patientStatus === "Existing" ? "Regular" : "New";
+  const resolvedCategory = payload.patientStatus === "Existing" ? "Existing" : "New";
 
   const syncPatientDetails = async (patientUuid: string) => {
     const { error: profileError } = await supabase
@@ -380,6 +395,9 @@ export async function resolveBookingPatientId(
 async function hydrateRows(rows: V2Appointment[]): Promise<AppointmentRecord[]> {
   if (rows.length === 0) return [];
   const supabase = getSupabaseAdmin();
+  const defaultMeetingLink = rows.some((row) => row.appointment_type === "Online")
+    ? (await readSystemSettings()).defaultMeetingLink
+    : "";
 
   const patientIds = [...new Set(rows.map((r) => r.patient_id))];
   const doctorIds = [...new Set(rows.map((r) => r.doctor_id))];
@@ -411,6 +429,7 @@ async function hydrateRows(rows: V2Appointment[]): Promise<AppointmentRecord[]> 
           phone: profile?.phone ?? null,
         },
         slugsById.get(row.doctor_id) ?? row.doctor_id,
+        defaultMeetingLink,
       );
     }),
   );
@@ -913,6 +932,8 @@ export async function markClinicAppointmentComplete(appointmentId: string) {
     .update({ status: "Completed" })
     .eq("id", appt.id);
   if (updateErr) throw updateErr;
+
+  await promotePatientToExistingAfterCompletion(appt);
 
   const appointments = await readAppointments();
   return {

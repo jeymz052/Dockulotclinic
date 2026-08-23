@@ -32,7 +32,7 @@ export type PatientRecordItem = {
   allergies: string;
   medicalHistory: string;
   isWalkIn: boolean;
-  patientCategory: "New" | "Regular" | "OldRecord";
+  patientCategory: "New" | "Existing";
   status: "Active" | "Inactive";
 };
 

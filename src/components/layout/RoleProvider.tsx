@@ -28,11 +28,29 @@ type UserProfile = {
   updated_at: string;
 };
 
+type PatientSnapshot = {
+  id: string;
+  patient_category?: "New" | "Existing" | null;
+  patient_number?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  suffix_name?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  civil_status?: string | null;
+  address?: string | null;
+  religion?: string | null;
+  occupation?: string | null;
+  guardian_name?: string | null;
+};
+
 type RoleContextValue = {
   role: UserRole;
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
+  patient: PatientSnapshot | null;
   isLoading: boolean;
   accessToken: string | null;
   refreshProfile: () => Promise<void>;
@@ -49,7 +67,7 @@ function isEmailVerified(user: User | null) {
   return Boolean(user?.email_confirmed_at);
 }
 
-async function fetchProfileFromApi(accessToken: string): Promise<UserProfile | null> {
+async function fetchProfileFromApi(accessToken: string): Promise<{ profile: UserProfile | null; patient: PatientSnapshot | null }> {
   const attempts = 3;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -59,16 +77,20 @@ async function fetchProfileFromApi(accessToken: string): Promise<UserProfile | n
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!res.ok) continue;
-      const payload = (await res.json()) as { profile?: UserProfile | null };
+      const payload = (await res.json()) as { profile?: UserProfile | null; patient?: PatientSnapshot | null };
       const nextProfile = payload.profile;
+      const nextPatient = payload.patient ?? null;
       const parsedRole = resolveProtectedUiRole(
         roleToUiRole(nextProfile?.role),
         nextProfile?.email,
       );
       if (nextProfile && parsedRole) {
         return {
-          ...nextProfile,
-          role: parsedRole,
+          profile: {
+            ...nextProfile,
+            role: parsedRole,
+          },
+          patient: nextPatient,
         };
       }
     } catch {
@@ -80,13 +102,14 @@ async function fetchProfileFromApi(accessToken: string): Promise<UserProfile | n
     }
   }
 
-  return null;
+  return { profile: null, patient: null };
 }
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole>(DEFAULT_ROLE);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [patient, setPatient] = useState<PatientSnapshot | null>(null);
   // `isLoading` is a one-shot gate that consumers (e.g. <Layout>) use to
   // decide whether to render the whole-page "Loading…" placeholder. We flip
   // it true on first mount only — after the very first session resolution it
@@ -147,17 +170,19 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           const dbProfile = await fetchProfileFromApi(nextSession.access_token);
           if (!active || requestId !== requestSequenceRef.current) return;
 
-          if (dbProfile) {
-            profileRef.current = dbProfile;
-            setProfile(dbProfile);
+          if (dbProfile.profile) {
+            profileRef.current = dbProfile.profile;
+            setProfile(dbProfile.profile);
+            setPatient(dbProfile.patient);
             setRole(
-              resolveProtectedUiRole(roleToUiRole(dbProfile.role), dbProfile.email)
+              resolveProtectedUiRole(roleToUiRole(dbProfile.profile.role), dbProfile.profile.email)
               ?? optimisticRole
               ?? readRoleFromUser(nextSession.user),
             );
           } else {
             profileRef.current = null;
             setProfile(null);
+            setPatient(null);
             setRole(optimisticRole ?? readRoleFromUser(nextSession.user));
           }
         }
@@ -168,6 +193,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         setRole(DEFAULT_ROLE);
         profileRef.current = null;
         setProfile(null);
+        setPatient(null);
       }
 
       lastUserIdRef.current = nextUserId;
@@ -202,12 +228,13 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     if (!session?.access_token) return;
 
     const nextProfile = await fetchProfileFromApi(session.access_token);
-    if (!nextProfile) return;
+    if (!nextProfile.profile) return;
 
-    profileRef.current = nextProfile;
-    setProfile(nextProfile);
+    profileRef.current = nextProfile.profile;
+    setProfile(nextProfile.profile);
+    setPatient(nextProfile.patient);
     setRole(
-      resolveProtectedUiRole(roleToUiRole(nextProfile.role), nextProfile.email)
+      resolveProtectedUiRole(roleToUiRole(nextProfile.profile.role), nextProfile.profile.email)
       ?? DEFAULT_ROLE,
     );
   }
@@ -224,6 +251,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
         session,
         user,
         profile,
+        patient,
         isLoading,
         accessToken: session?.access_token ?? null,
         refreshProfile,

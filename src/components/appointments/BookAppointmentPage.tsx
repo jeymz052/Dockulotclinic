@@ -25,7 +25,6 @@ import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useAppointmentAvailability } from "@/src/components/appointments/useAppointmentAvailability";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import type { OnlinePaymentAccount, SystemSettings } from "@/src/lib/clinic";
 import {
   encodeAppointmentContext,
   getDefaultServiceForType,
@@ -90,7 +89,6 @@ type BookingForm = {
   reason: string;
   symptoms: string;
   durationMinutes: "60";
-  paymentOption: OnlinePaymentOption;
 };
 
 type BookingPatientStatus = "Existing" | "New";
@@ -134,8 +132,6 @@ const PROCEDURE_SERVICE_TITLES = new Set(
   clinicServices.filter((service) => service.appointmentOnly).map((service) => service.title),
 );
 
-type OnlinePaymentOption = string;
-
 const today = getClinicToday();
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
 
@@ -162,27 +158,10 @@ const INITIAL_FORM: BookingForm = {
   reason: "",
   symptoms: "",
   durationMinutes: "60",
-  paymentOption: "",
 };
 
 function normalizeConsentName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function BrandChip({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold leading-none ${className ?? ""}`}
-    >
-      {children}
-    </span>
-  );
 }
 
 function getVisitPathLabel(path: BookingVisitPath) {
@@ -299,32 +278,6 @@ function VisitPathValue({ path }: { path: BookingVisitPath }) {
   );
 }
 
-function paymentOptionLabel(option: OnlinePaymentOption, accounts: OnlinePaymentAccount[]) {
-  const account = accounts.find((item) => item.id === option);
-  if (!account) return "Online payment";
-  return account.kind === "Bank" && account.bankName
-    ? account.bankName
-    : account.label || account.kind;
-}
-
-function paymentAccountDetail(account: OnlinePaymentAccount) {
-  const provider = account.kind === "Bank" && account.bankName ? account.bankName : account.kind;
-  const number = account.accountNumber ? `No. ${account.accountNumber}` : "Account number not set";
-  const name = account.accountName ? `under ${account.accountName}` : "account name not set";
-  return `${provider} ${number}, ${name}`;
-}
-
-function paymentAccountInitial(account: OnlinePaymentAccount) {
-  return (account.label || account.kind || "P").slice(0, 1).toUpperCase();
-}
-
-function paymentAccountTone(account: OnlinePaymentAccount) {
-  if (account.kind === "GCash") return "border-[#007dfe] bg-[#eaf3ff] text-[#007dfe]";
-  if (account.kind === "Maya") return "border-[#008f5a] bg-[#e8fff5] text-[#008f5a]";
-  if (account.kind === "Bank") return "border-[#0b4a8b] bg-[#f3f8fd] text-[#0b4a8b]";
-  return "border-neutral-300 bg-white text-neutral-700";
-}
-
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -345,7 +298,7 @@ function resolveAftercareGuide(serviceTitle: string) {
 export default function BookAppointmentPage() {
   const pathname = usePathname();
   const authReturnPath = pathname === "/" ? "/#booking" : pathname;
-  const { accessToken, role, user, profile, isLoading: authLoading } = useRole();
+  const { accessToken, role, user, profile, patient, isLoading: authLoading } = useRole();
   const { setAppointments, isLoading, error } = useAppointments();
   const { doctors } = useDoctors();
   const [formData, setFormData] = useState<BookingForm>(INITIAL_FORM);
@@ -357,8 +310,6 @@ export default function BookAppointmentPage() {
   const [isProcedureConsentModalOpen, setIsProcedureConsentModalOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [bookingPricing, setBookingPricing] = useState<PricingItem[]>([]);
-  const [onlinePaymentAccounts, setOnlinePaymentAccounts] = useState<OnlinePaymentAccount[]>([]);
-  const [isLoadingPaymentAccounts, setIsLoadingPaymentAccounts] = useState(false);
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [visibleWeekStart, setVisibleWeekStart] = useState(today);
 
@@ -394,12 +345,6 @@ export default function BookAppointmentPage() {
   const appointmentClinicConsultKind =
     formData.visitPath === "Clinic" && !isProcedureBooking ? formData.clinicConsultKind : undefined;
   const requiresOnlinePayment = formData.type === "Online" || isProcedureBooking;
-  const activePaymentAccounts = useMemo(
-    () => onlinePaymentAccounts.filter((account) => account.isActive),
-    [onlinePaymentAccounts],
-  );
-  const selectedPaymentAccount =
-    activePaymentAccounts.find((account) => account.id === formData.paymentOption) ?? null;
   const selectedSlotDuration = selectedSlot
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
     : isProcedureBooking ? "1 hr" : "30 min";
@@ -410,13 +355,16 @@ export default function BookAppointmentPage() {
   );
   const visitPathPriceLabels = useMemo(
     () => ({
-      Clinic: `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} first consult / ${formatBookingPeso(
-        getClinicConsultKindFee("FollowUp", bookingPricing),
-      )} follow-up`,
+      Clinic:
+        formData.patientStatus === "Existing" || (role === "PATIENT" && patient?.patient_category === "Existing")
+          ? `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} standard clinic rate`
+          : `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} first consult / ${formatBookingPeso(
+            getClinicConsultKindFee("FollowUp", bookingPricing),
+          )} follow-up`,
       Procedure: `${formatBookingPeso(procedureReservationAmount)} reservation`,
       Online: `${formatBookingPeso(getBookingPriceAmount(bookingPricing, BOOKING_PRICING_CODES.VIRTUAL_CONSULT))}`,
     }),
-    [bookingPricing, procedureReservationAmount],
+    [bookingPricing, patient, procedureReservationAmount, role, formData.patientStatus],
   );
 
   const BOOKING_STEP_LABELS = [
@@ -518,36 +466,6 @@ export default function BookAppointmentPage() {
   }, [accessToken, authLoading]);
 
   useEffect(() => {
-    if (authLoading || !accessToken) return;
-    let active = true;
-    setIsLoadingPaymentAccounts(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/v2/payment-methods", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (!res.ok) throw new Error("Failed to load payment methods.");
-        const payload = (await res.json()) as { data: SystemSettings };
-        if (active) setOnlinePaymentAccounts(payload.data.onlinePaymentAccounts ?? []);
-      } catch (settingsError) {
-        if (active) {
-          setOnlinePaymentAccounts([]);
-          setFeedback({
-            message: settingsError instanceof Error ? settingsError.message : "Failed to load payment methods.",
-            type: "error",
-          });
-        }
-      } finally {
-        if (active) setIsLoadingPaymentAccounts(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [accessToken, authLoading]);
-
-  useEffect(() => {
     let active = true;
 
     (async () => {
@@ -565,12 +483,6 @@ export default function BookAppointmentPage() {
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!requiresOnlinePayment || activePaymentAccounts.length === 0) return;
-    if (activePaymentAccounts.some((account) => account.id === formData.paymentOption)) return;
-    setFormData((current) => ({ ...current, paymentOption: activePaymentAccounts[0].id }));
-  }, [activePaymentAccounts, formData.paymentOption, requiresOnlinePayment]);
 
   // Persist the draft as the user types so it survives tab switches, hard
   // refreshes, redirects to /login, and the payment verification step back to the
@@ -618,9 +530,24 @@ export default function BookAppointmentPage() {
         "",
       email: profile?.email || user?.email || "",
       phone: profile?.phone || "",
+      dateOfBirth: patient?.dob || "",
+      gender: patient?.gender || "",
+      civilStatus: patient?.civil_status || "",
+      address: patient?.address || "",
+      religion: patient?.religion || "",
+      occupation: patient?.occupation || "",
+      guardianName: patient?.guardian_name || "",
     }),
-    [profile, user],
+    [patient, profile, user],
   );
+  const hasExistingPatientRecord =
+    role === "PATIENT"
+    && patient?.patient_category === "Existing";
+  const shouldHidePatientDetails = formData.patientStatus === "Existing" || hasExistingPatientRecord;
+  const canChooseFollowUpClinicConsult = formData.patientStatus === "New" && !hasExistingPatientRecord;
+  const activeClinicConsultKind: ClinicConsultKind = canChooseFollowUpClinicConsult
+    ? formData.clinicConsultKind
+    : "FirstConsult";
   const effectivePatientName =
     formData.patientStatus === "Existing" && role === "PATIENT"
       ? formData.patientName || patientDefaults.patientName
@@ -633,11 +560,32 @@ export default function BookAppointmentPage() {
     formData.patientStatus === "Existing" && role === "PATIENT"
       ? formData.phone || patientDefaults.phone
       : formData.phone;
-  const patientAge = calculatePatientAge(formData.dateOfBirth);
+  const effectivePatientDetails = {
+    dateOfBirth: formData.dateOfBirth || patientDefaults.dateOfBirth,
+    gender: formData.gender || patientDefaults.gender,
+    civilStatus: formData.civilStatus || patientDefaults.civilStatus,
+    address: formData.address || patientDefaults.address,
+    religion: formData.religion || patientDefaults.religion,
+    occupation: formData.occupation || patientDefaults.occupation,
+    guardianName: formData.guardianName || patientDefaults.guardianName,
+  };
+  const patientDetailPayload = shouldHidePatientDetails
+    ? {}
+    : {
+        dateOfBirth: effectivePatientDetails.dateOfBirth,
+        gender: effectivePatientDetails.gender,
+        civilStatus: effectivePatientDetails.civilStatus,
+        address: effectivePatientDetails.address,
+        religion: effectivePatientDetails.religion,
+        occupation: effectivePatientDetails.occupation,
+        guardianName: effectivePatientDetails.guardianName,
+      };
+  const patientAge = calculatePatientAge(effectivePatientDetails.dateOfBirth);
   const guardianRequired = patientAge != null && patientAge < 18;
   const patientDetailsError = useMemo(
-    () =>
-      validatePatientRegistrationFields({
+    () => {
+      if (shouldHidePatientDetails) return "";
+      return validatePatientRegistrationFields({
         fullName: effectivePatientName,
         firstName: "",
         middleName: "",
@@ -652,7 +600,8 @@ export default function BookAppointmentPage() {
         religion: formData.religion,
         occupation: formData.occupation,
         guardianName: formData.guardianName,
-      }),
+      });
+    },
     [
       effectivePatientName,
       effectivePatientEmail,
@@ -664,8 +613,74 @@ export default function BookAppointmentPage() {
       formData.guardianName,
       formData.occupation,
       formData.religion,
+      shouldHidePatientDetails,
     ],
   );
+  const patientDetailsRequired = !shouldHidePatientDetails;
+  const appointmentClinicConsultLabel = shouldHidePatientDetails
+    ? "Standard clinic consult"
+    : getClinicConsultKindLabel(activeClinicConsultKind);
+
+  useEffect(() => {
+    if (!hasExistingPatientRecord) return;
+
+    setFormData((current) => {
+      let nextState = current;
+      let changed = false;
+
+      if (current.patientStatus !== "Existing") {
+        nextState = { ...nextState, patientStatus: "Existing" };
+        changed = true;
+      }
+      if (current.clinicConsultKind !== "FirstConsult") {
+        nextState = { ...nextState, clinicConsultKind: "FirstConsult" };
+        changed = true;
+      }
+
+      if (current.patientName !== patientDefaults.patientName) {
+        nextState = { ...nextState, patientName: patientDefaults.patientName };
+        changed = true;
+      }
+      if (current.email !== patientDefaults.email) {
+        nextState = { ...nextState, email: patientDefaults.email };
+        changed = true;
+      }
+      if (current.phone !== patientDefaults.phone) {
+        nextState = { ...nextState, phone: patientDefaults.phone };
+        changed = true;
+      }
+      if (current.dateOfBirth !== patientDefaults.dateOfBirth) {
+        nextState = { ...nextState, dateOfBirth: patientDefaults.dateOfBirth };
+        changed = true;
+      }
+      if (current.gender !== patientDefaults.gender) {
+        nextState = { ...nextState, gender: patientDefaults.gender };
+        changed = true;
+      }
+      if (current.civilStatus !== patientDefaults.civilStatus) {
+        nextState = { ...nextState, civilStatus: patientDefaults.civilStatus };
+        changed = true;
+      }
+      if (current.address !== patientDefaults.address) {
+        nextState = { ...nextState, address: patientDefaults.address };
+        changed = true;
+      }
+      if (current.religion !== patientDefaults.religion) {
+        nextState = { ...nextState, religion: patientDefaults.religion };
+        changed = true;
+      }
+      if (current.occupation !== patientDefaults.occupation) {
+        nextState = { ...nextState, occupation: patientDefaults.occupation };
+        changed = true;
+      }
+      if (current.guardianName !== patientDefaults.guardianName) {
+        nextState = { ...nextState, guardianName: patientDefaults.guardianName };
+        changed = true;
+      }
+
+      return changed ? nextState : current;
+    });
+  }, [hasExistingPatientRecord, patientDefaults]);
   const maxBirthDate = new Date().toISOString().slice(0, 10);
   const selectedClinic = BOOKING_CLINICS.find((clinic) => clinic.value === formData.clinicId) ?? BOOKING_CLINICS[0];
   const hasProcedureSignatureImage = procedureConsentSignature.startsWith("data:image/png;base64,");
@@ -702,8 +717,7 @@ export default function BookAppointmentPage() {
     step1Valid
     && step2Valid
     && step3Valid
-    && canConfirmProcedure
-    && (!requiresOnlinePayment || !!selectedPaymentAccount);
+    && canConfirmProcedure;
 
   function canAccessStep(step: number): boolean {
     if (step === 1) return true;
@@ -749,10 +763,17 @@ export default function BookAppointmentPage() {
     setFormData((current) => {
       const nextState = { ...current, [field]: value };
       if (field === "patientStatus") {
-        nextState.patientName = value === "Existing" && role === "PATIENT" ? patientDefaults.patientName : current.patientName;
-        nextState.email = value === "Existing" && role === "PATIENT" ? patientDefaults.email : current.email;
-        nextState.phone = value === "Existing" && role === "PATIENT" ? patientDefaults.phone : current.phone;
-        nextState.clinicConsultKind = value === "Existing" ? "FollowUp" : "FirstConsult";
+        const isExisting = value === "Existing" || hasExistingPatientRecord;
+        nextState.patientStatus = isExisting ? "Existing" : "New";
+        nextState.patientName = isExisting && role === "PATIENT" ? patientDefaults.patientName : current.patientName;
+        nextState.email = isExisting && role === "PATIENT" ? patientDefaults.email : current.email;
+        nextState.phone = isExisting && role === "PATIENT" ? patientDefaults.phone : current.phone;
+        nextState.clinicConsultKind = isExisting ? "FirstConsult" : current.clinicConsultKind;
+      }
+      if (field === "clinicConsultKind") {
+        if (value === "FollowUp" && (hasExistingPatientRecord || current.patientStatus === "Existing")) {
+          nextState.clinicConsultKind = "FirstConsult";
+        }
       }
       if (field === "visitPath") {
         const nextPath = value as BookingVisitPath;
@@ -843,9 +864,6 @@ export default function BookAppointmentPage() {
     if (!accessToken) {
       throw new Error("Your session expired. Please sign in again.");
     }
-    if (!selectedPaymentAccount) {
-      throw new Error("No online payment method is configured yet. Please contact the clinic.");
-    }
 
     const reservationId = typeof window !== "undefined" ? localStorage.getItem("bookingReservation") : null;
     const buildCheckoutBody = (nextReservationId: string | null) => ({
@@ -856,23 +874,20 @@ export default function BookAppointmentPage() {
       middleName: "",
       lastName: "",
       suffixName: "",
-      dateOfBirth: formData.dateOfBirth,
-      gender: formData.gender,
-      civilStatus: formData.civilStatus,
-      address: formData.address,
-      religion: formData.religion,
-      occupation: formData.occupation,
-      guardianName: formData.guardianName,
+      ...patientDetailPayload,
       doctorId: activeDoctorId,
       date: formData.date,
       start: formData.start,
-      reason: encodeAppointmentContext(formData.service, formData.reason, appointmentClinicConsultKind),
+      reason: encodeAppointmentContext(
+        formData.service,
+        formData.reason,
+        hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind,
+      ),
       type: formData.type,
-      patientStatus: formData.patientStatus,
+      patientStatus: hasExistingPatientRecord ? "Existing" : formData.patientStatus,
       service: formData.service,
       reservation_id: nextReservationId ?? undefined,
-      payment_option: "bank_transfer",
-      payment_account_id: selectedPaymentAccount?.id,
+      payment_option: "paymongo_gcash",
       procedure_consent: isProcedureBooking
         ? {
           procedureName: formData.service,
@@ -999,27 +1014,25 @@ export default function BookAppointmentPage() {
       }
 
       const result = await createAppointmentAction(accessToken, {
-        patientName: effectivePatientName,
-        email: effectivePatientEmail,
-        phone: effectivePatientPhone,
-        firstName: "",
-        middleName: "",
-        lastName: "",
-        suffixName: "",
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
-        civilStatus: formData.civilStatus,
-        address: formData.address,
-        religion: formData.religion,
-        occupation: formData.occupation,
-        guardianName: formData.guardianName,
-        doctorId: activeDoctorId,
-        date: formData.date,
-        start: formData.start,
-        type: formData.type,
-        reason: encodeAppointmentContext(formData.service, formData.reason, appointmentClinicConsultKind),
-        patientStatus: formData.patientStatus,
-      });
+      patientName: effectivePatientName,
+      email: effectivePatientEmail,
+      phone: effectivePatientPhone,
+      firstName: "",
+      middleName: "",
+      lastName: "",
+      suffixName: "",
+      ...patientDetailPayload,
+      doctorId: activeDoctorId,
+      date: formData.date,
+      start: formData.start,
+      type: formData.type,
+      reason: encodeAppointmentContext(
+        formData.service,
+        formData.reason,
+        hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind,
+      ),
+      patientStatus: hasExistingPatientRecord ? "Existing" : formData.patientStatus,
+    });
 
       setAppointments(result.appointments);
 
@@ -1124,22 +1137,30 @@ export default function BookAppointmentPage() {
                 <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
                   {(["Existing", "New"] as BookingPatientStatus[]).map((status) => {
                     const selected = formData.patientStatus === status;
+                    const disabled = hasExistingPatientRecord && status === "New";
                     return (
                       <button
                         key={status}
                         type="button"
                         onClick={() => updateForm("patientStatus", status)}
+                        disabled={disabled}
                         aria-pressed={selected}
                         className={`group overflow-hidden rounded-2xl border p-5 text-left transition ${
                           selected
                             ? "border-neutral-300 bg-neutral-50 shadow-[0_12px_28px_rgba(17,17,17,0.16)] ring-2 ring-neutral-200 ring-offset-1"
-                            : "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
+                            : disabled
+                              ? "cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-400"
+                              : "border-neutral-100 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-[0_12px_24px_rgba(17,17,17,0.10)]"
                         }`}
                       >
                         <div className="flex items-start gap-4">
                           <span
                             className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                              selected ? "bg-white text-neutral-700 shadow-sm" : "bg-neutral-50 text-neutral-700 group-hover:bg-neutral-100"
+                              selected
+                                ? "bg-white text-neutral-700 shadow-sm"
+                                : disabled
+                                  ? "bg-white text-neutral-300"
+                                  : "bg-neutral-50 text-neutral-700 group-hover:bg-neutral-100"
                             }`}
                             aria-hidden="true"
                           >
@@ -1154,6 +1175,10 @@ export default function BookAppointmentPage() {
                                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" /> Selected
                                 </span>
+                              ) : disabled ? (
+                                <span className="inline-flex shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                                  Locked
+                                </span>
                               ) : (
                                 <span className="inline-flex shrink-0 rounded-full border border-neutral-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-700">
                                   Choose
@@ -1162,8 +1187,10 @@ export default function BookAppointmentPage() {
                             </div>
                             <p className="mt-1.5 text-sm text-slate-600 leading-snug">
                               {status === "Existing"
-                                ? "Choose this if you already have records before with Doc Kulot, whether you are an old patient or a regular returning patient."
-                                : "Choose this if you do not have any patient record yet with Doc Kulot."
+                                ? "Choose this if you already have a Doc Kulot record. We will match your booking to the saved patient profile when possible."
+                                : hasExistingPatientRecord
+                                  ? "Your record is already on file, so the new-patient path is locked."
+                                  : "Choose this if you do not have any patient record yet with Doc Kulot."
                               }
                             </p>
                           </div>
@@ -1172,6 +1199,11 @@ export default function BookAppointmentPage() {
                     );
                   })}
                 </div>
+                {hasExistingPatientRecord ? (
+                  <div className="mt-4 rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3 text-sm text-teal-800">
+                    We found an existing patient record, so we will use your saved details and keep the follow-up-only booking path locked.
+                  </div>
+                ) : null}
 
               </section>
 
@@ -1296,16 +1328,20 @@ export default function BookAppointmentPage() {
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {(["FirstConsult", "FollowUp"] as ClinicConsultKind[]).map((kind) => {
                         const selected = formData.clinicConsultKind === kind;
+                        const disabled = kind === "FollowUp" && !canChooseFollowUpClinicConsult;
                         return (
                           <button
                             key={kind}
                             type="button"
-                            onClick={() => updateForm("clinicConsultKind", kind)}
+                            onClick={() => !disabled && updateForm("clinicConsultKind", kind)}
+                            disabled={disabled}
                             aria-pressed={selected}
                             className={`rounded-2xl border px-4 py-3 text-left transition ${
                               selected
                                 ? bookingTone.cardSelected
-                                : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
+                                : disabled
+                                  ? "cursor-not-allowed border-neutral-100 bg-neutral-50/70 text-neutral-400"
+                                  : "border-neutral-100 bg-white hover:border-neutral-300 hover:bg-neutral-50/70"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -1315,22 +1351,33 @@ export default function BookAppointmentPage() {
                                   <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
                                   Active
                                 </span>
+                              ) : disabled ? (
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400">
+                                  Locked
+                                </span>
                               ) : null}
                             </div>
                             <p className="mt-1 text-xs leading-5 text-slate-600">
                               {kind === "FollowUp"
-                                ? "Returning visit after a prior clinic consultation."
+                                ? disabled
+                                  ? "Unavailable for existing patient records."
+                                  : "Returning visit after a prior clinic consultation."
                                 : "First in-clinic consultation before any follow-up rate applies."}
                             </p>
                             <p className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
                               selected ? bookingTone.priceBadge : "border-neutral-200 bg-white text-neutral-700"
                             }`}>
-                              {peso(getClinicConsultKindFee(kind, bookingPricing))}
+                              {disabled ? `${peso(getClinicConsultKindFee("FirstConsult", bookingPricing))} only` : peso(getClinicConsultKindFee(kind, bookingPricing))}
                             </p>
                           </button>
                         );
                       })}
                     </div>
+                    {canChooseFollowUpClinicConsult ? null : (
+                      <p className="mt-3 text-xs leading-5 text-neutral-600">
+                        Existing patient records use the standard clinic consult rate and cannot select the follow-up-only option.
+                      </p>
+                    )}
                   </div>
                 ) : null}
                 <div className="mt-8 rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-sm">
@@ -1353,7 +1400,7 @@ export default function BookAppointmentPage() {
                         service,
                         formData.visitPath,
                         formData.type,
-                        formData.clinicConsultKind,
+                        hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind,
                         bookingPricing,
                       );
                       const description = getServiceDescription(service);
@@ -1435,141 +1482,150 @@ export default function BookAppointmentPage() {
                       autoComplete="tel" 
                     />
                   </div>
-                  <div className="lg:col-span-3 sm:col-span-2 rounded-[1.4rem] border border-neutral-200 bg-neutral-50/80 p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-700">Patient record details</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          These details are used to create or update the patient record when the booking is submitted.
-                        </p>
+                  {patientDetailsRequired ? (
+                    <div className="lg:col-span-3 sm:col-span-2 rounded-[1.4rem] border border-neutral-200 bg-neutral-50/80 p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-700">Patient record details</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            These details are used to create or update the patient record when the booking is submitted.
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
+                          Required
+                        </span>
                       </div>
-                      <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-700">
-                        Required
-                      </span>
-                    </div>
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <label htmlFor="dob" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Date of Birth *</label>
-                        <input
-                          id="dob"
-                          type="date"
-                          value={formData.dateOfBirth}
-                          max={maxBirthDate}
-                          onChange={(e) => updateForm("dateOfBirth", e.target.value)}
-                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="gender" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Gender *</label>
-                        <div className="relative">
-                          <select
-                            id="gender"
-                            value={formData.gender}
-                            onChange={(e) => updateForm("gender", e.target.value)}
-                            className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
-                              formData.gender ? "text-slate-900" : "text-slate-400"
-                            }`}
+                      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                          <label htmlFor="dob" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Date of Birth *</label>
+                          <input
+                            id="dob"
+                            type="date"
+                            value={formData.dateOfBirth}
+                            max={maxBirthDate}
+                            onChange={(e) => updateForm("dateOfBirth", e.target.value)}
+                            className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
                             required
-                          >
-                            <option value="">Select gender</option>
-                            {GENDER_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-                            aria-hidden="true"
-                          >
-                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          />
                         </div>
-                      </div>
-                      <div>
-                        <label htmlFor="civil-status" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Civil Status</label>
-                        <div className="relative">
-                          <select
-                            id="civil-status"
-                            value={formData.civilStatus}
-                            onChange={(e) => updateForm("civilStatus", e.target.value)}
-                            className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
-                              formData.civilStatus ? "text-slate-900" : "text-slate-400"
-                            }`}
-                          >
-                            <option value="">Select civil status</option>
-                            {CIVIL_STATUS_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-                            aria-hidden="true"
-                          >
-                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                        <div>
+                          <label htmlFor="gender" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Gender *</label>
+                          <div className="relative">
+                            <select
+                              id="gender"
+                              value={formData.gender}
+                              onChange={(e) => updateForm("gender", e.target.value)}
+                              className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
+                                formData.gender ? "text-slate-900" : "text-slate-400"
+                              }`}
+                              required
+                            >
+                              <option value="">Select gender</option>
+                              {GENDER_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                              aria-hidden="true"
+                            >
+                              <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <label htmlFor="address" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Address *</label>
-                        <input
-                          id="address"
-                          type="text"
-                          value={formData.address}
-                          onChange={(e) => updateForm("address", e.target.value)}
-                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
-                          placeholder="Street, city, province"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="religion" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Religion</label>
-                        <input
-                          id="religion"
-                          type="text"
-                          value={formData.religion}
-                          onChange={(e) => updateForm("religion", e.target.value)}
-                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
-                          placeholder="Optional"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="occupation" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Occupation</label>
-                        <input
-                          id="occupation"
-                          type="text"
-                          value={formData.occupation}
-                          onChange={(e) => updateForm("occupation", e.target.value)}
-                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
-                          placeholder="Optional"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label htmlFor="guardian" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
-                          Guardian name {guardianRequired ? "*" : ""}
-                        </label>
-                        <input
-                          id="guardian"
-                          type="text"
-                          value={formData.guardianName}
-                          onChange={(e) => updateForm("guardianName", e.target.value)}
-                          className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
-                          placeholder="Parent or guardian"
-                          required={guardianRequired}
-                        />
-                        <p className="mt-2 text-xs text-slate-500">Required for patients under 18.</p>
+                        <div>
+                          <label htmlFor="civil-status" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Civil Status</label>
+                          <div className="relative">
+                            <select
+                              id="civil-status"
+                              value={formData.civilStatus}
+                              onChange={(e) => updateForm("civilStatus", e.target.value)}
+                              className={`w-full appearance-none rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 pr-9 text-sm outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200 ${
+                                formData.civilStatus ? "text-slate-900" : "text-slate-400"
+                              }`}
+                            >
+                              <option value="">Select civil status</option>
+                              {CIVIL_STATUS_OPTIONS.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                              aria-hidden="true"
+                            >
+                              <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <label htmlFor="address" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Address *</label>
+                          <input
+                            id="address"
+                            type="text"
+                            value={formData.address}
+                            onChange={(e) => updateForm("address", e.target.value)}
+                            className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                            placeholder="Street, city, province"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="religion" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Religion</label>
+                          <input
+                            id="religion"
+                            type="text"
+                            value={formData.religion}
+                            onChange={(e) => updateForm("religion", e.target.value)}
+                            className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                            placeholder="Optional"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="occupation" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">Occupation</label>
+                          <input
+                            id="occupation"
+                            type="text"
+                            value={formData.occupation}
+                            onChange={(e) => updateForm("occupation", e.target.value)}
+                            className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                            placeholder="Optional"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label htmlFor="guardian" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+                            Guardian name {guardianRequired ? "*" : ""}
+                          </label>
+                          <input
+                            id="guardian"
+                            type="text"
+                            value={formData.guardianName}
+                            onChange={(e) => updateForm("guardianName", e.target.value)}
+                            className="w-full rounded-[1.2rem] border border-neutral-100 bg-white px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:bg-neutral-50/30 focus:ring-4 focus:ring-neutral-200"
+                            placeholder="Parent or guardian"
+                            required={guardianRequired}
+                          />
+                          <p className="mt-2 text-xs text-slate-500">Required for patients under 18.</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="lg:col-span-3 sm:col-span-2 rounded-[1.4rem] border border-teal-100 bg-teal-50/70 p-4 shadow-sm text-sm text-teal-900">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-700">Saved patient record</p>
+                      <p className="mt-1 leading-6">
+                        You selected an existing patient. If your name, email, or phone matches a saved record, the clinic will reuse the patient details and you do not need to enter them again.
+                      </p>
+                    </div>
+                  )}
                   <div className="lg:col-span-3 sm:col-span-2">
                     <label htmlFor="reason" className="mb-3 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
                       {isProcedureBooking
@@ -1857,7 +1913,7 @@ export default function BookAppointmentPage() {
                           <SummaryRow label="Visit Type" value={<VisitPathValue path={formData.visitPath} />} done />
                           {formData.type === "Clinic" ? <SummaryRow label="Clinic" value={selectedClinic.label} done={!!formData.clinicId} /> : null}
                           {appointmentClinicConsultKind ? (
-                            <SummaryRow label="Consult Type" value={getClinicConsultKindLabel(appointmentClinicConsultKind)} done />
+                            <SummaryRow label="Consult Type" value={appointmentClinicConsultLabel} done />
                           ) : null}
                           <SummaryRow label="Service" value={formData.service} done={!!formData.service} />
                           {isProcedureBooking ? (
@@ -1896,14 +1952,14 @@ export default function BookAppointmentPage() {
                         {!isProcedureBooking ? (
                           <SummaryRow
                             label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
-                            value={getConsultationFeeLabel(formData.type, formData.clinicConsultKind, bookingPricing)}
+                            value={getConsultationFeeLabel(formData.type, hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind, bookingPricing)}
                             done
                           />
                         ) : null}
                         {requiresOnlinePayment ? (
-                          <SummaryRow
+                            <SummaryRow
                             label="Payment Method"
-                            value={paymentOptionLabel(formData.paymentOption, activePaymentAccounts)}
+                            value="PayMongo QR Ph"
                             done
                           />
                         ) : null}
@@ -1966,7 +2022,7 @@ export default function BookAppointmentPage() {
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
                         {formData.type === "Online"
-                          ? "Choose one of the clinic's configured online payment methods, then wait for staff verification."
+                          ? "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
                           : isProcedureBooking
                             ? `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
                             : selectedSlot
@@ -1975,79 +2031,20 @@ export default function BookAppointmentPage() {
                       </p>
 
                       {requiresOnlinePayment ? (
-                        <div className="mt-4 space-y-3 rounded-[1.4rem] border border-neutral-200 bg-linear-to-b from-neutral-50 to-white px-4 py-4">
+                        <div className="mt-4 rounded-[1.4rem] border border-sky-200 bg-sky-50 px-4 py-4">
                           <div className="flex items-center justify-between gap-2 text-sm">
-                            <span className="font-semibold text-neutral-800">Choose Payment Method</span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-700 shadow-sm border border-neutral-200">
+                            <span className="font-semibold text-sky-900">PayMongo QR Ph</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-700 shadow-sm border border-sky-200">
                               <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
-                              Staff verified
+                              QR checkout
                             </span>
                           </div>
-                          <div className="space-y-2.5">
-                            {isLoadingPaymentAccounts ? (
-                              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center text-sm text-slate-500">
-                                Loading payment methods...
-                              </div>
-                            ) : activePaymentAccounts.length === 0 ? (
-                              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
-                                No online payment method is configured yet.
-                              </div>
-                            ) : activePaymentAccounts.map((option) => {
-                              const isSelected = formData.paymentOption === option.id;
-                              const tone = paymentAccountTone(option);
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  onClick={() => updateForm("paymentOption", option.id)}
-                                  aria-pressed={isSelected}
-                                  className={`group relative w-full overflow-hidden rounded-2xl border-2 px-3.5 py-3.5 text-left transition-all duration-150 ${
-                                    isSelected
-                                      ? "border-neutral-900 bg-white shadow-md ring-2 ring-neutral-200 ring-offset-1"
-                                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-3.5">
-                                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border text-lg font-black ${tone}`}>
-                                      {option.qrCodeUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={option.qrCodeUrl} alt={`${paymentOptionLabel(option.id, activePaymentAccounts)} QR code`} className="h-full w-full object-cover" />
-                                      ) : (
-                                        paymentAccountInitial(option)
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-sm font-bold text-slate-900">{paymentOptionLabel(option.id, activePaymentAccounts)}</p>
-                                        {isSelected ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                                            <FaCheck className="h-2.5 w-2.5" aria-hidden="true" />
-                                            Selected
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                      <p className="mt-1 text-xs text-slate-600 leading-snug">
-                                        {paymentAccountDetail(option)}
-                                      </p>
-                                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                        <BrandChip className={tone}>{option.kind}</BrandChip>
-                                        {option.bankName ? <BrandChip className="border border-slate-200 bg-white text-slate-700">{option.bankName}</BrandChip> : null}
-                                        {option.qrCodeUrl ? <BrandChip className="border border-emerald-200 bg-emerald-50 text-emerald-700">QR ready</BrandChip> : null}
-                                      </div>
-                                    </div>
-                                    <span className={`mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                                      isSelected ? "border-neutral-900 bg-white" : "border-slate-300 bg-white group-hover:border-slate-400"
-                                    }`}>
-                                      {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-neutral-900" aria-hidden="true" /> : null}
-                                    </span>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <div className="flex items-center justify-center gap-1.5 pt-1 text-[10px] text-slate-500">
-                            <FaCircleCheck className="h-3 w-3 text-emerald-600" aria-hidden="true" />
-                            <span>Payment is checked by clinic staff before confirmation.</span>
+                          <p className="mt-2 text-sm leading-6 text-sky-900">
+                            You will be redirected to PayMongo to complete the payment through QR Ph. It works with GCash, Maya, and bank apps, and the booking is confirmed after payment verification.
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-sky-800">
+                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Virtual consults</span>
+                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Procedure reservation fee</span>
                           </div>
                         </div>
                       ) : null}

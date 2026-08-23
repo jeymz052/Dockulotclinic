@@ -855,30 +855,18 @@ function PatientConsultationLobby({
                     {formatReason(activeAppointment)}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {activeAppointment.meetingLink ? (
-                    <a
-                      href={activeAppointment.meetingLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
-                    >
-                      <FaVideo className="h-4 w-4" aria-hidden="true" />
-                      Join meeting
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setActiveAppointmentId("none")}
-                    className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
-                  >
-                    <FaXmark className="h-4 w-4" aria-hidden="true" />
-                    Close
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveAppointmentId("none")}
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
+                >
+                  <FaXmark className="h-4 w-4" aria-hidden="true" />
+                  Close
+                </button>
               </div>
 
               <div className="p-4 sm:p-5">
+                <MeetingLinkPanel appointment={activeAppointment} variant="patient" />
                 {activeNote ? (
                   <div className="space-y-5">
                     <ReadOnlyNoteBlock title="Diagnosis" value={activeNote.diagnosis || "No diagnosis recorded."} />
@@ -922,6 +910,7 @@ function VisitHeader({
   patientRecord: PatientRecordItem | null;
   onClose: () => void;
 }) {
+  const meetingLink = appointment.meetingLink?.trim() ?? "";
   return (
     <div className="border-b border-neutral-200 bg-neutral-50 p-4 sm:p-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -941,26 +930,118 @@ function VisitHeader({
           </p>
           <p className="mt-2 max-w-3xl text-sm text-neutral-500">{formatReason(appointment)}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {appointment.meetingLink ? (
-            <a
-              href={appointment.meetingLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+        <div className="flex w-full max-w-xl flex-col gap-3">
+          {meetingLink ? (
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/80 p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+                  Meeting link
+                </p>
+                <Badge tone="sky">{getMeetingPlatformLabel(meetingLink)}</Badge>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-neutral-700">
+                Open the video room from the consultation workspace, then keep this visit open while you chart.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href={meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                >
+                  <FaVideo className="h-4 w-4" aria-hidden="true" />
+                  Launch meeting
+                </a>
+                <a
+                  href={meetingLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
+                >
+                  <FaArrowUpRightFromSquare className="h-4 w-4" aria-hidden="true" />
+                  Open link
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-600">
+              No meeting link has been assigned yet. If Settings already has the clinic link saved, refresh the page or reopen the appointment after confirming.
+            </div>
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
             >
-              <FaVideo className="h-4 w-4" aria-hidden="true" />
-              Launch meeting
-            </a>
-          ) : null}
-          <button
-            type="button"
-            onClick={onClose}
+              <FaXmark className="h-4 w-4" aria-hidden="true" />
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MeetingLinkPanel({
+  appointment,
+  variant,
+}: {
+  appointment: AppointmentRecord;
+  variant: "doctor" | "patient";
+}) {
+  const meetingLink = appointment.meetingLink?.trim() ?? "";
+
+  if (!meetingLink) {
+    return (
+      <div className="mb-5 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
+        {variant === "doctor"
+          ? "No meeting link is set yet. The clinic default in Settings will be used once the appointment syncs."
+          : "No meeting link is ready yet. The clinic will show the link here as soon as it is available."}
+      </div>
+    );
+  }
+
+  const platform = getMeetingPlatformLabel(meetingLink);
+  return (
+    <div className="mb-5 rounded-2xl border border-sky-200 bg-sky-50/80 p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+          Virtual consult
+        </p>
+        <Badge tone="sky">{platform}</Badge>
+      </div>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-neutral-950">
+            {variant === "doctor" ? "Launch the meeting from here" : "Join your consult when the clinic is ready"}
+          </p>
+          <p className="text-sm leading-6 text-neutral-600">
+            {variant === "doctor"
+              ? "Share this link with the patient if needed, then keep the workspace open while charting."
+              : "Use the same link the clinic prepared in Settings for this virtual consult."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={meetingLink}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            <FaVideo className="h-4 w-4" aria-hidden="true" />
+            Join meeting
+          </a>
+          <a
+            href={meetingLink}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
           >
-            <FaXmark className="h-4 w-4" aria-hidden="true" />
-            Close
-          </button>
+            <FaArrowUpRightFromSquare className="h-4 w-4" aria-hidden="true" />
+            Open link
+          </a>
         </div>
       </div>
     </div>
@@ -1682,6 +1763,17 @@ function findPatientRecord(patients: PatientRecordItem[], appointment: Appointme
 
 function formatAppointmentType(type: AppointmentRecord["type"]) {
   return type === "Online" ? "Virtual" : type;
+}
+
+function getMeetingPlatformLabel(link: string) {
+  try {
+    const host = new URL(link).hostname.toLowerCase();
+    if (host.includes("meet.google") || host.includes("google.com")) return "Google Meet";
+    if (host.includes("zoom")) return "Zoom";
+  } catch {
+    // fall through
+  }
+  return "Video call";
 }
 
 function formatReason(appointment: AppointmentRecord) {

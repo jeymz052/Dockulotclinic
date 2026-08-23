@@ -233,15 +233,22 @@ export default function PrescriptionsPage() {
 
   async function emailPrescription(item: Prescription) {
     if (!authHeaders) return;
-    const res = await fetch(`/api/v2/prescriptions/${item.id}`, {
-      method: "POST",
-      headers: authHeaders,
-    });
-    setFeedback(
-      res.ok
-        ? `Prescription ${item.prescription_no} was emailed to the patient.`
-        : "Unable to email prescription to the patient.",
-    );
+    setFeedback(`Sending confirmation email for ${item.prescription_no}...`);
+    try {
+      const res = await fetch(`/api/v2/prescriptions/${item.id}`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      const payload = (await res.json().catch(() => ({}))) as { message?: string };
+      if (!res.ok) {
+        setFeedback(payload.message ?? "Unable to email prescription to the patient.");
+        return;
+      }
+
+      setFeedback(payload.message ?? `Confirmation email sent for prescription ${item.prescription_no}.`);
+    } catch {
+      setFeedback("Unable to email prescription to the patient.");
+    }
   }
 
   return (
