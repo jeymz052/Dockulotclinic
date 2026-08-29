@@ -210,7 +210,7 @@ export default function RegisterPage() {
   return (
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
       <Image
-        src="/images/dockulotbgs.png"
+        src="/images/glowrxloginbg - Copy.png"
         alt="Doc Kulot consultation background"
         fill
         priority

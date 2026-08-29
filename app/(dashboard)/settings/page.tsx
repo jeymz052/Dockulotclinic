@@ -52,7 +52,7 @@ const SETTINGS_SECTIONS: SettingsSectionOption[] = [
   {
     id: "general",
     label: "General",
-    summary: "Clinic details, hours, online consults, and payment instructions",
+    summary: "Virtual consult meeting link, doctor signature, and payment accounts",
     icon: FaGear,
   },
   {
@@ -294,157 +294,69 @@ export default function SettingsPage() {
 
       {activeSection === "general" ? (
         <>
-      {feedback ? (
-        <div
-          className={`rounded-xl px-4 py-3 text-sm font-medium ${
-            feedback.type === "success"
-              ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
-              : "border border-neutral-200 bg-neutral-50 text-neutral-800"
-          }`}
-        >
-          {feedback.message}
-        </div>
-      ) : null}
-
-      {!canEdit ? (
-        <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
-          Read-only view. Only Super Admin and Doctor can modify system settings.
-        </div>
-      ) : null}
-
-      <form onSubmit={handleSubmit} className="rounded-4xl border border-neutral-100 bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1">
-        <h2 className="text-lg font-bold text-slate-900">General</h2>
-        <fieldset disabled={loading || !canEdit || isSaving} className="mt-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Clinic Name</label>
-              <input
-              type="text"
-              value={settings.clinicName}
-              onChange={(e) => updateField("clinicName", e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
-              <input
-                type="email"
-                value={settings.email}
-                onChange={(e) => updateField("email", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-              />
+          {feedback ? (
+            <div
+              className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                feedback.type === "success"
+                  ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
+                  : "border border-neutral-200 bg-neutral-50 text-neutral-800"
+              }`}
+            >
+              {feedback.message}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Phone</label>
-              <input
-                type="tel"
-                value={settings.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-              />
-            </div>
-          </div>
+          ) : null}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Address</label>
-            <input
-              type="text"
-              value={settings.address}
-              onChange={(e) => updateField("address", e.target.value)}
-              className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-            />
-          </div>
+          {!canEdit ? (
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+              Read-only view. Only Super Admin and Doctor can modify system settings.
+            </div>
+          ) : null}
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Clinic Opens</label>
-              <input
-                type="time"
-                value={settings.clinicOpenTime}
-                onChange={(e) => updateField("clinicOpenTime", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Clinic Closes</label>
-              <input
-                type="time"
-                value={settings.clinicCloseTime}
-                onChange={(e) => updateField("clinicCloseTime", e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-neutral-100 px-3 py-3 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Virtual Consult Fee</label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={settings.onlineConsultationFee}
-                onChange={(e) => updateField("onlineConsultationFee", Number(e.target.value))}
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-neutral-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Slot Capacity</label>
-              <input
-                type="number"
-                min={MAX_BOOKINGS_PER_SLOT}
-                max={MAX_BOOKINGS_PER_SLOT}
-                value={MAX_BOOKINGS_PER_SLOT}
-                readOnly
-                className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600 focus:outline-none"
-              />
-              <p className="mt-2 text-xs text-slate-500">Booking is fixed to one patient per time slot.</p>
-            </div>
-          </div>
-
-          <div className="border-t border-neutral-100 pt-6">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-                <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
+          <form onSubmit={handleSubmit} className="rounded-4xl border border-neutral-100 bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] animate-fade-in-up stagger-1">
+            <h2 className="text-lg font-bold text-slate-900">General</h2>
+            <fieldset disabled={loading || !canEdit || isSaving} className="mt-6 space-y-6">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Virtual Consult</h3>
-                <p className="text-xs text-slate-500">
-                  Used as the meeting link for every virtual consult by default.
-                </p>
-              </div>
-            </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
+                    <FaVideo className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Virtual Consult</h3>
+                    <p className="text-xs text-slate-500">
+                      Used as the meeting link for every virtual consult by default.
+                    </p>
+                  </div>
+                </div>
 
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-slate-700">
-                Default Meeting Link
-              </label>
-              <input
-                type="url"
-                placeholder="https://meet.google.com/abc-defg-hij"
-                value={settings.defaultMeetingLink}
-                onChange={(e) => updateField("defaultMeetingLink", e.target.value)}
-                className={`mt-2 w-full rounded-2xl border px-3 py-3 outline-none transition focus:ring-4 ${
-                  meetingLinkClass.state === "invalid"
-                    ? "border-neutral-300 focus:border-neutral-400 focus:ring-neutral-100"
-                    : "border-neutral-100 focus:border-neutral-400 focus:ring-neutral-100"
-                }`}
-              />
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Default Meeting Link
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                    value={settings.defaultMeetingLink}
+                    onChange={(e) => updateField("defaultMeetingLink", e.target.value)}
+                    className={`mt-2 w-full rounded-2xl border px-3 py-3 outline-none transition focus:ring-4 ${
+                      meetingLinkClass.state === "invalid"
+                        ? "border-neutral-300 focus:border-neutral-400 focus:ring-neutral-100"
+                        : "border-neutral-100 focus:border-neutral-400 focus:ring-neutral-100"
+                    }`}
+                  />
 
-              <div className="mt-2 space-y-2 text-xs">
-                {meetingLinkClass.state === "empty" ? (
-                  <p className="inline-flex items-center gap-1.5 text-neutral-700">
-                    <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
-                    No link saved. Online bookings will be confirmed without a meeting link until you add one.
-                  </p>
-                ) : null}
-                {meetingLinkClass.state === "invalid" ? (
-                  <p className="inline-flex items-center gap-1.5 text-neutral-700">
-                    <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
-                    That doesn&apos;t look like a valid <code className="rounded bg-neutral-50 px-1">https://</code> URL.
-                  </p>
-                ) : null}
+                  <div className="mt-2 space-y-2 text-xs">
+                    {meetingLinkClass.state === "empty" ? (
+                      <p className="inline-flex items-center gap-1.5 text-neutral-700">
+                        <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
+                        No link saved. Online bookings will be confirmed without a meeting link until you add one.
+                      </p>
+                    ) : null}
+                    {meetingLinkClass.state === "invalid" ? (
+                      <p className="inline-flex items-center gap-1.5 text-neutral-700">
+                        <FaTriangleExclamation className="h-3 w-3" aria-hidden="true" />
+                        That doesn&apos;t look like a valid <code className="rounded bg-neutral-50 px-1">https://</code> URL.
+                      </p>
+                    ) : null}
                   {meetingLinkClass.state === "valid-known" ? (
                     <p className="inline-flex items-center gap-1.5 text-neutral-700">
                       <FaCircleCheck className="h-3 w-3 text-neutral-400" aria-hidden="true" />

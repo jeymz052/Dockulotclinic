@@ -17,8 +17,18 @@ function buildLoginRedirect(nextPath: string) {
 }
 
 export default function VerifyEmailPage() {
-  const [email, setEmail] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [email, setEmail] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    return new URLSearchParams(window.location.search).get("email")?.trim().toLowerCase() ?? "";
+  });
+  const [feedback, setFeedback] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    return new URLSearchParams(window.location.search).get("message")?.trim() || null;
+  });
   const [isPending, startTransition] = useTransition();
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
@@ -28,15 +38,6 @@ export default function VerifyEmailPage() {
     }
     return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
   });
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setEmail(params.get("email")?.trim().toLowerCase() ?? "");
-    const message = params.get("message")?.trim();
-    if (message) {
-      setFeedback(message);
-    }
-  }, []);
 
   useEffect(() => {
     if (!cooldownUntil || cooldownUntil <= nowTs) return;
@@ -90,7 +91,7 @@ export default function VerifyEmailPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 py-8">
       <Image
-        src="/images/dockulotbgs.png"
+        src="/images/glowrxloginbg - Copy.png"
         alt="Doc Kulot consultation background"
         fill
         priority
@@ -152,11 +153,11 @@ export default function VerifyEmailPage() {
           </button>
 
           {feedback ? (
-            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/75">
+            <div className="rounded-2xl border border-black/10 bg-black/3 px-4 py-3 text-center text-xs leading-5 text-black/75">
               {feedback}
             </div>
           ) : (
-            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/65">
+            <div className="rounded-2xl border border-black/10 bg-black/3 px-4 py-3 text-center text-xs leading-5 text-black/65">
               Use the same email you used during sign up. After verifying, you can sign in from the login page.
             </div>
           )}

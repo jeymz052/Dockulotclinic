@@ -49,8 +49,10 @@ function buildConsentSnapshot(procedureName: string) {
   return {
     consentTitle: consentGuide.title,
     consentSummary: consentGuide.summary,
+    consentPreamble: consentGuide.preamble,
     consentBullets: consentGuide.bullets,
-    procedureOptions: ["Botox", "Fillers", "Mesolipo / Mesotherapy", "Sclerotherapy", "GLP Initiation", "Other procedure"],
+    consentDisclaimer: consentGuide.disclaimer,
+    procedureOptions: ["Botox", "Fillers", "Mesotherapy", "Sclerotherapy", "GLP Initiation", "Other procedure"],
     procedureName,
     aftercareGuides: aftercareGuides.map((guide) => ({
       title: guide.title,

@@ -58,7 +58,10 @@ export type ConsentGuide = {
   title: string;
   image: string;
   summary: string;
+  procedures?: string[];
+  preamble?: string;
   bullets: string[];
+  disclaimer?: string;
 };
 
 export type PrescriptionGuide = {
@@ -482,12 +485,27 @@ export function resolveAftercareGuideForService(serviceTitle: string) {
 export const consentGuide: ConsentGuide = {
   title: "Patient Consent Form",
   image: "/images/patient consent.jpg",
-  summary: "Procedure patients must complete and sign the consent form before treatment.",
-  bullets: [
-    "The procedure, risks, benefits, and alternatives are explained first.",
-    "The patient, witness, and physician signatures are required.",
-    "Consent is mandatory for Botox, fillers, Mesolipo, sclerotherapy, GLP initiation, wart or skin tag removal, mole surgery, and cautery procedures.",
+  summary: "Informed consent for medical / aesthetic procedure(s) performed by Doc Kulot, Family Medicine Specialist and Aesthetic Medicine.",
+  procedures: [
+    "Botox",
+    "Fillers",
+    "Mesotherapy",
+    "Sclerotherapy",
+    "GLP Initiation",
+    "Other procedure",
   ],
+  preamble:
+    "I, the undersigned, hereby voluntarily give my consent to undergo the above-stated procedure(s) to be performed by Doc Kulot, Family Medicine Specialist and Aesthetic Medicine.",
+  bullets: [
+    "I confirm that all procedure/s to be done on me has been fully explained to me in a language that I understand, including the nature and purpose, expected benefits, possible risks, side effects, complications and possible alternatives, including doing nothing.",
+    "I understand the intended outcome and that results may vary from person to person. No guarantees or promises have been made to me regarding specific results.",
+    "I understand that while every effort will be made to ensure safety and the best possible care, no medical procedure is 100% risk-free.",
+    "I am aware that the clinic and the attending physician (Doc Kulot) do not take responsibility for any uneventful incident, complication, or dissatisfaction that may occur despite proper care.",
+    "I hereby consent willingly and voluntarily to undergo the above-stated procedure(s). I will not hold the clinic, its staff, or the attending physician liable for any adverse outcome, and I will not initiate any legal action or claim against them.",
+    "I understand that I may withdraw my consent at any time prior to the procedure. Once the procedure has started, I understand that I may not be able to withdraw my consent.",
+  ],
+  disclaimer:
+    "By signing this form, I acknowledge that I have read, understood, and had the opportunity to ask questions. All procedures, benefits, risks, possible side effects, alternatives, and expected outcomes were explained to me. I am signing this consent form of my own free will.",
 };
 
 export const prescriptionGuide: PrescriptionGuide = {

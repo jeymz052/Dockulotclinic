@@ -349,6 +349,7 @@ create table public.patient_files (
   file_name text not null,
   file_url text not null,
   file_type text,
+  document_metadata jsonb not null default '{}'::jsonb,
   visible_to_patient boolean not null default true,
   created_at timestamptz not null default now()
 );

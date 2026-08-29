@@ -23,6 +23,7 @@ export const BOOKING_PRICING_CODES = {
   CLINIC_FIRST_CONSULT: "GEN-CONSULT",
   CLINIC_FOLLOW_UP: "FOLLOW-UP",
   VIRTUAL_CONSULT: "ONLINE-CONSULT",
+  MEDICAL_CERTIFICATE_ADDON: "ONLINE-MEDCERT",
   PROCEDURE_RESERVATION: "PROC-RESERVATION",
 } as const;
 
@@ -81,6 +82,15 @@ export const BOOKING_PRICING_DEFINITIONS: BookingPricingDefinition[] = [
     defaultPrice: ONLINE_CONSULTATION_FEE,
     bookingUse: "Charged before virtual consult confirmation",
     note: "Used by booking checkout and public virtual consult service cards.",
+  },
+  {
+    code: BOOKING_PRICING_CODES.MEDICAL_CERTIFICATE_ADDON,
+    name: "Medical Certificate Add-on",
+    category: "Other",
+    group: "Virtual Consult",
+    defaultPrice: 200,
+    bookingUse: "Optional virtual consult add-on for a medical certificate request",
+    note: "Available only for virtual consult bookings. Physical clinic certificates remain handled in person.",
   },
   {
     code: BOOKING_PRICING_CODES.PROCEDURE_RESERVATION,

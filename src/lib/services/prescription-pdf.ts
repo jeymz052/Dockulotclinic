@@ -448,24 +448,24 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
 
   text(ops, "Note:", 42, Math.max(y, 170), { size: 13, font: "F3" });
   wrapped(ops, note, 42, Math.max(y - 18, 152), { size: 11, max: 80, lines: 4, leading: 14 });
-  rule(ops, 390, 90, 437);
-  rule(ops, 499, 90, 545);
+
   if (signatureImage) {
-    const signatureBox = fitImageSize(signatureImage, 92, 34);
+    const signatureBox = fitImageSize(signatureImage, 130, 48);
     const signatureX = 468 - signatureBox.width / 2;
-    const signatureY = 96;
+    const signatureY = 82;
     ops.push("q");
     ops.push(
       `${signatureBox.width.toFixed(2)} 0 0 ${signatureBox.height.toFixed(2)} ${signatureX.toFixed(2)} ${signatureY.toFixed(2)} cm ${logoImage ? "/Im2" : "/Im1"} Do`,
     );
     ops.push("Q");
   }
-  text(ops, "Physician's Signature", 468, 58, { size: 12, align: "center" });
-  text(ops, `PRC No.: ${prcNo}`, 468, 38, { size: 12, align: "center" });
-  text(ops, "(End of Prescription)", 306, 24, { size: 10, align: "center" });
-  rule(ops, 42, 18, 570);
-  wrapped(ops, "Note to User: The information contained in this electronic prescription is provided by the prescriber. Verify the original prescription before dispensing.", 42, 12, { size: 7, max: 118, lines: 2, leading: 9 });
-  text(ops, "Powered by Doc Kulot", 306, 6, { size: 8, font: "F2", align: "center" });
+  rule(ops, 370, 80, 565);
+  text(ops, "Physician's Signature", 468, 64, { size: 11, align: "center" });
+  text(ops, `PRC No.: ${prcNo}`, 468, 48, { size: 11, font: "F2", align: "center" });
+  text(ops, "(End of Prescription)", 306, 32, { size: 9.5, align: "center" });
+  rule(ops, 42, 24, 570);
+  wrapped(ops, "Note to User: The information contained in this electronic prescription is provided by the prescriber. Verify the original prescription before dispensing.", 42, 16, { size: 6.5, max: 120, lines: 1, leading: 8 });
+  text(ops, "Powered by Doc Kulot", 306, 8, { size: 7.5, font: "F2", align: "center" });
 
   return pdf(ops, logoImage, signatureImage);
 }

@@ -282,7 +282,7 @@ export default function PatientPortalPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric href="/appointments/my" icon={<FaCalendarCheck />} label="Appointments" value={appointments.length} helper={`${upcoming.length} upcoming`} />
         <Metric href="/consultations/history" icon={<FaStethoscope />} label="Released Notes" value={notes.length} helper="Allowed by doctor" />
-        <Metric href="/prescriptions" icon={<FaPrescriptionBottleMedical />} label="Prescriptions" value={portalData.prescriptions.length} helper="PDF and print ready" />
+        <Metric href="/profile/files" icon={<FaPrescriptionBottleMedical />} label="Prescriptions" value={portalData.prescriptions.length} helper="Open in Medical Documents" />
         <Metric href="/profile/files" icon={<FaFileSignature />} label="Documents" value={documentCount} helper="Consents and files" />
         <Metric href="/payments/history" icon={<FaCreditCard />} label="Billing Records" value={portalData.billings.length} helper="Receipts and balances" />
         <Metric href="/profile/inquiries" icon={<FaPaperPlane />} label="Follow-ups" value={portalData.inquiries.length} helper="Questions and replies" />
@@ -372,7 +372,7 @@ export default function PatientPortalPage() {
           <ActionCard href="/appointments/my" title="My Schedule" description="See upcoming and completed visits." tone="teal" icon={<FaCalendarCheck className="text-lg" />} />
           <ActionCard href="/consultations" title="Virtual Consult" description="Open your consultation lobby when it’s time." tone="sky" icon={<FaVideo className="text-lg" />} />
           <ActionCard href="/profile/files" title="Medical Documents" description="View consents, files, and released records." tone="indigo" icon={<FaFileSignature className="text-lg" />} />
-          <ActionCard href="/prescriptions" title="Prescriptions" description="Open, print, or download released prescriptions." tone="cyan" icon={<FaPrescriptionBottleMedical className="text-lg" />} />
+          <ActionCard href="/profile/files" title="Prescriptions" description="Open released prescriptions inside Medical Documents." tone="cyan" icon={<FaPrescriptionBottleMedical className="text-lg" />} />
           <ActionCard href="/payments/history" title="Payment History" description="Review billing history, payment records, and receipts." tone="gold" icon={<FaCreditCard className="text-lg" />} />
         </div>
       </SectionCard>
@@ -387,8 +387,8 @@ export default function PatientPortalPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <RecordTile
               title="Latest Prescription"
-              href="/prescriptions"
-              actionLabel="Open prescriptions"
+              href="/profile/files"
+              actionLabel="Open documents"
               emptyLabel="No released prescriptions yet."
               badge="Prescription"
               icon={<FaPrescriptionBottleMedical />}
@@ -429,8 +429,8 @@ export default function PatientPortalPage() {
                     <Link href="/profile/files" className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-xs font-bold text-white">
                       View consent
                     </Link>
-                    <a href={latestConsent.consent_form_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
-                      Original image
+                    <a href={`/api/v2/procedure-consents/${latestConsent.id}/pdf`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-700">
+                      Download PDF
                     </a>
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import { DashboardHeader } from "./DashboardHeader";
 import { Sidebar } from "./Sidebar";
 import { useRole } from "./RoleProvider";
 import { canAccessPath } from "@/src/lib/roles";
+import { AppBreadcrumbs } from "@/src/components/navigation/AppBreadcrumbs";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -62,7 +63,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   // won't flash on routine token refreshes and won't wipe in-progress forms.
   if (isLoading) {
     return (
-      <div className="flex min-h-[100svh] items-center justify-center bg-neutral-50">
+      <div className="flex min-h-svh items-center justify-center bg-neutral-50">
         <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-5 text-sm text-neutral-600 shadow-sm">
           Loading...
         </div>
@@ -75,7 +76,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-[100svh] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.05),transparent_28%),linear-gradient(180deg,#ffffff_0%,#f8f8f7_36%,#fafafa_100%)]">
+    <div className="relative min-h-svh overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.05),transparent_28%),linear-gradient(180deg,#ffffff_0%,#f8f8f7_36%,#fafafa_100%)]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/5 to-transparent" />
       <Sidebar role={role} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -88,7 +89,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           onLogout={handleLogout}
         />
 
-        <main className="responsive-content mx-auto w-full min-w-0 max-w-[1600px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <main className="responsive-content mx-auto w-full min-w-0 max-w-400 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <AppBreadcrumbs />
           {children}
         </main>
       </div>

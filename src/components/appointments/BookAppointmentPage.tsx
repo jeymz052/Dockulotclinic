@@ -7,6 +7,7 @@ import {
   FaCircleXmark,
   FaBolt,
   FaClipboardList,
+  FaCertificate,
   FaHospital,
   FaVideo,
   FaCreditCard,
@@ -89,6 +90,7 @@ type BookingForm = {
   reason: string;
   symptoms: string;
   durationMinutes: "60";
+  medicalCertificateRequested: boolean;
 };
 
 type BookingPatientStatus = "Existing" | "New";
@@ -158,6 +160,7 @@ const INITIAL_FORM: BookingForm = {
   reason: "",
   symptoms: "",
   durationMinutes: "60",
+  medicalCertificateRequested: false,
 };
 
 function normalizeConsentName(value: string) {
@@ -317,6 +320,7 @@ export default function BookAppointmentPage() {
   const activeDoctorId = primaryDoctor?.slug ?? DEFAULT_DOCTOR_ID;
   const selectedDoctor = primaryDoctor ?? getDoctorById(activeDoctorId);
   const isProcedureBooking = formData.visitPath === "Procedure" || PROCEDURE_SERVICE_TITLES.has(formData.service);
+  const medicalCertificateAddonRequested = formData.type === "Online" && formData.medicalCertificateRequested;
   const {
     slotStatuses,
     blockedReason,
@@ -349,6 +353,12 @@ export default function BookAppointmentPage() {
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
     : isProcedureBooking ? "1 hr" : "30 min";
   const selectedAftercareGuide = useMemo(() => resolveAftercareGuide(formData.service), [formData.service]);
+  const virtualConsultAmount = getBookingPriceAmount(bookingPricing, BOOKING_PRICING_CODES.VIRTUAL_CONSULT);
+  const medicalCertificateAddonAmount = getBookingPriceAmount(
+    bookingPricing,
+    BOOKING_PRICING_CODES.MEDICAL_CERTIFICATE_ADDON,
+  );
+  const virtualConsultTotalAmount = virtualConsultAmount + (medicalCertificateAddonRequested ? medicalCertificateAddonAmount : 0);
   const procedureReservationAmount = getBookingPriceAmount(
     bookingPricing,
     BOOKING_PRICING_CODES.PROCEDURE_RESERVATION,
@@ -362,9 +372,9 @@ export default function BookAppointmentPage() {
             getClinicConsultKindFee("FollowUp", bookingPricing),
           )} follow-up`,
       Procedure: `${formatBookingPeso(procedureReservationAmount)} reservation`,
-      Online: `${formatBookingPeso(getBookingPriceAmount(bookingPricing, BOOKING_PRICING_CODES.VIRTUAL_CONSULT))}`,
+      Online: `${formatBookingPeso(virtualConsultTotalAmount)}`,
     }),
-    [bookingPricing, patient, procedureReservationAmount, role, formData.patientStatus],
+    [bookingPricing, patient, procedureReservationAmount, role, formData.patientStatus, medicalCertificateAddonRequested, virtualConsultTotalAmount],
   );
 
   const BOOKING_STEP_LABELS = [
@@ -438,6 +448,9 @@ export default function BookAppointmentPage() {
               service: restoredHasPatientDetails
                 ? parsed.formData?.service ?? getDefaultServiceForType(restoredType)
                 : cur.service,
+              medicalCertificateRequested: restoredHasPatientDetails
+                ? Boolean(parsed.formData?.medicalCertificateRequested) && restoredType === "Online"
+                : cur.medicalCertificateRequested && cur.type === "Online",
             };
           });
         }
@@ -508,7 +521,8 @@ export default function BookAppointmentPage() {
         && !formData.occupation.trim()
         && !formData.guardianName.trim()
         && !formData.start
-        && !formData.reason.trim();
+        && !formData.reason.trim()
+        && !formData.medicalCertificateRequested;
       if (isEmptyDraft && activeStep === 1) {
         localStorage.removeItem("bookingDraft");
         return;
@@ -710,7 +724,7 @@ export default function BookAppointmentPage() {
     && !!effectivePatientEmail.trim()
     && !!effectivePatientPhone.trim()
     && !patientDetailsError
-    && (!isProcedureBooking || !!formData.reason.trim());
+    && !!formData.reason.trim();
   const datePicked = !!formData.date && !blockedReason;
   const step3Valid = datePicked && !!formData.start;
   const step4Done =
@@ -780,6 +794,7 @@ export default function BookAppointmentPage() {
         const nextType: AppointmentType = nextPath === "Online" ? "Online" : "Clinic";
         nextState.type = nextType;
         nextState.start = "";
+        nextState.medicalCertificateRequested = nextType === "Online" ? current.medicalCertificateRequested : false;
         nextState.service =
           nextPath === "Procedure"
             ? procedureServiceOptions[0] ?? "Botox"
@@ -799,6 +814,7 @@ export default function BookAppointmentPage() {
       if (field === "type") {
         nextState.visitPath = value === "Online" ? "Online" : "Clinic";
         nextState.service = getDefaultServiceForType(value as AppointmentType);
+        nextState.medicalCertificateRequested = value === "Online" ? current.medicalCertificateRequested : false;
         if (value === "Clinic") {
           nextState.clinicId = BOOKING_CLINICS[0].value;
         }
@@ -878,10 +894,12 @@ export default function BookAppointmentPage() {
       doctorId: activeDoctorId,
       date: formData.date,
       start: formData.start,
+      medical_certificate_requested: formData.type === "Online" && formData.medicalCertificateRequested,
       reason: encodeAppointmentContext(
         formData.service,
         formData.reason,
         hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind,
+        formData.type === "Online" && formData.medicalCertificateRequested ? ["Medical Certificate"] : [],
       ),
       type: formData.type,
       patientStatus: hasExistingPatientRecord ? "Existing" : formData.patientStatus,
@@ -948,6 +966,7 @@ export default function BookAppointmentPage() {
               reservationId: payload.reservation_id,
               concern: formData.reason,
               symptoms: formData.symptoms,
+              medicalCertificateRequested: formData.medicalCertificateRequested,
               files: uploadedConcernFiles,
             }),
           );
@@ -1633,7 +1652,7 @@ export default function BookAppointmentPage() {
                         : formData.type === "Online"
                           ? "Concern / Chief Complaint"
                           : "Reason for Visit"}{" "}
-                      <span className="font-normal text-slate-500">{isProcedureBooking ? "(Required)" : "(Optional)"}</span>
+                      <span className="font-normal text-slate-500">(Required)</span>
                     </label>
                     <input 
                       id="reason"
@@ -1648,6 +1667,7 @@ export default function BookAppointmentPage() {
                             ? "e.g., headache, cough, medication concern"
                             : "e.g., Follow-up checkup, lab result review, consultation"
                       }
+                      required
                     />
                   </div>
                   {formData.type === "Online" ? (
@@ -1721,6 +1741,37 @@ export default function BookAppointmentPage() {
                             ))}
                           </div>
                         ) : null}
+                      </div>
+                      <div className="lg:col-span-3 sm:col-span-2 rounded-[1.4rem] border border-sky-100 bg-sky-50/70 p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-sky-800">
+                              <FaCertificate className="h-3.5 w-3.5" aria-hidden="true" />
+                              Medical Certificate Add-on
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-sky-950">Optional virtual add-on for PHP 200</p>
+                            <p className="mt-1 text-xs leading-5 text-sky-900">
+                              Add this if you need a medical certificate after the online consult. The checkout total becomes PHP 1,000 when selected. Clinic certificates stay handled in person.
+                            </p>
+                          </div>
+                          <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700">
+                            Online only
+                          </span>
+                        </div>
+                        <label className="mt-4 flex items-start gap-3 rounded-[1.1rem] border border-sky-100 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={medicalCertificateAddonRequested}
+                            onChange={(event) => updateForm("medicalCertificateRequested", event.target.checked)}
+                            className="mt-0.5 h-4 w-4 rounded border-sky-300 text-sky-700 focus:ring-sky-400"
+                          />
+                          <span>
+                            Add medical certificate request for this virtual consult
+                            <span className="mt-1 block text-xs font-normal leading-5 text-slate-500">
+                              This adds PHP 200 to the online payment and saves the request with your booking.
+                            </span>
+                          </span>
+                        </label>
                       </div>
                     </>
                   ) : null}
@@ -1950,11 +2001,25 @@ export default function BookAppointmentPage() {
                       <div className="pt-2 border-t border-neutral-200">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700 mb-3">Payment Info</p>
                         {!isProcedureBooking ? (
-                          <SummaryRow
-                            label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
-                            value={getConsultationFeeLabel(formData.type, hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind, bookingPricing)}
-                            done
-                          />
+                          <>
+                            <SummaryRow
+                              label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
+                              value={formData.type === "Online"
+                                ? peso(virtualConsultAmount)
+                                : getConsultationFeeLabel(formData.type, hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind, bookingPricing)}
+                              done
+                            />
+                            {formData.type === "Online" && medicalCertificateAddonRequested ? (
+                              <SummaryRow
+                                label="Medical Certificate Add-on"
+                                value={peso(medicalCertificateAddonAmount)}
+                                done
+                              />
+                            ) : null}
+                            {formData.type === "Online" ? (
+                              <SummaryRow label="Total Due" value={peso(virtualConsultTotalAmount)} done />
+                            ) : null}
+                          </>
                         ) : null}
                         {requiresOnlinePayment ? (
                             <SummaryRow
@@ -2022,10 +2087,12 @@ export default function BookAppointmentPage() {
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
                         {formData.type === "Online"
-                          ? "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
+                          ? medicalCertificateAddonRequested
+                            ? "Complete payment through PayMongo QR Ph. The total includes the medical certificate add-on, so you will pay PHP 1,000 right away and we’ll confirm your booking after verification."
+                            : "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
                           : isProcedureBooking
                             ? `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
-                            : selectedSlot
+                          : selectedSlot
                             ? `Your appointment is confirmed for ${formatRange(selectedSlot.start, selectedSlot.end)}`
                             : "Select a time slot first"}
                       </p>
@@ -2044,6 +2111,11 @@ export default function BookAppointmentPage() {
                           </p>
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-sky-800">
                             <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Virtual consults</span>
+                            {medicalCertificateAddonRequested ? (
+                              <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">
+                                Medical certificate add-on
+                              </span>
+                            ) : null}
                             <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Procedure reservation fee</span>
                           </div>
                         </div>

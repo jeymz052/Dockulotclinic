@@ -9,7 +9,7 @@ export async function GET(req: Request) {
 
     let query = supabase
       .from("patient_files")
-      .select("id, patient_id, appointment_id, file_name, file_url, file_type, visible_to_patient, created_at")
+      .select("id, patient_id, appointment_id, file_name, file_url, file_type, document_metadata, visible_to_patient, created_at")
       .order("created_at", { ascending: false });
 
     if (actor.profile.role === "patient") {

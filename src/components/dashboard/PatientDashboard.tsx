@@ -71,7 +71,7 @@ export default function PatientDashboard() {
         <MetricCard href="/appointments/my?tab=completed" label="Completed" value={pastCompleted} helper="Past visits completed" tone="sky" icon={<FaChevronRight className="text-2xl" />} />
         <MetricCard href="/portal" label="Patient Portal" value="Open" helper="All patient records" tone="sky" icon={<FaShieldHalved className="text-2xl" />} />
         <MetricCard href="/profile/files" label="Documents" value="Files" helper="Consents, files, and records" tone="indigo" icon={<FaFileLines className="text-2xl" />} />
-        <MetricCard href="/prescriptions" label="Prescriptions" value="Rx" helper="Medicine instructions" tone="sky" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
+        <MetricCard href="/profile/files" label="Medical Docs" value="Rx" helper="Prescriptions and clinic records" tone="sky" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
         <MetricCard href="/payments/history" label="Receipts" value="Paid" helper="Billing history and receipts" tone="cyan" icon={<FaCreditCard className="text-2xl" />} />
         <MetricCard href="/profile/inquiries" label="Follow-ups" value="Ask" helper="Questions after your visit" tone="gold" icon={<FaInbox className="text-2xl" />} />
       </div>

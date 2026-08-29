@@ -19,7 +19,7 @@ const PATIENT_TOPICS = [
   },
   {
     question: "Where can I view prescriptions and diagnosis?",
-    answer: "Open Prescriptions or the Patient Portal to view doctor-released notes, download PDFs, and print copies for pharmacy use.",
+    answer: "Open Medical Documents or the Patient Portal to view doctor-released notes, download PDFs, and print copies for pharmacy use.",
   },
   {
     question: "Where can I see my files and billing history?",
@@ -30,7 +30,7 @@ const PATIENT_TOPICS = [
 const PATIENT_SHORTCUTS = [
   { href: "/appointments", label: "Book Appointment", icon: <FaRegCalendarCheck className="h-4 w-4" /> },
   { href: "/consultations", label: "Consultations", icon: <FaVideo className="h-4 w-4" /> },
-  { href: "/prescriptions", label: "Prescriptions", icon: <FaFilePrescription className="h-4 w-4" /> },
+  { href: "/profile/files", label: "Medical Documents", icon: <FaFilePrescription className="h-4 w-4" /> },
   { href: "/profile/files", label: "Medical Files", icon: <FaFolderOpen className="h-4 w-4" /> },
   { href: "/payments", label: "Online Payments", icon: <FaCreditCard className="h-4 w-4" /> },
 ];
@@ -60,7 +60,7 @@ export default function PatientHelpPage() {
       <section className="rounded-[2rem] border border-neutral-100 bg-white p-4 shadow-sm sm:p-5">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <StatCard title="Appointments" value="Book, review, and track status" />
-          <StatCard title="Portal" value="Prescriptions, notes, and files" />
+          <StatCard title="Portal" value="Medical documents, notes, and files" />
           <StatCard title="Profile" value="Edit info, password, and contact details" />
         </div>
       </section>
@@ -195,10 +195,10 @@ const PATIENT_MODULES = [
     icon: <FaVideo className="h-4 w-4" />,
   },
   {
-    href: "/prescriptions",
-    kicker: "Prescriptions",
+    href: "/profile/files",
+    kicker: "Medical documents",
     title: "View, download, print",
-    description: "Released prescriptions from the doctor appear here and can be downloaded as PDF or printed.",
+    description: "Released prescriptions, medical certificates, consent forms, and files all live in one place.",
     icon: <FaFilePrescription className="h-4 w-4" />,
   },
   {

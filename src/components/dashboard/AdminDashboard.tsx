@@ -478,7 +478,7 @@ export default function AdminDashboard() {
           <QuickAction label="Reports & Analytics" href="/reports" color="sky" />
           <QuickAction label="Users & Roles" href="/users" color="sky" />
           <QuickAction label="POS Billing" href="/payments/pos" color="amber" />
-          <QuickAction label="Prescriptions" href="/prescriptions" color="emerald" />
+          <QuickAction label="Medical Documents" href="/profile/files" color="emerald" />
           <QuickAction label="Inquiries" href="/inquiries" color="sky" />
           <QuickAction label="Website Content" href="/contents" color="teal" />
           <QuickAction label="Settings" href="/settings" color="emerald" />

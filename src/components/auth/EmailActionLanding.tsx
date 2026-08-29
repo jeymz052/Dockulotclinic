@@ -45,20 +45,13 @@ export function EmailActionLanding({
   fallbackLabel,
   autoProceed = false,
 }: EmailActionLandingProps) {
-  const [actionUrl, setActionUrl] = useState<string | null>(null);
-  const [isAutoProceeding, setIsAutoProceeding] = useState(false);
-
-  useEffect(() => {
-    setActionUrl(readActionUrl());
-  }, []);
+  const [actionUrl] = useState<string | null>(readActionUrl);
 
   useEffect(() => {
     if (!autoProceed || !actionUrl) {
-      setIsAutoProceeding(false);
       return;
     }
 
-    setIsAutoProceeding(true);
     const timer = window.setTimeout(() => {
       window.location.replace(actionUrl);
     }, 450);
@@ -71,7 +64,7 @@ export function EmailActionLanding({
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-100 px-4 py-8">
       <Image
-        src="/images/dockulotbgs.png"
+        src="/images/glowrxloginbg - Copy.png"
         alt="Doc Kulot consultation background"
         fill
         priority
@@ -103,12 +96,12 @@ export function EmailActionLanding({
 
         <div className="mt-6 space-y-3">
           {autoProceed && actionUrl ? (
-            <div className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm font-semibold text-black">
+            <div className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/10 bg-black/3 px-4 py-3 text-sm font-semibold text-black">
               <span
-                className={`h-4 w-4 animate-spin rounded-full border-2 border-black/15 border-t-black ${isAutoProceeding ? "" : "opacity-0"}`}
+                className="h-4 w-4 animate-spin rounded-full border-2 border-black/15 border-t-black"
                 aria-hidden="true"
               />
-              <span>{isAutoProceeding ? "Verifying your email now..." : "Preparing verification..."}</span>
+              <span>Verifying your email now...</span>
             </div>
           ) : (
             <a
@@ -128,7 +121,7 @@ export function EmailActionLanding({
           <p className="text-center text-xs leading-5 text-black/65">{note}</p>
 
           {!actionUrl ? (
-            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-center text-xs leading-5 text-black/70">
+            <div className="rounded-2xl border border-black/10 bg-black/3 px-4 py-3 text-center text-xs leading-5 text-black/70">
               We could not find the secure verification link on this page. Open the email again, or go back to the login page and request a new link.
             </div>
           ) : null}

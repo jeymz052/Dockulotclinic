@@ -90,7 +90,7 @@ export default function DoctorDashboard() {
         <MetricCard href="/consultations/history" label="Completed Today" value={completedToday} helper="Patients seen and finished" tone="emerald" icon={<FaChevronRight className="text-2xl" />} />
         <MetricCard href="/consultations" label="Pending Notes" value={pendingNotes} helper="Consultations needing documentation" tone="amber" icon={<FaNotesMedical className="text-2xl" />} />
         <MetricCard href="/consultations/history" label="Total Consultations" value={totalSeen} helper="All completed appointments on record" tone="sky" icon={<FaChartSimple className="text-2xl" />} />
-        <MetricCard href="/prescriptions" label="Prescriptions" value="Rx" helper="Create and review prescriptions" tone="cyan" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
+        <MetricCard href="/profile/files" label="Medical Docs" value="Rx" helper="Prescriptions and patient records" tone="cyan" icon={<FaPrescriptionBottleMedical className="text-2xl" />} />
         <MetricCard href="/patients/records" label="Records Review" value="Files" helper="Patient records and uploaded files" tone="sky" icon={<FaFileLines className="text-2xl" />} />
         <MetricCard href="/inquiries" label="Follow-ups" value="Inbox" helper="Patient questions after visits" tone="amber" icon={<FaInbox className="text-2xl" />} />
         <MetricCard href="/reports" label="Clinical Reports" value="View" helper="Appointment and patient activity" tone="indigo" icon={<FaChartLine className="text-2xl" />} />

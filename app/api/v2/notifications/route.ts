@@ -70,7 +70,7 @@ function buildNotificationHrefFromPayload(payload: Record<string, unknown> | nul
   }
 
   if (prescriptionId) {
-    return `/prescriptions?prescription=${encodeURIComponent(prescriptionId)}`;
+    return "/profile/files";
   }
 
   return null;

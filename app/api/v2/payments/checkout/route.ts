@@ -24,6 +24,7 @@ type BookingCheckoutBody = {
   date?: string;
   start?: string;
   reason?: string;
+  medical_certificate_requested?: boolean;
   type?: "Online" | "Clinic";
   patientStatus?: "New" | "Existing";
   service?: string;
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
       date: body.date,
       start: body.start,
       reason: body.reason ?? "",
+      medicalCertificateRequested: body.medical_certificate_requested ?? false,
       type: body.type,
       patientStatus: body.patientStatus,
       service: body.service,

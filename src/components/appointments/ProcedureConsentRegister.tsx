@@ -33,11 +33,12 @@ type StaffSignaturePadProps = {
 };
 
 const FALLBACK_CONSENT_POINTS = [
-  "The procedure, purpose, expected benefits, possible risks, side effects, complications, and possible alternatives were explained to the patient in a language they understand.",
-  "The patient understands that results vary and that no exact result, cosmetic outcome, or medical response can be guaranteed.",
-  "The patient understands that no medical or aesthetic procedure is completely risk-free, even when proper care is provided.",
-  "The patient had the opportunity to ask questions and confirms that their questions were answered before signing.",
-  "The patient signs voluntarily and authorizes Doc Kulot, Family Medicine Specialist and Aesthetic Medicine, to perform the selected procedure.",
+  "I confirm that all procedure/s to be done on me has been fully explained to me in a language that I understand, including the nature and purpose, expected benefits, possible risks, side effects, complications and possible alternatives, including doing nothing.",
+  "I understand the intended outcome and that results may vary from person to person. No guarantees or promises have been made to me regarding specific results.",
+  "I understand that while every effort will be made to ensure safety and the best possible care, no medical procedure is 100% risk-free.",
+  "I am aware that the clinic and the attending physician (Doc Kulot) do not take responsibility for any uneventful incident, complication, or dissatisfaction that may occur despite proper care.",
+  "I hereby consent willingly and voluntarily to undergo the above-stated procedure(s). I will not hold the clinic, its staff, or the attending physician liable for any adverse outcome, and I will not initiate any legal action or claim against them.",
+  "I understand that I may withdraw my consent at any time prior to the procedure. Once the procedure has started, I understand that I may not be able to withdraw my consent.",
 ];
 
 function formatDate(value: string | null | undefined, options?: Intl.DateTimeFormatOptions) {
@@ -323,6 +324,21 @@ function ConsentDocument({
                   </li>
                 ))}
               </ol>
+            </section>
+
+            {/* Disclaimer Section */}
+            <section className="mt-5 border border-neutral-300 bg-neutral-50 p-3.5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded bg-black text-xs font-black text-white">
+                  +
+                </div>
+                <div>
+                  <h3 className="text-[0.72rem] font-black uppercase tracking-[0.16em] text-neutral-950">Disclaimer</h3>
+                  <p className="mt-1 text-[0.78rem] leading-5 text-neutral-700">
+                    By signing this form, I acknowledge that I have read, understood, and had the opportunity to ask questions. All procedures, benefits, risks, possible side effects, alternatives, and expected outcomes were explained to me. I am signing this consent form of my own free will.
+                  </p>
+                </div>
+              </div>
             </section>
 
             {consent.aftercare_guide_title ? (

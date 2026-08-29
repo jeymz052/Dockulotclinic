@@ -21,6 +21,7 @@ import {
 } from "@/src/lib/services/procedure-consent";
 import {
   resolveProcedureReservationAmount,
+  resolveMedicalCertificateAddonAmount,
   resolveVirtualConsultAmount,
 } from "@/src/lib/server/booking-pricing-store";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
@@ -89,10 +90,16 @@ export type OnlineCheckoutBookingInput = Pick<
   | "religion"
   | "occupation"
   | "guardianName"
->;
+> & {
+  medicalCertificateRequested?: boolean;
+};
 
 async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { service?: string }) {
-  if (input.type === "Online") return resolveVirtualConsultAmount();
+  if (input.type === "Online") {
+    const base = await resolveVirtualConsultAmount();
+    const medicalCertificateAddon = input.medicalCertificateRequested ? await resolveMedicalCertificateAddonAmount() : 0;
+    return base + medicalCertificateAddon;
+  }
   if (input.type === "Clinic" && isProcedureServiceTitle(input.service)) {
     return resolveProcedureReservationAmount();
   }
@@ -102,8 +109,12 @@ async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { servi
 function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string }) {
   if (input.type === "Online") {
     return {
-      description: `Virtual consult on ${input.date}`,
-      lineItemName: "Virtual Consult",
+      description: input.medicalCertificateRequested
+        ? `Virtual consult with medical certificate add-on on ${input.date}`
+        : `Virtual consult on ${input.date}`,
+      lineItemName: input.medicalCertificateRequested
+        ? "Virtual Consult + Medical Certificate"
+        : "Virtual Consult",
     };
   }
 

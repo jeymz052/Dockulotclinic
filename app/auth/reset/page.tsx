@@ -123,7 +123,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden pr-8 md:pr-20 lg:pr-32">
       <Image
-          src="/images/dockulotbgs.png"
+        src="/images/glowrxloginbg - Copy.png"
         alt="Doc Kulot consultation background"
         fill
         priority

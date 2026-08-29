@@ -776,12 +776,12 @@ export function renderTemplate(
     case "prescription_released":
       return finalizeTemplate(
         "Your prescription is ready",
-        `Your prescription${prescriptionNo ? ` (${prescriptionNo})` : ""} is ready. You can view, download, or print the PDF from your patient portal under Prescriptions.`,
+        `Your prescription${prescriptionNo ? ` (${prescriptionNo})` : ""} is ready. You can view, download, or print the PDF from your patient portal under Medical Documents.`,
         {
           eyebrow: "Prescription ready",
           title: "Your prescription is ready",
           ...patientPortalCta(),
-          note: "Open the portal to view, download, or print the prescription.",
+          note: "Open Medical Documents to view, download, or print the prescription.",
         },
       );
     default:

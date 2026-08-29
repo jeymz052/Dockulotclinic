@@ -77,7 +77,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
-    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
+    { label: "Medical Documents", href: "/profile/files", icon: FaFileLines },
     {
       label: "Consultations",
       href: "/consultations",
@@ -87,7 +87,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
-    { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
     {
       label: "Schedules",
       href: "/schedules",
@@ -125,7 +124,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
-    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
+    { label: "Medical Documents", href: "/profile/files", icon: FaFileLines },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
     { label: "FAQ Content", href: "/faq-content", icon: FaCircleQuestion },
@@ -152,7 +151,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
       ],
     },
-    { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
     {
       label: "Schedules",
       href: "/schedules",
@@ -168,7 +166,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       icon: FaCreditCard,
     },
     { label: "POS Billing", href: "/payments/pos", icon: FaFileLines },
-    { label: "Procedure Consents", href: "/profile/files", icon: FaFileLines },
+    { label: "Medical Documents", href: "/profile/files", icon: FaFileLines },
     { label: "Reports", href: "/reports", icon: FaChartLine },
     { label: "Inquiries", href: "/inquiries", icon: FaInbox },
     { label: "Website Content", href: "/contents", icon: FaWandMagicSparkles },
@@ -184,7 +182,6 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
       subItems: [
         { label: "Portal Overview", href: "/portal", icon: FaHouse },
         { label: "Medical Documents", href: "/profile/files", icon: FaFileLines },
-        { label: "Prescriptions", href: "/prescriptions", icon: FaFileLines },
         { label: "Consultation History", href: "/consultations/history", icon: FaClockRotateLeft },
         { label: "Follow-up Messages", href: "/profile/inquiries", icon: FaInbox },
       ],

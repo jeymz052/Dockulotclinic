@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react";
+import { type ReactNode, Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import {
   FaAddressBook,
   FaArrowUpRightFromSquare,
   FaCalendarDay,
   FaCircleCheck,
+  FaCertificate,
   FaCircleInfo,
   FaEye,
   FaEyeSlash,
@@ -25,13 +26,19 @@ import {
   FaUserDoctor,
   FaUserGroup,
   FaVideo,
+  FaFlaskVial,
   FaXmark,
+  FaEnvelope,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useConsultationNotes, usePatients } from "@/src/components/clinic/useClinicData";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import { getAppointmentPrimaryLabel, getAppointmentSecondaryReason } from "@/src/lib/appointment-context";
+import {
+  getAppointmentPrimaryLabel,
+  getAppointmentSecondaryReason,
+  hasAppointmentAddOn,
+} from "@/src/lib/appointment-context";
 import {
   formatDisplayDate,
   formatRange,
@@ -60,6 +67,18 @@ type PrescriptionItemDraft = {
 type CreatedPrescription = {
   id: string;
   prescriptionNo: string;
+};
+
+type CreatedMedicalCertificate = {
+  id: string;
+  certificateNo: string;
+  fileName: string;
+};
+
+type CreatedLaboratoryRequest = {
+  id: string;
+  requestNo: string;
+  fileName: string;
 };
 
 type QueueFilter = "all" | "ready" | "live" | "completed";
@@ -100,6 +119,24 @@ export default function OnlineConsultationPage() {
   const [releasePrescription, setReleasePrescription] = useState(true);
   const [prescriptionFeedback, setPrescriptionFeedback] = useState<string | null>(null);
   const [createdPrescription, setCreatedPrescription] = useState<CreatedPrescription | null>(null);
+  const [medicalCertificateFeedback, setMedicalCertificateFeedback] = useState<string | null>(null);
+  const [createdMedicalCertificate, setCreatedMedicalCertificate] = useState<CreatedMedicalCertificate | null>(null);
+  const [selectedBloodChem, setSelectedBloodChem] = useState<string[]>([]);
+  const [selectedHematology, setSelectedHematology] = useState<string[]>([]);
+  const [selectedImmuno, setSelectedImmuno] = useState<string[]>([]);
+  const [selectedMicroscopy, setSelectedMicroscopy] = useState<string[]>([]);
+  const [labUltrasound, setLabUltrasound] = useState("");
+  const [labXray, setLabXray] = useState("");
+  const [labCtScan, setLabCtScan] = useState("");
+  const [labOthers, setLabOthers] = useState("");
+  const [releaseLabRequest, setReleaseLabRequest] = useState(true);
+  const [labFeedback, setLabFeedback] = useState<string | null>(null);
+  const [createdLabRequest, setCreatedLabRequest] = useState<CreatedLaboratoryRequest | null>(null);
+  const [chartStep, setChartStep] = useState(1);
+  const [medCertComplaints, setMedCertComplaints] = useState("");
+  const [medCertDiagnosis, setMedCertDiagnosis] = useState("");
+  const [medCertRecommendation, setMedCertRecommendation] = useState("");
+  const [releaseMedCert, setReleaseMedCert] = useState(true);
   const [isSaving, startTransition] = useTransition();
 
   const eligibleAppointments = useMemo(
@@ -148,6 +185,10 @@ export default function OnlineConsultationPage() {
   const activeAppointment = eligibleAppointments.find(
     (appointment) => appointment.id === activeAppointmentId,
   ) ?? null;
+  const activeAppointmentIsVirtual = activeAppointment?.type === "Online";
+  const activeAppointmentHasMedicalCertificateAddon = Boolean(
+    activeAppointment && hasAppointmentAddOn(activeAppointment.reason, "Medical Certificate"),
+  );
   const activeNote = activeAppointment
     ? notes.find((note) => note.appointmentId === activeAppointment.id) ?? null
     : null;
@@ -200,6 +241,24 @@ export default function OnlineConsultationPage() {
     setReleasePrescription(true);
     setPrescriptionFeedback(null);
     setCreatedPrescription(null);
+    setMedicalCertificateFeedback(null);
+    setCreatedMedicalCertificate(null);
+    setSelectedBloodChem([]);
+    setSelectedHematology([]);
+    setSelectedImmuno([]);
+    setSelectedMicroscopy([]);
+    setLabUltrasound("");
+    setLabXray("");
+    setLabCtScan("");
+    setLabOthers("");
+    setReleaseLabRequest(true);
+    setLabFeedback(null);
+    setCreatedLabRequest(null);
+    setChartStep(1);
+    setMedCertComplaints(formatReason(appointment));
+    setMedCertDiagnosis(existing?.diagnosis ?? "");
+    setMedCertRecommendation(existing?.prescription ?? existing?.note ?? "");
+    setReleaseMedCert(true);
     setFeedback(null);
   }
 
@@ -280,6 +339,11 @@ export default function OnlineConsultationPage() {
   function savePrescription(appointment: AppointmentRecord) {
     if (!accessToken) {
       setPrescriptionFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (appointment.type !== "Online") {
+      setPrescriptionFeedback("Prescriptions are only available for virtual consultations.");
       return;
     }
 
@@ -415,6 +479,345 @@ export default function OnlineConsultationPage() {
       printWindow.print();
       setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
     });
+  }
+
+  async function emailCreatedPrescription(prescription: CreatedPrescription) {
+    if (!accessToken) {
+      setPrescriptionFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+    setPrescriptionFeedback("Emailing prescription to patient...");
+    try {
+      const res = await fetch("/api/v2/medical-documents/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          documentId: prescription.id,
+          kind: "Prescription",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to email prescription.");
+      setPrescriptionFeedback(data?.message || "Prescription emailed to patient successfully.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to email prescription.";
+      setPrescriptionFeedback(msg);
+    }
+  }
+
+  function saveMedicalCertificate(appointment: AppointmentRecord) {
+    if (!accessToken) {
+      setMedicalCertificateFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (appointment.type !== "Online") {
+      setMedicalCertificateFeedback("Medical certificates are only available for virtual consultations.");
+      return;
+    }
+
+    if (!activeAppointmentHasMedicalCertificateAddon) {
+      setMedicalCertificateFeedback("This virtual consultation does not include the medical certificate add-on.");
+      return;
+    }
+
+    if (!activePatientRecord) {
+      setMedicalCertificateFeedback("Match this visit to a patient record before creating a medical certificate.");
+      return;
+    }
+
+    const doctor = doctors.find((item) => item.slug === appointment.doctorId || item.id === appointment.doctorId);
+    if (!doctor?.dbId) {
+      setMedicalCertificateFeedback("Doctor profile is still loading. Try again in a moment.");
+      return;
+    }
+
+    const complaints = medCertComplaints.trim();
+    const diagnosis = medCertDiagnosis.trim();
+    const recommendation = medCertRecommendation.trim();
+    if (!diagnosis) {
+      setMedicalCertificateFeedback("Add a diagnosis before creating the medical certificate.");
+      return;
+    }
+    if (!recommendation) {
+      setMedicalCertificateFeedback("Add a recommendation or care plan before creating the medical certificate.");
+      return;
+    }
+
+    startTransition(async () => {
+      const response = await fetch("/api/v2/medical-certificates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          appointment_id: appointment.id,
+          patient_id: activePatientRecord.id,
+          doctor_id: doctor.dbId,
+          complaints: complaints || formatReason(appointment),
+          diagnosis,
+          recommendation,
+          note: draft.note.trim() || null,
+          released_to_patient: releaseMedCert,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        medical_certificate?: { id?: string; certificate_no?: string; file_name?: string };
+      };
+
+      if (!response.ok) {
+        setMedicalCertificateFeedback(payload.message ?? "Unable to create medical certificate.");
+        return;
+      }
+
+      setCreatedMedicalCertificate(
+        payload.medical_certificate?.id && payload.medical_certificate?.certificate_no && payload.medical_certificate?.file_name
+          ? {
+              id: payload.medical_certificate.id,
+              certificateNo: payload.medical_certificate.certificate_no,
+              fileName: payload.medical_certificate.file_name,
+            }
+          : null,
+      );
+      setMedicalCertificateFeedback(
+        payload.medical_certificate?.certificate_no
+          ? `Medical certificate ${payload.medical_certificate.certificate_no} created.`
+          : "Medical certificate created.",
+      );
+    });
+  }
+
+  async function fetchMedicalCertificatePdf(certificate: CreatedMedicalCertificate) {
+    if (!accessToken) {
+      setMedicalCertificateFeedback("Your session expired. Please sign in again.");
+      return null;
+    }
+
+    const response = await fetch(`/api/v2/medical-certificates/${certificate.id}/pdf`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      setMedicalCertificateFeedback("Unable to open medical certificate PDF.");
+      return null;
+    }
+
+    return response.blob();
+  }
+
+  async function downloadCreatedMedicalCertificate(certificate: CreatedMedicalCertificate) {
+    const blob = await fetchMedicalCertificatePdf(certificate);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = certificate.fileName || `${certificate.certificateNo}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  async function printCreatedMedicalCertificate(certificate: CreatedMedicalCertificate) {
+    const blob = await fetchMedicalCertificatePdf(certificate);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      setMedicalCertificateFeedback("Pop-up blocked. Please allow pop-ups to print the medical certificate.");
+      window.URL.revokeObjectURL(url);
+      return;
+    }
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
+    });
+  }
+
+  async function emailCreatedMedicalCertificate(certificate: CreatedMedicalCertificate) {
+    if (!accessToken) {
+      setMedicalCertificateFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+    setMedicalCertificateFeedback("Emailing medical certificate to patient...");
+    try {
+      const res = await fetch("/api/v2/medical-documents/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          documentId: certificate.id,
+          kind: "Medical Certificate",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to email medical certificate.");
+      setMedicalCertificateFeedback(data?.message || "Medical certificate emailed to patient successfully.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to email medical certificate.";
+      setMedicalCertificateFeedback(msg);
+    }
+  }
+
+  function saveLaboratoryRequest(appointment: AppointmentRecord) {
+    if (!accessToken) {
+      setLabFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (!activePatientRecord) {
+      setLabFeedback("Match this visit to a patient record before creating a laboratory request.");
+      return;
+    }
+
+    const doctor = doctors.find((item) => item.slug === appointment.doctorId || item.id === appointment.doctorId);
+    const doctorDbId = doctor?.dbId || undefined;
+
+    const allSelected = [
+      ...selectedBloodChem,
+      ...selectedHematology,
+      ...selectedImmuno,
+      ...selectedMicroscopy,
+    ];
+
+    if (allSelected.length === 0 && !labUltrasound.trim() && !labXray.trim() && !labCtScan.trim() && !labOthers.trim()) {
+      setLabFeedback("Please select at least one test or specify imaging/diagnostics.");
+      return;
+    }
+
+    startTransition(async () => {
+      const response = await fetch("/api/v2/laboratory-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          appointment_id: appointment.id,
+          patient_id: activePatientRecord.id,
+          doctor_id: doctorDbId,
+          blood_chemistry: selectedBloodChem,
+          hematology: selectedHematology,
+          immuno_serology: selectedImmuno,
+          clinical_microscopy: selectedMicroscopy,
+          selected_tests: allSelected,
+          ultrasound: labUltrasound.trim() || null,
+          xray: labXray.trim() || null,
+          ct_scan: labCtScan.trim() || null,
+          others: labOthers.trim() || null,
+          released_to_patient: releaseLabRequest,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        laboratory_request?: { id?: string; request_no?: string; file_name?: string };
+      };
+
+      if (!response.ok) {
+        setLabFeedback(payload.message ?? "Unable to create laboratory request.");
+        return;
+      }
+
+      setCreatedLabRequest(
+        payload.laboratory_request?.id && payload.laboratory_request?.request_no
+          ? {
+              id: payload.laboratory_request.id,
+              requestNo: payload.laboratory_request.request_no,
+              fileName: payload.laboratory_request.file_name ?? `${payload.laboratory_request.request_no}.pdf`,
+            }
+          : null,
+      );
+      setLabFeedback(
+        payload.laboratory_request?.request_no
+          ? `Laboratory request ${payload.laboratory_request.request_no} created.`
+          : "Laboratory request created.",
+      );
+    });
+  }
+
+  async function fetchLabRequestPdf(req: CreatedLaboratoryRequest) {
+    if (!accessToken) {
+      setLabFeedback("Your session expired. Please sign in again.");
+      return null;
+    }
+
+    const response = await fetch(`/api/v2/laboratory-requests/${req.id}/pdf`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      setLabFeedback("Unable to open laboratory request PDF.");
+      return null;
+    }
+
+    return response.blob();
+  }
+
+  async function downloadCreatedLabRequest(req: CreatedLaboratoryRequest) {
+    const blob = await fetchLabRequestPdf(req);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = req.fileName || `${req.requestNo}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  async function printCreatedLabRequest(labRequest: CreatedLaboratoryRequest) {
+    const blob = await fetchLabRequestPdf(labRequest);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      setLabFeedback("Pop-up blocked. Please allow pop-ups to print the laboratory request.");
+      window.URL.revokeObjectURL(url);
+      return;
+    }
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
+    });
+  }
+
+  async function emailCreatedLaboratoryRequest(labRequest: CreatedLaboratoryRequest) {
+    if (!accessToken) {
+      setLabFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+    setLabFeedback("Emailing laboratory request to patient...");
+    try {
+      const res = await fetch("/api/v2/medical-documents/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          documentId: labRequest.id,
+          kind: "Laboratory Request",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to email laboratory request.");
+      setLabFeedback(data?.message || "Laboratory request emailed to patient successfully.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to email laboratory request.";
+      setLabFeedback(msg);
+    }
   }
 
   return (
@@ -557,7 +960,7 @@ export default function OnlineConsultationPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-5">
                 {activeTab === "record" ? (
                   <PatientRecordSnapshot
                     appointment={activeAppointment}
@@ -566,151 +969,428 @@ export default function OnlineConsultationPage() {
                 ) : null}
 
                 {activeTab === "chart" ? (
-                  <div className="mx-auto max-w-6xl space-y-5">
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-                      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-                        <SectionHeading
-                          icon={<FaStethoscope className="h-4 w-4" />}
-                          title="Assessment"
-                          description="Start with the clinical impression, then keep the chart details together below."
-                        />
-                        <div className="mt-4 space-y-4">
-                          <TextAreaField
-                            label="Diagnosis"
-                            value={draft.diagnosis}
-                            minHeight="min-h-40"
-                            onChange={(value) => setDraft((current) => ({ ...current, diagnosis: value }))}
-                            placeholder="Clinical diagnosis, impression, or assessment"
-                          />
-                          <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
-                            <input
-                              type="checkbox"
-                              checked={draft.visibleToPatient}
-                              onChange={(event) =>
-                                setDraft((current) => ({
-                                  ...current,
-                                  visibleToPatient: event.target.checked,
-                                }))
-                              }
-                              className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
-                            />
-                            <span className="inline-flex items-center gap-2">
-                              {draft.visibleToPatient ? (
-                                <FaEye className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                              ) : (
-                                <FaEyeSlash className="h-4 w-4 text-neutral-400" aria-hidden="true" />
-                              )}
-                              Visible in patient portal
-                            </span>
-                          </label>
-                          <div className="rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
-                            Keep the assessment short and specific. The final chart status is set at the bottom of this page.
-                          </div>
-                        </div>
-                      </section>
+                  <div className="mx-auto max-w-3xl space-y-5">
 
-                      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-                        <SectionHeading
-                          icon={<FaNotesMedical className="h-4 w-4" />}
-                          title="Consultation note"
-                          description="Document symptoms, decisions, and the follow-up plan in one place."
-                        />
-                        <div className="mt-4 space-y-4">
-                          <TextAreaField
-                            label="Consultation notes"
-                            value={draft.note}
-                            minHeight="min-h-56"
-                            onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
-                            placeholder="Assessment, progress, symptoms, recommendations, and patient instructions"
-                          />
-                          <TextAreaField
-                            label="Care plan summary"
-                            value={draft.prescription}
-                            minHeight="min-h-32"
-                            onChange={(value) => setDraft((current) => ({ ...current, prescription: value }))}
-                            placeholder="Tests, referrals, aftercare, lifestyle plan, or follow-up summary"
-                          />
-                        </div>
-                      </section>
-                    </div>
-
-                    <PrescriptionBuilder
-                      items={prescriptionItems}
-                      instructions={prescriptionInstructions}
-                      followUpDate={prescriptionFollowUpDate}
-                      releaseToPatient={releasePrescription}
-                      feedback={prescriptionFeedback}
-                      createdPrescription={createdPrescription}
-                      disabled={isSaving}
-                      patientMatched={Boolean(activePatientRecord)}
-                      onItemChange={updatePrescriptionItem}
-                      onAddItem={addPrescriptionItem}
-                      onRemoveItem={removePrescriptionItem}
-                      onInstructionsChange={(value) => {
-                        setPrescriptionInstructions(value);
-                        setPrescriptionFeedback(null);
-                      }}
-                      onFollowUpDateChange={(value) => {
-                        setPrescriptionFollowUpDate(value);
-                        setPrescriptionFeedback(null);
-                      }}
-                      onReleaseChange={(value) => {
-                        setReleasePrescription(value);
-                        setPrescriptionFeedback(null);
-                      }}
-                      onSave={() => savePrescription(activeAppointment)}
-                      onDownloadCreated={() =>
-                        createdPrescription
-                          ? void downloadCreatedPrescription(createdPrescription)
-                          : undefined
-                      }
-                      onPrintCreated={() =>
-                        createdPrescription
-                          ? void printCreatedPrescription(createdPrescription)
-                          : undefined
-                      }
+                    {/* ── Step Progress Nav ── */}
+                    <ChartStepNav
+                      step={chartStep}
+                      isVirtual={activeAppointmentIsVirtual}
+                      hasMedCertAddon={activeAppointmentHasMedicalCertificateAddon}
+                      noteSaved={Boolean(activeNote)}
+                      prescriptionCreated={Boolean(createdPrescription)}
+                      medCertCreated={Boolean(createdMedicalCertificate)}
+                      labCreated={Boolean(createdLabRequest)}
+                      onStepClick={setChartStep}
                     />
 
-                    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-5 shadow-sm">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-2xl">
-                          <p className="text-sm font-bold text-neutral-950">Save and close out</p>
-                          <p className="mt-1 text-sm text-neutral-600">
-                            Save the note first, then set the chart status as the final step so it is harder to miss.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => saveConsultation(activeAppointment)}
-                          disabled={isSaving}
-                          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-                        >
-                          <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
-                          {isSaving ? "Saving..." : "Save note"}
-                        </button>
-                      </div>
-                      <div className="mt-5 border-t border-neutral-200 pt-5">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                          <div>
-                            <p className="text-sm font-bold text-neutral-950">Chart status</p>
-                            <p className="mt-1 text-sm text-neutral-600">
-                              Set this last, after the assessment, note, and prescription are ready.
-                            </p>
-                          </div>
-                          <StatusControl
-                            value={draft.status}
-                            onChange={(status) => setDraft((current) => ({ ...current, status }))}
+                    {/* ── Step 1: Assessment & Notes ── */}
+                    {chartStep === 1 && (
+                      <div className="space-y-5">
+                        <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                          <SectionHeading
+                            icon={<FaStethoscope className="h-4 w-4" />}
+                            title="Assessment & Consultation Note"
+                            description={activeAppointmentIsVirtual
+                              ? "Record the clinical impression and visit notes. Values here auto-fill the Prescription, MedCert, and Lab Request steps."
+                              : "Record the clinical impression and visit notes. For clinic visits, prescriptions and requests are handled in person with physical forms."}
                           />
+                          <div className="mt-4 space-y-4">
+                            <TextAreaField
+                              label="Clinical Assessment / Diagnosis"
+                              value={draft.diagnosis}
+                              minHeight="min-h-24"
+                              onChange={(value) => {
+                                setDraft((current) => ({ ...current, diagnosis: value }));
+                                setMedCertDiagnosis(value);
+                              }}
+                              placeholder="e.g. Hypertensive urgency, Acute viral pharyngitis, Dysmenorrhea"
+                            />
+                            <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
+                              <input
+                                type="checkbox"
+                                checked={draft.visibleToPatient}
+                                onChange={(event) =>
+                                  setDraft((current) => ({
+                                    ...current,
+                                    visibleToPatient: event.target.checked,
+                                  }))
+                                }
+                                className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+                              />
+                              <span className="inline-flex items-center gap-2">
+                                {draft.visibleToPatient ? (
+                                  <FaEye className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                                ) : (
+                                  <FaEyeSlash className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                                )}
+                                Visible in patient portal
+                              </span>
+                            </label>
+
+                            <div className="border-t border-neutral-100 pt-4">
+                              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-neutral-400">Consultation Note</p>
+                              <div className="space-y-4">
+                                <TextAreaField
+                                  label="SOAP / Visit Notes"
+                                  value={draft.note}
+                                  minHeight="min-h-28"
+                                  onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
+                                  placeholder="Subjective: patient reports... Objective: BP 150/90... Plan: ..."
+                                />
+                                <TextAreaField
+                                  label="Care Plan & Recommendations"
+                                  value={draft.prescription}
+                                  minHeight="min-h-20"
+                                  onChange={(value) => {
+                                    setDraft((current) => ({ ...current, prescription: value }));
+                                    setMedCertRecommendation(value || draft.note);
+                                  }}
+                                  placeholder="Tests ordered, referrals, lifestyle advice, follow-up schedule"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => saveConsultation(activeAppointment)}
+                            disabled={isSaving}
+                            className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                          >
+                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                            {isSaving ? "Saving..." : "Save note"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 2 : 5)}
+                            className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                          >
+                            {activeAppointmentIsVirtual ? "Next: Prescription →" : "Next: Finalize →"}
+                          </button>
                         </div>
-                        {activeNote?.updatedAt ? (
-                          <p className="mt-4 text-xs text-neutral-500">
-                            Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
-                          </p>
-                        ) : null}
                       </div>
-                    </section>
+                    )}
+
+                    {/* ── Steps 2–4: Virtual only ── */}
+                    {activeAppointmentIsVirtual && chartStep === 2 && (
+                      <div className="space-y-5">
+                        {activeAppointmentIsVirtual ? (
+                          <PrescriptionBuilder
+                            items={prescriptionItems}
+                            instructions={prescriptionInstructions}
+                            followUpDate={prescriptionFollowUpDate}
+                            releaseToPatient={releasePrescription}
+                            feedback={prescriptionFeedback}
+                            createdPrescription={createdPrescription}
+                            disabled={isSaving}
+                            patientMatched={Boolean(activePatientRecord)}
+                            onItemChange={updatePrescriptionItem}
+                            onAddItem={addPrescriptionItem}
+                            onRemoveItem={removePrescriptionItem}
+                            onInstructionsChange={(value) => {
+                              setPrescriptionInstructions(value);
+                              setPrescriptionFeedback(null);
+                            }}
+                            onFollowUpDateChange={(value) => {
+                              setPrescriptionFollowUpDate(value);
+                              setPrescriptionFeedback(null);
+                            }}
+                            onReleaseChange={(value) => {
+                              setReleasePrescription(value);
+                              setPrescriptionFeedback(null);
+                            }}
+                            onSave={() => savePrescription(activeAppointment)}
+                            onDownloadCreated={() =>
+                              createdPrescription ? void downloadCreatedPrescription(createdPrescription) : undefined
+                            }
+                            onPrintCreated={() =>
+                              createdPrescription ? void printCreatedPrescription(createdPrescription) : undefined
+                            }
+                            onEmailCreated={() =>
+                              createdPrescription ? void emailCreatedPrescription(createdPrescription) : undefined
+                            }
+                          />
+                        ) : (
+                          <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                            <SectionHeading
+                              icon={<FaPrescriptionBottleMedical className="h-4 w-4" />}
+                              title="Prescription"
+                              description="Virtual consultations can generate electronic prescriptions here."
+                            />
+                            <div className="mt-5 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+                              Doc Kulot handles clinic-visit prescriptions in person using physical hard copies. No electronic prescription is created for clinic appointments.
+                            </div>
+                          </section>
+                        )}
+                        <StepNavButtons onBack={() => setChartStep(1)} onNext={() => setChartStep(3)} nextLabel="Next: Medical Certificate →" />
+                      </div>
+                    )}
+
+                    {/* ── Step 3: Medical Certificate (virtual only) ── */}
+                    {activeAppointmentIsVirtual && chartStep === 3 && (
+                      <div className="space-y-5">
+                        {activeAppointmentIsVirtual ? (
+                          activeAppointmentHasMedicalCertificateAddon ? (
+                            <MedicalCertificateBuilder
+                              patientMatched={Boolean(activePatientRecord)}
+                              complaints={medCertComplaints}
+                              onComplaintsChange={setMedCertComplaints}
+                              diagnosis={medCertDiagnosis}
+                              onDiagnosisChange={setMedCertDiagnosis}
+                              recommendation={medCertRecommendation}
+                              onRecommendationChange={setMedCertRecommendation}
+                              releaseToPatient={releaseMedCert}
+                              onReleaseChange={setReleaseMedCert}
+                              feedback={medicalCertificateFeedback}
+                              createdCertificate={createdMedicalCertificate}
+                              disabled={isSaving}
+                              onSave={() => saveMedicalCertificate(activeAppointment)}
+                              onDownloadCreated={() =>
+                                createdMedicalCertificate ? void downloadCreatedMedicalCertificate(createdMedicalCertificate) : undefined
+                              }
+                              onPrintCreated={() =>
+                                createdMedicalCertificate ? void printCreatedMedicalCertificate(createdMedicalCertificate) : undefined
+                              }
+                              onEmailCreated={() =>
+                                createdMedicalCertificate ? void emailCreatedMedicalCertificate(createdMedicalCertificate) : undefined
+                              }
+                            />
+                          ) : (
+                            <section className="rounded-lg border border-dashed border-amber-200 bg-amber-50 p-5 shadow-sm">
+                              <div className="flex items-start gap-3">
+                                <FaCertificate className="mt-0.5 h-4 w-4 text-amber-700" />
+                                <div>
+                                  <p className="text-sm font-bold text-amber-900">Medical certificate add-on not selected</p>
+                                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                                    This virtual consult does not include the medical certificate add-on. The certificate builder is only available when the patient selects it during booking.
+                                  </p>
+                                </div>
+                              </div>
+                            </section>
+                          )
+                        ) : (
+                          <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                            <SectionHeading
+                              icon={<FaCertificate className="h-4 w-4" />}
+                              title="Medical Certificate"
+                              description="Virtual consultations with the add-on can generate digital certificates here."
+                            />
+                            <div className="mt-5 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+                              Doc Kulot uses physical hard-copy medical certificates for clinic visits. Digital certificates are only issued for virtual consultations with the add-on.
+                            </div>
+                          </section>
+                        )}
+                        <StepNavButtons onBack={() => setChartStep(2)} onNext={() => setChartStep(4)} nextLabel="Next: Lab Request →" />
+                      </div>
+                    )}
+
+                    {/* ── Step 4: Lab / Diagnostics Request (virtual only) ── */}
+                    {activeAppointmentIsVirtual && chartStep === 4 && (
+                      <div className="space-y-5">
+                        {activeAppointmentIsVirtual ? (
+                          <LaboratoryRequestBuilder
+                            patientMatched={Boolean(activePatientRecord)}
+                            selectedBloodChem={selectedBloodChem}
+                            selectedHematology={selectedHematology}
+                            selectedImmuno={selectedImmuno}
+                            selectedMicroscopy={selectedMicroscopy}
+                            ultrasound={labUltrasound}
+                            xray={labXray}
+                            ctScan={labCtScan}
+                            others={labOthers}
+                            releaseToPatient={releaseLabRequest}
+                            feedback={labFeedback}
+                            createdLabRequest={createdLabRequest}
+                            disabled={isSaving}
+                            onToggleBloodChem={(item) =>
+                              setSelectedBloodChem((curr) =>
+                                curr.includes(item) ? curr.filter((x) => x !== item) : [...curr, item],
+                              )
+                            }
+                            onToggleHematology={(item) =>
+                              setSelectedHematology((curr) =>
+                                curr.includes(item) ? curr.filter((x) => x !== item) : [...curr, item],
+                              )
+                            }
+                            onToggleImmuno={(item) =>
+                              setSelectedImmuno((curr) =>
+                                curr.includes(item) ? curr.filter((x) => x !== item) : [...curr, item],
+                              )
+                            }
+                            onToggleMicroscopy={(item) =>
+                              setSelectedMicroscopy((curr) =>
+                                curr.includes(item) ? curr.filter((x) => x !== item) : [...curr, item],
+                              )
+                            }
+                            onSetUltrasound={(val) => { setLabUltrasound(val); setLabFeedback(null); }}
+                            onSetXray={(val) => { setLabXray(val); setLabFeedback(null); }}
+                            onSetCtScan={(val) => { setLabCtScan(val); setLabFeedback(null); }}
+                            onSetOthers={(val) => { setLabOthers(val); setLabFeedback(null); }}
+                            onReleaseChange={(val) => { setReleaseLabRequest(val); setLabFeedback(null); }}
+                            onApplyPreset={(preset) => {
+                              if (preset === "routine") {
+                                setSelectedBloodChem((c) => Array.from(new Set([...c, "Fasting Blood Sugar", "Lipid Profile", "Blood Uric Acid", "Creatinine"])));
+                                setSelectedHematology((c) => Array.from(new Set([...c, "Complete Blood Count"])));
+                                setSelectedMicroscopy((c) => Array.from(new Set([...c, "Urinalysis"])));
+                              } else if (preset === "liver_renal") {
+                                setSelectedBloodChem((c) => Array.from(new Set([...c, "SGOT (AST)", "SGPT (ALT)", "BUN", "Creatinine", "Electrolytes", "Total protein"])));
+                              } else if (preset === "fever_infection") {
+                                setSelectedHematology((c) => Array.from(new Set([...c, "Complete Blood Count"])));
+                                setSelectedMicroscopy((c) => Array.from(new Set([...c, "Urinalysis"])));
+                                setSelectedImmuno((c) => Array.from(new Set([...c, "Typhoid", "Dengue"])));
+                              } else if (preset === "clear") {
+                                setSelectedBloodChem([]);
+                                setSelectedHematology([]);
+                                setSelectedImmuno([]);
+                                setSelectedMicroscopy([]);
+                                setLabUltrasound("");
+                                setLabXray("");
+                                setLabCtScan("");
+                                setLabOthers("");
+                              }
+                              setLabFeedback(null);
+                            }}
+                            onSave={() => saveLaboratoryRequest(activeAppointment)}
+                            onDownloadCreated={() =>
+                              createdLabRequest ? void downloadCreatedLabRequest(createdLabRequest) : undefined
+                            }
+                            onPrintCreated={() =>
+                              createdLabRequest ? void printCreatedLabRequest(createdLabRequest) : undefined
+                            }
+                            onEmailCreated={() =>
+                              createdLabRequest ? void emailCreatedLaboratoryRequest(createdLabRequest) : undefined
+                            }
+                          />
+                        ) : (
+                          <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                            <SectionHeading
+                              icon={<FaFlaskVial className="h-4 w-4" />}
+                              title="Laboratory / Diagnostics Request"
+                              description="Virtual consultations can generate digital laboratory requests here."
+                            />
+                            <div className="mt-5 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 py-4 text-sm leading-6 text-neutral-700">
+                              Doc Kulot uses physical hard-copy laboratory request forms for clinic visits. The digital lab request builder is only available for virtual consultations.
+                            </div>
+                          </section>
+                        )}
+                        <StepNavButtons onBack={() => setChartStep(3)} onNext={() => setChartStep(5)} nextLabel="Next: Finalize →" />
+                      </div>
+                    )}
+
+                    {/* ── Step 5: Save & Finalize ── */}
+                    {chartStep === 5 && (
+                      <div className="space-y-5">
+                        {/* Session summary */}
+                        <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                          <SectionHeading
+                            icon={<FaCircleCheck className="h-4 w-4" />}
+                            title="Session summary"
+                            description="Review what was completed during this consultation before closing out."
+                          />
+                          <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                            {activeAppointmentIsVirtual ? (
+                              <>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Prescription</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {createdPrescription ? `✓ ${createdPrescription.prescriptionNo}` : "Not created"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Medical Certificate</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {createdMedicalCertificate
+                                      ? `✓ ${createdMedicalCertificate.certificateNo}`
+                                      : activeAppointmentHasMedicalCertificateAddon
+                                        ? "Not created"
+                                        : "No add-on selected"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Lab Request</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {createdLabRequest ? `✓ ${createdLabRequest.requestNo}` : "Not created"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Assessment & Notes</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {activeNote ? `✓ ${draft.diagnosis ? draft.diagnosis.slice(0, 35) + (draft.diagnosis.length > 35 ? "..." : "") : "Saved"}` : "Pending save"}
+                                  </dd>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Assessment / Diagnosis</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {draft.diagnosis ? `✓ ${draft.diagnosis.slice(0, 40)}${draft.diagnosis.length > 40 ? "..." : ""}` : "No diagnosis recorded"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Visit Notes & Plan</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {draft.note || draft.prescription ? "✓ Documented" : "No notes recorded"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 sm:col-span-2">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Physical Hard Copies (Clinic Visit)</dt>
+                                  <dd className="mt-1 text-xs leading-5 text-neutral-600">
+                                    Prescriptions, lab request forms, and medical certificates are issued in person using physical clinic stationery.
+                                  </dd>
+                                </div>
+                              </>
+                            )}
+                          </dl>
+                        </section>
+
+                        {/* Chart status */}
+                        <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+                          <SectionHeading
+                            icon={<FaFileWaveform className="h-4 w-4" />}
+                            title="Chart status"
+                            description="Set this last — after the assessment, note, and documents are ready."
+                          />
+                          <div className="mt-5">
+                            <StatusControl
+                              value={draft.status}
+                              onChange={(status) => setDraft((current) => ({ ...current, status }))}
+                            />
+                            {activeNote?.updatedAt ? (
+                              <p className="mt-3 text-xs text-neutral-500">
+                                Last saved {new Date(activeNote.updatedAt).toLocaleString("en-US")}
+                              </p>
+                            ) : null}
+                          </div>
+                        </section>
+
+                        {/* Final save */}
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 4 : 1)}
+                            className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                          >
+                            ← Back
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => saveConsultation(activeAppointment)}
+                            disabled={isSaving}
+                            className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                          >
+                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                            {isSaving ? "Saving..." : "Save & finalize chart"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 ) : null}
+
               </div>
             </div>
           ) : (
@@ -1278,6 +1958,7 @@ function PrescriptionBuilder({
   onSave,
   onDownloadCreated,
   onPrintCreated,
+  onEmailCreated,
 }: {
   items: PrescriptionItemDraft[];
   instructions: string;
@@ -1296,6 +1977,7 @@ function PrescriptionBuilder({
   onSave: () => void;
   onDownloadCreated: () => void;
   onPrintCreated: () => void;
+  onEmailCreated?: () => void;
 }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
@@ -1419,6 +2101,665 @@ function PrescriptionBuilder({
             {createdPrescription.prescriptionNo} is ready.
           </p>
           <div className="flex flex-wrap gap-2">
+            {onEmailCreated ? (
+              <button
+                type="button"
+                onClick={onEmailCreated}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-100/70 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-200"
+              >
+                <FaEnvelope className="h-3 w-3" />
+                Email to Patient
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onDownloadCreated}
+              className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={onPrintCreated}
+              className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
+            >
+              Print
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MedicalCertificateBuilder({
+  patientMatched,
+  complaints,
+  onComplaintsChange,
+  diagnosis,
+  onDiagnosisChange,
+  recommendation,
+  onRecommendationChange,
+  releaseToPatient,
+  onReleaseChange,
+  feedback,
+  createdCertificate,
+  disabled,
+  onSave,
+  onDownloadCreated,
+  onPrintCreated,
+  onEmailCreated,
+}: {
+  patientMatched: boolean;
+  complaints: string;
+  onComplaintsChange: (v: string) => void;
+  diagnosis: string;
+  onDiagnosisChange: (v: string) => void;
+  recommendation: string;
+  onRecommendationChange: (v: string) => void;
+  releaseToPatient: boolean;
+  onReleaseChange: (v: boolean) => void;
+  feedback: string | null;
+  createdCertificate: CreatedMedicalCertificate | null;
+  disabled: boolean;
+  onSave: () => void;
+  onDownloadCreated: () => void;
+  onPrintCreated: () => void;
+  onEmailCreated?: () => void;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <SectionHeading
+        icon={<FaCertificate className="h-4 w-4" />}
+        title="Medical Certificate"
+        description="Review and edit the fields below before creating the certificate. All values are pre-filled from this consultation's chart."
+      />
+
+      {!patientMatched ? (
+        <div className="mt-5 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+          Match this visit to a patient record before saving a medical certificate.
+        </div>
+      ) : null}
+
+      <div className="mt-5 space-y-4">
+        <TextAreaField
+          label="Chief Complaints (from appointment reason — editable)"
+          value={complaints}
+          minHeight="min-h-20"
+          placeholder="Reason for consultation, chief complaints, presenting symptoms"
+          onChange={onComplaintsChange}
+        />
+        <TextAreaField
+          label="Diagnosis (from Assessment — editable)"
+          value={diagnosis}
+          minHeight="min-h-24"
+          placeholder="Clinical diagnosis or impression from Step 1"
+          onChange={onDiagnosisChange}
+        />
+        <TextAreaField
+          label="Recommendation / Care Plan (from Consultation Notes — editable)"
+          value={recommendation}
+          minHeight="min-h-28"
+          placeholder="Treatment plan, referrals, rest advice, follow-up schedule"
+          onChange={onRecommendationChange}
+        />
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+          <input
+            type="checkbox"
+            checked={releaseToPatient}
+            onChange={(event) => onReleaseChange(event.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+          />
+          Send to patient portal
+        </label>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={disabled || !patientMatched}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+        >
+          <FaCertificate className="h-4 w-4" aria-hidden="true" />
+          {disabled ? "Saving..." : "Create Medical Certificate"}
+        </button>
+      </div>
+
+      {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
+      {createdCertificate ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-emerald-900">
+            {createdCertificate.certificateNo} is ready.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {onEmailCreated ? (
+              <button
+                type="button"
+                onClick={onEmailCreated}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-100/70 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-200"
+              >
+                <FaEnvelope className="h-3 w-3" />
+                Email to Patient
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onDownloadCreated}
+              className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50"
+            >
+              Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={onPrintCreated}
+              className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
+            >
+              Print
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ChartStepNav({
+  step,
+  isVirtual,
+  hasMedCertAddon,
+  noteSaved,
+  prescriptionCreated,
+  medCertCreated,
+  labCreated,
+  onStepClick,
+}: {
+  step: number;
+  isVirtual: boolean;
+  hasMedCertAddon: boolean;
+  noteSaved: boolean;
+  prescriptionCreated: boolean;
+  medCertCreated: boolean;
+  labCreated: boolean;
+  onStepClick: (s: number) => void;
+}) {
+  const steps = isVirtual
+    ? [
+        { displayNum: 1, targetStep: 1, label: "Assessment", done: noteSaved },
+        { displayNum: 2, targetStep: 2, label: "Prescription", done: prescriptionCreated },
+        { displayNum: 3, targetStep: 3, label: "Med Cert", done: medCertCreated, addon: hasMedCertAddon },
+        { displayNum: 4, targetStep: 4, label: "Lab Request", done: labCreated },
+        { displayNum: 5, targetStep: 5, label: "Finalize", done: false },
+      ]
+    : [
+        { displayNum: 1, targetStep: 1, label: "Assessment & Notes", done: noteSaved },
+        { displayNum: 2, targetStep: 5, label: "Finalize & Save", done: false },
+      ];
+
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-1 overflow-x-auto">
+        {steps.map((s, index) => {
+          const isActive = step === s.targetStep;
+          const isDone = s.done;
+          return (
+            <Fragment key={s.targetStep}>
+              <button
+                type="button"
+                onClick={() => onStepClick(s.targetStep)}
+                className={`flex shrink-0 flex-col items-center gap-1.5 rounded-lg px-4 py-2 text-center transition ${
+                  isActive
+                    ? "bg-neutral-950 text-white"
+                    : isDone
+                      ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-950"
+                }`}
+              >
+                <span
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${
+                    isActive
+                      ? "bg-white text-neutral-950"
+                      : isDone
+                        ? "bg-emerald-500 text-white"
+                        : "bg-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  {isDone ? "✓" : s.displayNum}
+                </span>
+                <span className="text-[11px] font-semibold leading-tight">
+                  {s.label}
+                  {s.addon === false ? (
+                    <span className="ml-1 text-[10px] text-amber-600">(no add-on)</span>
+                  ) : null}
+                </span>
+              </button>
+              {index < steps.length - 1 && (
+                <div key={`divider-${s.targetStep}`} className="h-px flex-1 bg-neutral-200" />
+              )}
+            </Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StepNavButtons({
+  onBack,
+  onNext,
+  nextLabel = "Next →",
+}: {
+  onBack: () => void;
+  onNext?: () => void;
+  nextLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+      >
+        ← Back
+      </button>
+      {onNext ? (
+        <button
+          type="button"
+          onClick={onNext}
+          className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        >
+          {nextLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+const BLOOD_CHEM_OPTIONS = [
+  "Lipid Profile",
+  "Fasting Blood Sugar",
+  "Blood Uric Acid",
+  "SGOT (AST)",
+  "SGPT (ALT)",
+  "BUN",
+  "Creatinine",
+  "Electrolytes",
+  "Total protein",
+  "B1, B2",
+  "HbA1c",
+];
+
+const HEMATOLOGY_OPTIONS = [
+  "Complete Blood Count",
+  "Blood Typing",
+  "Clotting/Bleeding Time",
+  "Protime",
+  "APTT",
+];
+
+const IMMUNO_OPTIONS = [
+  "HBsAg",
+  "Hepatitis C Virus",
+  "Hepatitis A Virus",
+  "HIV",
+  "Syphilis Test",
+  "Typhoid",
+  "Dengue",
+  "H.Pylori",
+];
+
+const MICROSCOPY_OPTIONS = [
+  "Urinalysis",
+  "Fecalysis",
+  "Pregnancy Test",
+  "Fecal Occult Blood",
+];
+
+const ULTRASOUND_PREFILLS = [
+  "Whole Abdomen",
+  "Upper Abdomen",
+  "KUB",
+  "Pelvic",
+  "OB",
+  "Thyroid",
+  "Breast",
+  "Soft tissue",
+];
+
+const XRAY_PREFILLS = [
+  "PA view",
+  "AP view",
+  "Lateral view",
+  "Chest PA",
+  "KUB",
+  "Skull AP/Lat",
+  "Lumbosacral",
+  "Cervical",
+  "Both hands",
+];
+
+function LabCheckGroup({
+  title,
+  options,
+  selected,
+  disabled,
+  onToggle,
+}: {
+  title: string;
+  options: string[];
+  selected: string[];
+  disabled: boolean;
+  onToggle: (item: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{title}</p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {options.map((option) => (
+          <label key={option} className="flex cursor-pointer items-center gap-2 text-sm text-neutral-800">
+            <input
+              type="checkbox"
+              checked={selected.includes(option)}
+              onChange={() => onToggle(option)}
+              disabled={disabled}
+              className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ImagingField({
+  label,
+  value,
+  prefills,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  prefills: string[];
+  disabled: boolean;
+  onChange: (val: string) => void;
+}) {
+  function appendPrefill(chip: string) {
+    const current = value.trim();
+    if (!current) {
+      onChange(chip);
+    } else if (!current.toLowerCase().includes(chip.toLowerCase())) {
+      onChange(`${current}, ${chip}`);
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-neutral-800">
+        {label}
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          placeholder={`e.g. ${prefills[0]}`}
+          className="mt-1.5 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+        />
+      </label>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {prefills.map((chip) => (
+          <button
+            key={chip}
+            type="button"
+            disabled={disabled}
+            onClick={() => appendPrefill(chip)}
+            className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-600 transition hover:border-neutral-400 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {chip}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LaboratoryRequestBuilder({
+  patientMatched,
+  selectedBloodChem,
+  selectedHematology,
+  selectedImmuno,
+  selectedMicroscopy,
+  ultrasound,
+  xray,
+  ctScan,
+  others,
+  releaseToPatient,
+  feedback,
+  createdLabRequest,
+  disabled,
+  onToggleBloodChem,
+  onToggleHematology,
+  onToggleImmuno,
+  onToggleMicroscopy,
+  onSetUltrasound,
+  onSetXray,
+  onSetCtScan,
+  onSetOthers,
+  onReleaseChange,
+  onApplyPreset,
+  onSave,
+  onDownloadCreated,
+  onPrintCreated,
+  onEmailCreated,
+}: {
+  patientMatched: boolean;
+  selectedBloodChem: string[];
+  selectedHematology: string[];
+  selectedImmuno: string[];
+  selectedMicroscopy: string[];
+  ultrasound: string;
+  xray: string;
+  ctScan: string;
+  others: string;
+  releaseToPatient: boolean;
+  feedback: string | null;
+  createdLabRequest: CreatedLaboratoryRequest | null;
+  disabled: boolean;
+  onToggleBloodChem: (item: string) => void;
+  onToggleHematology: (item: string) => void;
+  onToggleImmuno: (item: string) => void;
+  onToggleMicroscopy: (item: string) => void;
+  onSetUltrasound: (val: string) => void;
+  onSetXray: (val: string) => void;
+  onSetCtScan: (val: string) => void;
+  onSetOthers: (val: string) => void;
+  onReleaseChange: (val: boolean) => void;
+  onApplyPreset: (preset: "routine" | "liver_renal" | "fever_infection" | "clear") => void;
+  onSave: () => void;
+  onDownloadCreated: () => void;
+  onPrintCreated: () => void;
+  onEmailCreated?: () => void;
+}) {
+  const totalSelected =
+    selectedBloodChem.length +
+    selectedHematology.length +
+    selectedImmuno.length +
+    selectedMicroscopy.length;
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <SectionHeading
+          icon={<FaFlaskVial className="h-4 w-4" />}
+          title="Laboratory / Diagnostics Request"
+          description="Select tests from each category, then specify imaging and any other diagnostics below."
+        />
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => onApplyPreset("routine")}
+            disabled={disabled}
+            className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Routine
+          </button>
+          <button
+            type="button"
+            onClick={() => onApplyPreset("liver_renal")}
+            disabled={disabled}
+            className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Liver / Renal
+          </button>
+          <button
+            type="button"
+            onClick={() => onApplyPreset("fever_infection")}
+            disabled={disabled}
+            className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Fever / Infection
+          </button>
+          <button
+            type="button"
+            onClick={() => onApplyPreset("clear")}
+            disabled={disabled}
+            className="rounded-md border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Clear all
+          </button>
+        </div>
+      </div>
+
+      {!patientMatched ? (
+        <div className="mt-5 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+          Match this visit to a patient record before saving a laboratory request.
+        </div>
+      ) : null}
+
+      {totalSelected > 0 ? (
+        <div className="mt-4 rounded-md border border-sky-100 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800">
+          {totalSelected} test{totalSelected !== 1 ? "s" : ""} selected
+        </div>
+      ) : null}
+
+      {/* Lab test checkboxes — 4 categories in a 2×2 grid */}
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <LabCheckGroup
+          title="Blood Chemistry"
+          options={BLOOD_CHEM_OPTIONS}
+          selected={selectedBloodChem}
+          disabled={disabled}
+          onToggle={onToggleBloodChem}
+        />
+        <LabCheckGroup
+          title="Hematology"
+          options={HEMATOLOGY_OPTIONS}
+          selected={selectedHematology}
+          disabled={disabled}
+          onToggle={onToggleHematology}
+        />
+        <LabCheckGroup
+          title="Immuno / Serology"
+          options={IMMUNO_OPTIONS}
+          selected={selectedImmuno}
+          disabled={disabled}
+          onToggle={onToggleImmuno}
+        />
+        <LabCheckGroup
+          title="Clinical Microscopy"
+          options={MICROSCOPY_OPTIONS}
+          selected={selectedMicroscopy}
+          disabled={disabled}
+          onToggle={onToggleMicroscopy}
+        />
+      </div>
+
+      {/* Imaging & diagnostics */}
+      <div className="mt-6 border-t border-neutral-100 pt-5">
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Imaging &amp; Diagnostics
+        </p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <ImagingField
+            label="Ultrasound"
+            value={ultrasound}
+            prefills={ULTRASOUND_PREFILLS}
+            disabled={disabled}
+            onChange={onSetUltrasound}
+          />
+          <ImagingField
+            label="X-Ray"
+            value={xray}
+            prefills={XRAY_PREFILLS}
+            disabled={disabled}
+            onChange={onSetXray}
+          />
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800">
+              CT Scan
+              <input
+                value={ctScan}
+                onChange={(e) => onSetCtScan(e.target.value)}
+                disabled={disabled}
+                placeholder="e.g. CT Scan Brain Plain"
+                className="mt-1.5 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+              />
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800">
+              Others
+              <input
+                value={others}
+                onChange={(e) => onSetOthers(e.target.value)}
+                disabled={disabled}
+                placeholder="e.g. ECG, 2D Echo, Spirometry"
+                className="mt-1.5 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Release & save row */}
+      <div className="mt-5 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+          <input
+            type="checkbox"
+            checked={releaseToPatient}
+            onChange={(e) => onReleaseChange(e.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+          />
+          Send to patient portal
+        </label>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={disabled || !patientMatched}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+        >
+          <FaFlaskVial className="h-4 w-4" aria-hidden="true" />
+          {disabled ? "Saving..." : "Create lab request"}
+        </button>
+      </div>
+
+      {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
+      {createdLabRequest ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-emerald-900">
+            {createdLabRequest.requestNo} is ready.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {onEmailCreated ? (
+              <button
+                type="button"
+                onClick={onEmailCreated}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-100/70 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-200"
+              >
+                <FaEnvelope className="h-3 w-3" />
+                Email to Patient
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onDownloadCreated}
@@ -1751,14 +3092,66 @@ function statusTone(status: ConsultationProgress | AppointmentRecord["status"]):
   return "sky";
 }
 
+function normalizePatientName(value?: string | null) {
+  if (!value) return "";
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ");
+}
+
+function normalizePatientEmail(value?: string | null) {
+  if (!value) return "";
+  return value.trim().toLowerCase();
+}
+
+function normalizePatientPhone(value?: string | null) {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("63") && digits.length >= 12) {
+    return "0" + digits.slice(2);
+  }
+  return digits;
+}
+
 function findPatientRecord(patients: PatientRecordItem[], appointment: AppointmentRecord) {
-  return patients.find((patient) => patient.email === appointment.email)
-    ?? patients.find(
-      (patient) =>
-        patient.fullName === appointment.patientName
-        && (patient.phone === appointment.phone || !patient.phone || !appointment.phone),
-    )
-    ?? null;
+  const apptEmail = normalizePatientEmail(appointment.email);
+  const apptName = normalizePatientName(appointment.patientName);
+  const apptPhone = normalizePatientPhone(appointment.phone);
+
+  // 1. Match by Email if provided
+  if (apptEmail) {
+    const byEmail = patients.find((patient) => normalizePatientEmail(patient.email) === apptEmail);
+    if (byEmail) return byEmail;
+  }
+
+  // 2. Match by Full Name (case-insensitive, whitespace & dot normalized)
+  if (apptName) {
+    if (apptPhone) {
+      const byNameAndPhone = patients.find(
+        (patient) =>
+          normalizePatientName(patient.fullName) === apptName &&
+          normalizePatientPhone(patient.phone) === apptPhone,
+      );
+      if (byNameAndPhone) return byNameAndPhone;
+    }
+
+    const byName = patients.find(
+      (patient) => normalizePatientName(patient.fullName) === apptName,
+    );
+    if (byName) return byName;
+  }
+
+  // 3. Fallback match by Phone number if non-empty
+  if (apptPhone) {
+    const byPhone = patients.find(
+      (patient) => normalizePatientPhone(patient.phone) === apptPhone,
+    );
+    if (byPhone) return byPhone;
+  }
+
+  return null;
 }
 
 function formatAppointmentType(type: AppointmentRecord["type"]) {

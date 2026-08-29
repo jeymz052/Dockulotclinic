@@ -39,6 +39,10 @@ export async function resolveVirtualConsultAmount() {
   return resolveBookingPricingAmount(BOOKING_PRICING_CODES.VIRTUAL_CONSULT);
 }
 
+export async function resolveMedicalCertificateAddonAmount() {
+  return resolveBookingPricingAmount(BOOKING_PRICING_CODES.MEDICAL_CERTIFICATE_ADDON);
+}
+
 export async function resolveProcedureReservationAmount() {
   return resolveBookingPricingAmount(BOOKING_PRICING_CODES.PROCEDURE_RESERVATION);
 }

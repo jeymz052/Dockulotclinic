@@ -1,25 +1,78 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { FaArrowUpRightFromSquare, FaCheck, FaFileMedical, FaFileSignature, FaFolderOpen } from "react-icons/fa6";
-import { useAppointments } from "@/src/components/appointments/useAppointments";
+import { useEffect, useMemo, useState } from "react";
 import { useRole } from "@/src/components/layout/RoleProvider";
-import { getAppointmentPrimaryLabel, isProcedureServiceTitle } from "@/src/lib/appointment-context";
+import type { PatientRecordItem } from "@/src/lib/clinic";
 import { resolveAftercareGuideForService } from "@/src/lib/healthcare-content";
-import ProcedureConsentRegister from "@/src/components/appointments/ProcedureConsentRegister";
+import {
+  MedicalDocumentsBrowser,
+  type MedicalDocumentItem,
+} from "@/src/components/medical-documents/MedicalDocumentsBrowser";
 
 type PatientFile = {
   id: string;
+  patient_id: string;
   appointment_id: string | null;
   file_name: string;
   file_url: string;
   file_type: string | null;
+  document_metadata: {
+    certificate_no?: string;
+    complaints?: string;
+    diagnosis?: string;
+    recommendation?: string;
+    note?: string | null;
+    doctor_name?: string | null;
+    doctor_specialty?: string | null;
+    doctor_license_no?: string | null;
+    patient_name?: string | null;
+    patient_dob?: string | null;
+    patient_gender?: string | null;
+  } | null;
   created_at: string;
+};
+
+type PrescriptionItem = {
+  id?: string;
+  medicine_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  duration: string | null;
+  instructions: string | null;
+  sort_order?: number | null;
+};
+
+type Prescription = {
+  id: string;
+  prescription_no: string;
+  patient_id: string;
+  doctor_id: string;
+  general_instructions: string | null;
+  follow_up_date: string | null;
+  released_to_patient: boolean;
+  created_at: string;
+  prescription_items?: PrescriptionItem[];
+  diagnoses?: {
+    diagnosis_text: string;
+    treatment_plan: string | null;
+    follow_up_date: string | null;
+  } | null;
+  doctors?: {
+    specialty?: string | null;
+    license_no?: string | null;
+    profiles?: { full_name?: string | null } | null;
+  } | null;
+  doctor_signature_data_url?: string | null;
+  patients?: {
+    dob?: string | null;
+    gender?: string | null;
+    profiles?: { full_name?: string | null; email?: string | null } | null;
+  } | null;
 };
 
 type ProcedureConsent = {
   id: string;
+  patient_id: string;
   appointment_id: string | null;
   procedure_name: string;
   patient_name: string;
@@ -38,6 +91,34 @@ type ProcedureConsent = {
   signed_at: string;
 };
 
+function formatDate(value: string | null | undefined) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-US");
+}
+
+function parseTime(value: string | null | undefined) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function isPdfUrl(value: string) {
+  return /^data:application\/pdf/i.test(value) || /\.pdf(\?|#|$)/i.test(value);
+}
+
+function isImageUrl(value: string) {
+  return /^data:image\//i.test(value) || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(value);
+}
+
+function readSnapshotText(snapshot: Record<string, unknown> | null | undefined, key: string) {
+  const value = snapshot?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
+}
+
 const FALLBACK_CONSENT_POINTS = [
   "The procedure, purpose, expected benefits, possible risks, side effects, complications, and possible alternatives were explained in a language I understand.",
   "I understand that results vary and that no exact result, cosmetic outcome, or medical response can be guaranteed.",
@@ -46,172 +127,12 @@ const FALLBACK_CONSENT_POINTS = [
   "I voluntarily authorize Doc Kulot, Family Medicine Specialist and Aesthetic Medicine, to perform the selected procedure.",
 ];
 
-function formatDate(value: string | null | undefined, options?: Intl.DateTimeFormatOptions) {
-  if (!value) return "";
-  return new Date(value).toLocaleString("en-US", options);
-}
-
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : [];
-}
-
-function readSnapshotText(snapshot: Record<string, unknown> | null | undefined, key: string) {
-  const value = snapshot?.[key];
-  return typeof value === "string" ? value : "";
-}
-
-function SignatureBlock({
-  label,
-  name,
-  signature,
-  signedAt,
-}: {
-  label: string;
-  name: string | null;
-  signature: string | null;
-  signedAt: string | null;
-}) {
-  return (
-    <div className="border border-neutral-300 bg-white p-3">
-      <h4 className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-black">{label}</h4>
-      {signature ? (
-        <img src={signature} alt={`${label} signature`} className="mt-2 h-20 w-full rounded-md border border-neutral-300 bg-white object-contain object-left" />
-      ) : (
-        <div className="mt-2 flex h-20 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-neutral-50 text-xs font-semibold text-neutral-500">Pending signature</div>
-      )}
-      <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Printed Name: {name || "Pending"}</p>
-      <p className="mt-2 border-b border-neutral-300 pb-1 text-[0.74rem] font-semibold text-neutral-800">Date: {formatDate(signedAt) || "Pending"}</p>
-    </div>
-  );
-}
-
-function ConsentQueueItem({
-  consent,
-  selected,
-  onSelect,
-}: {
-  consent: ProcedureConsent;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const completedSignatures = [consent.patient_signature, consent.witness_signature, consent.physician_signature].filter(Boolean).length;
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full rounded-lg border p-3 text-left transition ${selected ? "border-black bg-black text-white" : "border-neutral-300 bg-white text-black hover:border-black hover:bg-neutral-50"}`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`truncate text-sm font-black ${selected ? "text-white" : "text-black"}`}>{consent.procedure_name}</p>
-          <p className={`mt-1 text-xs font-semibold ${selected ? "text-neutral-200" : "text-neutral-600"}`}>Signed {formatDate(consent.signed_at, { month: "short", day: "numeric", year: "numeric" })}</p>
-        </div>
-        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[0.62rem] font-black uppercase tracking-[0.08em] ${selected ? "border-white/40 text-white" : "border-neutral-300 text-neutral-700"}`}>
-          {completedSignatures}/3
-        </span>
-      </div>
-      <p className={`mt-3 text-[0.68rem] font-black uppercase tracking-[0.1em] ${selected ? "text-neutral-200" : "text-neutral-600"}`}>
-        {consent.aftercare_acknowledged ? "Aftercare acknowledged" : "Aftercare pending"}
-      </p>
-    </button>
-  );
-}
-
-function PatientConsentDocument({ consent }: { consent: ProcedureConsent }) {
-  const snapshot = consent.consent_snapshot ?? {};
-  const consentTitle = readSnapshotText(snapshot, "consentTitle") || "Patient Consent Form";
-  const consentSummary = readSnapshotText(snapshot, "consentSummary") || "Procedure patients must complete and sign the consent form before treatment.";
-  const consentPoints = asStringArray(snapshot.consentBullets).length ? asStringArray(snapshot.consentBullets) : FALLBACK_CONSENT_POINTS;
-  const signatureName = readSnapshotText(snapshot, "signatureName") || consent.patient_name;
-
-  return (
-    <article className="rounded-lg border border-neutral-300 bg-white shadow-sm">
-      <div className="border-b border-neutral-300 p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-[0.68rem] font-black uppercase tracking-[0.24em] text-neutral-600">Signed Procedure Consent</p>
-            <h3 className="mt-1 text-xl font-black text-black">{consent.procedure_name}</h3>
-            <p className="mt-1 text-sm font-semibold text-neutral-600">Signed {formatDate(consent.signed_at)}</p>
-          </div>
-          <span className="inline-flex w-max items-center gap-2 rounded-full border border-black bg-black px-3 py-1.5 text-xs font-black uppercase tracking-[0.1em] text-white">
-            <FaCheck className="h-3 w-3" />
-            Patient signed
-          </span>
-        </div>
-      </div>
-
-      <div className="p-4 sm:p-6">
-        <div className="mx-auto max-w-3xl border border-neutral-400 bg-white p-5 text-black sm:p-7">
-          <div className="border-b-2 border-black pb-4 text-center">
-            <p className="text-2xl font-black uppercase tracking-[0.08em]">{consentTitle}</p>
-            <p className="mt-2 text-[0.72rem] font-black uppercase tracking-[0.18em] text-neutral-700">Informed consent for medical / aesthetic procedure</p>
-          </div>
-
-          <section className="mt-5 grid gap-3 border-b border-neutral-300 pb-5 text-[0.82rem] leading-6 text-neutral-800 sm:grid-cols-2">
-            <p><span className="font-black text-black">Patient:</span> {consent.patient_name}</p>
-            <p><span className="font-black text-black">Procedure:</span> {consent.procedure_name}</p>
-            <p><span className="font-black text-black">Date signed:</span> {formatDate(consent.signed_at, { month: "short", day: "numeric", year: "numeric" })}</p>
-            <p><span className="font-black text-black">Aftercare:</span> {consent.aftercare_guide_title ?? "Not attached"}</p>
-          </section>
-
-          <section className="mt-5">
-            <h4 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Consent Statement</h4>
-            <p className="mt-3 text-[0.84rem] leading-6 text-neutral-800">
-              I, <span className="font-black text-black">{consent.patient_name}</span>, voluntarily give consent to undergo <span className="font-black text-black">{consent.procedure_name}</span> to be performed by Doc Kulot, Family Medicine Specialist and Aesthetic Medicine.
-            </p>
-            <p className="mt-3 text-[0.84rem] leading-6 text-neutral-800">{consentSummary}</p>
-          </section>
-
-          <section className="mt-5">
-            <h4 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Patient Acknowledgements</h4>
-            <ol className="mt-3 space-y-2 text-[0.82rem] leading-6 text-neutral-800">
-              {consentPoints.map((point, index) => (
-                <li key={`${point}-${index}`} className="grid grid-cols-[1.4rem,1fr] gap-2">
-                  <span className="font-black text-black">{index + 1}.</span>
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {consent.aftercare_acknowledged ? (
-            <section className="mt-5 border border-neutral-300 p-3">
-              <h4 className="text-[0.76rem] font-black uppercase tracking-[0.18em] text-black">Aftercare Acknowledgement</h4>
-              <p className="mt-2 text-[0.82rem] leading-6 text-neutral-800">I reviewed and acknowledged the procedure-specific aftercare guide: <span className="font-black text-black">{consent.aftercare_guide_title ?? "Procedure aftercare"}</span>.</p>
-            </section>
-          ) : null}
-
-          <section className="mt-6 grid gap-3 border-t-2 border-black pt-5 lg:grid-cols-3">
-            <SignatureBlock label="Patient Signature" name={signatureName} signature={consent.patient_signature} signedAt={consent.signed_at} />
-            <SignatureBlock label="Witness Signature" name={consent.witness_name} signature={consent.witness_signature} signedAt={consent.witness_signed_at} />
-            <SignatureBlock label="Physician Signature" name={consent.physician_name} signature={consent.physician_signature} signedAt={consent.physician_signed_at} />
-          </section>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <a href={consent.consent_form_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-black hover:text-black">
-              Open original image
-              <FaArrowUpRightFromSquare className="h-3.5 w-3.5" />
-            </a>
-            {consent.aftercare_image_url ? (
-              <a href={consent.aftercare_image_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
-                Open aftercare image
-                <FaArrowUpRightFromSquare className="h-3.5 w-3.5" />
-              </a>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-export default function PatientFilesPage() {
+export default function MedicalDocumentsPage() {
   const { accessToken, role } = useRole();
-  const { appointments, isLoading: isAppointmentsLoading } = useAppointments();
   const [files, setFiles] = useState<PatientFile[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [consents, setConsents] = useState<ProcedureConsent[]>([]);
-  const [selectedConsentId, setSelectedConsentId] = useState<string | null>(null);
+  const [patients, setPatients] = useState<PatientRecordItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -222,19 +143,39 @@ export default function PatientFilesPage() {
     async function load() {
       try {
         setIsLoading(true);
-        const res = await fetch("/api/v2/patient-files", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        const payload = (await res.json().catch(() => ({}))) as { files?: PatientFile[]; message?: string };
-        if (!res.ok) throw new Error(payload.message ?? "Unable to load medical files.");
-        if (active) {
-          setFiles(payload.files ?? []);
-          setError(null);
-        }
+        const headers = { Authorization: `Bearer ${accessToken}` };
+        const [filesRes, prescriptionsRes, consentsRes, patientsRes] = await Promise.all([
+          fetch("/api/v2/patient-files", { cache: "no-store", headers }),
+          fetch("/api/v2/prescriptions", { cache: "no-store", headers }),
+          fetch("/api/v2/procedure-consents", { cache: "no-store", headers }),
+          role === "PATIENT" ? Promise.resolve(null) : fetch("/api/patient-records", { cache: "no-store", headers }),
+        ]);
+
+        const filesPayload = (await filesRes.json().catch(() => ({}))) as { files?: PatientFile[]; message?: string };
+        const prescriptionsPayload = (await prescriptionsRes.json().catch(() => ({}))) as { prescriptions?: Prescription[]; message?: string };
+        const consentsPayload = (await consentsRes.json().catch(() => ({}))) as { consents?: ProcedureConsent[]; message?: string };
+        const patientsPayload = patientsRes ? (await patientsRes.json().catch(() => ({}))) as { patients?: PatientRecordItem[] } : null;
+
+        if (!filesRes.ok) throw new Error(filesPayload.message ?? "Unable to load medical files.");
+        if (!prescriptionsRes.ok) throw new Error(prescriptionsPayload.message ?? "Unable to load prescriptions.");
+        if (!consentsRes.ok) throw new Error(consentsPayload.message ?? "Unable to load consent records.");
+
+        if (!active) return;
+        setFiles(filesPayload.files ?? []);
+        setPrescriptions(
+          (prescriptionsPayload.prescriptions ?? []).map((item) => ({
+            ...item,
+            prescription_items: [...(item.prescription_items ?? [])].sort(
+              (left, right) => (left.sort_order ?? 0) - (right.sort_order ?? 0),
+            ),
+          })),
+        );
+        setConsents(consentsPayload.consents ?? []);
+        setPatients(patientsPayload?.patients?.filter((patient) => patient.status === "Active") ?? []);
+        setError(null);
       } catch (loadError) {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load medical files.");
+          setError(loadError instanceof Error ? loadError.message : "Unable to load medical documents.");
         }
       } finally {
         if (active) setIsLoading(false);
@@ -247,183 +188,280 @@ export default function PatientFilesPage() {
     };
   }, [accessToken]);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    let active = true;
+  const documentItems = useMemo<MedicalDocumentItem[]>(() => {
+    const isPatient = role === "PATIENT";
 
-    async function loadConsents() {
-      try {
-        const res = await fetch("/api/v2/procedure-consents", {
-          cache: "no-store",
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        const payload = (await res.json().catch(() => ({}))) as { consents?: ProcedureConsent[] };
-        if (active && res.ok) {
-          const nextConsents = payload.consents ?? [];
-          setConsents(nextConsents);
-          setSelectedConsentId((current) => current && nextConsents.some((consent) => consent.id === current) ? current : nextConsents[0]?.id ?? null);
-        }
-      } catch {
-        if (active) setConsents([]);
-      }
-    }
+    const prescriptionItems = prescriptions.map<MedicalDocumentItem>((prescription) => {
+      const doctorName = prescription.doctors?.profiles?.full_name ?? "Doctor not recorded";
+      const patientName = prescription.patients?.profiles?.full_name ?? "Patient not recorded";
+      const summary =
+        prescription.diagnoses?.diagnosis_text
+        ?? prescription.general_instructions
+        ?? "No diagnosis recorded.";
+      const bullets = (prescription.prescription_items ?? [])
+        .map((item) => {
+          const parts = [item.medicine_name, item.dosage, item.frequency, item.duration].filter(
+            (part): part is string => Boolean(part && part.trim()),
+          );
+          return parts.join(" • ");
+        })
+        .filter((item) => item.trim().length > 0);
 
-    void loadConsents();
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
+      return {
+        id: prescription.id,
+        patientId: prescription.patient_id,
+        category: "Prescriptions",
+        kind: "Prescription",
+        title: prescription.prescription_no,
+        subtitle: isPatient ? doctorName : patientName,
+        dateLabel: formatDate(prescription.created_at),
+        sortDate: parseTime(prescription.created_at),
+        summary,
+        details: [
+          { label: "Patient", value: patientName },
+          { label: "Doctor", value: doctorName },
+          { label: "Follow-up", value: prescription.follow_up_date || "Not set" },
+          { label: "Status", value: prescription.released_to_patient ? "Released" : "Pending release" },
+        ],
+        prescriptionNo: prescription.prescription_no,
+        prescriptionPatientName: patientName,
+        prescriptionPatientDob: prescription.patients?.dob ?? null,
+        prescriptionPatientGender: prescription.patients?.gender ?? null,
+        prescriptionDoctorName: doctorName,
+        prescriptionDoctorSpecialty: prescription.doctors?.specialty ?? null,
+        prescriptionDoctorLicenseNo: prescription.doctors?.license_no ?? null,
+        prescriptionDoctorSignatureDataUrl: prescription.doctor_signature_data_url ?? null,
+        prescriptionCreatedAt: prescription.created_at,
+        prescriptionGeneralInstructions: prescription.general_instructions,
+        prescriptionFollowUpDate: prescription.follow_up_date,
+        prescriptionItems: prescription.prescription_items ?? [],
+        bullets,
+        previewType: "pdf",
+        previewUrl: `/api/v2/prescriptions/${prescription.id}/pdf`,
+        openUrl: `/api/v2/prescriptions/${prescription.id}/pdf`,
+        downloadUrl: `/api/v2/prescriptions/${prescription.id}/pdf`,
+        fileName: `${prescription.prescription_no}.pdf`,
+        badge: prescription.released_to_patient ? "Released" : "Draft",
+      };
+    });
 
-  const aftercareItems = appointments
-    .filter((appointment) => appointment.status === "Completed")
-    .map((appointment) => {
-      const service = getAppointmentPrimaryLabel(appointment.reason, appointment.type);
-      if (!isProcedureServiceTitle(service)) return null;
-      const guide = resolveAftercareGuideForService(service);
-      if (!guide) return null;
-      return { appointment, service, guide };
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null);
-  const selectedConsent =
-    consents.find((consent) => consent.id === selectedConsentId)
-    ?? consents[0]
-    ?? null;
+    const certificateItems = files
+      .filter((file) => file.file_type === "Medical Certificate")
+      .map<MedicalDocumentItem>((file) => {
+        const docDoctorName = file.document_metadata?.doctor_name || "Dr. Fatimah Al-Zahra T. Ditti";
+        return {
+          id: file.id,
+          patientId: file.patient_id,
+          category: "Certificates",
+          kind: "Medical Certificate",
+          title: file.file_name,
+          subtitle: isPatient ? "Released certificate" : "Patient certificate",
+          dateLabel: formatDate(file.created_at),
+          sortDate: parseTime(file.created_at),
+          summary: file.document_metadata?.complaints || "Medical certificate issued by the clinic.",
+          note: file.document_metadata?.recommendation || file.document_metadata?.note || null,
+          details: [
+            { label: "Patient", value: file.document_metadata?.patient_name ?? (isPatient ? "You" : "Patient record") },
+            { label: "Diagnosis", value: file.document_metadata?.diagnosis ?? "Not recorded" },
+            { label: "Recommendation", value: file.document_metadata?.recommendation ?? "Not recorded" },
+          ],
+          prescriptionPatientName: file.document_metadata?.patient_name ?? null,
+          prescriptionPatientDob: file.document_metadata?.patient_dob ?? null,
+          prescriptionPatientGender: file.document_metadata?.patient_gender ?? null,
+          prescriptionDoctorName: docDoctorName,
+          prescriptionDoctorSpecialty: file.document_metadata?.doctor_specialty,
+          prescriptionDoctorLicenseNo: file.document_metadata?.doctor_license_no,
+          prescriptionCreatedAt: file.created_at,
+          previewType: "pdf",
+          previewUrl: `/api/v2/medical-certificates/${file.id}/pdf`,
+          openUrl: `/api/v2/medical-certificates/${file.id}/pdf`,
+          downloadUrl: `/api/v2/medical-certificates/${file.id}/pdf`,
+          fileName: file.file_name,
+          badge: "Certificate",
+        };
+      });
 
-  if (role !== "PATIENT") return <ProcedureConsentRegister />;
+    const consentItems = consents.map<MedicalDocumentItem>((consent) => {
+      const snapshot = consent.consent_snapshot ?? {};
+      const consentPoints = asStringArray(snapshot.consentBullets);
+      const consentSummary = readSnapshotText(snapshot, "consentSummary") || "Procedure consent signed for the selected treatment.";
+      const pdfUrl = `/api/v2/procedure-consents/${consent.id}/pdf`;
+
+      return {
+        id: consent.id,
+        patientId: consent.patient_id,
+        category: "Consent Forms",
+        kind: "Signed Consent Form",
+        title: consent.procedure_name,
+        subtitle: isPatient ? consent.patient_name : consent.patient_name,
+        dateLabel: formatDate(consent.signed_at),
+        sortDate: parseTime(consent.signed_at),
+        summary: consentSummary,
+        consentPatientName: consent.patient_name,
+        consentProcedureName: consent.procedure_name,
+        consentSignedAt: consent.signed_at,
+        consentSnapshot: snapshot,
+        consentPatientSignature: consent.patient_signature,
+        consentWitnessName: consent.witness_name,
+        consentWitnessSignature: consent.witness_signature,
+        consentWitnessSignedAt: consent.witness_signed_at,
+        consentPhysicianName: consent.physician_name,
+        consentPhysicianSignature: consent.physician_signature,
+        consentPhysicianSignedAt: consent.physician_signed_at,
+        consentAftercareAcknowledged: consent.aftercare_acknowledged,
+        consentAftercareGuideTitle: consent.aftercare_guide_title,
+        details: [
+          { label: "Patient", value: consent.patient_name },
+          { label: "Signed", value: formatDate(consent.signed_at) },
+          { label: "Aftercare", value: consent.aftercare_acknowledged ? "Acknowledged" : "Pending" },
+        ],
+        bullets: consentPoints.length ? consentPoints : FALLBACK_CONSENT_POINTS,
+        previewType: "pdf",
+        previewUrl: pdfUrl,
+        openUrl: pdfUrl,
+        downloadUrl: pdfUrl,
+        fileName: `${consent.procedure_name.replace(/[^\w.-]+/g, "_")}_Consent_Form.pdf`,
+        badge: consent.aftercare_acknowledged ? "Aftercare acknowledged" : "Aftercare pending",
+      };
+    });
+
+    const aftercareItems = consents
+      .filter((consent) => consent.aftercare_acknowledged || Boolean(resolveAftercareGuideForService(consent.procedure_name)))
+      .map<MedicalDocumentItem>((consent) => {
+        const guide = resolveAftercareGuideForService(consent.procedure_name);
+        const summary = guide?.summary || consent.aftercare_guide_title || "Aftercare instructions provided by the clinic.";
+        const bullets = guide?.bullets ?? [];
+        const aftercarePdfUrl = `/api/v2/procedure-consents/${consent.id}/aftercare-pdf`;
+        return {
+          id: `aftercare-${consent.id}`,
+          patientId: consent.patient_id,
+          category: "Aftercare",
+          kind: "Post-procedure aftercare",
+          title: consent.aftercare_guide_title || consent.procedure_name,
+          subtitle: consent.patient_name,
+          dateLabel: formatDate(consent.signed_at),
+          sortDate: parseTime(consent.signed_at),
+          summary,
+          note: consent.aftercare_acknowledged
+            ? "Real aftercare instructions acknowledged by the patient."
+            : "Real aftercare instructions linked to the procedure.",
+          details: [
+            { label: "Patient", value: consent.patient_name },
+            { label: "Procedure", value: consent.procedure_name },
+          ],
+          bullets,
+          previewType: "text",
+          previewUrl: aftercarePdfUrl,
+          openUrl: aftercarePdfUrl,
+          downloadUrl: aftercarePdfUrl,
+          fileName: `${(consent.aftercare_guide_title || consent.procedure_name).replace(/[^\w.-]+/g, "_")}_Aftercare_Instructions.pdf`,
+          badge: consent.aftercare_acknowledged ? "Acknowledged" : "Pending",
+        };
+      });
+
+    const laboratoryItems = files
+      .filter((file) => file.file_type === "Laboratory Request" || file.file_type === "Lab Request")
+      .map<MedicalDocumentItem>((file) => {
+        const meta = file.document_metadata as Record<string, unknown> | null;
+        const docDoctorName = (meta?.doctor_name as string) || "Dr. Fatimah Al-Zahra T. Ditti";
+        const patientName = (meta?.patient_name as string) ?? (isPatient ? "You" : "Patient record");
+        const requestNo = (meta?.request_no as string) || file.file_name.replace(/\.pdf$/i, "");
+        const allTests = Array.isArray(meta?.selected_tests) ? (meta.selected_tests as string[]) : [];
+        const ultrasound = meta?.ultrasound as string | undefined;
+        const xray = meta?.xray as string | undefined;
+        const ctScan = meta?.ct_scan as string | undefined;
+        const others = meta?.others as string | undefined;
+        
+        const summaryParts: string[] = [];
+        if (allTests.length > 0) summaryParts.push(`${allTests.length} tests selected (${allTests.slice(0, 3).join(", ")}${allTests.length > 3 ? "..." : ""})`);
+        if (ultrasound) summaryParts.push(`US: ${ultrasound}`);
+        if (xray) summaryParts.push(`X-Ray: ${xray}`);
+        if (ctScan) summaryParts.push(`CT: ${ctScan}`);
+        if (others) summaryParts.push(`Others: ${others}`);
+
+        return {
+          id: file.id,
+          patientId: file.patient_id,
+          category: "Lab Requests",
+          kind: "Laboratory Request",
+          title: requestNo,
+          subtitle: isPatient ? "Laboratory & Diagnostic Request" : patientName,
+          dateLabel: formatDate(file.created_at),
+          sortDate: parseTime(file.created_at),
+          summary: summaryParts.join(" • ") || "Laboratory request issued by FamMed Clinic.",
+          note: others || (meta?.notes as string) || null,
+          details: [
+            { label: "Patient", value: patientName },
+            { label: "Doctor", value: docDoctorName },
+            { label: "Tests count", value: allTests.length.toString() },
+            { label: "Status", value: "Released" },
+          ],
+          labRequestNo: requestNo,
+          labPatientName: patientName,
+          labPatientDob: (meta?.patient_dob as string) ?? null,
+          labPatientGender: (meta?.patient_gender as string) ?? null,
+          labPatientAddress: (meta?.patient_address as string) ?? null,
+          labDoctorName: docDoctorName,
+          labDoctorSpecialty: (meta?.doctor_specialty as string) ?? null,
+          labDoctorLicenseNo: (meta?.doctor_license_no as string) ?? null,
+          labCreatedAt: file.created_at,
+          labSelectedTests: allTests,
+          labBloodChemistry: Array.isArray(meta?.blood_chemistry) ? (meta.blood_chemistry as string[]) : [],
+          labHematology: Array.isArray(meta?.hematology) ? (meta.hematology as string[]) : [],
+          labImmunoSerology: Array.isArray(meta?.immuno_serology) ? (meta.immuno_serology as string[]) : [],
+          labClinicalMicroscopy: Array.isArray(meta?.clinical_microscopy) ? (meta.clinical_microscopy as string[]) : [],
+          labUltrasound: ultrasound ?? null,
+          labXray: xray ?? null,
+          labCtScan: ctScan ?? null,
+          labOthers: others ?? null,
+          labNotes: (meta?.notes as string) ?? null,
+          previewType: "pdf",
+          previewUrl: `/api/v2/laboratory-requests/${file.id}/pdf`,
+          openUrl: `/api/v2/laboratory-requests/${file.id}/pdf`,
+          downloadUrl: `/api/v2/laboratory-requests/${file.id}/pdf`,
+          fileName: file.file_name,
+          badge: "Lab Request",
+        };
+      });
+
+    return [...prescriptionItems, ...certificateItems, ...laboratoryItems, ...consentItems, ...aftercareItems].sort(
+      (left, right) => Number(right.sortDate ?? 0) - Number(left.sortDate ?? 0),
+    );
+  }, [files, prescriptions, consents, role]);
+
+  const isPatient = role === "PATIENT";
+  const title = isPatient ? "Your medical documents" : "Clinic medical documents";
+  const description = isPatient
+    ? "Browse your released prescriptions, medical certificates, signed consent forms, and aftercare in one place."
+    : "Browse all patient medical documents released by the clinic, including prescriptions, medical certificates, consent forms, and aftercare.";
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[2rem] border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Patient Portal</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">Medical Documents</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-          View files the clinic has released to your portal, including signed procedure consents, aftercare, and visit attachments.
+      <section className="rounded-4xl border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">
+          {isPatient ? "Patient Portal" : "Clinic Workspace"}
         </p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">{title}</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
       </section>
-
-      <div className="flex flex-wrap gap-3">
-        <Link href="/consultations/history" className="rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50">
-          Consultation History
-        </Link>
-        <Link href="/prescriptions" className="rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50">
-          Prescriptions
-        </Link>
-      </div>
 
       {error ? <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div> : null}
 
-      {isAppointmentsLoading ? (
-        <div className="h-32 animate-pulse rounded-3xl bg-slate-100" />
-      ) : aftercareItems.length ? (
-        <section className="space-y-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-700">Post Procedure Care</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">Aftercare Guides</h2>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {aftercareItems.map(({ appointment, service, guide }) => (
-              <article key={`${appointment.id}-${guide.title}`} className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
-                <div className="grid gap-0 sm:grid-cols-[140px_1fr]">
-                  <img src={guide.image} alt={guide.title} className="h-44 w-full object-cover sm:h-full" />
-                  <div className="p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700">{service}</p>
-                    <h3 className="mt-1 text-base font-black text-slate-950">{guide.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{guide.summary}</p>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Completed {new Date(`${appointment.date}T00:00:00`).toLocaleDateString("en-US")}
-                    </p>
-                    <a
-                      href={guide.image}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
-                    >
-                      Open Guide
-                      <FaArrowUpRightFromSquare className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {consents.length ? (
-        <section className="space-y-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-700">Procedure Consent</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">Signed Consent Records</h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Select a consent record to view the filled consent form, signatures, and aftercare acknowledgement.</p>
-          </div>
-          <div className="grid gap-5 lg:grid-cols-[18rem,minmax(0,1fr)]">
-            <aside className="h-fit rounded-lg border border-neutral-300 bg-neutral-50 p-3 lg:sticky lg:top-24">
-              <div className="flex items-center justify-between gap-3 px-1 pb-3">
-                <div>
-                  <h3 className="text-sm font-black text-black">Consent Queue</h3>
-                  <p className="mt-1 text-xs font-semibold text-neutral-500">Only one form opens at a time.</p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-2.5 py-1 text-[0.68rem] font-black text-neutral-700">
-                  <FaFileSignature className="h-3 w-3" />
-                  {consents.length}
-                </span>
-              </div>
-              <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
-                {consents.map((consent) => (
-                  <ConsentQueueItem
-                    key={consent.id}
-                    consent={consent}
-                    selected={selectedConsent?.id === consent.id}
-                    onSelect={() => setSelectedConsentId(consent.id)}
-                  />
-                ))}
-              </div>
-            </aside>
-
-            {selectedConsent ? <PatientConsentDocument consent={selectedConsent} /> : null}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-4">
-        {isLoading ? (
-          <div className="h-32 animate-pulse rounded-3xl bg-slate-100" />
-        ) : files.length ? (
-          files.map((file) => (
-            <article key={file.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-black">
-                    <FaFileMedical className="text-neutral-400" />
-                    {file.file_name}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {file.file_type || "Medical document"} • Uploaded {new Date(file.created_at).toLocaleString("en-US")}
-                  </p>
-                </div>
-                <a
-                  href={file.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition hover:bg-black"
-                >
-                  Open File
-                  <FaArrowUpRightFromSquare className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            </article>
-          ))
-        ) : (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white">
-              <FaFolderOpen className="text-xl text-neutral-400" />
-            </div>
-            <p className="mt-4 font-semibold text-slate-900">No medical files available yet</p>
-            <p className="mt-2">Files will appear here once clinic staff uploads and releases them to your portal.</p>
-          </div>
-        )}
-      </section>
+      <MedicalDocumentsBrowser
+        title={title}
+        description={description}
+        items={documentItems}
+        patients={patients.map((patient) => ({
+          id: patient.id,
+          name: patient.fullName,
+          documentCount: documentItems.filter((item) => item.patientId === patient.id).length,
+          latestDateLabel: documentItems.find((item) => item.patientId === patient.id)?.dateLabel,
+        }))}
+        loading={isLoading}
+        emptyTitle="No medical documents available yet"
+        emptyDescription={isPatient ? "Files and records will appear here once the clinic releases them to your portal." : "No documents have been recorded yet."}
+        note={isPatient ? "Patient-visible records only." : "Clinic-wide record browser for patient documents."}
+      />
     </div>
   );
 }
-

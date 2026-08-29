@@ -36,9 +36,9 @@ const CONSENT_POINTS = [
   "I confirm that all procedure/s to be done on me has been fully explained to me in a language that I understand, including the nature and purpose, expected benefits, possible risks, side effects, complications and possible alternatives, including doing nothing.",
   "I understand the intended outcome and that results may vary from person to person. No guarantees or promises have been made to me regarding specific results.",
   "I understand that while every effort will be made to ensure safety and the best possible care, no medical procedure is 100% risk-free.",
-  "I am aware that the clinic and the attending physician, Doc Kulot, do not take responsibility for any uneventful incident, complication, or dissatisfaction that may occur despite proper care.",
-  "I have been given the opportunity to ask questions. All procedures, benefits, risks, possible side effects, alternatives, and expected outcomes were explained to me.",
-  "I am signing this consent form of my own free will.",
+  "I am aware that the clinic and the attending physician (Doc Kulot) do not take responsibility for any uneventful incident, complication, or dissatisfaction that may occur despite proper care.",
+  "I hereby consent willingly and voluntarily to undergo the above-stated procedure(s). I will not hold the clinic, its staff, or the attending physician liable for any adverse outcome, and I will not initiate any legal action or claim against them.",
+  "I understand that I may withdraw my consent at any time prior to the procedure. Once the procedure has started, I understand that I may not be able to withdraw my consent.",
 ];
 
 function formatToday() {
@@ -278,7 +278,10 @@ export function ProcedureConsentModal({
           {activeTab === "consent" ? (
             <article className="mx-auto rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
               <div className="text-center">
-                <p className="font-serif text-4xl font-black uppercase tracking-[0.06em] text-black">Patient Consent</p>
+                <p className="text-sm font-black tracking-widest text-neutral-900">Doc Kulot</p>
+                <p className="text-[0.62rem] font-black uppercase tracking-[0.2em] text-neutral-600">Family Medicine Specialist</p>
+                <p className="text-[0.58rem] font-semibold tracking-widest text-neutral-500">— AESTHETIC MEDICINE —</p>
+                <p className="mt-2 font-serif text-3xl font-black uppercase tracking-[0.06em] text-black sm:text-4xl">Patient Consent</p>
                 <p className="mt-1 text-[0.68rem] font-black uppercase tracking-[0.2em] text-neutral-700">Informed consent for medical / aesthetic procedure(s)</p>
               </div>
 
@@ -308,6 +311,21 @@ export function ProcedureConsentModal({
                   </div>
                 ))}
               </div>
+
+              {/* Disclaimer Block from reference image */}
+              <section className="mt-4 rounded-lg border border-neutral-300 bg-neutral-50 p-3.5">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded bg-neutral-900 text-xs font-black text-white">
+                    +
+                  </div>
+                  <div>
+                    <h3 className="text-[0.72rem] font-black uppercase tracking-[0.16em] text-neutral-950">Disclaimer</h3>
+                    <p className="mt-1 text-[0.74rem] leading-5 text-neutral-700">
+                      By signing this form, I acknowledge that I have read, understood, and had the opportunity to ask questions. All procedures, benefits, risks, possible side effects, alternatives, and expected outcomes were explained to me. I am signing this consent form of my own free will.
+                    </p>
+                  </div>
+                </div>
+              </section>
 
               <section className="mt-4 overflow-hidden rounded-lg border border-neutral-300 bg-white">
                 <div className="grid sm:grid-cols-2">

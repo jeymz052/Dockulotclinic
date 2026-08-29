@@ -26,6 +26,22 @@ function normalizeText(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+async function assertVirtualConsultationAppointment(supabase: ReturnType<typeof getSupabaseAdmin>, appointmentId: string | null) {
+  if (!appointmentId) {
+    throw new HttpError(400, "Prescriptions are only available for virtual consultations.");
+  }
+
+  const { data: appointment, error } = await supabase
+    .from("appointments")
+    .select("appointment_type")
+    .eq("id", appointmentId)
+    .single<{ appointment_type: string }>();
+  if (error) throw error;
+  if (appointment.appointment_type !== "Online") {
+    throw new HttpError(400, "Prescriptions are only available for virtual consultations.");
+  }
+}
+
 export async function PATCH(req: Request, ctx: RouteContext<"/api/v2/prescriptions/[id]">) {
   try {
     const actor = await requireActor(req);
@@ -52,6 +68,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/v2/prescriptio
         released_to_patient: boolean;
       }>();
     if (currentError) throw currentError;
+    await assertVirtualConsultationAppointment(supabase, current.appointment_id);
 
     const diagnosisText = "diagnosis_text" in body ? normalizeText(body.diagnosis_text) : undefined;
     const treatmentPlan = "treatment_plan" in body ? normalizeText(body.treatment_plan) : undefined;
@@ -151,15 +168,17 @@ export async function POST(req: Request, ctx: RouteContext<"/api/v2/prescription
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("prescriptions")
-      .select("*, diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(dob, gender, profiles(full_name,email)), doctors(specialty, license_no, profiles(full_name))")
+      .select("*, appointments(appointment_type), diagnoses(diagnosis_text, treatment_plan, follow_up_date), prescription_items(*), patients(dob, gender, profiles(full_name,email)), doctors(specialty, license_no, profiles(full_name))")
       .eq("id", id)
       .maybeSingle<
         PrescriptionPdfRow & {
+          appointment_id: string | null;
           patients?: { profiles?: { full_name?: string | null; email?: string | null } | null } | null;
         }
       >();
     if (error) throw error;
     if (!data) throw new HttpError(404, "Prescription not found.");
+    await assertVirtualConsultationAppointment(supabase, data.appointment_id);
 
     const patientEmail = data.patients?.profiles?.email?.trim();
     if (!patientEmail) {
