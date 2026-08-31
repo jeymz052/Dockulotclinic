@@ -1,46 +1,60 @@
 "use client";
 
-import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useState } from "react";
 import {
-  FaBell,
-  FaCircleCheck,
-  FaCreditCard,
-  FaLock,
-  FaPenToSquare,
+  FaCheck,
+  FaCircleExclamation,
+  FaEye,
+  FaEyeSlash,
+  FaKey,
+  FaPen,
   FaRegUser,
-  FaShieldHeart,
+  FaXmark,
 } from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { roleToUiRole } from "@/src/lib/auth/role-mappings";
+import { getRoleProfile } from "@/src/lib/roles";
 
 export default function PatientProfileSettings() {
-  const { profile, user, accessToken, refreshProfile } = useRole();
-  const fullName = profile?.full_name ?? user?.user_metadata?.full_name ?? "Patient";
+  const { role: contextRole, profile, user, accessToken, refreshProfile } = useRole();
+  const fullName =
+    profile?.full_name ?? user?.user_metadata?.full_name ?? "User";
   const email = profile?.email ?? user?.email ?? "No email saved";
-  const [form, setForm] = useState({
-    fullName,
-    phone: profile?.phone ?? "",
-  });
+  const resolvedRole =
+    roleToUiRole(profile?.role) ?? contextRole ?? "PATIENT";
+  const roleLabel = getRoleProfile(resolvedRole).label;
+
+  const [form, setForm] = useState({ fullName, phone: profile?.phone ?? "" });
   const [passwordForm, setPasswordForm] = useState({
     password: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [passwordFeedback, setPasswordFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [passwordFeedback, setPasswordFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken) {
-      setFeedback({ type: "error", message: "You need to be signed in to update your profile." });
+      setFeedback({
+        type: "error",
+        message: "You need to be signed in to update your profile.",
+      });
       return;
     }
-
     setIsSaving(true);
     setFeedback(null);
-
     try {
       const response = await fetch("/api/v2/me", {
         method: "PATCH",
@@ -53,16 +67,18 @@ export default function PatientProfileSettings() {
           phone: form.phone,
         }),
       });
-
       const payload = (await response.json()) as { message?: string };
       if (!response.ok) {
         throw new Error(payload.message ?? "Unable to save your profile.");
       }
-
       await refreshProfile();
-      setFeedback({ type: "success", message: "Your profile details were updated." });
+      setFeedback({
+        type: "success",
+        message: "Profile updated successfully.",
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to save your profile.";
+      const message =
+        error instanceof Error ? error.message : "Unable to save your profile.";
       setFeedback({ type: "error", message });
     } finally {
       setIsSaving(false);
@@ -72,23 +88,28 @@ export default function PatientProfileSettings() {
   async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken) {
-      setPasswordFeedback({ type: "error", message: "You need to be signed in to update your password." });
+      setPasswordFeedback({
+        type: "error",
+        message: "You need to be signed in to update your password.",
+      });
       return;
     }
-
     if (passwordForm.password.length < 8) {
-      setPasswordFeedback({ type: "error", message: "Password must be at least 8 characters long." });
+      setPasswordFeedback({
+        type: "error",
+        message: "Password must be at least 8 characters.",
+      });
       return;
     }
-
     if (passwordForm.password !== passwordForm.confirmPassword) {
-      setPasswordFeedback({ type: "error", message: "Passwords do not match." });
+      setPasswordFeedback({
+        type: "error",
+        message: "Passwords do not match.",
+      });
       return;
     }
-
     setIsSavingPassword(true);
     setPasswordFeedback(null);
-
     try {
       const response = await fetch("/api/v2/me", {
         method: "PATCH",
@@ -96,249 +117,532 @@ export default function PatientProfileSettings() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          new_password: passwordForm.password,
-        }),
+        body: JSON.stringify({ new_password: passwordForm.password }),
       });
-
       const payload = (await response.json()) as { message?: string };
       if (!response.ok) {
         throw new Error(payload.message ?? "Unable to update your password.");
       }
-
       setPasswordForm({ password: "", confirmPassword: "" });
-      setPasswordFeedback({ type: "success", message: "Your password was updated successfully." });
+      setPasswordFeedback({
+        type: "success",
+        message: "Password updated successfully.",
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to update your password.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to update your password.";
       setPasswordFeedback({ type: "error", message });
     } finally {
       setIsSavingPassword(false);
     }
   }
 
-  return (
-    <div className="space-y-6 pb-10">
-      <section className="rounded-[2.25rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.92),transparent_34%),linear-gradient(135deg,#fafafa_0%,#e6f4ff_42%,#cbe7ff_100%)] p-6 shadow-[0_24px_80px_rgba(17,17,17,0.10)] sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">Patient Profile</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-black">Your profile</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-          Update your contact details and password here. This is the patient-facing profile page, so everything stays in one place.
-        </p>
-      </section>
+  const initials = fullName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
-              <FaRegUser className="h-5 w-5" />
+  return (
+    <div className="profile-page-root">
+      <style>{`
+        .profile-page-root {
+          min-height: 100vh;
+          background: #f8f8f8;
+          padding: 2rem 1rem 4rem;
+          font-family: 'Inter', system-ui, sans-serif;
+        }
+        .profile-container {
+          max-width: 780px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        /* ── Hero Header ── */
+        .profile-hero {
+          background: #000;
+          border-radius: 2rem;
+          padding: 2.5rem 2rem;
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          position: relative;
+          overflow: hidden;
+        }
+        .profile-hero::before {
+          content: '';
+          position: absolute;
+          top: -60px; right: -60px;
+          width: 220px; height: 220px;
+          background: rgba(255,255,255,0.04);
+          border-radius: 50%;
+        }
+        .profile-hero::after {
+          content: '';
+          position: absolute;
+          bottom: -40px; left: 30%;
+          width: 160px; height: 160px;
+          background: rgba(255,255,255,0.03);
+          border-radius: 50%;
+        }
+        .profile-avatar {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: #fff;
+          color: #000;
+          font-size: 1.6rem;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          letter-spacing: -0.03em;
+          z-index: 1;
+        }
+        .profile-hero-info {
+          z-index: 1;
+        }
+        .profile-hero-name {
+          font-size: 1.6rem;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.03em;
+          margin: 0 0 0.25rem;
+        }
+        .profile-hero-email {
+          font-size: 0.875rem;
+          color: rgba(255,255,255,0.55);
+          margin: 0 0 0.6rem;
+        }
+        .profile-hero-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 999px;
+          padding: 0.25rem 0.75rem;
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: rgba(255,255,255,0.75);
+        }
+
+        /* ── Cards ── */
+        .profile-card {
+          background: #fff;
+          border: 1px solid #e5e5e5;
+          border-radius: 1.5rem;
+          padding: 2rem;
+        }
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 0.875rem;
+          margin-bottom: 1.75rem;
+        }
+        .card-icon {
+          width: 42px;
+          height: 42px;
+          background: #f4f4f4;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #111;
+          font-size: 0.95rem;
+          flex-shrink: 0;
+        }
+        .card-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #111;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+        .card-subtitle {
+          font-size: 0.8rem;
+          color: #888;
+          margin: 0.15rem 0 0;
+        }
+
+        /* ── Divider ── */
+        .card-divider {
+          border: none;
+          border-top: 1px solid #f0f0f0;
+          margin: 1.75rem 0;
+        }
+
+        /* ── Form Fields ── */
+        .field-group {
+          display: flex;
+          flex-direction: column;
+          gap: 1.1rem;
+          margin-bottom: 1.25rem;
+        }
+        .field-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+        @media (max-width: 560px) {
+          .field-row { grid-template-columns: 1fr; }
+        }
+        .field-label {
+          display: block;
+          margin-bottom: 0.4rem;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #666;
+        }
+        .field-input {
+          width: 100%;
+          border: 1.5px solid #e8e8e8;
+          border-radius: 0.875rem;
+          background: #fafafa;
+          padding: 0.75rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #111;
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+          box-sizing: border-box;
+        }
+        .field-input:focus {
+          border-color: #111;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+        }
+        .field-input:disabled {
+          color: #aaa;
+          background: #f5f5f5;
+          cursor: not-allowed;
+        }
+        .field-input-wrapper {
+          position: relative;
+        }
+        .field-input-wrapper .field-input {
+          padding-right: 2.8rem;
+        }
+        .toggle-pw-btn {
+          position: absolute;
+          right: 0.875rem;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #999;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          font-size: 0.875rem;
+          transition: color 0.15s;
+        }
+        .toggle-pw-btn:hover { color: #111; }
+
+        /* ── Buttons ── */
+        .btn-row {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          margin-top: 1.25rem;
+        }
+        .btn-primary {
+          background: #000;
+          color: #fff;
+          border: none;
+          border-radius: 999px;
+          padding: 0.65rem 1.4rem;
+          font-size: 0.82rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          transition: opacity 0.15s, transform 0.12s;
+        }
+        .btn-primary:hover:not(:disabled) { opacity: 0.82; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-ghost {
+          background: transparent;
+          color: #555;
+          border: 1.5px solid #e0e0e0;
+          border-radius: 999px;
+          padding: 0.65rem 1.4rem;
+          font-size: 0.82rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        .btn-ghost:hover { background: #f4f4f4; border-color: #ccc; }
+
+        /* ── Feedback ── */
+        .feedback-bar {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.7rem 1rem;
+          border-radius: 0.875rem;
+          font-size: 0.82rem;
+          font-weight: 500;
+          margin-top: 1rem;
+        }
+        .feedback-success {
+          background: #f0faf0;
+          border: 1px solid #c3e6cb;
+          color: #1a6b2f;
+        }
+        .feedback-error {
+          background: #fff5f5;
+          border: 1px solid #f5c6cb;
+          color: #721c24;
+        }
+
+        /* ── Info note ── */
+        .info-note {
+          background: #f9f9f9;
+          border: 1px solid #ebebeb;
+          border-radius: 0.875rem;
+          padding: 0.75rem 1rem;
+          font-size: 0.78rem;
+          color: #888;
+          line-height: 1.5;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+          font-size: 0.68rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.14em;
+          color: #bbb;
+          margin-bottom: 0.5rem;
+        }
+      `}</style>
+
+      <div className="profile-container">
+        {/* ── Hero ── */}
+        <div className="profile-hero">
+          <div className="profile-avatar">{initials}</div>
+          <div className="profile-hero-info">
+            <h1 className="profile-hero-name">{fullName}</h1>
+            <p className="profile-hero-email">{email}</p>
+            <span className="profile-hero-badge">
+              <FaRegUser style={{ fontSize: "0.65rem" }} />
+              {roleLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Profile Information + Change Password (single card) ── */}
+        <div className="profile-card">
+          {/* Profile Section */}
+          <div className="card-header">
+            <div className="card-icon">
+              <FaPen />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Edit profile information</h2>
-              <p className="text-sm text-slate-500">Update the personal details tied to your patient account.</p>
+              <h2 className="card-title">Profile Information</h2>
+              <p className="card-subtitle">
+                Update your personal details and sign-in password.
+              </p>
             </div>
           </div>
 
-          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-            <Field label="Full name">
-              <input
-                value={form.fullName}
-                onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                placeholder="Enter your full name"
-              />
-            </Field>
-
-            <Field label="Email address">
-              <input
-                value={email}
-                disabled
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 outline-none"
-              />
-            </Field>
-
-            <Field label="Phone number">
-              <input
-                value={form.phone}
-                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                placeholder="Enter your phone number"
-              />
-            </Field>
-
-            <div className="rounded-[1.5rem] border border-neutral-100 bg-neutral-50/70 p-4 text-sm text-slate-700">
-              Your email stays locked here because it is used as your sign-in identity. Contact the clinic if that needs to change.
+          <form onSubmit={handleSubmit}>
+            <div className="field-group">
+              <div className="field-row">
+                <label>
+                  <span className="field-label">Full Name</span>
+                  <input
+                    className="field-input"
+                    value={form.fullName}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, fullName: e.target.value }))
+                    }
+                    placeholder="Your full name"
+                    autoComplete="name"
+                  />
+                </label>
+                <label>
+                  <span className="field-label">Phone Number</span>
+                  <input
+                    className="field-input"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, phone: e.target.value }))
+                    }
+                    placeholder="e.g. 09XXXXXXXXX"
+                    autoComplete="tel"
+                  />
+                </label>
+              </div>
+              <label>
+                <span className="field-label">Email Address</span>
+                <input
+                  className="field-input"
+                  value={email}
+                  disabled
+                  autoComplete="email"
+                />
+              </label>
+              <p className="info-note">
+                Your email is locked as it is your sign-in identity. Contact
+                the clinic if it needs to be changed.
+              </p>
             </div>
 
-            {feedback ? <Feedback tone={feedback.type} message={feedback.message} /> : null}
+            {feedback && (
+              <FeedbackBar tone={feedback.type} message={feedback.message} />
+            )}
 
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
+            <div className="btn-row">
+              <button type="submit" disabled={isSaving} className="btn-primary">
+                <FaCheck style={{ fontSize: "0.75rem" }} />
+                {isSaving ? "Saving…" : "Save Profile"}
               </button>
               <button
                 type="button"
-                className="rounded-full border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                className="btn-ghost"
                 onClick={() => {
                   setForm({
-                    fullName: profile?.full_name ?? user?.user_metadata?.full_name ?? "Patient",
+                    fullName:
+                      profile?.full_name ??
+                      user?.user_metadata?.full_name ??
+                      "",
                     phone: profile?.phone ?? "",
                   });
                   setFeedback(null);
                 }}
               >
+                <FaXmark style={{ fontSize: "0.75rem" }} />
                 Reset
               </button>
             </div>
           </form>
-        </section>
 
-        <section className="space-y-6">
-          <div className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
-                <FaBell className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Patient notifications</h2>
-                <p className="text-sm text-slate-500">You can expect updates related to appointments and payments.</p>
-              </div>
+          <hr className="card-divider" />
+
+          {/* Change Password Section */}
+          <div className="card-header" style={{ marginBottom: "1.25rem" }}>
+            <div className="card-icon">
+              <FaKey />
             </div>
-
-            <div className="mt-5 space-y-3">
-              <Pill label="Appointment confirmations" />
-              <Pill label="Schedule reminders" />
-              <Pill label="Payment receipts" />
-              <Pill label="Consultation links" />
+            <div>
+              <h2 className="card-title">Change Password</h2>
+              <p className="card-subtitle">
+                Must be at least 8 characters long.
+              </p>
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-neutral-100 bg-black p-6 text-white shadow-[0_20px_50px_rgba(15,23,42,0.18)]">
-            <div className="flex items-center gap-3">
-              <FaShieldHeart className="h-5 w-5 text-neutral-300" />
-              <h2 className="text-lg font-bold">Safety and privacy</h2>
-            </div>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-50/85">
-              <li>Use the same email address you use for bookings to avoid missed updates.</li>
-              <li>Review your appointment details before joining a virtual consult.</li>
-              <li>Contact clinic staff if your name, email, or mobile number needs to be corrected.</li>
-            </ul>
-          </div>
-
-          <div className="rounded-[2rem] border border-neutral-100 bg-white p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-50 text-neutral-700">
-                <FaCreditCard className="h-4 w-4" />
+          <form onSubmit={handlePasswordSubmit}>
+            <div className="field-group">
+              <div className="field-row">
+                <label>
+                  <span className="field-label">New Password</span>
+                  <div className="field-input-wrapper">
+                    <input
+                      className="field-input"
+                      type={showPassword ? "text" : "password"}
+                      value={passwordForm.password}
+                      onChange={(e) =>
+                        setPasswordForm((p) => ({
+                          ...p,
+                          password: e.target.value,
+                        }))
+                      }
+                      placeholder="Min. 8 characters"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="toggle-pw-btn"
+                      onClick={() => setShowPassword((v) => !v)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </label>
+                <label>
+                  <span className="field-label">Confirm Password</span>
+                  <div className="field-input-wrapper">
+                    <input
+                      className="field-input"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm((p) => ({
+                          ...p,
+                          confirmPassword: e.target.value,
+                        }))
+                      }
+                      placeholder="Re-enter password"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="toggle-pw-btn"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </label>
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Password</h2>
-                <p className="text-sm text-slate-500">Change your sign-in password without leaving your profile page.</p>
-              </div>
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
-              <Field label="New password">
-                <input
-                  type="password"
-                  value={passwordForm.password}
-                  onChange={(event) =>
-                    setPasswordForm((current) => ({ ...current, password: event.target.value }))
-                  }
-                  className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                  placeholder="Enter a new password"
-                />
-              </Field>
-              <Field label="Confirm password">
-                <input
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(event) =>
-                    setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))
-                  }
-                  className="w-full rounded-2xl border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100"
-                  placeholder="Re-enter the new password"
-                />
-              </Field>
+            {passwordFeedback && (
+              <FeedbackBar
+                tone={passwordFeedback.type}
+                message={passwordFeedback.message}
+              />
+            )}
+
+            <div className="btn-row">
               <button
                 type="submit"
                 disabled={isSavingPassword}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-primary"
               >
-                <FaPenToSquare className="h-4 w-4" />
-                {isSavingPassword ? "Updating..." : "Update Password"}
+                <FaKey style={{ fontSize: "0.7rem" }} />
+                {isSavingPassword ? "Updating…" : "Update Password"}
               </button>
-            </form>
-            {passwordFeedback ? <Feedback tone={passwordFeedback.type} message={passwordFeedback.message} /> : null}
-          </div>
-        </section>
-      </div>
-
-      <div className="rounded-[2rem] border border-neutral-100 bg-neutral-50/60 p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-neutral-700">
-              <FaCircleCheck className="h-4 w-4" />
-              <p className="text-sm font-semibold">Need to update your details?</p>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setPasswordForm({ password: "", confirmPassword: "" });
+                  setPasswordFeedback(null);
+                }}
+              >
+                <FaXmark style={{ fontSize: "0.75rem" }} />
+                Clear
+              </button>
             </div>
-            <p className="mt-2 text-sm text-slate-700">
-              Keep your email and password current so notifications, appointment updates, and billing references stay accurate.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <QuickLink href="/profile/help" label="Open Patient Help" />
-            <QuickLink href="/appointments/my" label="View Appointments" />
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 text-sm text-slate-500">
-        <div className="flex items-center gap-2">
-          <FaLock className="h-4 w-4 text-neutral-700" />
-          <span>This is your Doc Kulot patient profile, where you can update your details and password.</span>
+          </form>
         </div>
       </div>
     </div>
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block space-y-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function Pill({ label }: { label: string }) {
-  return (
-    <div className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-700">
-      {label}
-    </div>
-  );
-}
-
-function QuickLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
-    >
-      {label}
-    </Link>
-  );
-}
-
-function Feedback({
+function FeedbackBar({
   tone,
   message,
 }: {
@@ -347,12 +651,13 @@ function Feedback({
 }) {
   return (
     <div
-      className={`rounded-2xl border px-4 py-3 text-sm ${
-        tone === "success"
-          ? "border-neutral-200 bg-neutral-50 text-neutral-700"
-          : "border-neutral-200 bg-neutral-50 text-neutral-700"
-      }`}
+      className={`feedback-bar ${tone === "success" ? "feedback-success" : "feedback-error"}`}
     >
+      {tone === "success" ? (
+        <FaCheck style={{ flexShrink: 0 }} />
+      ) : (
+        <FaCircleExclamation style={{ flexShrink: 0 }} />
+      )}
       {message}
     </div>
   );

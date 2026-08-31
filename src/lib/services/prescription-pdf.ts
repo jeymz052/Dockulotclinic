@@ -129,9 +129,10 @@ function dateTime(value: string) {
 
 function formatPrescriptionSpecialty(raw?: string | null) {
   const specialty = raw?.trim();
-  if (!specialty) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine specialist/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
+  if (!specialty) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine specialist/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
   return specialty;
 }
 
@@ -419,11 +420,11 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
   }
   text(ops, "Prescription ID", 570, 746, { size: 10, font: "F2", align: "right" });
   text(ops, row.prescription_no, 570, 732, { size: 13, font: "F2", align: "right" });
-  text(ops, doctorHeaderName, 306, 678, { size: 16, font: "F2", align: "center" });
-  text(ops, specialty, 306, 660, { size: 11.5, align: "center" });
-  text(ops, clinicHeaderName, 306, 640, { size: 17, font: "F2", align: "center" });
-  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 622, { size: 11.5, align: "center" });
-  rule(ops, 42, 578, 570);
+  text(ops, doctorHeaderName, 306, 684, { size: 15, font: "F2", align: "center" });
+  text(ops, "Family Medicine Specialist | Aesthetic Medicine", 306, 668, { size: 10, align: "center" });
+  text(ops, clinicHeaderName, 306, 650, { size: 15, font: "F2", align: "center" });
+  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 633, { size: 10.5, align: "center" });
+  rule(ops, 42, 588, 570);
 
   text(ops, "Patient:", 42, 550, { size: 12 });
   text(ops, patientName, 90, 550, { size: 13, font: "F2" });
@@ -452,17 +453,19 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
   if (signatureImage) {
     const signatureBox = fitImageSize(signatureImage, 130, 48);
     const signatureX = 468 - signatureBox.width / 2;
-    const signatureY = 82;
+    const signatureY = 88;
     ops.push("q");
     ops.push(
       `${signatureBox.width.toFixed(2)} 0 0 ${signatureBox.height.toFixed(2)} ${signatureX.toFixed(2)} ${signatureY.toFixed(2)} cm ${logoImage ? "/Im2" : "/Im1"} Do`,
     );
     ops.push("Q");
   }
-  rule(ops, 370, 80, 565);
-  text(ops, "Physician's Signature", 468, 64, { size: 11, align: "center" });
-  text(ops, `PRC No.: ${prcNo}`, 468, 48, { size: 11, font: "F2", align: "center" });
-  text(ops, "(End of Prescription)", 306, 32, { size: 9.5, align: "center" });
+  rule(ops, 370, 86, 565);
+  text(ops, doctorHeaderName, 468, 73, { size: 9.5, font: "F2", align: "center" });
+  text(ops, "Family Medicine", 468, 62, { size: 8.5, align: "center" });
+  text(ops, "Aesthetic Medicine", 468, 52, { size: 8.5, align: "center" });
+  text(ops, `PRC License No.: ${prcNo}`, 468, 42, { size: 8.5, font: "F2", align: "center" });
+  text(ops, "(End of Prescription)", 306, 28, { size: 9, align: "center" });
   rule(ops, 42, 24, 570);
   wrapped(ops, "Note to User: The information contained in this electronic prescription is provided by the prescriber. Verify the original prescription before dispensing.", 42, 16, { size: 6.5, max: 120, lines: 1, leading: 8 });
   text(ops, "Powered by Doc Kulot", 306, 8, { size: 7.5, font: "F2", align: "center" });

@@ -54,7 +54,7 @@ const DEFAULT_RESULTS_BOARD_SUBTITLE = "Medical weight-loss progress and aesthet
 const DEFAULT_RESULTS_BOARD_LABEL = "Results Board";
 const DEFAULT_RESULT_ITEMS: LandingBeforeAfterResult[] = beforeAfterResults.map((item) => ({ ...item }));
 const DEFAULT_ABOUT_HIGHLIGHTS: LandingHighlight[] = [
-  { title: "Specialty", body: "Family Medicine and Aesthetic Medicine" },
+  { title: "Specialty", body: "Family Medicine Specialist | Aesthetic Medicine" },
   { title: "Medical School", body: "Silliman University Medical School, 2017" },
   { title: "Residency", body: "Zamboanga City Medical Center" },
   { title: "Pre-Med", body: "BS Nursing, Western Mindanao State University" },
@@ -1499,10 +1499,10 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
     about_eyebrow: hasLegacyAboutDefaults ? "About the Doctor" : content.about_eyebrow,
     about_title: hasLegacyAboutDefaults ? "Dr. Fatimah Al-Zahra T. Ditti (Doc Kulot) | Injector Queen" : content.about_title,
     about_subtitle: hasLegacyAboutDefaults
-      ? "Doc Kulot is a Family Medicine and Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics."
+      ? "Doc Kulot is a Family Medicine Specialist | Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics."
       : content.about_subtitle,
     doctor_name: hasLegacyAboutDefaults ? "Dr. Fatimah Al-Zahra T. Ditti" : content.doctor_name,
-    doctor_title: hasLegacyAboutDefaults ? "Family Medicine | Aesthetic Medicine" : content.doctor_title,
+    doctor_title: hasLegacyAboutDefaults ? "Family Medicine Specialist | Aesthetic Medicine" : content.doctor_title,
     doctor_photo_url: content.doctor_photo_url ?? null,
     about_highlights: hasLegacyAboutDefaults ? DEFAULT_ABOUT_HIGHLIGHTS : normalizedHighlights,
     hero_slides: normalizedHeroSlides,

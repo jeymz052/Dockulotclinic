@@ -314,10 +314,10 @@ function pdf(ops: string[], logoImage?: PdfImage | null, signatureImage?: PdfIma
 
 export function createLaboratoryRequestPdf(row: LaboratoryRequestPdfRow) {
   const createdAt = new Date(row.created_at);
-  const doctorName = row.doctors?.profiles?.full_name ?? "FATIMAH AL-ZAHRA T. DITTI, MD, DFM";
+  const doctorName = row.doctors?.profiles?.full_name ?? "Dr. Fatimah Al-Zahra T. Ditti";
   const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
-  const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD, DFM` : doctorName;
-  const specialty = "Family and Community Medicine";
+  const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD, DFM` : "FATIMAH AL-ZAHRA T. DITTI, MD, DFM";
+  const clinicHeaderName = doctorNameBase ? `${doctorNameBase} Online Clinic` : "Doc Kulot Online Clinic";
   const prcNo = row.doctors?.license_no ?? "0141185";
   const logoImage = loadLogoImage();
   const signatureImage = row.doctor_signature_data_url ? decodePng(row.doctor_signature_data_url) : null;
@@ -350,14 +350,14 @@ export function createLaboratoryRequestPdf(row: LaboratoryRequestPdfRow) {
   }
 
   // LABORATORY REQUEST label — top right
-  text(ops, "LABORATORY REQUEST", 570, 756, { size: 8.5, font: "F2", align: "right" });
-  text(ops, row.request_no, 570, 740, { size: 16, font: "F2", align: "right" });
+  text(ops, "Laboratory Request ID", 570, 746, { size: 10, font: "F2", align: "right" });
+  text(ops, row.request_no, 570, 732, { size: 13, font: "F2", align: "right" });
 
   // Doctor / clinic block — centered, same style as prescription
   text(ops, doctorHeaderName, 306, 714, { size: 16, font: "F2", align: "center" });
-  text(ops, specialty, 306, 698, { size: 10, align: "center" });
-  text(ops, "FamMed Family Clinic", 306, 683, { size: 12, font: "F2", align: "center" });
-  text(ops, "MCLL Highway, Paso Bolong, ZC  |  0965 034 8343", 306, 669, { size: 8.5, align: "center" });
+  text(ops, "Family Medicine Specialist | Aesthetic Medicine", 306, 698, { size: 10, align: "center" });
+  text(ops, clinicHeaderName, 306, 683, { size: 14, font: "F2", align: "center" });
+  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 669, { size: 8.5, align: "center" });
 
   // Horizontal rule under header
   rule(ops, 38, 660, 565);
@@ -502,12 +502,12 @@ export function createLaboratoryRequestPdf(row: LaboratoryRequestPdfRow) {
   // -------------------------------------------------------------
   // REQUESTING PHYSICIAN SIGNATURE & FOOTER
   // -------------------------------------------------------------
-  text(ops, "Requesting Physician", 460, 132, { size: 9.5, font: "F2", align: "center" });
+  text(ops, "Requesting Physician", 460, 134, { size: 9.5, font: "F2", align: "center" });
 
   if (signatureImage) {
     const signatureBox = fitImageSize(signatureImage, 110, 48);
     const signatureX = 460 - signatureBox.width / 2;
-    const signatureY = 88;
+    const signatureY = 90;
     ops.push("q");
     ops.push(
       `${signatureBox.width.toFixed(2)} 0 0 ${signatureBox.height.toFixed(2)} ${signatureX.toFixed(2)} ${signatureY.toFixed(2)} cm ${logoImage ? "/Im2" : "/Im1"} Do`,
@@ -516,14 +516,15 @@ export function createLaboratoryRequestPdf(row: LaboratoryRequestPdfRow) {
   }
 
   rule(ops, 370, 86, 550);
-  text(ops, doctorHeaderName, 460, 73, { size: 10, font: "F2", align: "center" });
-  text(ops, specialty, 460, 60, { size: 8.5, align: "center" });
-  text(ops, `License No.: ${prcNo}`, 460, 47, { size: 8.5, font: "F2", align: "center" });
+  text(ops, doctorHeaderName, 460, 73, { size: 9.5, font: "F2", align: "center" });
+  text(ops, "Family Medicine", 460, 62, { size: 8.5, align: "center" });
+  text(ops, "Aesthetic Medicine", 460, 52, { size: 8.5, align: "center" });
+  text(ops, `PRC License No.: ${prcNo}`, 460, 42, { size: 8.5, font: "F2", align: "center" });
 
   // Footer
   rule(ops, 38, 36, 565);
-  text(ops, "Note: This diagnostic request is issued by FamMed Family Clinic. Results should be submitted for physician review.", 38, 26, { size: 7.5 });
-  text(ops, "Powered by Doc Kulot - FamMed Clinic System", 306, 18, { size: 8, font: "F2", align: "center" });
+  text(ops, "Note: This diagnostic request is issued for clinical evaluation. Results should be submitted for physician review.", 38, 26, { size: 7.5 });
+  text(ops, "Powered by Doc Kulot Online Clinic", 306, 18, { size: 8, font: "F2", align: "center" });
 
   return pdf(ops, logoImage, signatureImage);
 }

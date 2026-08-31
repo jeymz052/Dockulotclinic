@@ -68,12 +68,12 @@ const PREVIOUS_ABOUT = {
   eyebrow: "About the Doctor",
   title: "Dr. Fatimah Al-Zahra T. Ditti (Doc Kulot) | Injector Queen",
   subtitle:
-    "Doc Kulot is a Family Medicine and Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics.",
+    "Doc Kulot is a Family Medicine Specialist | Aesthetic Medicine doctor focused on family care, women's health, telemedicine, and procedure-based aesthetics.",
   name: "Dr. Fatimah Al-Zahra T. Ditti",
-  titleLabel: "Family Medicine | Aesthetic Medicine",
+  titleLabel: "Family Medicine Specialist | Aesthetic Medicine",
   photo: "/images/SEF_0442.jpeg",
   highlights: [
-    { title: "Specialty", body: "Family Medicine and Aesthetic Medicine" },
+    { title: "Specialty", body: "Family Medicine Specialist | Aesthetic Medicine" },
     { title: "Medical School", body: "Silliman University Medical School, 2017" },
     { title: "Residency", body: "Zamboanga City Medical Center" },
     { title: "Pre-Med", body: "BS Nursing, Western Mindanao State University" },

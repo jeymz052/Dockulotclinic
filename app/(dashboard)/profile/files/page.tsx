@@ -437,17 +437,10 @@ export default function MedicalDocumentsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-4xl border border-neutral-100 bg-linear-to-br from-neutral-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-700">
-          {isPatient ? "Patient Portal" : "Clinic Workspace"}
-        </p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-black">{title}</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
-      </section>
-
       {error ? <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">{error}</div> : null}
 
       <MedicalDocumentsBrowser
+        kicker={isPatient ? "Patient Portal" : "Clinic Workspace"}
         title={title}
         description={description}
         items={documentItems}

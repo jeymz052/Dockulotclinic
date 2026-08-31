@@ -94,7 +94,7 @@ export default function InquiriesPage() {
       nextDoctors = (payload.doctors ?? []).map((doctor) => ({
         id: doctor.id,
         name: doctor.name ?? doctor.full_name ?? "Doctor",
-        specialty: doctor.specialty ?? "Family Medicine and Aesthetic Medicine",
+        specialty: doctor.specialty ?? "Family Medicine Specialist | Aesthetic Medicine",
       }));
       setDoctors(nextDoctors);
     }

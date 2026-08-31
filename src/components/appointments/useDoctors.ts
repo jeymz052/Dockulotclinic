@@ -12,7 +12,7 @@ import {
 
 const DEFAULT_DOCTOR = DOCTORS[0];
 const FALLBACK_DOCTOR_NAME = "Doctor";
-const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
+const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine Specialist | Aesthetic Medicine";
 
 export type BookingDoctor = {
   id: string;

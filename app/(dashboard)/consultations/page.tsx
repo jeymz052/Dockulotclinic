@@ -825,7 +825,7 @@ export default function OnlineConsultationPage() {
       <div className="mb-5 flex flex-col gap-4 border-b border-neutral-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-            Consultations
+            Clinical Workspace
           </p>
           <h1 className="mt-2 text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
             Visit workspace
@@ -1440,7 +1440,7 @@ function PatientConsultationLobby({
       <div className="mb-5 flex flex-col gap-4 border-b border-neutral-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-            Consultations
+            Patient Portal
           </p>
           <h1 className="mt-2 text-2xl font-black tracking-tight text-neutral-950 sm:text-3xl">
             Virtual consultation hub

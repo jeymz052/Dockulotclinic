@@ -255,7 +255,7 @@ export async function POST(req: Request) {
           },
         },
         doctors: {
-          specialty: (meta.doctor_specialty as string) || "Family and Aesthetic Medicine Specialist",
+          specialty: (meta.doctor_specialty as string) || "Family Medicine Specialist | Aesthetic Medicine",
           license_no: (meta.doctor_license_no as string) || "0141185",
           profiles: {
             full_name: (meta.doctor_name as string) || "Dr. Fatimah Al-Zahra T. Ditti",
@@ -316,7 +316,7 @@ export async function POST(req: Request) {
           },
         },
         doctors: {
-          specialty: (meta.doctor_specialty as string) || "Family and Aesthetic Medicine Specialist",
+          specialty: (meta.doctor_specialty as string) || "Family Medicine Specialist | Aesthetic Medicine",
           license_no: (meta.doctor_license_no as string) || "0141185",
           profiles: {
             full_name: (meta.doctor_name as string) || "Dr. Fatimah Al-Zahra T. Ditti",

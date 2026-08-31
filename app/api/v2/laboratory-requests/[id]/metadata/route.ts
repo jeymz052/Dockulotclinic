@@ -77,7 +77,7 @@ export async function GET(req: Request, { params }: Ctx) {
       patientGender,
       patientAddress,
       doctorName: metadata?.doctor_name ?? "FATIMAH AL-ZAHRA T. DITTI, MD, DFM",
-      doctorSpecialty: metadata?.doctor_specialty ?? "Family and Community Medicine",
+      doctorSpecialty: metadata?.doctor_specialty ?? "Family Medicine, Aesthetic Medicine",
       doctorLicenseNo: metadata?.doctor_license_no ?? "0141185",
       doctorSignatureDataUrl: settings.doctorSignatureDataUrl,
       selectedTests: metadata?.selected_tests ?? [],

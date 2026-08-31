@@ -121,9 +121,10 @@ function dateTime(value: string) {
 
 function formatSpecialty(raw?: string | null) {
   const specialty = raw?.trim();
-  if (!specialty) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine specialist/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
+  if (!specialty) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine specialist/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
   return specialty;
 }
 
@@ -402,11 +403,11 @@ export function createMedicalCertificatePdf(row: MedicalCertificatePdfRow) {
   }
   text(ops, "MEDICAL CERTIFICATE ID", 306, 748, { size: 8.5, font: "F2", align: "center" });
   text(ops, row.certificate_no, 306, 736, { size: 11.5, font: "F2", align: "center" });
-  text(ops, doctorHeaderName, 306, 706, { size: 16, font: "F2", align: "center" });
-  text(ops, specialty, 306, 688, { size: 11.5, align: "center" });
-  text(ops, clinicHeaderName, 306, 668, { size: 17, font: "F2", align: "center" });
-  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 650, { size: 11.5, align: "center" });
-  text(ops, "MEDICAL CERTIFICATE", 306, 626, { size: 16, font: "F2", align: "center" });
+  text(ops, doctorHeaderName, 306, 712, { size: 15, font: "F2", align: "center" });
+  text(ops, "Family Medicine Specialist | Aesthetic Medicine", 306, 696, { size: 10, align: "center" });
+  text(ops, clinicHeaderName, 306, 678, { size: 15, font: "F2", align: "center" });
+  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 661, { size: 10.5, align: "center" });
+  text(ops, "MEDICAL CERTIFICATE", 306, 635, { size: 16, font: "F2", align: "center" });
 
   text(ops, "Patient:", 42, 586, { size: 12 });
   text(ops, patientName, 98, 586, { size: 13, font: "F2" });
@@ -434,17 +435,19 @@ export function createMedicalCertificatePdf(row: MedicalCertificatePdfRow) {
   if (signatureImage) {
     const signatureBox = fitImageSize(signatureImage, 130, 48);
     const signatureX = 468 - signatureBox.width / 2;
-    const signatureY = 82;
+    const signatureY = 88;
     ops.push("q");
     ops.push(
       `${signatureBox.width.toFixed(2)} 0 0 ${signatureBox.height.toFixed(2)} ${signatureX.toFixed(2)} ${signatureY.toFixed(2)} cm ${logoImage ? "/Im2" : "/Im1"} Do`,
     );
     ops.push("Q");
   }
-  rule(ops, 370, 80, 565);
-  text(ops, "Physician's Signature", 468, 64, { size: 11, align: "center" });
-  text(ops, `PRC No.: ${prcNo}`, 468, 48, { size: 11, font: "F2", align: "center" });
-  text(ops, "(End of Medical Certificate)", 306, 32, { size: 9.5, align: "center" });
+  rule(ops, 370, 86, 565);
+  text(ops, doctorHeaderName, 468, 73, { size: 9.5, font: "F2", align: "center" });
+  text(ops, "Family Medicine", 468, 62, { size: 8.5, align: "center" });
+  text(ops, "Aesthetic Medicine", 468, 52, { size: 8.5, align: "center" });
+  text(ops, `PRC License No.: ${prcNo}`, 468, 42, { size: 8.5, font: "F2", align: "center" });
+  text(ops, "(End of Medical Certificate)", 306, 28, { size: 9, align: "center" });
   rule(ops, 42, 24, 570);
   wrapped(
     ops,

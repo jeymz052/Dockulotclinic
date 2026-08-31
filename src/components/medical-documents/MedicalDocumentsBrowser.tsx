@@ -100,6 +100,7 @@ export type MedicalDocumentItem = {
 };
 
 type BrowserProps = {
+  kicker?: string;
   title: string;
   description: string;
   items: MedicalDocumentItem[];
@@ -112,9 +113,10 @@ type BrowserProps = {
 
 function formatPrescriptionSpecialty(raw?: string | null) {
   const specialty = raw?.trim();
-  if (!specialty) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine specialist/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
-  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family and Aesthetic Medicine Specialist";
+  if (!specialty) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine specialist/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family medicine and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
+  if (/family and aesthetic medicine/i.test(specialty)) return "Family Medicine Specialist | Aesthetic Medicine";
   return specialty;
 }
 
@@ -164,6 +166,7 @@ function normalizeSelection(items: MedicalDocumentItem[], selectedId: string | n
 }
 
 export function MedicalDocumentsBrowser({
+  kicker,
   title,
   description,
   items,
@@ -422,7 +425,9 @@ export function MedicalDocumentsBrowser({
       <section className="overflow-hidden rounded-4xl border border-neutral-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-neutral-200 bg-linear-to-br from-neutral-50 to-white px-6 py-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-600">Medical documents</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-neutral-600">
+              {kicker ?? (isPatient ? "Patient Portal" : "Clinic Workspace")}
+            </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-black">{title}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">{description}</p>
             {note ? <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">{note}</p> : null}
@@ -761,7 +766,7 @@ function PrescriptionPreview({ item }: { item: MedicalDocumentItem }) {
 
         <div className="mt-7 text-center">
           <p className="text-lg font-black tracking-tight text-black sm:text-[1.65rem]">{doctorHeaderName}</p>
-          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">{specialty}</p>
+          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">Family Medicine Specialist | Aesthetic Medicine</p>
           <p className="mt-1 text-xl font-black tracking-tight text-black sm:text-[1.5rem]">{clinicHeaderName}</p>
           <p className="mt-1 text-sm text-neutral-700 sm:text-[0.95rem]">Zamboanga City, Zamboanga Del Sur</p>
         </div>
@@ -842,8 +847,10 @@ function PrescriptionPreview({ item }: { item: MedicalDocumentItem }) {
             ) : (
               <div className="mb-0 h-24 border-b border-black" />
             )}
-            <p className="mt-2 text-sm text-neutral-700">Physician&apos;s Signature</p>
-            <p className="mt-1 text-sm font-semibold text-neutral-800">PRC No.: {prcNo}</p>
+            <p className="mt-2 text-sm font-black text-neutral-950">{doctorHeaderName}</p>
+            <p className="text-xs text-neutral-700">Family Medicine</p>
+            <p className="text-xs text-neutral-700">Aesthetic Medicine</p>
+            <p className="mt-0.5 text-xs font-bold text-neutral-800">PRC License No.: {prcNo}</p>
           </div>
         </div>
 
@@ -985,7 +992,7 @@ function MedicalCertificatePreview({ item }: { item: MedicalDocumentItem }) {
           <p className="text-lg font-black tracking-tight text-black sm:text-[1.65rem]">
             {doctorHeaderName}
           </p>
-          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">{specialty}</p>
+          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">Family Medicine Specialist | Aesthetic Medicine</p>
           <p className="mt-1 text-xl font-black tracking-tight text-black sm:text-[1.5rem]">{clinicHeaderName}</p>
           <p className="mt-1 text-sm text-neutral-700 sm:text-[0.95rem]">Zamboanga City, Zamboanga Del Sur</p>
           <p className="mt-3 text-2xl font-black tracking-[0.12em] text-black">MEDICAL CERTIFICATE</p>
@@ -1045,8 +1052,10 @@ function MedicalCertificatePreview({ item }: { item: MedicalDocumentItem }) {
             ) : (
               <div className="mb-0 h-24 border-b border-black" />
             )}
-            <p className="mt-2 text-sm text-neutral-700">Physician&apos;s Signature</p>
-            <p className="mt-1 text-sm font-semibold text-neutral-800">PRC No.: {prcNo}</p>
+            <p className="mt-2 text-sm font-black text-neutral-950">{doctorHeaderName}</p>
+            <p className="text-xs text-neutral-700">Family Medicine</p>
+            <p className="text-xs text-neutral-700">Aesthetic Medicine</p>
+            <p className="mt-0.5 text-xs font-bold text-neutral-800">PRC License No.: {prcNo}</p>
           </div>
         </div>
 
@@ -1127,6 +1136,8 @@ function LaboratoryRequestPreview({ item }: { item: MedicalDocumentItem }) {
   const rawDoctorName = meta?.doctorName || item.labDoctorName || "FATIMAH AL-ZAHRA T. DITTI, MD, DFM";
   const doctorNameBase = rawDoctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
   const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD, DFM` : rawDoctorName;
+  const clinicHeaderName = doctorNameBase ? `${doctorNameBase} Online Clinic` : "Doc Kulot Online Clinic";
+  const specialty = meta?.doctorSpecialty || item.labDoctorSpecialty || "Family Medicine\nAesthetic Medicine";
   const prcNo = meta?.doctorLicenseNo || item.labDoctorLicenseNo || "0141185";
   const signatureDataUrl = meta?.doctorSignatureDataUrl || item.labDoctorSignatureDataUrl || "";
 
@@ -1150,34 +1161,29 @@ function LaboratoryRequestPreview({ item }: { item: MedicalDocumentItem }) {
     <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white">
       <div className="mx-auto max-w-4xl bg-white px-6 py-8 text-neutral-900 sm:px-10 lg:px-12 font-sans">
         {/* Header Branding */}
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-6 border-b border-neutral-200 pb-5">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/images/dockulotslogonobg.png"
-              alt="FamMed Doc Kulot Logo"
-              width={140}
-              height={80}
-              className="h-16 w-auto object-contain"
-              priority
-            />
-            <div>
-              <p className="text-2xl font-black tracking-tight text-neutral-950">FamMed</p>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-600">FAMILY CLINIC</p>
-            </div>
-          </div>
-          <div className="text-left sm:text-right text-xs text-neutral-600 space-y-0.5">
-            <p className="font-semibold text-neutral-800">MCLL Highway, Paso Bolong, ZC</p>
-            <p>FamMed Family Clinic</p>
-            <p className="font-medium text-neutral-700">0965 034 8343 / 0998 294 3774</p>
-            <p className="font-mono text-[11px] font-bold text-neutral-900 mt-1">ID: {requestNo}</p>
+        <div className="flex items-start justify-between gap-6">
+          <Image
+            src="/images/dockulotslogonobg.png"
+            alt="Doc Kulot logo"
+            width={300}
+            height={168}
+            className="h-auto w-52 max-w-full object-contain sm:w-60"
+            priority
+          />
+          <div className="min-w-44 text-right">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-neutral-500">Laboratory Request ID</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-black">{requestNo}</p>
           </div>
         </div>
 
-        {/* Title */}
-        <div className="mt-6 text-center">
-          <h2 className="text-xl sm:text-2xl font-black uppercase tracking-[0.25em] text-neutral-950">
+        <div className="mt-7 text-center">
+          <p className="text-lg font-black tracking-tight text-black sm:text-[1.65rem]">{doctorHeaderName}</p>
+          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">Family Medicine Specialist | Aesthetic Medicine</p>
+          <p className="mt-1 text-xl font-black tracking-tight text-black sm:text-[1.5rem]">{clinicHeaderName}</p>
+          <p className="mt-1 text-sm text-neutral-700 sm:text-[0.95rem]">Zamboanga City, Zamboanga Del Sur</p>
+          <p className="mt-4 text-2xl font-black uppercase tracking-[0.25em] text-neutral-950">
             LABORATORY REQUEST
-          </h2>
+          </p>
         </div>
 
         {/* Patient Demographic Information Header */}
@@ -1358,14 +1364,15 @@ function LaboratoryRequestPreview({ item }: { item: MedicalDocumentItem }) {
               <div className="h-16 border-b border-neutral-950" />
             )}
             <p className="mt-2 text-sm font-black text-neutral-950">{doctorHeaderName}</p>
-            <p className="text-xs text-neutral-700">Family and Community Medicine</p>
+            <p className="text-xs text-neutral-700">Family Medicine</p>
+            <p className="text-xs text-neutral-700">Aesthetic Medicine</p>
             <p className="mt-0.5 text-xs font-bold text-neutral-800">PRC License No.: {prcNo}</p>
           </div>
         </div>
 
         {/* Footer Notice */}
         <div className="mt-10 border-t border-neutral-200 pt-4 text-center text-xs text-neutral-500">
-          <p>This laboratory / diagnostic request is issued by FamMed Family Clinic for clinical evaluation.</p>
+          <p>This laboratory / diagnostic request is issued for clinical evaluation. Results should be submitted for physician review.</p>
           <p className="mt-1 font-semibold text-neutral-600">Powered by Doc Kulot Online Clinic</p>
         </div>
       </div>
@@ -1440,6 +1447,7 @@ function ConsentPreview({ item }: { item: MedicalDocumentItem }) {
   const doctorName = item.consentPhysicianName || "Dr. Fatimah Al-Zahra T. Ditti";
   const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
   const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : doctorName;
+  const prcNo = item.prescriptionDoctorLicenseNo || "0141185";
   const physicianSig = item.consentPhysicianSignature || resolvedDoctorSignature || "";
 
   const normProc = procedureName.toLowerCase();
@@ -1633,7 +1641,10 @@ function ConsentPreview({ item }: { item: MedicalDocumentItem }) {
                 )}
               </div>
               <p className="mt-2 text-xs font-bold text-neutral-950">PRINTED NAME: {doctorHeaderName}</p>
-              <p className="text-[11px] text-neutral-600">
+              <p className="text-[11px] text-neutral-600">Family Medicine</p>
+              <p className="text-[11px] text-neutral-600">Aesthetic Medicine</p>
+              <p className="text-[11px] font-bold text-neutral-700">PRC License No.: {prcNo}</p>
+              <p className="mt-1 text-[11px] text-neutral-600">
                 DATE: {item.consentPhysicianSignedAt ? formatDateTime(item.consentPhysicianSignedAt).date : (physicianSig ? signedDateStr : "Pending")}
               </p>
             </div>
@@ -1708,6 +1719,11 @@ function AftercarePreview({ item }: { item: MedicalDocumentItem }) {
   const isAcknowledged = item.badge === "Acknowledged" || item.consentAftercareAcknowledged;
   const statusLabel = isAcknowledged ? "Acknowledged" : "Provided";
 
+  const doctorName = item.prescriptionDoctorName || item.consentPhysicianName || "Dr. Fatimah Al-Zahra T. Ditti";
+  const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
+  const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : doctorName;
+  const prcNo = item.prescriptionDoctorLicenseNo || "0141185";
+
   const resolvedSignature = item.prescriptionDoctorSignatureDataUrl || item.consentPhysicianSignature || doctorSig;
 
   return (
@@ -1731,10 +1747,10 @@ function AftercarePreview({ item }: { item: MedicalDocumentItem }) {
         {/* Center Doctor / Clinic Info */}
         <div className="mt-2 text-center">
           <p className="text-base font-black tracking-tight text-neutral-950 sm:text-xl">
-            Fatimah Al-Zahra T. Ditti, MD
+            {doctorHeaderName}
           </p>
           <p className="mt-0.5 text-xs text-neutral-600 sm:text-sm">
-            Family and Aesthetic Medicine Specialist
+            Family Medicine Specialist | Aesthetic Medicine
           </p>
           <p className="mt-0.5 text-base font-black tracking-tight text-neutral-950 sm:text-lg">
             Doc Kulot Online Clinic
@@ -1858,9 +1874,9 @@ function AftercarePreview({ item }: { item: MedicalDocumentItem }) {
                 <span className="text-xs text-neutral-400 italic mb-2">Physician Verified</span>
               )}
             </div>
-            <p className="mt-2 text-xs font-bold text-neutral-950">Fatimah Al-Zahra T. Ditti, MD</p>
-            <p className="text-[11px] text-neutral-600">Family and Aesthetic Medicine Specialist</p>
-            <p className="text-[11px] font-bold text-neutral-700">PRC No.: 0141185</p>
+            <p className="mt-2 text-xs font-bold text-neutral-950">{doctorHeaderName}</p>
+            <p className="text-[11px] text-neutral-600">Family Medicine Specialist | Aesthetic Medicine</p>
+            <p className="text-[11px] font-bold text-neutral-700">PRC License No.: {prcNo}</p>
           </div>
         </div>
 

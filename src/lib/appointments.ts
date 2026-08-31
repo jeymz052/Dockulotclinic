@@ -55,7 +55,7 @@ export type BlockedDayLookup = Record<string, { reason: string }>;
 export const MAX_PATIENTS_PER_HOUR = 1;
 
 export const DOCTORS: Doctor[] = [
-  { id: "doctora-kulot-md", name: "Dr. Fatimah Al-Zahra T. Ditti", specialty: "Family Medicine and Aesthetic Medicine" },
+  { id: "doctora-kulot-md", name: "Dr. Fatimah Al-Zahra T. Ditti", specialty: "Family Medicine Specialist | Aesthetic Medicine" },
 ];
 
 export const SLOT_TEMPLATES_BY_DOCTOR: Record<string, SlotTemplate[]> = {

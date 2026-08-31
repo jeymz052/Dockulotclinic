@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { logActivity } from "@/src/lib/services/activity-log";
 import type { DbRole } from "@/src/lib/db/types";
 
-const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
+const CANONICAL_DOCTOR_SPECIALTY = "Family Medicine Specialist | Aesthetic Medicine";
 
 type UpdateUserBody = {
   full_name?: string;

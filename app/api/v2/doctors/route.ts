@@ -5,7 +5,7 @@ import {
 } from "@/src/lib/consultation-pricing";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 
-const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine and Aesthetic Medicine";
+const FALLBACK_DOCTOR_SPECIALTY = "Family Medicine Specialist | Aesthetic Medicine";
 
 type DoctorRow = {
   id: string;

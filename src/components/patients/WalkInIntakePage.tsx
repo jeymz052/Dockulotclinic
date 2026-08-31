@@ -282,7 +282,7 @@ export default function WalkInIntakePage({ embedded = false, onSuccess }: WalkIn
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <IntakeMetric label="Visit Type" value="Clinic" detail="Walk-ins use clinic-only flow" icon={<FaHospitalUser className="h-4 w-4" />} />
-        <IntakeMetric label="Assigned Doctor" value={selectedDoctor?.name?.replace(/^Dra\.\s*/, "Dra. ") ?? "Assigned doctor"} detail={selectedDoctor?.specialty ?? "Family Medicine and Aesthetic Medicine"} icon={<FaUserDoctor className="h-4 w-4" />} />
+        <IntakeMetric label="Assigned Doctor" value={selectedDoctor?.name?.replace(/^Dra\.\s*/, "Dra. ") ?? "Assigned doctor"} detail={selectedDoctor?.specialty ?? "Family Medicine Specialist | Aesthetic Medicine"} icon={<FaUserDoctor className="h-4 w-4" />} />
         <IntakeMetric label="Selected Date" value={formatDisplayDate(form.date)} detail={blockedReason ?? "Live slot availability is active"} icon={<FaCalendarDay className="h-4 w-4" />} />
         <IntakeMetric label="Queue Preview" value={selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"} detail={selectedSlot ? formatRange(selectedSlot.start, selectedSlot.end) : "Choose a slot"} icon={<FaClipboardCheck className="h-4 w-4" />} />
       </section>

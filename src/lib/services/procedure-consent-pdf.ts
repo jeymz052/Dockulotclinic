@@ -407,6 +407,7 @@ export function createProcedureConsentPdf(row: ProcedureConsentPdfRow) {
   const doctorName = row.physician_name || "Dr. Fatimah Al-Zahra T. Ditti";
   const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
   const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : doctorName;
+  const prcNo = row.doctor_license_no || "0141185";
 
   const procName = row.procedure_name || "Medical / Aesthetic Procedure";
   const normProc = procName.toLowerCase();
@@ -593,8 +594,11 @@ export function createProcedureConsentPdf(row: ProcedureConsentPdfRow) {
     ops.push("Q");
   }
   rule(ops, col3X + 6, sigLineY + 4, col3X + colWidth - 6);
-  text(ops, `PRINTED NAME: ${doctorHeaderName}`, col3X + 6, sigLineY - 11, { size: 8.8, font: "F2" });
-  text(ops, `DATE: ${row.physician_signed_at ? dateTime(row.physician_signed_at) : (doctorSig ? dateTime(row.signed_at) : "Pending")}`, col3X + 6, sigLineY - 25, { size: 8.5 });
+  text(ops, `PRINTED NAME: ${doctorHeaderName}`, col3X + 6, sigLineY - 10, { size: 8, font: "F2" });
+  text(ops, "Family Medicine", col3X + 6, sigLineY - 19, { size: 7.5 });
+  text(ops, "Aesthetic Medicine", col3X + 6, sigLineY - 27, { size: 7.5 });
+  text(ops, `PRC License No.: ${prcNo}`, col3X + 6, sigLineY - 36, { size: 7.5, font: "F2" });
+  text(ops, `DATE: ${row.physician_signed_at ? dateTime(row.physician_signed_at) : (doctorSig ? dateTime(row.signed_at) : "Pending")}`, col3X + 6, sigLineY - 45, { size: 7.5 });
 
   // Page bottom copyright
   text(ops, "Doc Kulot Clinic System — Official Patient Consent Document", 306, 16, { size: 8, align: "center" });
@@ -627,7 +631,7 @@ export function createProcedureAftercarePdf(row: ProcedureAftercarePdfRow) {
   const doctorName = row.doctor_name || "Dr. Fatimah Al-Zahra T. Ditti";
   const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
   const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : doctorName;
-  const specialty = row.doctor_specialty || "Family and Aesthetic Medicine Specialist";
+  const specialty = row.doctor_specialty || "Family Medicine Specialist | Aesthetic Medicine";
   const prcNo = row.doctor_license_no || "0141185";
 
   const ops: string[] = [];
@@ -643,12 +647,11 @@ export function createProcedureAftercarePdf(row: ProcedureAftercarePdfRow) {
 
   text(ops, "POST-PROCEDURE AFTERCARE", 570, 752, { size: 10, font: "F2", align: "right" });
   text(ops, `Date: ${dateTime(row.signed_at)}`, 570, 738, { size: 9, align: "right" });
-
-  text(ops, doctorHeaderName, 306, 720, { size: 15, font: "F2", align: "center" });
-  text(ops, specialty, 306, 705, { size: 10.5, align: "center" });
-  text(ops, "Doc Kulot Online Clinic", 306, 689, { size: 15, font: "F2", align: "center" });
-  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 674, { size: 10, align: "center" });
-  rule(ops, 42, 664, 570);
+  text(ops, doctorHeaderName, 306, 724, { size: 15, font: "F2", align: "center" });
+  text(ops, "Family Medicine Specialist | Aesthetic Medicine", 306, 709, { size: 9.5, align: "center" });
+  text(ops, "Doc Kulot Online Clinic", 306, 692, { size: 14, font: "F2", align: "center" });
+  text(ops, "Zamboanga City, Zamboanga Del Sur", 306, 678, { size: 9.5, align: "center" });
+  rule(ops, 42, 668, 570);
 
   // Title
   text(ops, "POST-PROCEDURE AFTERCARE INSTRUCTIONS", 306, 646, { size: 13.5, font: "F2", align: "center" });
@@ -707,7 +710,7 @@ export function createProcedureAftercarePdf(row: ProcedureAftercarePdfRow) {
   y = wrapped(ops, `Urgent Alert: ${alert}`, 52, y, { size: 8.5, font: "F3", max: 86, lines: 2, leading: 11 }) - 8;
 
   // Physician Signature
-  const sigY = Math.max(y - 10, 80);
+  const sigY = Math.max(y - 10, 84);
   if (doctorSig) {
     const box = fitImageSize(doctorSig, 120, 42);
     const imgX = 460 - box.width / 2;
@@ -718,8 +721,9 @@ export function createProcedureAftercarePdf(row: ProcedureAftercarePdfRow) {
   }
   rule(ops, 370, sigY + 2, 550);
   text(ops, doctorHeaderName, 460, sigY - 10, { size: 9.5, font: "F2", align: "center" });
-  text(ops, specialty, 460, sigY - 21, { size: 8, align: "center" });
-  text(ops, `PRC No.: ${prcNo}`, 460, sigY - 32, { size: 8, font: "F2", align: "center" });
+  text(ops, "Family Medicine", 460, sigY - 20, { size: 8, align: "center" });
+  text(ops, "Aesthetic Medicine", 460, sigY - 29, { size: 8, align: "center" });
+  text(ops, `PRC License No.: ${prcNo}`, 460, sigY - 38, { size: 8, font: "F2", align: "center" });
 
   rule(ops, 42, 28, 570);
   text(ops, "(End of Post-Procedure Aftercare Instructions)", 306, 18, { size: 8.5, align: "center" });

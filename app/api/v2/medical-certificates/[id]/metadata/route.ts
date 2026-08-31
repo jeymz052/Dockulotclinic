@@ -133,7 +133,7 @@ export async function GET(req: Request, { params }: Ctx) {
 
     const doctorProfile = Array.isArray(doctorRow?.profiles) ? doctorRow?.profiles[0] : doctorRow?.profiles;
     const doctorName = doctorProfile?.full_name ?? metadata?.doctor_name ?? "Dr. Fatimah Al-Zahra T. Ditti";
-    const doctorSpecialty = doctorRow?.specialty ?? metadata?.doctor_specialty ?? "Family and Aesthetic Medicine Specialist";
+    const doctorSpecialty = doctorRow?.specialty ?? metadata?.doctor_specialty ?? "Family Medicine Specialist | Aesthetic Medicine";
     const doctorLicenseNo = doctorRow?.license_no ?? metadata?.doctor_license_no ?? "0141185";
 
     return Response.json({

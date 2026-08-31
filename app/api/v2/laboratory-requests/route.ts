@@ -146,7 +146,7 @@ export async function POST(req: Request, _ctx: Ctx) {
           notes,
           doctor_id: doctorId || null,
           doctor_name: doctor?.profiles?.full_name ?? "FATIMAH AL-ZAHRA T. DITTI, MD, DFM",
-          doctor_specialty: doctor?.specialty ?? "Family and Community Medicine",
+          doctor_specialty: doctor?.specialty ?? "Family Medicine, Aesthetic Medicine",
           doctor_license_no: doctor?.license_no ?? "0141185",
           patient_name: patient?.profiles?.full_name ?? null,
           patient_dob: patient?.dob ?? null,
