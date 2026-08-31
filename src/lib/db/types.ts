@@ -286,6 +286,7 @@ export type LandingContent = {
   hero_cta_primary: string;
   hero_cta_secondary: string;
   hero_background_url: string | null;
+  auth_background_url?: string | null;
   hero_slides: LandingHeroSlide[];
   about_eyebrow: string;
   about_title: string;

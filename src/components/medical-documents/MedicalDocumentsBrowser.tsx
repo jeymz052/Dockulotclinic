@@ -289,6 +289,11 @@ export function MedicalDocumentsBrowser({
     };
   }, [accessToken, selectedItem]);
 
+  /** Returns true when running on iOS (Safari or Chrome-on-iOS) — blob download via <a> is broken there. */
+  function isIos() {
+    return /iP(hone|ad|od)/i.test(navigator.userAgent);
+  }
+
   async function resolveSource(item: MedicalDocumentItem) {
     const source = item.openUrl ?? item.downloadUrl ?? item.previewUrl ?? "";
     if (!source) return null;
@@ -304,15 +309,29 @@ export function MedicalDocumentsBrowser({
   }
 
   async function openDocument(item: MedicalDocumentItem) {
+    // Open a blank window BEFORE the async fetch so mobile browsers don't
+    // treat it as an unsolicited popup and block it.
+    const win = window.open("", "_blank");
     try {
       const source = await resolveSource(item);
-      if (!source) return;
-      window.open(source, "_blank", "noopener,noreferrer");
+      if (!source) {
+        win?.close();
+        return;
+      }
+      if (win) {
+        win.location.href = source;
+      } else {
+        // Fallback in case window.open returned null (e.g. popups fully disabled).
+        window.location.href = source;
+      }
       if (source.startsWith("blob:")) {
-        window.setTimeout(() => window.URL.revokeObjectURL(source), 15_000);
+        window.setTimeout(() => window.URL.revokeObjectURL(source), 60_000);
       }
     } catch {
-      window.open(item.openUrl ?? item.previewUrl ?? item.downloadUrl ?? "", "_blank", "noopener,noreferrer");
+      win?.close();
+      // Last-resort: navigate in-page — at least the user gets the PDF.
+      const fallback = item.openUrl ?? item.previewUrl ?? item.downloadUrl ?? "";
+      if (fallback) window.open(fallback, "_blank", "noopener,noreferrer");
     }
   }
 
@@ -320,6 +339,21 @@ export function MedicalDocumentsBrowser({
     try {
       const source = await resolveSource(item);
       if (!source) return;
+
+      // iOS Safari cannot trigger a file download via <a download href="blob:…">.
+      // The best we can do is open the blob URL in a new tab so the user can
+      // use the share-sheet to save the PDF to Files.
+      if (isIos() && source.startsWith("blob:")) {
+        const win = window.open("", "_blank");
+        if (win) {
+          win.location.href = source;
+        } else {
+          window.location.href = source;
+        }
+        window.setTimeout(() => window.URL.revokeObjectURL(source), 60_000);
+        return;
+      }
+
       const anchor = document.createElement("a");
       anchor.href = source;
       anchor.download = item.fileName ?? `${item.title}.pdf`;
@@ -332,6 +366,10 @@ export function MedicalDocumentsBrowser({
     } catch {
       const direct = item.downloadUrl ?? item.previewUrl ?? "";
       if (!direct) return;
+      if (isIos()) {
+        window.open(direct, "_blank", "noopener,noreferrer");
+        return;
+      }
       const anchor = document.createElement("a");
       anchor.href = direct;
       anchor.download = item.fileName ?? `${item.title}.pdf`;

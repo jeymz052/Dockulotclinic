@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       "result-before",
       "result-after",
       "result-single",
+      "auth-bg",
     ]);
 
     if (!allowedKinds.has(kindRaw)) {

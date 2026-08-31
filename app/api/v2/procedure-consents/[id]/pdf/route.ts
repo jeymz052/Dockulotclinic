@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: Ctx) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${getProcedureConsentPdfFilename(data.procedure_name)}"`,
+        "Content-Disposition": `${new URL(req.url).searchParams.get("inline") === "1" ? "inline" : "attachment"}; filename="${getProcedureConsentPdfFilename(data.procedure_name)}"`,
         "Cache-Control": "no-store, max-age=0",
       },
     });

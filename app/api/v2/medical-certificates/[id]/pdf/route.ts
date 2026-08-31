@@ -137,7 +137,7 @@ export async function GET(req: Request, { params }: Ctx) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${data.file_name || getMedicalCertificatePdfFilename(data.id)}"`,
+        "Content-Disposition": `${new URL(req.url).searchParams.get("inline") === "1" ? "inline" : "attachment"}; filename="${data.file_name || getMedicalCertificatePdfFilename(data.id)}"`,
         "Cache-Control": "no-store, max-age=0",
       },
     });

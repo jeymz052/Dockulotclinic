@@ -43,6 +43,26 @@ export default function LoginPage() {
     }
     return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
   });
+  const [bgUrl, setBgUrl] = useState("/images/glowrxloginbg - Copy.png");
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/v2/landing-content", { cache: "no-store" });
+        if (!res.ok) return;
+        const payload = (await res.json()) as { content?: { auth_background_url?: string | null } };
+        if (active && payload.content?.auth_background_url) {
+          setBgUrl(payload.content.auth_background_url);
+        }
+      } catch {
+        // Keep default background
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -204,7 +224,7 @@ export default function LoginPage() {
   return (
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden px-4 md:px-10 lg:px-20">
       <Image
-        src="/images/glowrxloginbg - Copy.png"
+        src={bgUrl}
         alt="Doc Kulot consultation background"
         fill
         priority

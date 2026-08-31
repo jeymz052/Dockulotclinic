@@ -56,11 +56,14 @@ export async function GET(req: Request, { params }: Ctx) {
 
     const settings = await readSystemSettings();
     const pdf = createPrescriptionPdf({ ...data, doctor_signature_data_url: settings.doctorSignatureDataUrl });
+    const url = new URL(req.url);
+    const isInline = url.searchParams.get("inline") === "1";
     return new Response(pdf, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${getPrescriptionPdfFilename(data.prescription_no)}"`,
+        "Content-Disposition": `${isInline ? "inline" : "attachment"}; filename="${getPrescriptionPdfFilename(data.prescription_no)}"`,
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (e) {

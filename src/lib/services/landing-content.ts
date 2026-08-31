@@ -185,7 +185,7 @@ export async function updateLandingContent(
   }
 
   // URL fields — null clears, string sets.
-  for (const f of ["hero_background_url", "doctor_photo_url", "program_feature_image_url"] as const) {
+  for (const f of ["hero_background_url", "doctor_photo_url", "program_feature_image_url", "auth_background_url"] as const) {
     if (f in input) {
       const v = (input as Record<string, unknown>)[f];
       if (v === null || typeof v === "string") patch[f] = v;
@@ -193,9 +193,6 @@ export async function updateLandingContent(
   }
 
   if (input.testimonials !== undefined) {
-    if (!Array.isArray(input.testimonials)) {
-      throw new HttpError(400, "testimonials must be an array");
-    }
     patch.testimonials = sanitizeTestimonials(input.testimonials);
   }
 
@@ -347,7 +344,7 @@ export async function updateLandingContent(
 // — this avoids unbounded disk growth on the bucket and means we don't need
 // to clean up old files on update.
 export async function uploadLandingImage(
-  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single",
+  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single" | "auth-bg",
   file: File,
   actor: Actor,
 ): Promise<{ url: string; path: string }> {

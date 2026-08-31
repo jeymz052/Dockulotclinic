@@ -26,6 +26,8 @@ export async function PATCH(req: Request) {
     const body = (await req.json()) as LandingContentInput;
     const content = await updateLandingContent(body, actor);
     revalidatePath("/");
+    revalidatePath("/login");
+    revalidatePath("/register");
     return ok({ content });
   } catch (e) {
     return httpError(e);

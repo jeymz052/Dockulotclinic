@@ -34,7 +34,7 @@ import {
   DEFAULT_TESTIMONIALS,
 } from "@/src/lib/landing-defaults";
 
-type Tab = "home" | "programs" | "services" | "about" | "results" | "booking" | "blog" | "videos" | "live" | "testimonials" | "faq" | "contact" | "footer";
+type Tab = "home" | "programs" | "services" | "about" | "results" | "booking" | "blog" | "videos" | "live" | "testimonials" | "faq" | "contact" | "footer" | "auth";
 type Feedback = { kind: "ok" | "err"; msg: string } | null;
 type Faq = {
   id: string;
@@ -46,6 +46,7 @@ type Faq = {
 };
 
 const DEFAULT_HERO = "/images/dockulotbgs.png";
+const DEFAULT_AUTH_BG = "/images/glowrxloginbg - Copy.png";
 const DEFAULT_DOCTOR = "/images/SEF_0442.jpeg";
 const DEFAULT_PROGRAM_FEATURE_IMAGE = "/images/SEF_0450.jpeg";
 const DEFAULT_RESULTS_BOARD_TITLE = "GlowRx Results";
@@ -80,6 +81,7 @@ const TABS: Array<{ id: Tab; label: string; detail: string }> = [
   { id: "faq", label: "FAQ", detail: "Landing-page FAQs" },
   { id: "contact", label: "Contact", detail: "Contact copy and socials" },
   { id: "footer", label: "Footer", detail: "Footer copy and lists" },
+  { id: "auth", label: "Sign In / Sign Up", detail: "Shared auth background" },
 ];
 
 export default function ContentsManagerPage() {
@@ -144,6 +146,14 @@ export default function ContentsManagerPage() {
     };
   }, [accessToken]);
 
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = window.setTimeout(() => {
+      setFeedback(null);
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
+
   const dirty = useMemo(() => {
     if (!content || !original) return false;
     return JSON.stringify(content) !== JSON.stringify(original);
@@ -151,7 +161,6 @@ export default function ContentsManagerPage() {
 
   function update<K extends keyof LandingContent>(key: K, value: LandingContent[K]) {
     setContent((current) => (current ? { ...current, [key]: value } : current));
-    setFeedback(null);
   }
 
   function patchArray<K extends keyof LandingContent>(
@@ -159,7 +168,6 @@ export default function ContentsManagerPage() {
     fn: (current: LandingContent[K]) => LandingContent[K],
   ) {
     setContent((current) => (current ? { ...current, [key]: fn(current[key]) } : current));
-    setFeedback(null);
   }
 
   function addHeroSlide() {
@@ -315,6 +323,7 @@ export default function ContentsManagerPage() {
         hero_cta_primary: content.hero_cta_primary,
         hero_cta_secondary: content.hero_cta_secondary,
         hero_background_url: content.hero_background_url,
+        auth_background_url: content.auth_background_url,
         hero_slides: content.hero_slides,
         about_eyebrow: content.about_eyebrow,
         about_title: content.about_title,
@@ -383,7 +392,7 @@ export default function ContentsManagerPage() {
       if (!res.ok || !payload.content) throw new Error(payload.message ?? "Failed to save website content");
       setContent(payload.content);
       setOriginal(payload.content);
-      setFeedback({ kind: "ok", msg: "Website content updated." });
+      setFeedback({ kind: "ok", msg: "Website content saved and published successfully." });
     } catch (error) {
       setFeedback({ kind: "err", msg: error instanceof Error ? error.message : "Failed to save website content" });
     } finally {
@@ -483,7 +492,7 @@ export default function ContentsManagerPage() {
   const faqGroups = groupFaqsByCategory(faqs);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-24">
       <div className="overflow-hidden rounded-[2rem] border border-neutral-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.32),_transparent_36%),linear-gradient(135deg,#ffffff_0%,#f7f7f7_52%,#f5f5f5_100%)] p-6 shadow-[0_28px_70px_-48px_rgba(17,17,17,0.35)]">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-700">Website Content</p>
@@ -507,23 +516,6 @@ export default function ContentsManagerPage() {
           </div>
         </div>
       </div>
-
-      {feedback ? (
-        <div
-          className={`flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm font-medium ${
-            feedback.kind === "ok"
-              ? "border border-neutral-200 bg-neutral-50 text-neutral-700"
-              : "border border-neutral-200 bg-neutral-50 text-neutral-800"
-          }`}
-        >
-          {feedback.kind === "ok" ? (
-            <FaCircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" aria-hidden="true" />
-          ) : (
-            <FaCircleXmark className="mt-0.5 h-4 w-4 shrink-0 text-neutral-600" aria-hidden="true" />
-          )}
-          <span>{feedback.msg}</span>
-        </div>
-      ) : null}
 
       <div className="rounded-[1.75rem] border border-neutral-100 bg-white p-2 shadow-sm">
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-5">
@@ -585,13 +577,14 @@ export default function ContentsManagerPage() {
                       <Textarea label="Subtitle" rows={3} value={slide.subtitle} onChange={(value) => updateHeroSlide(index, { subtitle: value })} />
                       <ImageUploader
                         kind="hero-slide"
-                        label="Slide image"
+                        label={`Hero slide ${index + 1}`}
                         hint="This image fills the hero carousel background for this slide."
                         currentUrl={slide.image || null}
                         defaultUrl={fallbackImage}
                         accessToken={accessToken}
                         onChange={(url) => updateHeroSlide(index, { image: url || fallbackImage })}
                         onError={(msg) => setFeedback({ kind: "err", msg })}
+                        onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                       />
                     </div>
                   </div>
@@ -646,6 +639,7 @@ export default function ContentsManagerPage() {
                 accessToken={accessToken}
                 onChange={(url) => update("program_feature_image_url", url)}
                 onError={(msg) => setFeedback({ kind: "err", msg })}
+                onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                 aspect="portrait"
               />
             </PreviewCard>
@@ -674,6 +668,7 @@ export default function ContentsManagerPage() {
                   accessToken={accessToken}
                   onChange={(url) => update("doctor_photo_url", url)}
                   onError={(msg) => setFeedback({ kind: "err", msg })}
+                  onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                   aspect="portrait"
                 />
               </div>
@@ -795,6 +790,7 @@ export default function ContentsManagerPage() {
                         accessToken={accessToken}
                         onChange={(url) => updateResultItem(index, { beforeImage: url || undefined })}
                         onError={(msg) => setFeedback({ kind: "err", msg })}
+                        onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                         compact
                       />
                       <ImageUploader
@@ -806,6 +802,7 @@ export default function ContentsManagerPage() {
                         accessToken={accessToken}
                         onChange={(url) => updateResultItem(index, { afterImage: url || undefined })}
                         onError={(msg) => setFeedback({ kind: "err", msg })}
+                        onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                         compact
                       />
                       <ImageUploader
@@ -817,6 +814,7 @@ export default function ContentsManagerPage() {
                         accessToken={accessToken}
                         onChange={(url) => updateResultItem(index, { image: url || undefined })}
                         onError={(msg) => setFeedback({ kind: "err", msg })}
+                        onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
                         compact
                       />
                     </div>
@@ -1324,10 +1322,95 @@ export default function ContentsManagerPage() {
         </EditorSection>
       ) : null}
 
+      {activeTab === "auth" ? (
+        <EditorSection
+          title="Sign In & Sign Up"
+          note="Manage the shared background image used across both the Sign In and Sign Up authentication pages."
+        >
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="space-y-4">
+              <ImageUploader
+                kind="auth-bg"
+                label="Sign In & Sign Up Background Image"
+                hint="This background image is shared and displayed on both the /login and /register pages behind the authentication card."
+                currentUrl={content.auth_background_url ?? null}
+                defaultUrl={DEFAULT_AUTH_BG}
+                accessToken={accessToken}
+                onChange={(url) => update("auth_background_url", url)}
+                onError={(msg) => setFeedback({ kind: "err", msg })}
+                onSuccess={(msg) => setFeedback({ kind: "ok", msg })}
+              />
+              <div className="rounded-[1.4rem] border border-neutral-100 bg-slate-50/70 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">Live Auth Links</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Preview how the background appears directly on the live authentication pages:
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link
+                    href="/login"
+                    target="_blank"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50"
+                  >
+                    Open Sign In Page
+                    <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                  <Link
+                    href="/register"
+                    target="_blank"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50"
+                  >
+                    Open Sign Up Page
+                    <FaArrowUpRightFromSquare className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <PreviewCard title="Auth Page Preview">
+              <div className="relative overflow-hidden rounded-[1.4rem] border border-black/10 bg-black aspect-[16/10] shadow-sm flex items-center justify-end p-4">
+                <Image
+                  src={content.auth_background_url || DEFAULT_AUTH_BG}
+                  alt="Auth background preview"
+                  fill
+                  unoptimized
+                  className="object-cover object-left md:object-center"
+                />
+                <div className="absolute inset-0 bg-black/60" />
+                <div className="relative z-10 w-40 rounded-xl border border-black/10 bg-white/95 p-3.5 shadow-xl backdrop-blur-sm">
+                  <div className="flex justify-center mb-1.5">
+                    <div className="h-3.5 w-20 rounded bg-neutral-200" />
+                  </div>
+                  <div className="space-y-2 mt-2">
+                    <div className="h-2 w-14 rounded bg-neutral-300 mx-auto" />
+                    <div className="h-4 w-full rounded bg-neutral-100 border border-neutral-200" />
+                    <div className="h-4 w-full rounded bg-neutral-100 border border-neutral-200" />
+                    <div className="h-4 w-full rounded bg-black" />
+                  </div>
+                </div>
+              </div>
+            </PreviewCard>
+          </div>
+        </EditorSection>
+      ) : null}
+
       <div className="sticky bottom-4 z-30 mt-2 flex flex-col items-stretch gap-3 rounded-2xl border border-neutral-100 bg-white/95 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-        <p className={`text-xs font-semibold ${dirty ? "text-neutral-700" : "text-slate-500"}`}>
-          {dirty ? "Unsaved landing-page changes" : "Landing-page content is up to date"}
-        </p>
+        <div className="flex items-center gap-2">
+          {feedback && feedback.kind === "ok" ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-800 animate-fade-in">
+              <FaCircleCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" aria-hidden="true" />
+              <span>{feedback.msg}</span>
+            </div>
+          ) : feedback && feedback.kind === "err" ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-bold text-red-800 animate-fade-in">
+              <FaCircleXmark className="h-3.5 w-3.5 text-red-600 shrink-0" aria-hidden="true" />
+              <span>{feedback.msg}</span>
+            </div>
+          ) : (
+            <p className={`text-xs font-semibold ${dirty ? "text-amber-700 font-bold" : "text-slate-500"}`}>
+              {dirty ? "Unsaved changes ready to be saved" : "Landing-page content is up to date"}
+            </p>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <button
             type="button"
@@ -1341,12 +1424,38 @@ export default function ContentsManagerPage() {
             type="button"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded-full bg-black px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-black px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save website content"}
           </button>
         </div>
       </div>
+
+      {feedback ? (
+        <div className="fixed bottom-20 right-6 z-50 max-w-md animate-slide-up rounded-2xl border border-neutral-200 bg-white/95 p-4 shadow-2xl backdrop-blur sm:bottom-24">
+          <div className="flex items-start gap-3">
+            {feedback.kind === "ok" ? (
+              <FaCircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+            ) : (
+              <FaCircleXmark className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden="true" />
+            )}
+            <div className="flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                {feedback.kind === "ok" ? "Success" : "Error"}
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-neutral-900">{feedback.msg}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="text-neutral-400 hover:text-neutral-700 p-1 text-sm font-bold"
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1417,6 +1526,7 @@ function normalizeLandingContent(content: LandingContent): LandingContent {
     contact_youtube_label: content.contact_youtube_label ?? "Doc Kulot YouTube",
     contact_youtube_url: content.contact_youtube_url ?? "https://www.youtube.com/@DocKulot",
     footer_hours: content.footer_hours?.length ? content.footer_hours : DEFAULT_FOOTER_HOURS,
+    auth_background_url: content.auth_background_url ?? null,
   };
 }
 
@@ -1577,10 +1687,11 @@ function ImageUploader({
   accessToken,
   onChange,
   onError,
+  onSuccess,
   aspect = "landscape",
   compact = false,
 }: {
-  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single";
+  kind: "hero-bg" | "hero-slide" | "doctor-photo" | "program-photo" | "result-before" | "result-after" | "result-single" | "auth-bg";
   label: string;
   hint: string;
   currentUrl: string | null;
@@ -1588,10 +1699,12 @@ function ImageUploader({
   accessToken: string | null;
   onChange: (url: string | null) => void;
   onError: (msg: string) => void;
+  onSuccess?: (msg: string) => void;
   aspect?: "landscape" | "portrait";
   compact?: boolean;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [localFeedback, setLocalFeedback] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   async function handleFile(file: File) {
@@ -1600,6 +1713,7 @@ function ImageUploader({
       return;
     }
     setUploading(true);
+    setLocalFeedback(null);
     try {
       const form = new FormData();
       form.append("kind", kind);
@@ -1611,7 +1725,13 @@ function ImageUploader({
       });
       const payload = (await res.json().catch(() => ({}))) as { url?: string; message?: string };
       if (!res.ok || !payload.url) throw new Error(payload.message ?? "Upload failed");
+      const isReplacement = Boolean(currentUrl);
       onChange(payload.url);
+      const successMsg = isReplacement
+        ? `"${label}" replaced successfully. Remember to click "Save website content" below to apply.`
+        : `"${label}" uploaded successfully. Remember to click "Save website content" below to apply.`;
+      setLocalFeedback(isReplacement ? "Replaced!" : "Uploaded!");
+      onSuccess?.(successMsg);
     } catch (error) {
       onError(error instanceof Error ? error.message : "Upload failed");
     } finally {
@@ -1620,12 +1740,26 @@ function ImageUploader({
     }
   }
 
+  function handleResetDefault() {
+    onChange(null);
+    setLocalFeedback("Reset to default.");
+    onSuccess?.(`"${label}" reset to default image. Click "Save website content" below to apply.`);
+  }
+
   return (
     <div className={`rounded-[1.4rem] border border-neutral-100 bg-neutral-50/60 ${compact ? "p-3" : "p-4"}`}>
-      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-        {kind === "doctor-photo" || kind === "program-photo" ? <FaUserDoctor className="h-3 w-3" aria-hidden="true" /> : <FaNewspaper className="h-3 w-3" aria-hidden="true" />}
-        {label}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+          {kind === "doctor-photo" || kind === "program-photo" ? <FaUserDoctor className="h-3 w-3" aria-hidden="true" /> : <FaNewspaper className="h-3 w-3" aria-hidden="true" />}
+          {label}
+        </p>
+        {localFeedback ? (
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+            <FaCircleCheck className="h-3 w-3" />
+            {localFeedback}
+          </span>
+        ) : null}
+      </div>
       {!compact ? <p className="mt-1 text-xs leading-5 text-slate-600">{hint}</p> : null}
       <div className={`relative mt-4 overflow-hidden rounded-[1.25rem] border border-neutral-100 bg-white ${aspect === "portrait" ? "aspect-[3/4]" : "aspect-[16/9]"}`}>
         <Image src={currentUrl || defaultUrl} alt={label} fill unoptimized className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
@@ -1635,7 +1769,7 @@ function ImageUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-black px-3.5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FaCloudArrowUp className="h-3 w-3" aria-hidden="true" />
           {uploading ? "Uploading..." : currentUrl ? "Replace" : "Upload"}
@@ -1643,7 +1777,7 @@ function ImageUploader({
         {currentUrl ? (
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={handleResetDefault}
             className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             Use default
@@ -1751,4 +1885,3 @@ function RemoveButton({
     </button>
   );
 }
-
