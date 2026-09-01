@@ -212,8 +212,7 @@ export async function issueBilling(input: {
       },
     ]),
   );
-
-  const normalizedItems = input.items.map((item) => {
+  const normalizedItems = input.items.map((item) => {
     if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
       throw new HttpError(400, "Quantity must be greater than zero.");
     }
@@ -227,12 +226,16 @@ export async function issueBilling(input: {
         throw new HttpError(400, "POS only allows active clinic services and inventory products.");
       }
 
+      const customPrice = typeof item.unit_price === "number" && Number.isFinite(item.unit_price) && item.unit_price >= 0
+        ? round2(item.unit_price)
+        : Number(pricingItem.price);
+
       return {
         pricing_id: pricingItem.id,
         product_id: null,
-        description: pricingItem.name,
+        description: item.description?.trim() || pricingItem.name,
         quantity: item.quantity,
-        unit_price: Number(pricingItem.price),
+        unit_price: customPrice,
       };
     }
 
@@ -245,12 +248,16 @@ export async function issueBilling(input: {
       throw new HttpError(400, `Not enough stock for ${product.brand_name ?? product.name}.`);
     }
 
+    const customPrice = typeof item.unit_price === "number" && Number.isFinite(item.unit_price) && item.unit_price >= 0
+      ? round2(item.unit_price)
+      : Number(product.selling_price);
+
     return {
       pricing_id: null,
       product_id: product.id,
-      description: [product.brand_name ?? product.name, product.dosage].filter(Boolean).join(" - "),
+      description: item.description?.trim() || [product.brand_name ?? product.name, product.dosage].filter(Boolean).join(" - "),
       quantity: item.quantity,
-      unit_price: Number(product.selling_price),
+      unit_price: customPrice,
     };
   });
   let patientCategory: "New" | "Existing" | undefined;

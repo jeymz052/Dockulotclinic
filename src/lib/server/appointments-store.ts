@@ -12,7 +12,7 @@ import {
   mapV2RowToLegacy,
   normalizeSqlTime,
 } from "@/src/lib/server/legacy-bridge";
-import { readSystemSettings } from "@/src/lib/server/clinic-store";
+import { createPatient, readSystemSettings } from "@/src/lib/server/clinic-store";
 import { resolveDoctorUuid } from "@/src/lib/server/doctor-identity";
 import { getClinicToday, isPastInClinicTime } from "@/src/lib/timezone";
 import {
@@ -35,6 +35,7 @@ import {
 } from "@/src/lib/patient-registration";
 
 export type AppointmentCreatePayload = {
+  patientId?: string;
   patientName: string;
   email: string;
   phone: string;
@@ -351,7 +352,10 @@ export async function resolveBookingPatientId(
     }
 
     const fields = buildBookingPatientFields(payload);
-    const validationError = validatePatientRegistrationFields(fields);
+    const validationError = validatePatientRegistrationFields(fields, {
+      requireEmail: false,
+      requireGuardianForMinors: false,
+    });
     if (validationError) {
       throw new Error(validationError);
     }
@@ -380,16 +384,101 @@ export async function resolveBookingPatientId(
     return patientUuid;
   }
 
-  const patientUuid = await findOrCreatePatientByEmail(
-    payload.email,
-    payload.patientName,
-    payload.phone,
-  );
+  // 1. Direct patientId match from existing records
+  if (payload.patientId) {
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("id", payload.patientId)
+      .maybeSingle<{ id: string; role: string }>();
 
-  await syncPatientDetails(patientUuid);
-  await upsertPatientCategory(patientUuid, resolvedCategory);
+    if (existingProfile && existingProfile.role === "patient") {
+      await syncPatientDetails(existingProfile.id);
+      await upsertPatientCategory(existingProfile.id, resolvedCategory);
+      return existingProfile.id;
+    }
+  }
 
-  return patientUuid;
+  // 2. Email lookup / creation if email is provided
+  const normalizedEmail = (payload.email ?? "").trim().toLowerCase();
+  if (normalizedEmail) {
+    const patientUuid = await findOrCreatePatientByEmail(
+      normalizedEmail,
+      payload.patientName,
+      payload.phone,
+    );
+
+    await syncPatientDetails(patientUuid);
+    await upsertPatientCategory(patientUuid, resolvedCategory);
+    return patientUuid;
+  }
+
+  // 3. Fallback for walk-in patients without email: match by phone or name
+  const normalizedPhone = (payload.phone ?? "").trim();
+  const normalizedName = payload.patientName.trim();
+
+  let matchedId: string | null = null;
+  if (normalizedPhone) {
+    const { data: matchByPhone } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("phone", normalizedPhone)
+      .eq("role", "patient")
+      .maybeSingle<{ id: string; role: string }>();
+    if (matchByPhone) matchedId = matchByPhone.id;
+  }
+
+  if (!matchedId && normalizedName) {
+    const { data: matchByName } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("full_name", normalizedName)
+      .eq("role", "patient")
+      .maybeSingle<{ id: string; role: string }>();
+    if (matchByName) matchedId = matchByName.id;
+  }
+
+  if (matchedId) {
+    await syncPatientDetails(matchedId);
+    await upsertPatientCategory(matchedId, resolvedCategory);
+    return matchedId;
+  }
+
+  // 4. Create new patient profile for walk-in using createPatient
+  const createdPatients = await createPatient({
+    patientNumber: "",
+    fullName: payload.patientName,
+    firstName: payload.firstName ?? "",
+    middleName: payload.middleName ?? "",
+    lastName: payload.lastName ?? "",
+    suffixName: payload.suffixName ?? "",
+    email: "",
+    phone: payload.phone,
+    dateOfBirth: payload.dateOfBirth ?? "",
+    gender: payload.gender ?? "",
+    civilStatus: payload.civilStatus ?? "",
+    address: payload.address ?? "",
+    religion: payload.religion ?? "",
+    occupation: payload.occupation ?? "",
+    guardianName: payload.guardianName ?? "",
+    doctorNotes: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    familyHistory: "",
+    allergies: "",
+    medicalHistory: "",
+    isWalkIn: true,
+    patientCategory: resolvedCategory,
+  });
+
+  const createdPatient =
+    createdPatients.find((p) => p.fullName === payload.patientName) ??
+    createdPatients[createdPatients.length - 1];
+  if (!createdPatient) {
+    throw new Error("Failed to create patient profile for walk-in appointment.");
+  }
+
+  return createdPatient.id;
 }
 
 async function hydrateRows(rows: V2Appointment[]): Promise<AppointmentRecord[]> {
@@ -608,7 +697,7 @@ export type BookingPatientDetails = {
 
 export type BookingPatientPayload = Pick<
   AppointmentCreatePayload,
-  "email" | "patientName" | "phone" | "patientStatus"
+  "patientId" | "email" | "patientName" | "phone" | "patientStatus"
 > & BookingPatientDetails;
 
 function hasBookingPatientDetails(payload: BookingPatientDetails) {

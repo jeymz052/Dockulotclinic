@@ -252,6 +252,14 @@ export default function POSBillingPage() {
     setLines((current) => current.map((line) => line.tempId === tempId ? { ...line, quantity: Math.max(1, quantity) } : line));
   }
 
+  function updateUnitPrice(tempId: string, unitPrice: number) {
+    setLines((current) => current.map((line) => line.tempId === tempId ? { ...line, unit_price: Math.max(0, unitPrice) } : line));
+  }
+
+  function updateDescription(tempId: string, description: string) {
+    setLines((current) => current.map((line) => line.tempId === tempId ? { ...line, description } : line));
+  }
+
   function removeItem(tempId: string) {
     setLines((current) => current.filter((line) => line.tempId !== tempId));
   }
@@ -534,29 +542,118 @@ export default function POSBillingPage() {
               )}
 
               <div className="mt-3 space-y-2">
-                {lines.map((line) => (
-                  <div key={line.tempId} className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-slate-950">{line.description}</p>
-                        <p className="mt-1 font-mono text-xs text-slate-500">{peso(line.unit_price)} each</p>
+                {lines.map((line) => {
+                  const isGlp = line.description.toLowerCase().includes("glp") || line.pricing_id === pricing.find((p) => p.code === "PROC-GLP-INITIATION")?.id;
+                  return (
+                    <div key={line.tempId} className="rounded-2xl border border-slate-200 bg-white p-3 space-y-2.5 shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <input
+                            type="text"
+                            value={line.description}
+                            onChange={(event) => updateDescription(line.tempId, event.target.value)}
+                            disabled={!!issuedBillingId}
+                            placeholder="Description / Note"
+                            className="w-full truncate rounded-lg border border-transparent px-1.5 py-0.5 text-sm font-bold text-slate-950 outline-none hover:border-slate-300 focus:border-emerald-400 focus:bg-emerald-50/40"
+                            title="Click to edit item title or add remarks (e.g. Dose 1 of 8)"
+                          />
+                        </div>
+                        {!issuedBillingId ? (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(line.tempId)}
+                            className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            aria-label="Remove item"
+                          >
+                            <FaXmark className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
                       </div>
-                      {!issuedBillingId ? (
-                        <button type="button" onClick={() => removeItem(line.tempId)} className="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label="Remove item">
-                          <FaXmark className="h-3.5 w-3.5" />
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="inline-flex overflow-hidden rounded-xl border border-slate-200">
-                        <button type="button" onClick={() => updateQty(line.tempId, line.quantity - 1)} disabled={!!issuedBillingId} className="px-3 py-1.5 text-sm font-black disabled:opacity-40">-</button>
-                        <span className="border-x border-slate-200 px-4 py-1.5 font-mono text-sm font-black">{line.quantity}</span>
-                        <button type="button" onClick={() => updateQty(line.tempId, line.quantity + 1)} disabled={!!issuedBillingId} className="px-3 py-1.5 text-sm font-black disabled:opacity-40">+</button>
+
+                      {/* Quick preset chips for GLP Initiation / installment plans */}
+                      {isGlp && !issuedBillingId && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Plan:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateUnitPrice(line.tempId, 10000);
+                              updateDescription(line.tempId, "GLP Initiation (Full Package)");
+                            }}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-900"
+                          >
+                            Full: ₱10,000
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateUnitPrice(line.tempId, 5000);
+                              updateDescription(line.tempId, "GLP Initiation (50% Downpayment)");
+                            }}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-900"
+                          >
+                            50%: ₱5,000
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateUnitPrice(line.tempId, 1250);
+                              updateDescription(line.tempId, "GLP Initiation (Per Visit / Weekly Dose)");
+                            }}
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-900"
+                          >
+                            Per Visit: ₱1,250
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-400">₱</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={line.unit_price}
+                            onChange={(event) => updateUnitPrice(line.tempId, Number(event.target.value || 0))}
+                            disabled={!!issuedBillingId}
+                            aria-label="Unit Price"
+                            title="Edit unit price directly"
+                            className="w-24 rounded-lg border border-slate-300 px-2 py-1 font-mono text-xs font-black text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100"
+                          />
+                          <span className="text-[11px] font-medium text-slate-400">each</span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="inline-flex overflow-hidden rounded-xl border border-slate-200">
+                            <button
+                              type="button"
+                              onClick={() => updateQty(line.tempId, line.quantity - 1)}
+                              disabled={!!issuedBillingId}
+                              className="px-2.5 py-1 text-xs font-black disabled:opacity-40"
+                            >
+                              -
+                            </button>
+                            <span className="border-x border-slate-200 px-3 py-1 font-mono text-xs font-black">
+                              {line.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateQty(line.tempId, line.quantity + 1)}
+                              disabled={!!issuedBillingId}
+                              className="px-2.5 py-1 text-xs font-black disabled:opacity-40"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <p className="font-mono text-sm font-black text-slate-950 text-right min-w-[70px]">
+                            {peso(line.quantity * line.unit_price)}
+                          </p>
+                        </div>
                       </div>
-                      <p className="font-mono text-sm font-black text-slate-950">{peso(line.quantity * line.unit_price)}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

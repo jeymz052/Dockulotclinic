@@ -160,9 +160,9 @@ export const BOOKING_PRICING_DEFINITIONS: BookingPricingDefinition[] = [
     name: "GLP Initiation",
     category: "Procedure",
     group: "Medical Procedure",
-    defaultPrice: 0,
-    bookingUse: "Shown as consult-required procedure service",
-    note: "Use zero when price is determined after assessment.",
+    defaultPrice: 10000,
+    bookingUse: "Shown as procedure service and standard package reference",
+    note: "Base package price is ₱10,000. In POS billing, unit price can be adjusted or split into installments (e.g. ₱5,000 or ₱1,250 per visit).",
   },
 ];
 

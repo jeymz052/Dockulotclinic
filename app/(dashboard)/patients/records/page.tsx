@@ -11,6 +11,7 @@ import {
   FaUserPlus,
   FaUsers,
   FaXmark,
+  FaCalendarPlus,
 } from "react-icons/fa6";
 import { formatDisplayDate } from "@/src/lib/appointments";
 import type { PatientRecordItem, PatientVisitRecord } from "@/src/lib/clinic";
@@ -22,6 +23,7 @@ import {
   validatePatientRegistrationFields,
 } from "@/src/lib/patient-registration";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { ConvertToAppointmentModal } from "@/src/components/patients/ConvertToAppointmentModal";
 
 type Payload = { patients: PatientRecordItem[]; visits: PatientVisitRecord[] };
 type ImportPayload = {
@@ -80,11 +82,11 @@ const INITIAL_ADD_PATIENT_FORM: AddPatientFormState = {
   patientCategory: "New",
 };
 
-const TABLE_COLUMNS = ["Patient No.", "Patient", "Age / Sex", "Contact", "Type", "Last Visit"] as const;
+const TABLE_COLUMNS = ["Patient No.", "Patient", "Age / Sex", "Contact", "Type", "Last Visit", ""] as const;
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function PatientRecordsPage() {
-  const { accessToken, isLoading: authLoading } = useRole();
+  const { accessToken, role, isLoading: authLoading } = useRole();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [patients, setPatients] = useState<PatientRecordItem[]>([]);
@@ -98,11 +100,14 @@ export default function PatientRecordsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isPreviewingImport, setIsPreviewingImport] = useState(false);
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+  const [convertingPatient, setConvertingPatient] = useState<PatientRecordItem | null>(null);
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<{
     rows: ImportPreviewRecord[];
     summary: ImportPreviewSummary;
   } | null>(null);
+
+  const isStaff = role === "SUPER_ADMIN" || role === "SECRETARY" || role === "DOCTOR";
 
   async function loadRecords(token: string) {
     setIsLoading(true);
@@ -348,28 +353,27 @@ export default function PatientRecordsPage() {
                 return (
                   <tr
                     key={patient.id}
-                    onClick={() => openPatient(patient.id)}
-                    className="group cursor-pointer bg-white text-neutral-700 transition hover:bg-neutral-50"
+                    className="group bg-white text-neutral-700 transition hover:bg-neutral-50"
                   >
-                    <TableCell className="sticky left-0 z-10 bg-white font-mono text-xs font-bold text-neutral-950 group-hover:bg-neutral-50">
+                    <TableCell className="sticky left-0 z-10 cursor-pointer bg-white font-mono text-xs font-bold text-neutral-950 group-hover:bg-neutral-50" onClick={() => openPatient(patient.id)}>
                       {patient.patientNumber || "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openPatient(patient.id)} className="cursor-pointer">
                       <p className="font-bold text-neutral-950">{patient.fullName}</p>
                       <p className="mt-1 text-xs text-neutral-500">{patient.email || "No email"}</p>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openPatient(patient.id)} className="cursor-pointer">
                       <p className="font-semibold text-neutral-800">{calculatePatientAge(patient.dateOfBirth) ?? "-"} yrs</p>
                       <p className="mt-1 text-xs text-neutral-500">{patient.gender || "Not recorded"}</p>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openPatient(patient.id)} className="cursor-pointer">
                       <p className="font-medium text-neutral-800">{patient.phone || "No contact"}</p>
                       <p className="mt-1 text-xs text-neutral-500">{patient.civilStatus || "Civil status not set"}</p>
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openPatient(patient.id)} className="cursor-pointer">
                       <PatientBadge category={patient.patientCategory} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => openPatient(patient.id)} className="cursor-pointer">
                       {lastVisit ? (
                         <>
                           <p className="font-medium text-neutral-800">{formatDisplayDate(lastVisit.date)}</p>
@@ -380,6 +384,19 @@ export default function PatientRecordsPage() {
                       ) : (
                         <span className="text-neutral-400">No visit yet</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {isStaff ? (
+                        <button
+                          type="button"
+                          id={`convert-appointment-${patient.id}`}
+                          title="Convert to Appointment"
+                          onClick={(e) => { e.stopPropagation(); setConvertingPatient(patient); }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-200 bg-teal-50 text-teal-700 transition hover:border-teal-400 hover:bg-teal-100"
+                        >
+                          <FaCalendarPlus className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
                     </TableCell>
                   </tr>
                 );
@@ -438,6 +455,18 @@ export default function PatientRecordsPage() {
         />
       ) : null}
 
+      {convertingPatient ? (
+        <ConvertToAppointmentModal
+          patient={convertingPatient}
+          accessToken={accessToken}
+          onClose={() => setConvertingPatient(null)}
+          onSuccess={(message) => {
+            setConvertingPatient(null);
+            setNotice({ tone: "success", text: message });
+          }}
+        />
+      ) : null}
+
       {notice ? <Toast notice={notice} onClose={() => setNotice(null)} /> : null}
     </div>
   );
@@ -475,8 +504,8 @@ function MetricCard({
   );
 }
 
-function TableCell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-3 py-3 align-top leading-5 ${className}`}>{children}</td>;
+function TableCell({ children, className = "", onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+  return <td className={`px-3 py-3 align-top leading-5 ${className}`} onClick={onClick}>{children}</td>;
 }
 
 function PatientBadge({ category }: { category: PatientRecordItem["patientCategory"] }) {
