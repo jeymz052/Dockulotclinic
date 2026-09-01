@@ -50,6 +50,8 @@ import { calculatePatientAge } from "@/src/lib/patient-registration";
 
 type DraftState = {
   diagnosis: string;
+  subjective: string;
+  objective: string;
   note: string;
   prescription: string;
   status: ConsultationProgress;
@@ -85,8 +87,40 @@ type QueueFilter = "all" | "ready" | "live" | "completed";
 type ConsultationTab = "record" | "chart";
 type BadgeTone = "sky" | "emerald" | "amber" | "rose" | "slate";
 
+function parseSoapNote(note: string) {
+  if (!note) return { subjective: "", objective: "" };
+
+  const subjectiveMatch = note.match(/(?:^|\n)Subjective:\s*([\s\S]*?)(?=(?:\n(?:Objective|Assessment|Plan):)|$)/i);
+  const objectiveMatch = note.match(/(?:^|\n)Objective:\s*([\s\S]*?)(?=(?:\n(?:Subjective|Assessment|Plan):)|$)/i);
+
+  if (subjectiveMatch || objectiveMatch) {
+    return {
+      subjective: subjectiveMatch ? subjectiveMatch[1].trim() : "",
+      objective: objectiveMatch ? objectiveMatch[1].trim() : "",
+    };
+  }
+
+  return {
+    subjective: note.trim(),
+    objective: "",
+  };
+}
+
+function formatSoapNote(subjective: string, objective: string): string {
+  const parts: string[] = [];
+  if (subjective.trim()) {
+    parts.push(`Subjective:\n${subjective.trim()}`);
+  }
+  if (objective.trim()) {
+    parts.push(`Objective:\n${objective.trim()}`);
+  }
+  return parts.join("\n\n");
+}
+
 const emptyDraft: DraftState = {
   diagnosis: "",
+  subjective: "",
+  objective: "",
   note: "",
   prescription: "",
   status: "Ready",
@@ -226,10 +260,14 @@ export default function OnlineConsultationPage() {
           ? "In Progress"
           : "Ready");
 
+    const parsedNote = parseSoapNote(existing?.note ?? "");
+
     setActiveAppointmentId(appointment.id);
     setActiveTab(tab);
     setDraft({
       diagnosis: existing?.diagnosis ?? "",
+      subjective: parsedNote.subjective,
+      objective: parsedNote.objective,
       note: existing?.note ?? "",
       prescription: existing?.prescription ?? "",
       status: inferredStatus,
@@ -270,6 +308,7 @@ export default function OnlineConsultationPage() {
 
     startTransition(async () => {
       const existing = notes.find((note) => note.appointmentId === appointment.id);
+      const combinedNote = formatSoapNote(draft.subjective, draft.objective) || draft.note;
       const response = await fetch("/api/consultation-notes", {
         method: "POST",
         headers: {
@@ -282,7 +321,7 @@ export default function OnlineConsultationPage() {
           doctorId: appointment.doctorId,
           patientName: appointment.patientName,
           diagnosis: draft.diagnosis,
-          note: draft.note,
+          note: combinedNote,
           prescription: draft.prescription,
           status: draft.status,
           visibleToPatient: draft.visibleToPatient,
@@ -391,7 +430,7 @@ export default function OnlineConsultationPage() {
           patient_id: activePatientRecord.id,
           doctor_id: doctor.dbId,
           diagnosis_text: diagnosis,
-          treatment_plan: draft.note,
+          treatment_plan: formatSoapNote(draft.subjective, draft.objective) || draft.note,
           general_instructions: prescriptionInstructions,
           follow_up_date: prescriptionFollowUpDate || null,
           released_to_patient: releasePrescription,
@@ -561,7 +600,7 @@ export default function OnlineConsultationPage() {
           complaints: complaints || formatReason(appointment),
           diagnosis,
           recommendation,
-          note: draft.note.trim() || null,
+          note: (formatSoapNote(draft.subjective, draft.objective) || draft.note).trim() || null,
           released_to_patient: releaseMedCert,
         }),
       });
@@ -991,12 +1030,12 @@ export default function OnlineConsultationPage() {
                             icon={<FaStethoscope className="h-4 w-4" />}
                             title="Assessment & Consultation Note"
                             description={activeAppointmentIsVirtual
-                              ? "Record the clinical impression and visit notes. Values here auto-fill the Prescription, MedCert, and Lab Request steps."
-                              : "Record the clinical impression and visit notes. For clinic visits, prescriptions and requests are handled in person with physical forms."}
+                              ? "Record the clinical assessment, subjective & objective notes, and plan. Values auto-fill Prescription, MedCert, and Lab Request steps."
+                              : "Record the clinical assessment, subjective & objective notes, and plan. For clinic visits, prescriptions and requests are handled in person with physical forms."}
                           />
                           <div className="mt-4 space-y-4">
                             <TextAreaField
-                              label="Clinical Assessment / Diagnosis"
+                              label="Clinical Assessment"
                               value={draft.diagnosis}
                               minHeight="min-h-24"
                               onChange={(value) => {
@@ -1005,6 +1044,48 @@ export default function OnlineConsultationPage() {
                               }}
                               placeholder="e.g. Hypertensive urgency, Acute viral pharyngitis, Dysmenorrhea"
                             />
+
+                            <TextAreaField
+                              label="Subjective"
+                              value={draft.subjective}
+                              minHeight="min-h-24"
+                              onChange={(value) =>
+                                setDraft((current) => ({
+                                  ...current,
+                                  subjective: value,
+                                  note: formatSoapNote(value, current.objective),
+                                }))
+                              }
+                              placeholder="Patient complaints, symptoms, history of present illness..."
+                            />
+
+                            <TextAreaField
+                              label="Objective"
+                              value={draft.objective}
+                              minHeight="min-h-24"
+                              onChange={(value) =>
+                                setDraft((current) => ({
+                                  ...current,
+                                  objective: value,
+                                  note: formatSoapNote(current.subjective, value),
+                                }))
+                              }
+                              placeholder="Vital signs, physical examination findings, diagnostic observations..."
+                            />
+
+                            <TextAreaField
+                              label="Plan and Recommendation"
+                              value={draft.prescription}
+                              minHeight="min-h-24"
+                              onChange={(value) => {
+                                setDraft((current) => ({ ...current, prescription: value }));
+                                setMedCertRecommendation(
+                                  value || formatSoapNote(draft.subjective, draft.objective) || draft.note,
+                                );
+                              }}
+                              placeholder="Treatment plan, medications, referrals, lifestyle advice, follow-up schedule..."
+                            />
+
                             <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
                               <input
                                 type="checkbox"
@@ -1026,29 +1107,6 @@ export default function OnlineConsultationPage() {
                                 Visible in patient portal
                               </span>
                             </label>
-
-                            <div className="border-t border-neutral-100 pt-4">
-                              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-neutral-400">Consultation Note</p>
-                              <div className="space-y-4">
-                                <TextAreaField
-                                  label="SOAP / Visit Notes"
-                                  value={draft.note}
-                                  minHeight="min-h-28"
-                                  onChange={(value) => setDraft((current) => ({ ...current, note: value }))}
-                                  placeholder="Subjective: patient reports... Objective: BP 150/90... Plan: ..."
-                                />
-                                <TextAreaField
-                                  label="Care Plan & Recommendations"
-                                  value={draft.prescription}
-                                  minHeight="min-h-20"
-                                  onChange={(value) => {
-                                    setDraft((current) => ({ ...current, prescription: value }));
-                                    setMedCertRecommendation(value || draft.note);
-                                  }}
-                                  placeholder="Tests ordered, referrals, lifestyle advice, follow-up schedule"
-                                />
-                              </div>
-                            </div>
                           </div>
                         </section>
 
@@ -1324,15 +1382,15 @@ export default function OnlineConsultationPage() {
                             ) : (
                               <>
                                 <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
-                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Assessment / Diagnosis</dt>
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Clinical Assessment</dt>
                                   <dd className="mt-1 text-sm font-semibold text-neutral-900">
-                                    {draft.diagnosis ? `✓ ${draft.diagnosis.slice(0, 40)}${draft.diagnosis.length > 40 ? "..." : ""}` : "No diagnosis recorded"}
+                                    {draft.diagnosis ? `✓ ${draft.diagnosis.slice(0, 40)}${draft.diagnosis.length > 40 ? "..." : ""}` : "No assessment recorded"}
                                   </dd>
                                 </div>
                                 <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
-                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Visit Notes & Plan</dt>
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Subjective & Objective Notes</dt>
                                   <dd className="mt-1 text-sm font-semibold text-neutral-900">
-                                    {draft.note || draft.prescription ? "✓ Documented" : "No notes recorded"}
+                                    {draft.subjective || draft.objective || draft.note || draft.prescription ? "✓ Documented" : "No notes recorded"}
                                   </dd>
                                 </div>
                                 <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 sm:col-span-2">
