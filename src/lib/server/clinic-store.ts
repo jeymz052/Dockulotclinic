@@ -183,11 +183,11 @@ function isMissingPatientColumn(error: unknown) {
 }
 
 const PATIENT_SELECT_WITH_OFFICIAL_FIELDS =
-  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
+  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_WITH_CATEGORY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_LEGACY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)";
 
 function mapPatientRow(row: PatientJoinRow): PatientRecordItem {
   const legacyParts = splitPatientFullName(row.profiles?.full_name ?? "");
@@ -237,6 +237,7 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
   const initial = await supabase
     .from("patients")
     .select(PATIENT_SELECT_WITH_OFFICIAL_FIELDS)
+    .eq("profiles.role", "patient")
     .order("id");
   let data: unknown[] | null = initial.data;
   let error = initial.error;
@@ -244,6 +245,7 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
     const retryWithCategory = await supabase
       .from("patients")
       .select(PATIENT_SELECT_WITH_CATEGORY)
+      .eq("profiles.role", "patient")
       .order("id");
     data = retryWithCategory.data;
     error = retryWithCategory.error;
@@ -252,12 +254,15 @@ export async function readPatients(): Promise<PatientRecordItem[]> {
     const retry = await supabase
       .from("patients")
       .select(PATIENT_SELECT_LEGACY)
+      .eq("profiles.role", "patient")
       .order("id");
     data = retry.data;
     error = retry.error;
   }
   if (error) throw error;
-  return (data ?? []).map((row) => mapPatientRow(row as unknown as PatientJoinRow));
+  return (data ?? [])
+    .filter((row) => (row as unknown as PatientJoinRow).profiles?.role === "patient")
+    .map((row) => mapPatientRow(row as unknown as PatientJoinRow));
 }
 
 function formatPatientNumber(value: string) {

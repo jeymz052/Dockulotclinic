@@ -292,9 +292,23 @@ export function MedicalDocumentsBrowser({
     };
   }, [accessToken, selectedItem]);
 
-  /** Returns true when running on iOS (Safari or Chrome-on-iOS) — blob download via <a> is broken there. */
+  /**
+   * Returns true on iOS (Safari or Chrome-on-iOS) — blob: URL navigation and
+   * <a download> are broken on all iOS browsers due to WebKit restrictions.
+   */
   function isIos() {
     return /iP(hone|ad|od)/i.test(navigator.userAgent);
+  }
+
+  /**
+   * Returns true on any mobile browser where blob: URLs in new tabs are
+   * unreliable. This covers iOS (all browsers) and Android Chrome / WebView.
+   */
+  function isMobileBrowser() {
+    if (isIos()) return true;
+    // Android Chrome and WebView block navigating a pre-opened about:blank
+    // window to a blob: URL created asynchronously in the opener's context.
+    return /Android/i.test(navigator.userAgent);
   }
 
   async function resolveSource(item: MedicalDocumentItem) {
@@ -311,6 +325,23 @@ export function MedicalDocumentsBrowser({
     return window.URL.createObjectURL(blob);
   }
 
+  /**
+   * On mobile browsers, Chrome/Android blocks navigating a pre-opened blank
+   * window to a blob: URL. Instead we write an HTML page containing an
+   * <embed> that embeds the blob: URL — this works because the blob is in
+   * the same origin and document.write to an about:blank popup is allowed.
+   */
+  function openBlobInWindow(win: Window, blobUrl: string, title: string) {
+    win.document.open();
+    win.document.write(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title.replace(/</g, "&lt;")}</title>` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<style>*{margin:0;padding:0;box-sizing:border-box}html,body,embed{width:100%;height:100%;display:block}</style></head>` +
+      `<body><embed src="${blobUrl}" type="application/pdf" width="100%" height="100%"></embed></body></html>`,
+    );
+    win.document.close();
+  }
+
   async function openDocument(item: MedicalDocumentItem) {
     // Open a blank window BEFORE the async fetch so mobile browsers don't
     // treat it as an unsolicited popup and block it.
@@ -321,12 +352,20 @@ export function MedicalDocumentsBrowser({
         win?.close();
         return;
       }
+
       if (win) {
-        win.location.href = source;
+        if (source.startsWith("blob:") && isMobileBrowser()) {
+          // Android Chrome (and iOS) block blob: URL navigation in a new tab;
+          // write an embed page directly into the about:blank window instead.
+          openBlobInWindow(win, source, item.title);
+        } else {
+          win.location.href = source;
+        }
       } else {
         // Fallback in case window.open returned null (e.g. popups fully disabled).
         window.location.href = source;
       }
+
       if (source.startsWith("blob:")) {
         window.setTimeout(() => window.URL.revokeObjectURL(source), 60_000);
       }
@@ -343,13 +382,13 @@ export function MedicalDocumentsBrowser({
       const source = await resolveSource(item);
       if (!source) return;
 
-      // iOS Safari cannot trigger a file download via <a download href="blob:…">.
-      // The best we can do is open the blob URL in a new tab so the user can
-      // use the share-sheet to save the PDF to Files.
-      if (isIos() && source.startsWith("blob:")) {
+      // On mobile (iOS and Android), <a download href="blob:…"> does not
+      // trigger a real file download. Open the blob in a new tab instead so
+      // the user can use the share-sheet / long-press to save the file.
+      if (isMobileBrowser() && source.startsWith("blob:")) {
         const win = window.open("", "_blank");
         if (win) {
-          win.location.href = source;
+          openBlobInWindow(win, source, item.title);
         } else {
           window.location.href = source;
         }
@@ -369,7 +408,7 @@ export function MedicalDocumentsBrowser({
     } catch {
       const direct = item.downloadUrl ?? item.previewUrl ?? "";
       if (!direct) return;
-      if (isIos()) {
+      if (isMobileBrowser()) {
         window.open(direct, "_blank", "noopener,noreferrer");
         return;
       }

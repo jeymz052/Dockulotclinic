@@ -392,7 +392,7 @@ export async function getPeakHours(from?: string, to?: string): Promise<PeakHour
 export async function getPatientVolume(from?: string, to?: string): Promise<PatientVolumeReport> {
   const supabase = getSupabaseAdmin();
   const [{ count: totalPatients, error: patientsError }, appointments] = await Promise.all([
-    supabase.from("patients").select("id", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "patient"),
     getAppointments(from, to),
   ]);
 

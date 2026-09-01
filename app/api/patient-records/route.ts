@@ -59,11 +59,11 @@ function isMissingPatientColumn(error: unknown) {
 }
 
 const PATIENT_SELECT_WITH_OFFICIAL_FIELDS =
-  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
+  "id, patient_number, first_name, middle_name, last_name, suffix_name, dob, gender, civil_status, address, religion, occupation, guardian_name, doctor_notes, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_WITH_CATEGORY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, patient_category, profiles!inner(full_name, email, phone, is_active, role)";
 const PATIENT_SELECT_LEGACY =
-  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles(full_name, email, phone, is_active, role)";
+  "id, dob, gender, address, emergency_contact_name, emergency_contact_phone, family_history, allergies, medical_history, is_walk_in, profiles!inner(full_name, email, phone, is_active, role)";
 
 type VisitRow = {
   id: string;
@@ -176,7 +176,7 @@ function mapVisit(row: VisitRow): PatientVisitRecord {
           notes: vitals.notes,
         }
       : null,
-        consultation: consultation
+    consultation: consultation
       ? {
           updatedAt: consultation.updated_at,
           diagnosis: consultation.diagnosis ?? "",
@@ -194,13 +194,14 @@ export async function GET(request: Request) {
     return unauthorized();
   }
 
-  const supabase = getSupabaseAdmin();
+  const adminClient = getSupabaseAdmin();
   const [patientsResultInitial, visitsResult] = await Promise.all([
-    supabase
+    adminClient
       .from("patients")
       .select(PATIENT_SELECT_WITH_OFFICIAL_FIELDS)
+      .eq("profiles.role", "patient")
       .order("id"),
-    supabase
+    adminClient
       .from("appointments")
       .select(`
         id,
@@ -228,15 +229,17 @@ export async function GET(request: Request) {
     error: { message: string } | null;
   } = patientsResultInitial;
   if (isMissingPatientColumn(patientsResult.error)) {
-    patientsResult = await supabase
+    patientsResult = await adminClient
       .from("patients")
       .select(PATIENT_SELECT_WITH_CATEGORY)
+      .eq("profiles.role", "patient")
       .order("id");
   }
   if (isMissingPatientColumn(patientsResult.error)) {
-    patientsResult = await supabase
+    patientsResult = await adminClient
       .from("patients")
       .select(PATIENT_SELECT_LEGACY)
+      .eq("profiles.role", "patient")
       .order("id");
   }
 
@@ -255,12 +258,14 @@ export async function GET(request: Request) {
   );
 
   return NextResponse.json({
-    patients: (patientsResult.data ?? []).map((row) => {
-      const patient = mapPatient(row as unknown as PatientRow);
-      return completedPatientIds.has(patient.id) && patient.patientCategory === "New"
-        ? { ...patient, patientCategory: "Existing" as const }
-        : patient;
-    }),
+    patients: (patientsResult.data ?? [])
+      .filter((row) => (row as unknown as PatientRow).profiles?.role === "patient")
+      .map((row) => {
+        const patient = mapPatient(row as unknown as PatientRow);
+        return completedPatientIds.has(patient.id) && patient.patientCategory === "New"
+          ? { ...patient, patientCategory: "Existing" as const }
+          : patient;
+      }),
     visits,
   });
 }
@@ -292,7 +297,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Missing patientId" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const adminClient = getSupabaseAdmin();
   const officialUpdate = {
     ...(body.patientCategory ? { patient_category: body.patientCategory } : {}),
     ...(body.familyHistory !== undefined ? { family_history: body.familyHistory.trim() || null } : {}),
@@ -306,13 +311,13 @@ export async function PATCH(request: Request) {
     ...(body.emergencyContactName !== undefined ? { emergency_contact_name: body.emergencyContactName.trim() || null } : {}),
     ...(body.emergencyContactPhone !== undefined ? { emergency_contact_phone: body.emergencyContactPhone.trim() || null } : {}),
   };
-  const { error } = await supabase
+  const { error } = await adminClient
     .from("patients")
     .update(officialUpdate)
     .eq("id", body.patientId);
 
   if (isMissingPatientColumn(error)) {
-    const { error: legacyError } = await supabase
+    const { error: legacyError } = await adminClient
       .from("patients")
       .update({
         ...("family_history" in officialUpdate ? { family_history: officialUpdate.family_history } : {}),

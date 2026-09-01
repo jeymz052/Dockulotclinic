@@ -83,6 +83,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       await supabase.auth.admin.updateUserById(id, {
         app_metadata: { role: body.role },
       });
+
+      // Clean up orphaned patient records if role is updated to non-patient
+      if (body.role !== "patient") {
+        try {
+          await supabase.from("patients").delete().eq("id", id);
+        } catch {
+          // Ignored if foreign key constraints prevent deletion
+        }
+      }
     }
 
     await logActivity({
@@ -102,4 +111,3 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     return httpError(e);
   }
 }
-
