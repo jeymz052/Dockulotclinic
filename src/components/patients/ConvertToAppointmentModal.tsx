@@ -118,6 +118,7 @@ export function ConvertToAppointmentModal({
       if (!isValidDate) { setFormError(dateWarning ?? "This date is not a valid clinic day."); return; }
       if (!start) { setFormError("Please select a time slot."); return; }
       if (!service) { setFormError("Please select a service."); return; }
+      if (!reason.trim()) { setFormError("Please enter the patient's chief complaint or reason."); return; }
       if (!accessToken) { setFormError("Your session expired. Please sign in again."); return; }
 
       setFormError(null);
@@ -126,7 +127,7 @@ export function ConvertToAppointmentModal({
       try {
         const encodedReason = encodeAppointmentContext(
           service,
-          reason,
+          reason.trim(),
           visitPath === "Clinic" ? consultKind : undefined
         );
 
@@ -414,12 +415,16 @@ export function ConvertToAppointmentModal({
               <span className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
                 <FaClipboardList className="h-3 w-3" />
                 Chief Complaint / Notes
-                <span className="ml-1 font-normal normal-case text-neutral-400">(optional)</span>
+                <span className="text-red-500">*</span>
               </span>
               <textarea
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  if (formError && e.target.value.trim()) setFormError(null);
+                }}
                 rows={3}
+                required
                 placeholder={
                   visitPath === "Procedure"
                     ? "e.g. Target areas for Botox, wart locations, specific aesthetic requests…"
@@ -464,7 +469,7 @@ export function ConvertToAppointmentModal({
             </button>
             <button
               type="submit"
-              disabled={isSaving || !start || !date || !isValidDate}
+              disabled={isSaving || !start || !date || !isValidDate || !reason.trim()}
               id="convert-to-appointment-submit"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
