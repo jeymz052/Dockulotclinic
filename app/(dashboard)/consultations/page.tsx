@@ -180,8 +180,9 @@ export default function OnlineConsultationPage() {
           ["Confirmed", "In Progress", "Completed"].includes(appointment.status),
         )
         .sort((left, right) => {
-          const byDateTime = `${left.date} ${left.start}`.localeCompare(
-            `${right.date} ${right.start}`,
+          // Newest date/time first so the doctor sees the latest appointments at the top
+          const byDateTime = `${right.date} ${right.start}`.localeCompare(
+            `${left.date} ${left.start}`,
           );
           if (byDateTime !== 0) return byDateTime;
           return left.queueNumber - right.queueNumber;
