@@ -328,7 +328,7 @@ export async function upsertSchedule(input: {
   if (input.start_time >= input.end_time)
     throw new HttpError(400, "start_time must be before end_time");
   if (![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes ?? CONSULTATION_SLOT_MINUTES)) {
-    throw new HttpError(400, "Slot minutes must be 30 for consultations or 60 for procedures.");
+    throw new HttpError(400, "Slot minutes must be 20 for consultations or 60 for procedures.");
   }
   if (input.schedule_mode !== "Online" && !(BOOKING_RULES.Both.days as readonly number[]).includes(input.day_of_week)) {
     throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Saturday and Sunday.");
@@ -417,7 +417,7 @@ export async function updateSchedule(
     throw new HttpError(400, "start_time must be before end_time");
   }
   if (input.slot_minutes && ![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes)) {
-    throw new HttpError(400, "Slot minutes must be 30 for consultations or 60 for procedures.");
+    throw new HttpError(400, "Slot minutes must be 20 for consultations or 60 for procedures.");
   }
   if (nextStart && nextEnd) {
     assertScheduleWithinPolicy(effectiveDay, effectiveMode, nextStart, nextEnd);

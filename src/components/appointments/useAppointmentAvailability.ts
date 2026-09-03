@@ -17,7 +17,7 @@ export function useAppointmentAvailability(
   doctorId: string,
   date: string,
   type: AppointmentType,
-  slotMinutes = 30,
+  slotMinutes = 20,
 ) {
   const { accessToken } = useRole();
   const [data, setData] = useState<AvailabilityResponse | null>(null);

@@ -1,4 +1,4 @@
-export const CONSULTATION_SLOT_MINUTES = 30;
+export const CONSULTATION_SLOT_MINUTES = 20;
 export const PROCEDURE_SLOT_MINUTES = 60;
 export const MAX_BOOKINGS_PER_SLOT = 1;
 export const STANDARD_BOOKING_START = "09:00";

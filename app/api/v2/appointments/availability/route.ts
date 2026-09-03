@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const date = searchParams.get("date");
     const typeParam = searchParams.get("type");
     const scanDays = Number(searchParams.get("scan_days") ?? "14");
-    const slotMinutesParam = Number(searchParams.get("slot_minutes") ?? "30");
+    const slotMinutesParam = Number(searchParams.get("slot_minutes") ?? "20");
 
     if (!doctorId || !date || (typeParam !== "Clinic" && typeParam !== "Online")) {
       throw new HttpError(400, "doctor_id, date, and a valid type are required");
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     const type = typeParam as ApptType;
     const resolvedDoctorId = await resolveDoctorIdBySlug(doctorId);
-    const slotMinutes = slotMinutesParam === 60 ? 60 : 30;
+    const slotMinutes = slotMinutesParam === 60 ? 60 : 20;
     const current = await buildSharedDayAvailability(resolvedDoctorId, date, type, { slotMinutes });
     const nextAvailable = await findNextAvailableSharedSlot(resolvedDoctorId, date, type, scanDays, { slotMinutes });
 
