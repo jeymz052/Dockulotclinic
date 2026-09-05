@@ -302,7 +302,35 @@ export async function issueBilling(input: {
     unit_price: consultationFee,
   };
 
-  const allItems = [consultationLine, ...normalizedItems];
+  const allItems: Array<{
+    pricing_id: string | null;
+    product_id: string | null;
+    description: string;
+    quantity: number;
+    unit_price: number;
+  }> = [consultationLine, ...normalizedItems];
+
+  // If the patient paid a non-refundable clinic-visit reservation fee online
+  // (PayMongo QR Ph), deduct it from the POS bill so they only pay the
+  // remainder at the clinic counter.
+  const { data: clinicReservation } = await supabase
+    .from("online_booking_reservations")
+    .select("amount")
+    .eq("appointment_id", appt.id)
+    .eq("status", "Converted")
+    .eq("appointment_type", "Clinic")
+    .maybeSingle<{ amount: number }>();
+
+  if (clinicReservation && Number(clinicReservation.amount) > 0) {
+    allItems.push({
+      pricing_id: null,
+      product_id: null,
+      description: "Online Reservation Fee — Pre-paid via QR Ph (non-refundable credit)",
+      quantity: 1,
+      unit_price: -round2(Number(clinicReservation.amount)),
+    });
+  }
+
   const subtotal = round2(allItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0));
 
   // Resolve discount + tax from the discount_kind. SC/PWD overrides any

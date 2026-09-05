@@ -20,8 +20,10 @@ async function readActivePricingItems() {
     .in("code", [
       BOOKING_PRICING_CODES.CLINIC_FIRST_CONSULT,
       BOOKING_PRICING_CODES.CLINIC_FOLLOW_UP,
+      BOOKING_PRICING_CODES.CLINIC_VISIT_RESERVATION,
       BOOKING_PRICING_CODES.VIRTUAL_CONSULT,
       BOOKING_PRICING_CODES.PROCEDURE_RESERVATION,
+      BOOKING_PRICING_CODES.MEDICAL_CERTIFICATE_ADDON,
     ]);
 
   if (error) throw error;
@@ -45,6 +47,10 @@ export async function resolveMedicalCertificateAddonAmount() {
 
 export async function resolveProcedureReservationAmount() {
   return resolveBookingPricingAmount(BOOKING_PRICING_CODES.PROCEDURE_RESERVATION);
+}
+
+export async function resolveClinicVisitReservationAmount() {
+  return resolveBookingPricingAmount(BOOKING_PRICING_CODES.CLINIC_VISIT_RESERVATION);
 }
 
 export async function resolveClinicConsultationAmount(input: {

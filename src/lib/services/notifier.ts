@@ -647,6 +647,26 @@ export function renderTemplate(
         },
       );
     case "appointment_paid_and_confirmed":
+      if (purpose === "clinic_visit_reservation") {
+        return finalizeTemplate(
+          "Clinic visit reservation confirmed",
+          channel === "sms"
+            ? `Doc Kulot: PHP 200 reservation fee received. Your clinic visit slot${scheduleLine ? ` on ${scheduleLine}` : ""} is confirmed.${appt ? ` Ref ${appt}.` : ""} Show this to the clinic. The fee will be deducted from your bill.`
+            : [
+              `Your clinic visit reservation is confirmed${appt ? ` (ref ${appt})` : ""}.`,
+              scheduleLine ? `Schedule: ${scheduleLine}` : "",
+              `Reservation fee paid: ${amount || "PHP 200"} via PayMongo QR Ph — non-refundable.`,
+              "This amount will be deducted from your clinic bill (POS) on your visit day. Consultation and any add-ons are paid at the clinic.",
+              "Please arrive on time. This reservation secures your slot.",
+            ].filter(Boolean).join("\n"),
+          {
+            eyebrow: "Clinic visit reservation",
+            title: "Clinic visit reservation confirmed",
+            ...patientPortalCta(),
+            note: "Show this confirmation to the clinic receptionist on your visit day.",
+          },
+        );
+      }
       if (purpose === "procedure_downpayment") {
         return finalizeTemplate(
           "Procedure reservation confirmed",

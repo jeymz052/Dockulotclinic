@@ -1,4 +1,5 @@
 import {
+  CLINIC_VISIT_RESERVATION_FEE,
   FOLLOW_UP_CLINIC_CONSULTATION_FEE,
   NEW_PATIENT_CLINIC_CONSULTATION_FEE,
   ONLINE_CONSULTATION_FEE,
@@ -22,6 +23,7 @@ export type PricingItem = {
 export const BOOKING_PRICING_CODES = {
   CLINIC_FIRST_CONSULT: "GEN-CONSULT",
   CLINIC_FOLLOW_UP: "FOLLOW-UP",
+  CLINIC_VISIT_RESERVATION: "CLINIC-VISIT-RESERVATION",
   VIRTUAL_CONSULT: "ONLINE-CONSULT",
   MEDICAL_CERTIFICATE_ADDON: "ONLINE-MEDCERT",
   PROCEDURE_RESERVATION: "PROC-RESERVATION",
@@ -91,6 +93,15 @@ export const BOOKING_PRICING_DEFINITIONS: BookingPricingDefinition[] = [
     defaultPrice: 200,
     bookingUse: "Optional virtual consult add-on for a medical certificate request",
     note: "Available only for virtual consult bookings. Physical clinic certificates remain handled in person.",
+  },
+  {
+    code: BOOKING_PRICING_CODES.CLINIC_VISIT_RESERVATION,
+    name: "Clinic Visit Reservation Fee",
+    category: "Consultation",
+    group: "Clinic Visit",
+    defaultPrice: CLINIC_VISIT_RESERVATION_FEE,
+    bookingUse: "Non-refundable fee charged online before clinic visit confirmation",
+    note: "Deducted from the patient's POS bill on the day of visit. Prevents no-shows.",
   },
   {
     code: BOOKING_PRICING_CODES.PROCEDURE_RESERVATION,

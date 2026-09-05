@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type ReactNode, Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import {
   FaAddressBook,
+  FaArrowLeft,
   FaArrowUpRightFromSquare,
   FaCalendarDay,
   FaCircleCheck,
@@ -29,6 +30,8 @@ import {
   FaFlaskVial,
   FaXmark,
   FaEnvelope,
+  FaPrint,
+  FaDownload,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
@@ -80,6 +83,12 @@ type CreatedMedicalCertificate = {
 type CreatedLaboratoryRequest = {
   id: string;
   requestNo: string;
+  fileName: string;
+};
+
+type CreatedMdReferral = {
+  id: string;
+  referralNo: string;
   fileName: string;
 };
 
@@ -166,6 +175,12 @@ export default function OnlineConsultationPage() {
   const [releaseLabRequest, setReleaseLabRequest] = useState(true);
   const [labFeedback, setLabFeedback] = useState<string | null>(null);
   const [createdLabRequest, setCreatedLabRequest] = useState<CreatedLaboratoryRequest | null>(null);
+  const [referralSpecialty, setReferralSpecialty] = useState("Internal Medicine");
+  const [referralDoctorName, setReferralDoctorName] = useState("");
+  const [referralReason, setReferralReason] = useState("");
+  const [releaseReferral, setReleaseReferral] = useState(true);
+  const [referralFeedback, setReferralFeedback] = useState<string | null>(null);
+  const [createdReferral, setCreatedReferral] = useState<CreatedMdReferral | null>(null);
   const [chartStep, setChartStep] = useState(1);
   const [medCertComplaints, setMedCertComplaints] = useState("");
   const [medCertDiagnosis, setMedCertDiagnosis] = useState("");
@@ -298,6 +313,12 @@ export default function OnlineConsultationPage() {
     setMedCertDiagnosis(existing?.diagnosis ?? "");
     setMedCertRecommendation(existing?.prescription ?? existing?.note ?? "");
     setReleaseMedCert(true);
+    setReferralSpecialty("Internal Medicine");
+    setReferralDoctorName("");
+    setReferralReason("");
+    setReleaseReferral(true);
+    setReferralFeedback(null);
+    setCreatedReferral(null);
     setFeedback(null);
   }
 
@@ -545,6 +566,159 @@ export default function OnlineConsultationPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to email prescription.";
       setPrescriptionFeedback(msg);
+    }
+  }
+
+  function saveMdReferral(appointment: AppointmentRecord) {
+    if (!accessToken) {
+      setReferralFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (appointment.type !== "Online") {
+      setReferralFeedback("MD Referrals are only available for virtual consultations.");
+      return;
+    }
+
+    if (!activePatientRecord) {
+      setReferralFeedback("Match this visit to a patient record before creating an MD referral.");
+      return;
+    }
+
+    const doctor = doctors.find((item) => item.slug === appointment.doctorId || item.id === appointment.doctorId);
+    if (!doctor?.dbId) {
+      setReferralFeedback("Doctor profile is still loading. Try again in a moment.");
+      return;
+    }
+
+    const reason = referralReason.trim();
+    if (!reason) {
+      setReferralFeedback("Please enter a reason for referral before proceeding.");
+      return;
+    }
+
+    startTransition(async () => {
+      const response = await fetch("/api/v2/md-referrals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          appointment_id: appointment.id,
+          patient_id: activePatientRecord.id,
+          doctor_id: doctor.dbId,
+          referred_specialty: referralSpecialty.trim() || "Internal Medicine",
+          referred_doctor: referralDoctorName.trim() || null,
+          reason_for_referral: reason,
+          note: (formatSoapNote(draft.subjective, draft.objective) || draft.note).trim() || null,
+          released_to_patient: releaseReferral,
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        md_referral?: { id?: string; referral_no?: string; file_name?: string };
+      };
+
+      if (!response.ok) {
+        setReferralFeedback(payload.message ?? "Unable to create MD referral.");
+        return;
+      }
+
+      setCreatedReferral(
+        payload.md_referral?.id && payload.md_referral?.referral_no && payload.md_referral?.file_name
+          ? {
+              id: payload.md_referral.id,
+              referralNo: payload.md_referral.referral_no,
+              fileName: payload.md_referral.file_name,
+            }
+          : null,
+      );
+      setReferralFeedback(
+        payload.md_referral?.referral_no
+          ? `MD Referral ${payload.md_referral.referral_no} created.`
+          : "MD Referral created.",
+      );
+    });
+  }
+
+  async function fetchMdReferralPdf(referral: CreatedMdReferral) {
+    if (!accessToken) {
+      setReferralFeedback("Your session expired. Please sign in again.");
+      return null;
+    }
+
+    const response = await fetch(`/api/v2/md-referrals/${referral.id}/pdf`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setReferralFeedback(payload.message ?? "Unable to fetch MD referral PDF.");
+      return null;
+    }
+
+    return response.blob();
+  }
+
+  async function downloadCreatedMdReferral(referral: CreatedMdReferral) {
+    const blob = await fetchMdReferralPdf(referral);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = referral.fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
+  }
+
+  async function printCreatedMdReferral(referral: CreatedMdReferral) {
+    const blob = await fetchMdReferralPdf(referral);
+    if (!blob) return;
+
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank", "noopener,noreferrer");
+    if (!printWindow) {
+      setReferralFeedback("Pop-up blocked. Please allow pop-ups to print the MD referral.");
+      window.URL.revokeObjectURL(url);
+      return;
+    }
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      setTimeout(() => window.URL.revokeObjectURL(url), 5_000);
+    });
+  }
+
+  async function emailCreatedMdReferral(referral: CreatedMdReferral) {
+    if (!accessToken) {
+      setReferralFeedback("Your session expired. Please sign in again.");
+      return;
+    }
+    setReferralFeedback("Emailing MD referral to patient...");
+    try {
+      const res = await fetch("/api/v2/medical-documents/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          documentId: referral.id,
+          kind: "MD Referral",
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to email MD referral.");
+      setReferralFeedback(data?.message || "MD referral emailed to patient successfully.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to email MD referral.";
+      setReferralFeedback(msg);
     }
   }
 
@@ -1018,6 +1192,7 @@ export default function OnlineConsultationPage() {
                       hasMedCertAddon={activeAppointmentHasMedicalCertificateAddon}
                       noteSaved={Boolean(activeNote)}
                       prescriptionCreated={Boolean(createdPrescription)}
+                      referralCreated={Boolean(createdReferral)}
                       medCertCreated={Boolean(createdMedicalCertificate)}
                       labCreated={Boolean(createdLabRequest)}
                       onStepClick={setChartStep}
@@ -1123,7 +1298,7 @@ export default function OnlineConsultationPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 2 : 5)}
+                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 2 : 6)}
                             className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                           >
                             {activeAppointmentIsVirtual ? "Next: Prescription →" : "Next: Finalize →"}
@@ -1183,12 +1358,50 @@ export default function OnlineConsultationPage() {
                             </div>
                           </section>
                         )}
-                        <StepNavButtons onBack={() => setChartStep(1)} onNext={() => setChartStep(3)} nextLabel="Next: Medical Certificate →" />
+                        <StepNavButtons onBack={() => setChartStep(1)} onNext={() => setChartStep(3)} nextLabel="Next: MD Referral →" />
                       </div>
                     )}
 
-                    {/* ── Step 3: Medical Certificate (virtual only) ── */}
+                    {/* ── Step 3: MD Referral (virtual only) ── */}
                     {activeAppointmentIsVirtual && chartStep === 3 && (
+                      <div className="space-y-5">
+                        <MDReferralBuilder
+                          patientMatched={Boolean(activePatientRecord)}
+                          specialty={referralSpecialty}
+                          onSpecialtyChange={setReferralSpecialty}
+                          doctorName={referralDoctorName}
+                          onDoctorNameChange={setReferralDoctorName}
+                          reason={referralReason}
+                          onReasonChange={setReferralReason}
+                          releaseToPatient={releaseReferral}
+                          onReleaseChange={setReleaseReferral}
+                          feedback={referralFeedback}
+                          createdReferral={createdReferral}
+                          disabled={isSaving}
+                          onBack={() => setChartStep(2)}
+                          onDiscard={() => {
+                            setReferralSpecialty("Internal Medicine");
+                            setReferralDoctorName("");
+                            setReferralReason("");
+                            setReferralFeedback(null);
+                          }}
+                          onSave={() => saveMdReferral(activeAppointment)}
+                          onDownloadCreated={() =>
+                            createdReferral ? void downloadCreatedMdReferral(createdReferral) : undefined
+                          }
+                          onPrintCreated={() =>
+                            createdReferral ? void printCreatedMdReferral(createdReferral) : undefined
+                          }
+                          onEmailCreated={() =>
+                            createdReferral ? void emailCreatedMdReferral(createdReferral) : undefined
+                          }
+                        />
+                        <StepNavButtons onBack={() => setChartStep(2)} onNext={() => setChartStep(4)} nextLabel="Next: Medical Certificate →" />
+                      </div>
+                    )}
+
+                    {/* ── Step 4: Medical Certificate (virtual only) ── */}
+                    {activeAppointmentIsVirtual && chartStep === 4 && (
                       <div className="space-y-5">
                         {activeAppointmentIsVirtual ? (
                           activeAppointmentHasMedicalCertificateAddon ? (
@@ -1241,12 +1454,12 @@ export default function OnlineConsultationPage() {
                             </div>
                           </section>
                         )}
-                        <StepNavButtons onBack={() => setChartStep(2)} onNext={() => setChartStep(4)} nextLabel="Next: Lab Request →" />
+                        <StepNavButtons onBack={() => setChartStep(3)} onNext={() => setChartStep(5)} nextLabel="Next: Lab Request →" />
                       </div>
                     )}
 
-                    {/* ── Step 4: Lab / Diagnostics Request (virtual only) ── */}
-                    {activeAppointmentIsVirtual && chartStep === 4 && (
+                    {/* ── Step 5: Lab / Diagnostics Request (virtual only) ── */}
+                    {activeAppointmentIsVirtual && chartStep === 5 && (
                       <div className="space-y-5">
                         {activeAppointmentIsVirtual ? (
                           <LaboratoryRequestBuilder
@@ -1334,12 +1547,12 @@ export default function OnlineConsultationPage() {
                             </div>
                           </section>
                         )}
-                        <StepNavButtons onBack={() => setChartStep(3)} onNext={() => setChartStep(5)} nextLabel="Next: Finalize →" />
+                        <StepNavButtons onBack={() => setChartStep(4)} onNext={() => setChartStep(6)} nextLabel="Next: Finalize →" />
                       </div>
                     )}
 
-                    {/* ── Step 5: Save & Finalize ── */}
-                    {chartStep === 5 && (
+                    {/* ── Step 6: Save & Finalize ── */}
+                    {chartStep === 6 && (
                       <div className="space-y-5">
                         {/* Session summary */}
                         <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
@@ -1358,6 +1571,12 @@ export default function OnlineConsultationPage() {
                                   </dd>
                                 </div>
                                 <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                  <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">MD Referral</dt>
+                                  <dd className="mt-1 text-sm font-semibold text-neutral-900">
+                                    {createdReferral ? `✓ ${createdReferral.referralNo}` : "Not created"}
+                                  </dd>
+                                </div>
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
                                   <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Medical Certificate</dt>
                                   <dd className="mt-1 text-sm font-semibold text-neutral-900">
                                     {createdMedicalCertificate
@@ -1373,7 +1592,7 @@ export default function OnlineConsultationPage() {
                                     {createdLabRequest ? `✓ ${createdLabRequest.requestNo}` : "Not created"}
                                   </dd>
                                 </div>
-                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3">
+                                <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-4 py-3 sm:col-span-2">
                                   <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">Assessment & Notes</dt>
                                   <dd className="mt-1 text-sm font-semibold text-neutral-900">
                                     {activeNote ? `✓ ${draft.diagnosis ? draft.diagnosis.slice(0, 35) + (draft.diagnosis.length > 35 ? "..." : "") : "Saved"}` : "Pending save"}
@@ -1429,7 +1648,7 @@ export default function OnlineConsultationPage() {
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
                           <button
                             type="button"
-                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 4 : 1)}
+                            onClick={() => setChartStep(activeAppointmentIsVirtual ? 5 : 1)}
                             className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                           >
                             ← Back
@@ -2191,6 +2410,215 @@ function PrescriptionBuilder({
   );
 }
 
+const PHILIPPINE_MEDICAL_SPECIALTIES = [
+  "Internal Medicine",
+  "Cardiology",
+  "Pulmonology",
+  "Gastroenterology",
+  "Endocrinology & Diabetology",
+  "Nephrology",
+  "Neurology",
+  "General Surgery",
+  "Orthopedic Surgery",
+  "Obstetrics & Gynecology (OB-GYN)",
+  "Pediatrics",
+  "Pediatric Cardiology",
+  "Dermatology",
+  "Ophthalmology",
+  "Otorhinolaryngology (ENT)",
+  "Psychiatry",
+  "Urology",
+  "Oncology",
+  "Rheumatology",
+  "Physical Medicine & Rehabilitation",
+  "Infectious Diseases",
+  "Family Medicine",
+  "Allergy & Immunology",
+  "Plastic & Reconstructive Surgery",
+];
+
+function MDReferralBuilder({
+  patientMatched,
+  specialty,
+  onSpecialtyChange,
+  doctorName,
+  onDoctorNameChange,
+  reason,
+  onReasonChange,
+  releaseToPatient,
+  onReleaseChange,
+  feedback,
+  createdReferral,
+  disabled,
+  onDiscard,
+  onSave,
+  onDownloadCreated,
+  onPrintCreated,
+  onEmailCreated,
+}: {
+  patientMatched: boolean;
+  specialty: string;
+  onSpecialtyChange: (v: string) => void;
+  doctorName: string;
+  onDoctorNameChange: (v: string) => void;
+  reason: string;
+  onReasonChange: (v: string) => void;
+  releaseToPatient: boolean;
+  onReleaseChange: (v: boolean) => void;
+  feedback: string | null;
+  createdReferral: CreatedMdReferral | null;
+  disabled: boolean;
+  onBack?: () => void;
+  onDiscard?: () => void;
+  onSave: () => void;
+  onDownloadCreated: () => void;
+  onPrintCreated: () => void;
+  onEmailCreated?: () => void;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <SectionHeading
+          icon={<FaUserDoctor className="h-4 w-4" />}
+          title="MD Referral"
+          description="Specify the specialist doctor and clinical reason for referral, then generate the referral document."
+        />
+        {onDiscard ? (
+          <button
+            type="button"
+            onClick={onDiscard}
+            className="inline-flex items-center gap-1.5 self-start rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50 hover:text-rose-600"
+          >
+            <FaTrash className="h-3 w-3" />
+            Clear
+          </button>
+        ) : null}
+      </div>
+
+      {!patientMatched ? (
+        <div className="mt-5 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+          Match this visit to a patient record before creating an MD referral.
+        </div>
+      ) : null}
+
+      <div className="mt-5 rounded-lg border border-neutral-200 bg-neutral-50/50 p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
+          Referral Details
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800">
+              Specialty / Department
+              <div className="relative mt-2">
+                <select
+                  value={specialty}
+                  onChange={(e) => onSpecialtyChange(e.target.value)}
+                  className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100"
+                >
+                  {PHILIPPINE_MEDICAL_SPECIALTIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                  {!PHILIPPINE_MEDICAL_SPECIALTIES.includes(specialty) && specialty ? (
+                    <option value={specialty}>{specialty}</option>
+                  ) : null}
+                </select>
+              </div>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-neutral-800">
+              Referred Doctor Name (Optional)
+              <input
+                type="text"
+                value={doctorName}
+                onChange={(e) => onDoctorNameChange(e.target.value)}
+                placeholder="e.g. Dr. Maria Santos"
+                className="mt-2 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-semibold text-neutral-800">
+            Reason for Referral / Note to Doctor
+            <textarea
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              placeholder="State the clinical reason for referring the patient, symptoms, or clinical background..."
+              rows={4}
+              className="mt-2 w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-500 focus:ring-2 focus:ring-neutral-100"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
+          <input
+            type="checkbox"
+            checked={releaseToPatient}
+            onChange={(e) => onReleaseChange(e.target.checked)}
+            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
+          />
+          Send to patient portal
+        </label>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={disabled || !patientMatched}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+        >
+          <FaUserDoctor className="h-4 w-4" aria-hidden="true" />
+          {disabled ? "Saving..." : "Create MD Referral"}
+        </button>
+      </div>
+
+      {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
+
+      {createdReferral ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-emerald-900">
+            {createdReferral.referralNo} is ready.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {onEmailCreated ? (
+              <button
+                type="button"
+                onClick={onEmailCreated}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-100/70 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-200"
+              >
+                <FaEnvelope className="h-3 w-3" />
+                Email to Patient
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onPrintCreated}
+              className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-neutral-800 transition hover:bg-neutral-100"
+            >
+              <FaPrint className="h-3 w-3" />
+              Print
+            </button>
+            <button
+              type="button"
+              onClick={onDownloadCreated}
+              className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-neutral-800 transition hover:bg-neutral-100"
+            >
+              <FaDownload className="h-3 w-3" />
+              Download PDF
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function MedicalCertificateBuilder({
   patientMatched,
   complaints,
@@ -2329,6 +2757,7 @@ function ChartStepNav({
   hasMedCertAddon,
   noteSaved,
   prescriptionCreated,
+  referralCreated,
   medCertCreated,
   labCreated,
   onStepClick,
@@ -2338,6 +2767,7 @@ function ChartStepNav({
   hasMedCertAddon: boolean;
   noteSaved: boolean;
   prescriptionCreated: boolean;
+  referralCreated: boolean;
   medCertCreated: boolean;
   labCreated: boolean;
   onStepClick: (s: number) => void;
@@ -2346,13 +2776,14 @@ function ChartStepNav({
     ? [
         { displayNum: 1, targetStep: 1, label: "Assessment", done: noteSaved },
         { displayNum: 2, targetStep: 2, label: "Prescription", done: prescriptionCreated },
-        { displayNum: 3, targetStep: 3, label: "Med Cert", done: medCertCreated, addon: hasMedCertAddon },
-        { displayNum: 4, targetStep: 4, label: "Lab Request", done: labCreated },
-        { displayNum: 5, targetStep: 5, label: "Finalize", done: false },
+        { displayNum: 3, targetStep: 3, label: "MD Referral", done: referralCreated },
+        { displayNum: 4, targetStep: 4, label: "Med Cert", done: medCertCreated, addon: hasMedCertAddon },
+        { displayNum: 5, targetStep: 5, label: "Lab Request", done: labCreated },
+        { displayNum: 6, targetStep: 6, label: "Finalize", done: false },
       ]
     : [
         { displayNum: 1, targetStep: 1, label: "Assessment & Notes", done: noteSaved },
-        { displayNum: 2, targetStep: 5, label: "Finalize & Save", done: false },
+        { displayNum: 2, targetStep: 6, label: "Finalize & Save", done: false },
       ];
 
   return (

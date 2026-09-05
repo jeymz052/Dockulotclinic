@@ -2,7 +2,19 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { FaArrowUpRightFromSquare, FaDownload, FaEnvelope, FaFolderOpen } from "react-icons/fa6";
+import {
+  FaArrowDownAZ,
+  FaArrowLeft,
+  FaArrowUpAZ,
+  FaArrowUpRightFromSquare,
+  FaChevronRight,
+  FaDownload,
+  FaEnvelope,
+  FaFolderOpen,
+  FaMagnifyingGlass,
+  FaUser,
+  FaXmark,
+} from "react-icons/fa6";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { resolveAftercareGuideForService } from "@/src/lib/healthcare-content";
 
@@ -97,6 +109,10 @@ export type MedicalDocumentItem = {
   labCtScan?: string | null;
   labOthers?: string | null;
   labNotes?: string | null;
+  referralNo?: string | null;
+  referralSpecialty?: string | null;
+  referredDoctorName?: string | null;
+  referralReason?: string | null;
 };
 
 type BrowserProps = {
@@ -186,43 +202,129 @@ export function MedicalDocumentsBrowser({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientSort, setPatientSort] = useState<"name-asc" | "name-desc" | "records-desc">("name-asc");
+  const [docSearch, setDocSearch] = useState("");
+  const [docSort, setDocSort] = useState<"date-desc" | "date-asc" | "title-asc">("date-desc");
 
   const isPatient = role === "PATIENT";
   const canEmailToPatient = role === "DOCTOR" || role === "SUPER_ADMIN";
   const hasPatientExplorer = !isPatient && patients.length > 0;
+
+  const selectedPatient = useMemo(
+    () => patients.find((p) => p.id === selectedPatientId) ?? null,
+    [patients, selectedPatientId],
+  );
+
+  const filteredAndSortedPatients = useMemo(() => {
+    let result = [...patients];
+    if (patientSearch.trim()) {
+      const q = patientSearch.trim().toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.subtitle && p.subtitle.toLowerCase().includes(q)),
+      );
+    }
+    result.sort((a, b) => {
+      if (patientSort === "name-asc") {
+        return a.name.localeCompare(b.name);
+      }
+      if (patientSort === "name-desc") {
+        return b.name.localeCompare(a.name);
+      }
+      if (patientSort === "records-desc") {
+        return b.documentCount - a.documentCount || a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
+    return result;
+  }, [patients, patientSearch, patientSort]);
+
+  const isItemForPatient = (item: MedicalDocumentItem, patient: PatientExplorerItem | null) => {
+    if (!patient) return false;
+    if (item.patientId && item.patientId === patient.id) return true;
+    const pName = patient.name.trim().toLowerCase();
+    if (!pName) return false;
+    if (item.prescriptionPatientName && item.prescriptionPatientName.trim().toLowerCase() === pName) return true;
+    if (item.consentPatientName && item.consentPatientName.trim().toLowerCase() === pName) return true;
+    if (item.labPatientName && item.labPatientName.trim().toLowerCase() === pName) return true;
+    if (item.details?.some((d) => d.label.toLowerCase() === "patient" && d.value.trim().toLowerCase() === pName)) return true;
+    return false;
+  };
+
+  const allPatientItems = useMemo(() => {
+    if (!hasPatientExplorer || !selectedPatient) return items;
+    return items.filter((item) => isItemForPatient(item, selectedPatient));
+  }, [hasPatientExplorer, items, selectedPatient]);
+
+  const patientItems = useMemo(() => {
+    if (filter === "All") return allPatientItems;
+    return allPatientItems.filter((item) => item.category === filter);
+  }, [allPatientItems, filter]);
 
   const filteredItems = useMemo(() => {
     if (filter === "All") return items;
     return items.filter((item) => item.category === filter);
   }, [filter, items]);
 
-  const patientItems = useMemo(() => {
-    if (!hasPatientExplorer) return [];
-    return filteredItems.filter((item) => item.patientId === selectedPatientId);
-  }, [filteredItems, hasPatientExplorer, selectedPatientId]);
+  const visibleItems = hasPatientExplorer && selectedPatientId ? patientItems : filteredItems;
 
-  const visibleItems = hasPatientExplorer ? patientItems : filteredItems;
-  const categories = useMemo(
-    () => (hasPatientExplorer && selectedPatientId ? ["All", ...new Set(patientItems.map((item) => item.category))] : ["All", ...new Set(items.map((item) => item.category))]),
-    [hasPatientExplorer, items, patientItems, selectedPatientId],
-  );
+  const processedDocuments = useMemo(() => {
+    let list = [...visibleItems];
+    if (docSearch.trim()) {
+      const q = docSearch.trim().toLowerCase();
+      list = list.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.kind.toLowerCase().includes(q) ||
+          (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
+          (item.dateLabel && item.dateLabel.toLowerCase().includes(q)),
+      );
+    }
+    list.sort((a, b) => {
+      if (docSort === "date-desc") {
+        return (b.sortDate ?? 0) - (a.sortDate ?? 0);
+      }
+      if (docSort === "date-asc") {
+        return (a.sortDate ?? 0) - (b.sortDate ?? 0);
+      }
+      if (docSort === "title-asc") {
+        return a.title.localeCompare(b.title);
+      }
+      return 0;
+    });
+    return list;
+  }, [visibleItems, docSearch, docSort]);
+
+  const categories = useMemo(() => {
+    const sourceList = hasPatientExplorer && selectedPatientId ? allPatientItems : items;
+    return ["All", ...new Set(sourceList.map((item) => item.category))];
+  }, [allPatientItems, hasPatientExplorer, items, selectedPatientId]);
+
+  useEffect(() => {
+    if (filter !== "All" && !categories.includes(filter)) {
+      setFilter("All");
+    }
+  }, [categories, filter]);
 
   const selectedItem = useMemo(
-    () => normalizeSelection(visibleItems, hasPatientExplorer ? selectedDocumentId : selectedId),
-    [hasPatientExplorer, selectedDocumentId, selectedId, visibleItems],
+    () => normalizeSelection(processedDocuments, hasPatientExplorer ? selectedDocumentId : selectedId),
+    [hasPatientExplorer, processedDocuments, selectedDocumentId, selectedId],
   );
 
   useEffect(() => {
-    if (!filteredItems.length) {
+    if (hasPatientExplorer) return;
+    if (!processedDocuments.length) {
       setSelectedId(null);
       return;
     }
 
     setSelectedId((current) => {
-      if (current && filteredItems.some((item) => item.id === current)) return current;
-      return filteredItems[0]?.id ?? null;
+      if (current && processedDocuments.some((item) => item.id === current)) return current;
+      return processedDocuments[0]?.id ?? null;
     });
-  }, [filteredItems]);
+  }, [hasPatientExplorer, processedDocuments]);
 
   useEffect(() => {
     if (!hasPatientExplorer) {
@@ -236,16 +338,16 @@ export function MedicalDocumentsBrowser({
       return;
     }
 
-    if (!patientItems.length) {
+    if (!processedDocuments.length) {
       setSelectedDocumentId(null);
       return;
     }
 
     setSelectedDocumentId((current) => {
-      if (current && patientItems.some((item) => item.id === current)) return current;
-      return patientItems[0]?.id ?? null;
+      if (current && processedDocuments.some((item) => item.id === current)) return current;
+      return processedDocuments[0]?.id ?? null;
     });
-  }, [hasPatientExplorer, patientItems, selectedPatientId]);
+  }, [hasPatientExplorer, processedDocuments, selectedPatientId]);
 
   useEffect(() => {
     let active = true;
@@ -260,6 +362,8 @@ export function MedicalDocumentsBrowser({
       if (
         selectedItem.kind === "Prescription" ||
         selectedItem.kind === "Medical Certificate" ||
+        selectedItem.kind === "MD Referral" ||
+        selectedItem.kind === "Doctor Referral" ||
         selectedItem.kind === "Signed Consent Form" ||
         selectedItem.kind === "Post-procedure aftercare" ||
         selectedItem.previewType === "text"
@@ -493,89 +597,344 @@ export function MedicalDocumentsBrowser({
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
-        <aside className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm">
-          <div className="border-b border-neutral-200 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600">{hasPatientExplorer ? "Patients" : "Documents"}</p>
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-black">{hasPatientExplorer ? "Patient records" : "All records"}</h2>
-          </div>
+      <div className="grid gap-5 xl:grid-cols-[23rem_minmax(0,1fr)]">
+        <aside className="overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm flex flex-col min-h-[640px] xl:h-[calc(100vh-17rem)]">
+          {/* VIEW 1: Patient Records List (When hasPatientExplorer && !selectedPatientId) */}
+          {hasPatientExplorer && !selectedPatientId ? (
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="border-b border-neutral-200 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600">Patients</p>
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-bold text-neutral-700">
+                    {filteredAndSortedPatients.length}
+                  </span>
+                </div>
+                <h2 className="mt-1 text-2xl font-black tracking-tight text-black">Patient records</h2>
+                <p className="mt-1 text-xs text-neutral-500">Select a patient to view their medical documents</p>
+              </div>
 
-          {hasPatientExplorer ? (
-            <div className="space-y-2 border-b border-neutral-200 p-4">
-              {patients.map((patient) => (
-                <button
-                  key={patient.id}
-                  type="button"
-                  onClick={() => setSelectedPatientId(patient.id)}
-                  className={`w-full rounded-lg border px-4 py-3 text-left transition ${
-                    selectedPatientId === patient.id ? "border-black bg-black text-white" : "border-neutral-200 hover:bg-neutral-50"
-                  }`}
-                >
-                  <p className="font-bold">{patient.name}</p>
-                  <p className={`mt-1 text-xs ${selectedPatientId === patient.id ? "text-neutral-300" : "text-neutral-500"}`}>
-                    {patient.documentCount} record{patient.documentCount === 1 ? "" : "s"}{patient.latestDateLabel ? ` | ${patient.latestDateLabel}` : ""}
-                  </p>
-                </button>
-              ))}
-              {!selectedPatientId ? <p className="px-1 py-2 text-xs text-neutral-500">Select a patient to view medical records.</p> : null}
-            </div>
-          ) : null}
+              {/* Search & Sort Filters for Patients */}
+              <div className="border-b border-neutral-200 bg-neutral-50/50 p-4 space-y-2.5">
+                <div className="relative">
+                  <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-xs pointer-events-none" />
+                  <input
+                    type="text"
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    placeholder="Search patient name..."
+                    className="w-full rounded-lg border border-neutral-200 bg-white py-2 pl-8 pr-8 text-xs text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition"
+                  />
+                  {patientSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setPatientSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <FaXmark className="h-3 w-3" />
+                    </button>
+                  ) : null}
+                </div>
 
-          {loading ? (
-            <div className="px-5 py-6 text-sm text-neutral-500">Loading medical documents...</div>
-          ) : null}
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Sort</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setPatientSort("name-asc")}
+                      title="Sort A to Z"
+                      className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                        patientSort === "name-asc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <FaArrowDownAZ className="h-3 w-3" />
+                      A-Z
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPatientSort("name-desc")}
+                      title="Sort Z to A"
+                      className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                        patientSort === "name-desc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <FaArrowUpAZ className="h-3 w-3" />
+                      Z-A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPatientSort("records-desc")}
+                      title="Sort by most records"
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                        patientSort === "records-desc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      Records
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-          {!loading && filteredItems.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <FaFolderOpen className="mx-auto h-10 w-10 text-neutral-300" />
-              <h3 className="mt-4 text-base font-bold text-black">{emptyTitle}</h3>
-              <p className="mt-2 text-sm leading-6 text-neutral-500">{emptyDescription}</p>
-            </div>
-          ) : null}
-
-          <div className="max-h-[calc(100vh-18rem)] space-y-3 overflow-y-auto p-4">
-            {hasPatientExplorer && !selectedPatientId ? null : visibleItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => hasPatientExplorer ? setSelectedDocumentId(item.id) : setSelectedId(item.id)}
-                className={`w-full rounded-[1.1rem] border px-4 py-4 text-left transition ${
-                  selectedItem?.id === item.id
-                    ? "border-black bg-black text-white shadow-sm"
-                    : "border-neutral-200 bg-white text-black hover:border-neutral-300 hover:bg-neutral-50"
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className={`text-xs font-black uppercase tracking-[0.14em] ${selectedItem?.id === item.id ? "text-neutral-200" : "text-neutral-500"}`}>
-                      {item.title}
+              {/* Scrollable Patient Cards */}
+              <div className="flex-1 space-y-2 overflow-y-auto p-4 min-h-72">
+                {loading ? (
+                  <div className="py-12 text-center text-sm text-neutral-500">Loading patient records...</div>
+                ) : filteredAndSortedPatients.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <FaFolderOpen className="mx-auto h-8 w-8 text-neutral-300" />
+                    <p className="mt-3 text-sm font-semibold text-neutral-700">
+                      {patientSearch ? `No patient matching "${patientSearch}"` : "No patients found"}
                     </p>
-                    {item.badge ? (
-                      <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${
-                        selectedItem?.id === item.id
-                          ? "border-white/20 bg-white/10 text-white"
-                          : "border-neutral-200 bg-neutral-50 text-neutral-700"
-                      }`}>
-                        {item.badge}
-                      </span>
+                    {patientSearch ? (
+                      <button
+                        type="button"
+                        onClick={() => setPatientSearch("")}
+                        className="mt-2 text-xs font-bold text-neutral-900 underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
                     ) : null}
                   </div>
-                  <p className="break-words text-base font-black leading-snug">{item.kind}</p>
-                  <p className={`text-sm ${selectedItem?.id === item.id ? "text-neutral-200" : "text-neutral-600"}`}>
-                    {item.subtitle || " "}
-                  </p>
-                  <p className={`text-xs font-semibold ${selectedItem?.id === item.id ? "text-neutral-300" : "text-neutral-500"}`}>
-                    {item.dateLabel || ""}
-                  </p>
+                ) : (
+                  filteredAndSortedPatients.map((patient) => (
+                    <button
+                      key={patient.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPatientId(patient.id);
+                        setSelectedDocumentId(null);
+                        setDocSearch("");
+                      }}
+                      className="group flex w-full items-center justify-between rounded-xl border border-neutral-200 bg-white p-3.5 text-left transition hover:border-neutral-900 hover:bg-neutral-50/80 hover:shadow-xs cursor-pointer"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="truncate text-sm font-black text-neutral-950 group-hover:text-black">
+                          {patient.name}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-neutral-500">
+                          {patient.documentCount} record{patient.documentCount === 1 ? "" : "s"}
+                          {patient.latestDateLabel ? ` • ${patient.latestDateLabel}` : ""}
+                        </p>
+                      </div>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-400 transition group-hover:bg-neutral-950 group-hover:text-white">
+                        <FaChevronRight className="h-3 w-3" />
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* VIEW 2: Patient's Documents (When hasPatientExplorer && selectedPatientId) OR (When !hasPatientExplorer) */}
+          {(!hasPatientExplorer || selectedPatientId) ? (
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Header with Breadcrumb and Back Button */}
+              {hasPatientExplorer && selectedPatient ? (
+                <div className="border-b border-neutral-200 px-4 py-3.5 space-y-2.5 bg-neutral-50/40">
+                  {/* Row 1: Back button & Document Count */}
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPatientId(null);
+                        setSelectedDocumentId(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-bold text-neutral-800 transition hover:bg-neutral-100 hover:text-black shadow-2xs group cursor-pointer"
+                    >
+                      <FaArrowLeft className="h-3 w-3 transition group-hover:-translate-x-0.5" />
+                      <span>Back to Patients</span>
+                    </button>
+                    <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-bold text-neutral-700">
+                      {patientItems.length} {patientItems.length === 1 ? "record" : "records"}
+                    </span>
+                  </div>
+
+                  {/* Row 2: Breadcrumbs of patient name - medical document */}
+                  <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-500 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPatientId(null);
+                        setSelectedDocumentId(null);
+                      }}
+                      className="font-bold text-neutral-600 hover:text-black hover:underline shrink-0 cursor-pointer"
+                    >
+                      Patients
+                    </button>
+                    <span className="text-neutral-400 shrink-0">/</span>
+                    <span className="font-bold text-neutral-900 truncate" title={selectedPatient.name}>
+                      {selectedPatient.name}
+                    </span>
+                    <span className="text-neutral-400 shrink-0">–</span>
+                    <span
+                      className="font-semibold text-neutral-700 truncate"
+                      title={selectedItem?.title || "Medical Document"}
+                    >
+                      {selectedItem?.title || "Medical Document"}
+                    </span>
+                  </nav>
                 </div>
-              </button>
-            ))}
-          </div>
+              ) : (
+                <div className="border-b border-neutral-200 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600">Documents</p>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-black">All records</h2>
+                </div>
+              )}
+
+              {/* Document Search & Sort */}
+              <div className="border-b border-neutral-200 bg-neutral-50/50 p-3.5 space-y-2.5">
+                <div className="relative">
+                  <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-xs pointer-events-none" />
+                  <input
+                    type="text"
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    placeholder="Filter documents..."
+                    className="w-full rounded-lg border border-neutral-200 bg-white py-1.5 pl-8 pr-7 text-xs text-neutral-900 placeholder:text-neutral-400 outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition"
+                  />
+                  {docSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setDocSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-0.5 cursor-pointer"
+                    >
+                      <FaXmark className="h-3 w-3" />
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Sort</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setDocSort("date-desc")}
+                      title="Newest first"
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
+                        docSort === "date-desc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      Newest
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocSort("date-asc")}
+                      title="Oldest first"
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
+                        docSort === "date-asc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      Oldest
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDocSort("title-asc")}
+                      title="Sort A to Z"
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-bold transition cursor-pointer ${
+                        docSort === "title-asc"
+                          ? "bg-neutral-950 text-white shadow-xs"
+                          : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100"
+                      }`}
+                    >
+                      A-Z
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="px-5 py-6 text-sm text-neutral-500">Loading medical documents...</div>
+              ) : null}
+
+              {/* Scrollable Document List */}
+              <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-72">
+                {!loading && processedDocuments.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <FaFolderOpen className="mx-auto h-8 w-8 text-neutral-300" />
+                    <h3 className="mt-3 text-sm font-bold text-black">
+                      {docSearch ? `No documents matching "${docSearch}"` : emptyTitle}
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-neutral-500">
+                      {docSearch ? "Try adjusting your search filter." : emptyDescription}
+                    </p>
+                  </div>
+                ) : (
+                  processedDocuments.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => hasPatientExplorer ? setSelectedDocumentId(item.id) : setSelectedId(item.id)}
+                      className={`w-full rounded-[1.1rem] border px-4 py-3.5 text-left transition cursor-pointer ${
+                        selectedItem?.id === item.id
+                          ? "border-black bg-black text-white shadow-sm"
+                          : "border-neutral-200 bg-white text-black hover:border-neutral-300 hover:bg-neutral-50"
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className={`text-xs font-black uppercase tracking-[0.14em] ${selectedItem?.id === item.id ? "text-neutral-200" : "text-neutral-500"}`}>
+                            {item.title}
+                          </p>
+                          {item.badge ? (
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] ${
+                              selectedItem?.id === item.id
+                                ? "border-white/20 bg-white/10 text-white"
+                                : "border-neutral-200 bg-neutral-50 text-neutral-700"
+                            }`}>
+                              {item.badge}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="break-words text-sm font-black leading-snug">{item.kind}</p>
+                        <p className={`text-xs ${selectedItem?.id === item.id ? "text-neutral-200" : "text-neutral-600"}`}>
+                          {item.subtitle || " "}
+                        </p>
+                        <p className={`text-[11px] font-semibold ${selectedItem?.id === item.id ? "text-neutral-300" : "text-neutral-500"}`}>
+                          {item.dateLabel || ""}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
         </aside>
 
         <main className="min-w-0 overflow-hidden rounded-[1.75rem] border border-neutral-200 bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-neutral-200 px-6 py-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
+              {hasPatientExplorer && selectedPatient ? (
+                <nav aria-label="Document Breadcrumb" className="mb-2 flex items-center gap-1.5 text-xs text-neutral-500">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPatientId(null);
+                      setSelectedDocumentId(null);
+                    }}
+                    className="font-bold text-neutral-600 hover:text-black hover:underline cursor-pointer"
+                  >
+                    Patients
+                  </button>
+                  <span className="text-neutral-400">/</span>
+                  <span className="font-semibold text-neutral-700">{selectedPatient.name}</span>
+                  <span className="text-neutral-400">–</span>
+                  <span className="font-bold text-neutral-950 truncate">
+                    {selectedItem?.title ?? "Medical Document"}
+                  </span>
+                </nav>
+              ) : null}
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-neutral-600">{selectedCategory}</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight text-black">
                 {selectedItem?.title ?? "No record selected"}
@@ -691,6 +1050,10 @@ function DocumentPreview({
 }) {
   if (item.kind === "Prescription") {
     return <PrescriptionPreview item={item} />;
+  }
+
+  if (item.kind === "MD Referral" || item.kind === "Doctor Referral") {
+    return <MDReferralPreview item={item} />;
   }
 
   if (item.kind === "Medical Certificate") {
@@ -1102,6 +1465,229 @@ function MedicalCertificatePreview({ item }: { item: MedicalDocumentItem }) {
           <p className="text-sm font-semibold text-neutral-700">(End of Medical Certificate)</p>
           <p className="mt-6 text-sm leading-6 text-neutral-800">
             Note to User: The information contained in this medical certificate is provided by the prescriber and should be verified by the clinic before use.
+          </p>
+          <div className="mt-6 border-t border-neutral-200 pt-3">
+            <p className="text-sm font-semibold text-neutral-700">Powered by Doc Kulot</p>
+            <p className="text-sm text-neutral-700">For clinic use only.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MDReferralPreview({ item }: { item: MedicalDocumentItem }) {
+  const { accessToken } = useRole();
+  const [resolvedDoctorName, setResolvedDoctorName] = useState<string | null>(null);
+  const [resolvedSpecialty, setResolvedSpecialty] = useState<string | null>(null);
+  const [resolvedLicenseNo, setResolvedLicenseNo] = useState<string | null>(null);
+  const [resolvedSignature, setResolvedSignature] = useState<string | null>(null);
+  const [resolvedPatientName, setResolvedPatientName] = useState<string | null>(null);
+  const [resolvedPatientDob, setResolvedPatientDob] = useState<string | null>(null);
+  const [resolvedPatientGender, setResolvedPatientGender] = useState<string | null>(null);
+  const [resolvedReferredSpecialty, setResolvedReferredSpecialty] = useState<string | null>(null);
+  const [resolvedReferredDoctor, setResolvedReferredDoctor] = useState<string | null>(null);
+  const [resolvedReason, setResolvedReason] = useState<string | null>(null);
+  const [resolvedCreatedAt, setResolvedCreatedAt] = useState<string | null>(null);
+  const [metadataLoading, setMetadataLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const fetchMetadata = async () => {
+      try {
+        if (!item.id) {
+          if (active) setMetadataLoading(false);
+          return;
+        }
+        const response = await fetch(`/api/v2/md-referrals/${item.id}/metadata`, {
+          cache: "no-store",
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        });
+        if (response.ok && active) {
+          const data = await response.json();
+          setResolvedDoctorName(data.doctorName ?? null);
+          setResolvedSpecialty(data.doctorSpecialty ?? null);
+          setResolvedLicenseNo(data.doctorLicenseNo ?? null);
+          setResolvedSignature(data.doctorSignatureDataUrl ?? null);
+          setResolvedPatientName(data.patientName ?? null);
+          setResolvedPatientDob(data.patientDob ?? null);
+          setResolvedPatientGender(data.patientGender ?? null);
+          setResolvedReferredSpecialty(data.referredSpecialty ?? null);
+          setResolvedReferredDoctor(data.referredDoctor ?? null);
+          setResolvedReason(data.reasonForReferral ?? null);
+          setResolvedCreatedAt(data.createdAt ?? null);
+        }
+      } catch {
+        // Fallback to item
+      } finally {
+        if (active) setMetadataLoading(false);
+      }
+    };
+    fetchMetadata();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, item.id]);
+
+  const referralNo =
+    item.referralNo ||
+    item.title?.replace(/\.[^.]+$/, "") ||
+    item.fileName?.replace(/\.[^.]+$/, "") ||
+    "REF-00000000";
+
+  const patientName =
+    resolvedPatientName ||
+    item.prescriptionPatientName ||
+    item.details?.find((detail) => /patient/i.test(detail.label))?.value ||
+    "Patient";
+
+  const patientDob = resolvedPatientDob ?? item.prescriptionPatientDob;
+  const patientAge = ageFromDob(patientDob);
+  const patientGender =
+    resolvedPatientGender ||
+    item.prescriptionPatientGender ||
+    item.details?.find((detail) => /gender/i.test(detail.label))?.value ||
+    "Not recorded";
+
+  const referredSpecialty =
+    resolvedReferredSpecialty ||
+    item.referralSpecialty ||
+    item.details?.find((detail) => /specialty/i.test(detail.label))?.value ||
+    "Internal Medicine";
+
+  const referredDoctor =
+    resolvedReferredDoctor?.trim() ||
+    item.referredDoctorName?.trim() ||
+    item.details?.find((detail) => /^referred\s*doctor$/i.test(detail.label))?.value?.trim() ||
+    null;
+
+  const reason =
+    resolvedReason ||
+    item.referralReason ||
+    item.note ||
+    item.summary ||
+    "Clinical consultation and management.";
+
+  const createdAt = formatDateTime(resolvedCreatedAt || item.prescriptionCreatedAt || null);
+
+  const rawDoctorName = metadataLoading
+    ? (item.prescriptionDoctorName ?? "Dr. Fatimah Al-Zahra T. Ditti")
+    : (resolvedDoctorName ?? item.prescriptionDoctorName ?? "Dr. Fatimah Al-Zahra T. Ditti");
+  const doctorName = !rawDoctorName || /not recorded/i.test(rawDoctorName) ? "Dr. Fatimah Al-Zahra T. Ditti" : rawDoctorName;
+  const doctorNameBase = doctorName.replace(/^Dr\.?\s*/i, "").replace(/,\s*MD$/i, "").trim();
+  const doctorHeaderName = doctorNameBase ? `${doctorNameBase}, MD` : "Fatimah Al-Zahra T. Ditti, MD";
+  const clinicHeaderName = doctorNameBase ? `${doctorNameBase} Online Clinic` : "Doc Kulot Online Clinic";
+  const rawSpecialty = metadataLoading
+    ? item.prescriptionDoctorSpecialty
+    : (resolvedSpecialty ?? item.prescriptionDoctorSpecialty);
+  const specialty = rawSpecialty?.trim() || "Family Medicine Specialist | Aesthetic Medicine";
+  const prcNo = metadataLoading
+    ? (item.prescriptionDoctorLicenseNo ?? "0141185")
+    : (resolvedLicenseNo ?? item.prescriptionDoctorLicenseNo ?? "0141185");
+  const signatureDataUrl = metadataLoading
+    ? (item.prescriptionDoctorSignatureDataUrl ?? "")
+    : (resolvedSignature ?? item.prescriptionDoctorSignatureDataUrl ?? "");
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white">
+      <div className="mx-auto max-w-4xl bg-white px-6 py-8 text-neutral-900 sm:px-10 lg:px-12">
+        {/* Top Header matching prescription format */}
+        <div className="flex items-start justify-between gap-6">
+          <Image
+            src="/images/dockulotslogonobg.png"
+            alt="Doc Kulot logo"
+            width={300}
+            height={168}
+            className="h-auto w-52 max-w-full object-contain sm:w-60"
+            priority
+          />
+          <div className="min-w-44 text-right">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-neutral-500">REFERRAL ID</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-black">{referralNo}</p>
+          </div>
+        </div>
+
+        {/* Doctor and Clinic Header matching prescription */}
+        <div className="mt-7 text-center">
+          <p className="text-lg font-black tracking-tight text-black sm:text-[1.65rem]">{doctorHeaderName}</p>
+          <p className="mt-2 text-sm text-neutral-700 sm:text-[0.95rem]">Family Medicine Specialist | Aesthetic Medicine</p>
+          <p className="mt-1 text-xl font-black tracking-tight text-black sm:text-[1.5rem]">{clinicHeaderName}</p>
+          <p className="mt-1 text-sm text-neutral-700 sm:text-[0.95rem]">Zamboanga City, Zamboanga Del Sur</p>
+        </div>
+
+        {/* Patient Details & Date */}
+        <div className="mt-6 border-t border-neutral-200 pt-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-sm leading-6 text-neutral-900">
+                Patient: <span className="font-black text-black">{patientName}</span>
+              </p>
+              <p className="text-sm leading-6 text-neutral-800">
+                Age: {patientAge != null ? `${patientAge} years old` : "Not recorded"}
+              </p>
+              <p className="text-sm leading-6 text-neutral-800">Gender: {patientGender}</p>
+            </div>
+            <div className="text-left sm:text-right">
+              <p className="text-sm leading-6 text-neutral-700">
+                Referred on: {createdAt.date || item.dateLabel || "Not recorded"}
+              </p>
+              <p className="text-sm leading-6 text-neutral-700">
+                {createdAt.time ? `${createdAt.time} PHT` : ""}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Section: Referred Doctor & Reason for Referral */}
+        <div className="mt-8 space-y-6">
+          <div>
+            <p className="text-base font-black text-black">Referred Doctor</p>
+            <div className="mt-2 space-y-1">
+              {referredDoctor ? (
+                <p className="text-sm text-neutral-800">
+                  Doctor: <span className="font-semibold text-neutral-900">{referredDoctor}</span>
+                </p>
+              ) : null}
+              <p className="text-sm text-neutral-800">
+                Specialty: <span className="font-semibold text-neutral-900">{referredSpecialty}</span>
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-base font-black text-black">Reason for Referral</p>
+            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-neutral-800">
+              {reason}
+            </p>
+          </div>
+        </div>
+
+        {/* Physician's Signature */}
+        <div className="mt-16 flex justify-end">
+          <div className="w-72 text-center">
+            {signatureDataUrl ? (
+              <div className="mb-0 flex h-24 items-end justify-center border-b border-black pb-1">
+                <img
+                  src={signatureDataUrl}
+                  alt="Physician signature"
+                  className="h-auto max-h-16 w-auto object-contain"
+                />
+              </div>
+            ) : (
+              <div className="mb-0 h-24 border-b border-black" />
+            )}
+            <p className="mt-2 text-sm font-black text-neutral-950">{doctorHeaderName}</p>
+            <p className="text-xs text-neutral-700">Family Medicine</p>
+            <p className="text-xs text-neutral-700">Aesthetic Medicine</p>
+            <p className="mt-0.5 text-xs font-bold text-neutral-800">PRC License No.: {prcNo}</p>
+          </div>
+        </div>
+
+        {/* Footer & Revised Disclaimer matching prescription */}
+        <div className="mt-14 text-center">
+          <p className="text-sm font-semibold text-neutral-700">(End of MD Referral)</p>
+          <p className="mt-6 text-sm leading-6 text-neutral-800">
+            Note to User: The information contained in this electronic referral is provided by the referring physician and should be verified upon presentation.
           </p>
           <div className="mt-6 border-t border-neutral-200 pt-3">
             <p className="text-sm font-semibold text-neutral-700">Powered by Doc Kulot</p>

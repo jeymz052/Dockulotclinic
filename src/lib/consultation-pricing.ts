@@ -11,6 +11,9 @@ export const NEW_PATIENT_CLINIC_CONSULTATION_FEE = 600;
 export const FOLLOW_UP_CLINIC_CONSULTATION_FEE = 300;
 export const ONLINE_CONSULTATION_FEE = 800;
 export const PROCEDURE_DOWNPAYMENT_AMOUNT = 1000;
+// Non-refundable reservation fee collected online (PayMongo QR Ph) to secure a
+// clinic visit slot. Deducted from the patient's POS bill on the day of visit.
+export const CLINIC_VISIT_RESERVATION_FEE = 200;
 
 export const DEFAULT_CLINIC_CONSULTATION_FEE = NEW_PATIENT_CLINIC_CONSULTATION_FEE;
 export const DEFAULT_ONLINE_CONSULTATION_FEE = ONLINE_CONSULTATION_FEE;

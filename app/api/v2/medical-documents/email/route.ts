@@ -25,6 +25,11 @@ import {
   getLaboratoryRequestPdfFilename,
   type LaboratoryRequestPdfRow,
 } from "@/src/lib/services/laboratory-request-pdf";
+import {
+  createMdReferralPdf,
+  getMdReferralPdfFilename,
+  type MdReferralPdfRow,
+} from "@/src/lib/services/md-referral-pdf";
 
 type EmailDocumentBody = {
   documentId: string;
@@ -350,7 +355,61 @@ export async function POST(req: Request) {
       return ok({ message: `Laboratory request successfully emailed to ${patientEmail}.` });
     }
 
-    // 4C. OTHER PATIENT FILE
+    // 4C. MD REFERRAL
+    if (fileType === "MD Referral" || kind === "MD Referral") {
+      const meta = fileData.document_metadata || {};
+      const referralNo = (meta.referral_no as string) || "REF-FORM";
+      const referralRow: MdReferralPdfRow = {
+        referral_no: referralNo,
+        created_at: fileData.created_at,
+        referred_specialty: (meta.referred_specialty as string) || "Internal Medicine",
+        referred_doctor: (meta.referred_doctor as string) || null,
+        reason_for_referral: (meta.reason_for_referral as string) || (meta.note as string) || "Clinical consultation and management.",
+        note: (meta.note as string) || null,
+        released_to_patient: true,
+        patients: {
+          dob: (meta.patient_dob as string) || patientData?.dob || null,
+          gender: (meta.patient_gender as string) || patientData?.gender || null,
+          profiles: {
+            full_name: (meta.patient_name as string) || patientData?.profiles?.full_name || "Patient",
+          },
+        },
+        doctors: {
+          specialty: (meta.doctor_specialty as string) || "Family Medicine",
+          license_no: (meta.doctor_license_no as string) || "0141185",
+          profiles: {
+            full_name: (meta.doctor_name as string) || "Dr. Fatimah Al-Zahra T. Ditti",
+          },
+        },
+        doctor_signature_data_url: settings.doctorSignatureDataUrl,
+      };
+
+      const pdf = createMdReferralPdf(referralRow);
+      const filename = getMdReferralPdfFilename(referralNo);
+
+      await sendEmail({
+        to: patientEmail,
+        subject: `Doctor Referral Form: ${referralNo}`,
+        body: [
+          `Hello ${patientData?.profiles?.full_name ?? "Patient"},`,
+          "",
+          `Your doctor referral form (${referralNo}) from Doc Kulot has been generated.`,
+          "Please present the attached PDF copy to your referred physician.",
+          "",
+          `You can also view this referral in your patient portal: ${portalUrl}`,
+        ].join("\n"),
+        attachments: [
+          {
+            filename,
+            content: Buffer.from(pdf).toString("base64"),
+          },
+        ],
+      });
+
+      return ok({ message: `Doctor referral form successfully emailed to ${patientEmail}.` });
+    }
+
+    // 4D. OTHER PATIENT FILE
     await sendEmail({
       to: patientEmail,
       subject: `Medical Document from Doc Kulot: ${fileData.file_name}`,

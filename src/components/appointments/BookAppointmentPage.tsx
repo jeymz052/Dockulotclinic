@@ -114,7 +114,7 @@ const BOOKING_VISIT_OPTIONS: Array<{
   {
     path: "Clinic",
     label: "Clinic Visit",
-    helper: "In-person consultation at the clinic. Procedures are booked separately.",
+    helper: "In-person consultation at the clinic. ₱200 non-refundable reservation fee required (deducted from POS payment).",
   },
   {
     path: "Procedure",
@@ -348,11 +348,15 @@ export default function BookAppointmentPage() {
   const serviceOptions = formData.visitPath === "Procedure" ? procedureServiceOptions : consultationServiceOptions;
   const appointmentClinicConsultKind =
     formData.visitPath === "Clinic" && !isProcedureBooking ? formData.clinicConsultKind : undefined;
-  const requiresOnlinePayment = formData.type === "Online" || isProcedureBooking;
+  const requiresOnlinePayment = true;
   const selectedSlotDuration = selectedSlot
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
     : isProcedureBooking ? "1 hr" : "30 min";
   const selectedAftercareGuide = useMemo(() => resolveAftercareGuide(formData.service), [formData.service]);
+  const clinicVisitReservationAmount = getBookingPriceAmount(
+    bookingPricing,
+    BOOKING_PRICING_CODES.CLINIC_VISIT_RESERVATION,
+  );
   const virtualConsultAmount = getBookingPriceAmount(bookingPricing, BOOKING_PRICING_CODES.VIRTUAL_CONSULT);
   const medicalCertificateAddonAmount = getBookingPriceAmount(
     bookingPricing,
@@ -365,16 +369,11 @@ export default function BookAppointmentPage() {
   );
   const visitPathPriceLabels = useMemo(
     () => ({
-      Clinic:
-        formData.patientStatus === "Existing" || (role === "PATIENT" && patient?.patient_category === "Existing")
-          ? `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} standard clinic rate`
-          : `${formatBookingPeso(getClinicConsultKindFee("FirstConsult", bookingPricing))} first consult / ${formatBookingPeso(
-            getClinicConsultKindFee("FollowUp", bookingPricing),
-          )} follow-up`,
+      Clinic: `${formatBookingPeso(clinicVisitReservationAmount)} non-refundable reservation (deducted at counter)`,
       Procedure: `${formatBookingPeso(procedureReservationAmount)} reservation`,
       Online: `${formatBookingPeso(virtualConsultTotalAmount)}`,
     }),
-    [bookingPricing, patient, procedureReservationAmount, role, formData.patientStatus, medicalCertificateAddonRequested, virtualConsultTotalAmount],
+    [clinicVisitReservationAmount, procedureReservationAmount, virtualConsultTotalAmount],
   );
 
   const BOOKING_STEP_LABELS = [
@@ -2000,25 +1999,32 @@ export default function BookAppointmentPage() {
 
                       <div className="pt-2 border-t border-neutral-200">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-700 mb-3">Payment Info</p>
-                        {!isProcedureBooking ? (
+                        {!isProcedureBooking && formData.type === "Online" ? (
                           <>
                             <SummaryRow
-                              label={formData.type === "Online" ? "Consultation Fee" : "Clinic Fee"}
-                              value={formData.type === "Online"
-                                ? peso(virtualConsultAmount)
-                                : getConsultationFeeLabel(formData.type, hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind, bookingPricing)}
+                              label="Consultation Fee"
+                              value={peso(virtualConsultAmount)}
                               done
                             />
-                            {formData.type === "Online" && medicalCertificateAddonRequested ? (
+                            {medicalCertificateAddonRequested ? (
                               <SummaryRow
                                 label="Medical Certificate Add-on"
                                 value={peso(medicalCertificateAddonAmount)}
                                 done
                               />
                             ) : null}
-                            {formData.type === "Online" ? (
-                              <SummaryRow label="Total Due" value={peso(virtualConsultTotalAmount)} done />
-                            ) : null}
+                            <SummaryRow label="Total Due" value={peso(virtualConsultTotalAmount)} done />
+                          </>
+                        ) : null}
+                        {!isProcedureBooking && formData.type === "Clinic" ? (
+                          <>
+                            <SummaryRow
+                              label="Clinic Consultation Fee"
+                              value={getConsultationFeeLabel(formData.type, hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind, bookingPricing)}
+                              done
+                            />
+                            <SummaryRow label="Reservation Fee (Pay Now)" value={`${peso(clinicVisitReservationAmount)} (Non-refundable)`} done />
+                            <SummaryRow label="Billing Note" value="₱200 non-refundable fee; automatically credited/deducted at POS on visit" done />
                           </>
                         ) : null}
                         {requiresOnlinePayment ? (
@@ -2066,24 +2072,15 @@ export default function BookAppointmentPage() {
 
                     <div className="rounded-[1.75rem] border-2 border-neutral-300 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
                       <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
-                        {requiresOnlinePayment ? (
-                          <>
-                            <FaCreditCard className="h-3 w-3" aria-hidden="true" />
-                            Ready for Payment
-                          </>
-                        ) : (
-                          <>
-                            <FaCircleCheck className="h-3 w-3" aria-hidden="true" />
-                            Ready to Book
-                          </>
-                        )}
+                        <FaCreditCard className="h-3 w-3" aria-hidden="true" />
+                        Ready for Payment
                       </p>
                       <p className="mt-4 text-3xl font-black text-neutral-800">
                         {formData.type === "Online"
                           ? "Pay Now"
                           : isProcedureBooking
                             ? "Pay Reservation"
-                            : `Queue ${selectedSlot?.nextQueueNumber ? `#${selectedSlot.nextQueueNumber}` : "--"}`}
+                            : `Pay ${peso(clinicVisitReservationAmount)} Reservation`}
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
                         {formData.type === "Online"
@@ -2092,9 +2089,7 @@ export default function BookAppointmentPage() {
                             : "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
                           : isProcedureBooking
                             ? `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
-                          : selectedSlot
-                            ? `Your appointment is confirmed for ${formatRange(selectedSlot.start, selectedSlot.end)}`
-                            : "Select a time slot first"}
+                            : `A non-refundable ${peso(clinicVisitReservationAmount)} reservation fee secures your clinic visit slot and is automatically deducted from your final payment in POS upon clinic arrival.`}
                       </p>
 
                       {requiresOnlinePayment ? (
@@ -2116,6 +2111,7 @@ export default function BookAppointmentPage() {
                                 Medical certificate add-on
                               </span>
                             ) : null}
+                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Clinic reservation fee (₱200)</span>
                             <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Procedure reservation fee</span>
                           </div>
                         </div>

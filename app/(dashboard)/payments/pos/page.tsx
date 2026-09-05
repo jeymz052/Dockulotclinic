@@ -123,6 +123,7 @@ export default function POSBillingPage() {
   const [receiptBillingId, setReceiptBillingId] = useState<string | null>(null);
   const [receiptPayment, setReceiptPayment] = useState<PaymentSnapshot | null>(null);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [reservationCredit, setReservationCredit] = useState(0);
   const [currentClock, setCurrentClock] = useState(() => formatClock(new Date()));
   const [isWorking, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -214,7 +215,7 @@ export default function POSBillingPage() {
   );
 
   const addOnsTotal = lines.reduce((sum, line) => sum + line.quantity * line.unit_price, 0);
-  const subtotal = consultationFee + addOnsTotal;
+  const subtotal = Math.max(0, consultationFee + addOnsTotal - reservationCredit);
   const isStatutoryDiscount = discountKind === "SeniorCitizen" || discountKind === "PWD";
   const effectiveDiscount = isStatutoryDiscount ? Math.round(subtotal * 20) / 100 : discount;
   const effectiveTax = isStatutoryDiscount ? 0 : tax;
@@ -235,6 +236,18 @@ export default function POSBillingPage() {
     setTenderedInput("");
     setIssuedBillingStatus(null);
     setFeedback(null);
+    setReservationCredit(0);
+
+    if (accessToken) {
+      void fetch(`/api/v2/appointments/${appointment.id}/reservation-credit`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.amount) setReservationCredit(Number(data.amount));
+        })
+        .catch(() => {});
+    }
   }
 
   function addItem(item: PricingItem) {
@@ -287,6 +300,7 @@ export default function POSBillingPage() {
     setIssuedBillingId(null);
     setIssuedBillingStatus(null);
     setFeedback(null);
+    setReservationCredit(0);
     setConfirmingVoid(false);
     setVoidReason("");
     closeReceiptModal();
@@ -528,14 +542,28 @@ export default function POSBillingPage() {
 
             <div className="max-h-[24rem] overflow-y-auto px-4 py-3">
               {selectedAppt ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-black text-slate-950">Clinic consultation</p>
-                      <p className="mt-1 text-xs font-semibold text-emerald-800">{consultationKindLabel} flat fee</p>
+                <div className="space-y-2">
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black text-slate-950">Clinic consultation</p>
+                        <p className="mt-1 text-xs font-semibold text-emerald-800">{consultationKindLabel} flat fee</p>
+                      </div>
+                      <p className="font-mono text-sm font-black text-slate-950">{peso(consultationFee)}</p>
                     </div>
-                    <p className="font-mono text-sm font-black text-slate-950">{peso(consultationFee)}</p>
                   </div>
+
+                  {reservationCredit > 0 ? (
+                    <div className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-black text-sky-950">Pre-paid Reservation Fee</p>
+                          <p className="mt-1 text-xs font-semibold text-sky-700">Online PayMongo QR Ph (Credit)</p>
+                        </div>
+                        <p className="font-mono text-sm font-black text-sky-900">- {peso(reservationCredit)}</p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">No patient selected.</p>

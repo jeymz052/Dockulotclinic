@@ -23,6 +23,7 @@ import {
   resolveProcedureReservationAmount,
   resolveMedicalCertificateAddonAmount,
   resolveVirtualConsultAmount,
+  resolveClinicVisitReservationAmount,
 } from "@/src/lib/server/booking-pricing-store";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 import { finalizeInventorySaleForBilling } from "@/src/lib/services/billing";
@@ -103,7 +104,12 @@ async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { servi
   if (input.type === "Clinic" && isProcedureServiceTitle(input.service)) {
     return resolveProcedureReservationAmount();
   }
-  throw new HttpError(400, "Only virtual consults or clinic procedure bookings can use online checkout.");
+  if (input.type === "Clinic") {
+    // Regular clinic visit — collect a non-refundable reservation fee online
+    // (PayMongo QR Ph) to prevent no-shows. Deducted at POS on the day.
+    return resolveClinicVisitReservationAmount();
+  }
+  throw new HttpError(400, "Unknown appointment type for online checkout.");
 }
 
 function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string }) {
@@ -115,6 +121,13 @@ function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string
       lineItemName: input.medicalCertificateRequested
         ? "Virtual Consult + Medical Certificate"
         : "Virtual Consult",
+    };
+  }
+
+  if (input.type === "Clinic" && !isProcedureServiceTitle(input.service)) {
+    return {
+      description: `Clinic visit reservation fee on ${input.date} (non-refundable, deducted from POS bill)`,
+      lineItemName: "Clinic Visit Reservation Fee",
     };
   }
 
@@ -295,6 +308,12 @@ function buildPaidBookingNotificationPayload(
   const service = context.service || (reservation.appointment_type === "Online" ? "Telemedicine Services" : "Medical Procedure");
   const isProcedureReservation =
     reservation.appointment_type === "Clinic" && isProcedureServiceTitle(service);
+  const isClinicVisitReservation =
+    reservation.appointment_type === "Clinic" && !isProcedureServiceTitle(service);
+
+  let payment_purpose = "online_consultation";
+  if (isProcedureReservation) payment_purpose = "procedure_downpayment";
+  if (isClinicVisitReservation) payment_purpose = "clinic_visit_reservation";
 
   return {
     appointment_id: appointment.id,
@@ -304,7 +323,7 @@ function buildPaidBookingNotificationPayload(
     service,
     amount: reservation.amount,
     meeting_link: meetingLink,
-    payment_purpose: isProcedureReservation ? "procedure_downpayment" : "online_consultation",
+    payment_purpose,
   };
 }
 

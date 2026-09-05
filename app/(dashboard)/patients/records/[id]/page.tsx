@@ -363,13 +363,16 @@ export default function PatientProfilePage() {
     const fileItems = files.map<MedicalDocumentItem>((file) => {
       const isMedCert = file.file_type === "Medical Certificate";
       const isLabRequest = file.file_type === "Laboratory Request" || file.file_type === "Lab Request";
-      const category = isMedCert ? "Certificates" : isLabRequest ? "Lab Requests" : "Files";
+      const isReferral = file.file_type === "MD Referral" || file.file_type === "Doctor Referral";
+      const category = isMedCert ? "Certificates" : isLabRequest ? "Lab Requests" : isReferral ? "Referrals" : "Files";
       const previewUrl = isMedCert
         ? `/api/v2/medical-certificates/${file.id}/pdf`
         : isLabRequest
           ? `/api/v2/laboratory-requests/${file.id}/pdf`
-          : file.file_url;
-      const previewType = (isMedCert || isLabRequest)
+          : isReferral
+            ? `/api/v2/md-referrals/${file.id}/pdf`
+            : file.file_url;
+      const previewType = (isMedCert || isLabRequest || isReferral)
         ? "pdf"
         : isPdfUrl(file.file_url)
           ? "pdf"
@@ -399,15 +402,17 @@ export default function PatientProfilePage() {
               ctScan ? `CT: ${ctScan}` : null,
               others ? `Others: ${others}` : null,
             ].filter(Boolean).join(" • ") || "Laboratory request issued by the clinic."
-          : "Uploaded document from the clinic.";
+          : isReferral
+            ? ((meta?.reason_for_referral as string) || (meta?.note as string) || "MD Referral issued by the clinic.")
+            : "Uploaded document from the clinic.";
 
       return {
         id: file.id,
         patientId: id,
         category,
-        kind: isLabRequest ? "Laboratory Request" : (file.file_type || "Medical file"),
-        title: isLabRequest ? ((meta?.request_no as string) || file.file_name) : file.file_name,
-        subtitle: isMedCert ? "Patient certificate" : isLabRequest ? "Laboratory & Diagnostic Request" : (file.file_type || "Released medical file"),
+        kind: isLabRequest ? "Laboratory Request" : isReferral ? "MD Referral" : (file.file_type || "Medical file"),
+        title: isLabRequest ? ((meta?.request_no as string) || file.file_name) : isReferral ? ((meta?.referral_no as string) || file.file_name) : file.file_name,
+        subtitle: isMedCert ? "Patient certificate" : isLabRequest ? "Laboratory & Diagnostic Request" : isReferral ? `Referred to ${(meta?.referred_specialty as string) || "Specialist"}` : (file.file_type || "Released medical file"),
         dateLabel: formatDisplayDate(file.created_at.slice(0, 10)),
         sortDate: parseTime(file.created_at),
         summary,
@@ -415,7 +420,9 @@ export default function PatientProfilePage() {
           ? (file.document_metadata?.recommendation || file.document_metadata?.note || null)
           : isLabRequest
             ? (others || (meta?.notes as string) || null)
-            : null,
+            : isReferral
+              ? ((meta?.note as string) || null)
+              : null,
         details: isMedCert
           ? [
               { label: "Patient", value: docPatientName },
@@ -429,14 +436,25 @@ export default function PatientProfilePage() {
                 { label: "Tests count", value: allTests.length.toString() },
                 { label: "Status", value: "Released" },
               ]
-            : undefined,
-        prescriptionPatientName: (isMedCert || isLabRequest) ? docPatientName : undefined,
-        prescriptionPatientDob: (isMedCert || isLabRequest) ? docPatientDob : undefined,
-        prescriptionPatientGender: (isMedCert || isLabRequest) ? docPatientGender : undefined,
-        prescriptionDoctorName: (isMedCert || isLabRequest) ? docDoctorName : undefined,
-        prescriptionDoctorSpecialty: (isMedCert || isLabRequest) ? (file.document_metadata?.doctor_specialty as string) : undefined,
-        prescriptionDoctorLicenseNo: (isMedCert || isLabRequest) ? (file.document_metadata?.doctor_license_no as string) : undefined,
+            : isReferral
+              ? [
+                  { label: "Patient", value: docPatientName },
+                  { label: "Specialty", value: (meta?.referred_specialty as string) || "Internal Medicine" },
+                  ...((meta?.referred_doctor as string) ? [{ label: "Doctor", value: meta?.referred_doctor as string }] : []),
+                  { label: "Referring Doctor", value: docDoctorName },
+                ]
+              : undefined,
+        prescriptionPatientName: (isMedCert || isLabRequest || isReferral) ? docPatientName : undefined,
+        prescriptionPatientDob: (isMedCert || isLabRequest || isReferral) ? docPatientDob : undefined,
+        prescriptionPatientGender: (isMedCert || isLabRequest || isReferral) ? docPatientGender : undefined,
+        prescriptionDoctorName: (isMedCert || isLabRequest || isReferral) ? docDoctorName : undefined,
+        prescriptionDoctorSpecialty: (isMedCert || isLabRequest || isReferral) ? (file.document_metadata?.doctor_specialty as string) : undefined,
+        prescriptionDoctorLicenseNo: (isMedCert || isLabRequest || isReferral) ? (file.document_metadata?.doctor_license_no as string) : undefined,
         prescriptionCreatedAt: file.created_at,
+        referralNo: isReferral ? ((meta?.referral_no as string) || file.file_name.replace(/\.pdf$/i, "")) : undefined,
+        referralSpecialty: isReferral ? ((meta?.referred_specialty as string) || "Internal Medicine") : undefined,
+        referredDoctorName: isReferral ? ((meta?.referred_doctor as string) || null) : undefined,
+        referralReason: isReferral ? ((meta?.reason_for_referral as string) || null) : undefined,
         labRequestNo: isLabRequest ? ((meta?.request_no as string) || file.file_name.replace(/\.pdf$/i, "")) : undefined,
         labPatientName: isLabRequest ? docPatientName : undefined,
         labPatientDob: isLabRequest ? docPatientDob : undefined,

@@ -281,6 +281,56 @@ export default function MedicalDocumentsPage() {
         };
       });
 
+    const referralItems = files
+      .filter((file) => file.file_type === "MD Referral")
+      .map<MedicalDocumentItem>((file) => {
+        const meta = (file.document_metadata as Record<string, unknown> | null) || {};
+        const docDoctorName = (meta.doctor_name as string) || "Dr. Fatimah Al-Zahra T. Ditti";
+        const patientName = (meta.patient_name as string) ?? (isPatient ? "You" : "Patient record");
+        const referralNo = (meta.referral_no as string) || file.file_name.replace(/\.pdf$/i, "");
+        const referredSpecialty = (meta.referred_specialty as string) || "Internal Medicine";
+        const referredDoctor = (meta.referred_doctor as string) || null;
+        const reason = (meta.reason_for_referral as string) || (meta.note as string) || "Clinical consultation and management.";
+
+        return {
+          id: file.id,
+          patientId: file.patient_id,
+          category: "Referrals",
+          kind: "MD Referral",
+          title: referralNo,
+          subtitle: isPatient
+            ? `Referred to ${referredDoctor ? `${referredDoctor} (${referredSpecialty})` : referredSpecialty}`
+            : `Referral for ${patientName}`,
+          dateLabel: formatDate(file.created_at),
+          sortDate: parseTime(file.created_at),
+          summary: reason,
+          note: (meta.note as string) || null,
+          details: [
+            { label: "Patient", value: patientName },
+            { label: "Referred Specialty", value: referredSpecialty },
+            ...(referredDoctor ? [{ label: "Referred Doctor", value: referredDoctor }] : []),
+            { label: "Referring Doctor", value: docDoctorName },
+          ],
+          prescriptionPatientName: (meta.patient_name as string) ?? null,
+          prescriptionPatientDob: (meta.patient_dob as string) ?? null,
+          prescriptionPatientGender: (meta.patient_gender as string) ?? null,
+          prescriptionDoctorName: docDoctorName,
+          prescriptionDoctorSpecialty: (meta.doctor_specialty as string) || "Family Medicine",
+          prescriptionDoctorLicenseNo: (meta.doctor_license_no as string) || "0141185",
+          prescriptionCreatedAt: file.created_at,
+          referralNo,
+          referralSpecialty: referredSpecialty,
+          referredDoctorName: referredDoctor,
+          referralReason: reason,
+          previewType: "pdf",
+          previewUrl: `/api/v2/md-referrals/${file.id}/pdf`,
+          openUrl: `/api/v2/md-referrals/${file.id}/pdf`,
+          downloadUrl: `/api/v2/md-referrals/${file.id}/pdf`,
+          fileName: file.file_name,
+          badge: "MD Referral",
+        };
+      });
+
     const consentItems = consents.map<MedicalDocumentItem>((consent) => {
       const snapshot = consent.consent_snapshot ?? {};
       const consentPoints = asStringArray(snapshot.consentBullets);
@@ -424,7 +474,7 @@ export default function MedicalDocumentsPage() {
         };
       });
 
-    return [...prescriptionItems, ...certificateItems, ...laboratoryItems, ...consentItems, ...aftercareItems].sort(
+    return [...prescriptionItems, ...certificateItems, ...referralItems, ...laboratoryItems, ...consentItems, ...aftercareItems].sort(
       (left, right) => Number(right.sortDate ?? 0) - Number(left.sortDate ?? 0),
     );
   }, [files, prescriptions, consents, role]);
@@ -444,12 +494,25 @@ export default function MedicalDocumentsPage() {
         title={title}
         description={description}
         items={documentItems}
-        patients={patients.map((patient) => ({
-          id: patient.id,
-          name: patient.fullName,
-          documentCount: documentItems.filter((item) => item.patientId === patient.id).length,
-          latestDateLabel: documentItems.find((item) => item.patientId === patient.id)?.dateLabel,
-        }))}
+        patients={patients.map((patient) => {
+          const pName = patient.fullName?.trim().toLowerCase() || "";
+          const pDocs = documentItems.filter(
+            (item) =>
+              item.patientId === patient.id ||
+              (pName && (
+                item.prescriptionPatientName?.trim().toLowerCase() === pName ||
+                item.consentPatientName?.trim().toLowerCase() === pName ||
+                item.labPatientName?.trim().toLowerCase() === pName ||
+                item.details?.some((d) => d.label.toLowerCase() === "patient" && d.value.trim().toLowerCase() === pName)
+              )),
+          );
+          return {
+            id: patient.id,
+            name: patient.fullName,
+            documentCount: pDocs.length,
+            latestDateLabel: pDocs[0]?.dateLabel,
+          };
+        })}
         loading={isLoading}
         emptyTitle="No medical documents available yet"
         emptyDescription={isPatient ? "Files and records will appear here once the clinic releases them to your portal." : "No documents have been recorded yet."}
