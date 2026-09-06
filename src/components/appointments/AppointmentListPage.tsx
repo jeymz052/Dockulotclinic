@@ -78,6 +78,7 @@ type RescheduleRequestView = {
   appointmentId: string;
   patientName: string;
   appointmentType: AppointmentType;
+  appointmentStatus?: string;
   currentDate: string;
   currentStart: string;
   currentEnd: string;
@@ -214,6 +215,25 @@ export default function AppointmentListPage() {
       active = false;
     };
   }, [accessToken, canManage]);
+
+  const visibleRescheduleRequests = useMemo(() => {
+    return rescheduleRequests.filter((request) => {
+      const appt = appointments.find((a) => a.id === request.appointmentId);
+      if (appt && (appt.status === "Completed" || (appt.status as string) === "Cancelled")) {
+        return false;
+      }
+      if (
+        request.appointmentStatus &&
+        (request.appointmentStatus.toLowerCase() === "completed" ||
+          request.appointmentStatus.toLowerCase() === "cancelled" ||
+          request.appointmentStatus.toLowerCase() === "noshow" ||
+          request.appointmentStatus.toLowerCase() === "no show")
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [rescheduleRequests, appointments]);
 
   const activeDraftDoctorId = primaryDoctor?.slug ?? draft?.doctorId ?? DEFAULT_DOCTOR_ID;
   const activeDraftDate = draft?.date ?? today;
@@ -527,9 +547,9 @@ export default function AppointmentListPage() {
         </Banner>
       ) : null}
 
-      {canManage && rescheduleRequests.length > 0 ? (
+      {canManage && visibleRescheduleRequests.length > 0 ? (
         <RescheduleReviewPanel
-          requests={rescheduleRequests}
+          requests={visibleRescheduleRequests}
           isUpdating={isUpdating}
           onApprove={(requestId) => reviewRescheduleRequest(requestId, "approve")}
           onReject={(requestId) => reviewRescheduleRequest(requestId, "reject")}

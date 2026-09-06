@@ -13,6 +13,7 @@ const LABELS: Record<string, string> = {
   consultations: "Consultations",
   dashboard: "Dashboard",
   files: "Medical Documents",
+  messages: "Messages",
   patients: "Patients",
   profile: "Profile",
   records: "Patient Records",

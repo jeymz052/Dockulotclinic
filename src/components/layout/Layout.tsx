@@ -7,6 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { useRole } from "./RoleProvider";
 import { canAccessPath } from "@/src/lib/roles";
 import { AppBreadcrumbs } from "@/src/components/navigation/AppBreadcrumbs";
+import { FloatingMessageWidget } from "@/src/components/messaging/FloatingMessageWidget";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -94,6 +95,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Floating Messenger Widget in lower right corner */}
+      {pathname !== "/messages" && user && profile && (
+        <FloatingMessageWidget
+          myId={user.id}
+          myRole={role}
+          myName={profile.full_name}
+          myAvatar={profile.avatar_url ?? null}
+          accessToken={accessToken}
+        />
+      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ export type RescheduleRequestView = {
   doctorId: string;
   patientName: string;
   appointmentType: "Clinic" | "Online";
+  appointmentStatus?: string;
   currentDate: string;
   currentStart: string;
   currentEnd: string;
@@ -111,7 +112,7 @@ async function mapRequests(rows: AppointmentRescheduleRequest[]): Promise<Resche
   const [{ data: appointments }, { data: profiles }] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, appointment_date, start_time, end_time, appointment_type")
+      .select("id, appointment_date, start_time, end_time, appointment_type, status")
       .in("id", appointmentIds),
     supabase
       .from("profiles")
@@ -128,6 +129,7 @@ async function mapRequests(rows: AppointmentRescheduleRequest[]): Promise<Resche
         start_time: string;
         end_time: string;
         appointment_type: "Clinic" | "Online";
+        status?: string;
       },
     ]),
   );
@@ -138,9 +140,36 @@ async function mapRequests(rows: AppointmentRescheduleRequest[]): Promise<Resche
     ]),
   );
 
+  // Auto-cancel any stale pending requests whose appointments are already Completed, Cancelled, or NoShow
+  const stalePendingRequestIds = rows
+    .filter((row) => {
+      if (row.status !== "Pending") return false;
+      const appt = appointmentsById.get(row.appointment_id);
+      if (!appt) return true;
+      const st = (appt.status || "").toLowerCase().trim();
+      return st === "completed" || st === "cancelled" || st === "noshow" || st === "no show";
+    })
+    .map((row) => row.id);
+
+  if (stalePendingRequestIds.length > 0) {
+    try {
+      await supabase
+        .from("appointment_reschedule_requests")
+        .update({
+          status: "Cancelled",
+          reviewed_at: new Date().toISOString(),
+          review_note: "Appointment completed or cancelled",
+        })
+        .in("id", stalePendingRequestIds);
+    } catch (err) {
+      console.warn("Failed to auto-cancel stale reschedule requests:", err);
+    }
+  }
+
   return rows.map((row) => {
     const appt = appointmentsById.get(row.appointment_id);
     const patient = profilesById.get(row.patient_id);
+    const isStale = stalePendingRequestIds.includes(row.id);
     return {
       id: row.id,
       appointmentId: row.appointment_id,
@@ -148,17 +177,18 @@ async function mapRequests(rows: AppointmentRescheduleRequest[]): Promise<Resche
       doctorId: row.doctor_id,
       patientName: patient?.full_name ?? "Patient",
       appointmentType: appt?.appointment_type ?? row.requested_appointment_type,
+      appointmentStatus: appt?.status,
       currentDate: appt?.appointment_date ?? "",
-      currentStart: appt?.start_time.slice(0, 5) ?? "",
-      currentEnd: appt?.end_time.slice(0, 5) ?? "",
+      currentStart: appt?.start_time?.slice(0, 5) ?? "",
+      currentEnd: appt?.end_time?.slice(0, 5) ?? "",
       requestedDate: row.requested_appointment_date,
       requestedStart: row.requested_start_time.slice(0, 5),
       requestedEnd: row.requested_end_time.slice(0, 5),
       reason: row.reason ?? "",
-      status: row.status,
+      status: isStale ? "Cancelled" : row.status,
       createdAt: row.created_at,
-      reviewedAt: row.reviewed_at,
-      reviewNote: row.review_note,
+      reviewedAt: isStale ? new Date().toISOString() : row.reviewed_at,
+      reviewNote: isStale ? "Appointment completed or cancelled" : row.review_note,
     };
   });
 }
@@ -184,7 +214,18 @@ export async function listRescheduleRequests(
 
   const { data, error } = await query;
   if (error) throw error;
-  return mapRequests((data ?? []) as AppointmentRescheduleRequest[]);
+  const mapped = await mapRequests((data ?? []) as AppointmentRescheduleRequest[]);
+
+  // When requesting pending requests, exclude any whose underlying appointment is already completed, cancelled, or no-show
+  if (status === "Pending") {
+    return mapped.filter((req) => {
+      if (req.status !== "Pending") return false;
+      const st = (req.appointmentStatus || "").toLowerCase().trim();
+      return st !== "completed" && st !== "cancelled" && st !== "noshow" && st !== "no show";
+    });
+  }
+
+  return mapped;
 }
 
 export async function createRescheduleRequest(
@@ -307,7 +348,18 @@ export async function reviewRescheduleRequest(
     throw new HttpError(400, "This reschedule request has already been reviewed.");
   }
   if (!canPatientChange(appt)) {
-    throw new HttpError(400, "Only pending or confirmed appointments can be rescheduled.");
+    const supabase = getSupabaseAdmin();
+    if (request.status === "Pending") {
+      await supabase
+        .from("appointment_reschedule_requests")
+        .update({
+          status: "Cancelled",
+          reviewed_at: new Date().toISOString(),
+          review_note: `Appointment is already ${appt.status}`,
+        })
+        .eq("id", id);
+    }
+    throw new HttpError(400, `Appointment is already ${appt.status.toLowerCase()} and cannot be rescheduled.`);
   }
 
   const supabase = getSupabaseAdmin();

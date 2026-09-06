@@ -32,6 +32,7 @@ import {
   FaEnvelope,
   FaPrint,
   FaDownload,
+  FaCommentDots,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
@@ -1663,6 +1664,33 @@ export default function OnlineConsultationPage() {
                             {isSaving ? "Saving..." : "Save & finalize chart"}
                           </button>
                         </div>
+
+                        {/* Virtual Consultation Messenger Shortcut */}
+                        {activeAppointmentIsVirtual && (
+                          <section className="rounded-xl border border-neutral-900 bg-neutral-950 p-5 text-white shadow-md">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="space-y-1">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-neutral-200">
+                                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                  Virtual Consultation Follow-up
+                                </div>
+                                <h4 className="text-base font-bold text-white">
+                                  Message {activeAppointment.patientName} on Doc Kulot Messenger
+                                </h4>
+                                <p className="text-xs text-neutral-300">
+                                  Link this visit&apos;s details (assessment, prescription, and reason) directly to the chat thread for Doc Kulot&apos;s instant reference.
+                                </p>
+                              </div>
+                              <Link
+                                href={`/messages?appointmentId=${encodeURIComponent(activeAppointment.id)}&patientEmail=${encodeURIComponent(activeAppointment.email || "")}`}
+                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-neutral-950 shadow-sm transition hover:bg-neutral-100 active:scale-95"
+                              >
+                                <FaCommentDots className="h-4 w-4" />
+                                <span>Message Patient →</span>
+                              </Link>
+                            </div>
+                          </section>
+                        )}
                       </div>
                     )}
 
@@ -1927,6 +1955,15 @@ function VisitHeader({
             </div>
           )}
           <div className="flex flex-wrap justify-end gap-2">
+            {appointment.type === "Online" && (
+              <Link
+                href={`/messages?appointmentId=${encodeURIComponent(appointment.id)}&patientEmail=${encodeURIComponent(appointment.email || "")}`}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800"
+              >
+                <FaCommentDots className="h-4 w-4" aria-hidden="true" />
+                Message Patient
+              </Link>
+            )}
             <button
               type="button"
               onClick={onClose}

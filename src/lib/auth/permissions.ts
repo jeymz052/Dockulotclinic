@@ -13,7 +13,9 @@ type PermissionAction =
   | "settings.read"
   | "users.manage"
   | "payments.pos"
-  | "landing.manage";
+  | "landing.manage"
+  | "messages.read"
+  | "messages.send";
 
 const PERMISSION_MAP: Record<PermissionAction, UserRole[]> = {
   "appointments.read": ["SUPER_ADMIN", "SECRETARY", "DOCTOR", "PATIENT"],
@@ -31,6 +33,9 @@ const PERMISSION_MAP: Record<PermissionAction, UserRole[]> = {
   // Landing-page CMS — owners only. Doctor is included because the
   // single-doctor practice owner edits their own marketing copy.
   "landing.manage": ["SUPER_ADMIN", "SECRETARY", "DOCTOR"],
+  // Messaging — all authenticated roles can read and send
+  "messages.read": ["SUPER_ADMIN", "SECRETARY", "DOCTOR", "PATIENT"],
+  "messages.send": ["SUPER_ADMIN", "SECRETARY", "DOCTOR", "PATIENT"],
 };
 
 export function hasPermission(role: UserRole, action: PermissionAction) {

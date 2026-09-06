@@ -24,6 +24,7 @@ type UserProfile = {
   full_name: string;
   role: string;
   is_active: boolean;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -104,6 +105,7 @@ async function fetchProfileFromApi(accessToken: string): Promise<{ profile: User
 
   return { profile: null, patient: null };
 }
+
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);

@@ -1022,6 +1022,16 @@ export async function markClinicAppointmentComplete(appointmentId: string) {
     .eq("id", appt.id);
   if (updateErr) throw updateErr;
 
+  await supabase
+    .from("appointment_reschedule_requests")
+    .update({
+      status: "Cancelled",
+      reviewed_at: new Date().toISOString(),
+      review_note: "Appointment completed",
+    })
+    .eq("appointment_id", appt.id)
+    .eq("status", "Pending");
+
   await promotePatientToExistingAfterCompletion(appt);
 
   const appointments = await readAppointments();

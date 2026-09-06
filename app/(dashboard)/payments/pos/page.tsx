@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   FaBan,
+  FaBuildingColumns,
   FaCircleCheck,
   FaCircleExclamation,
+  FaMobileScreen,
+  FaMoneyBillWave,
+  FaQrcode,
   FaReceipt,
   FaXmark,
 } from "react-icons/fa6";
@@ -37,6 +41,9 @@ type DiscountKind = "None" | "Manual" | "SeniorCitizen" | "PWD";
 type RecentBilling = {
   id: string;
   appointment_id: string | null;
+  subtotal?: number;
+  discount?: number;
+  tax?: number;
   total: number;
   status: "Draft" | "Issued" | "Paid" | "Void";
   created_at: string;
@@ -51,6 +58,27 @@ type PaymentSnapshot = {
   paid_at: string | null;
   provider_ref: string | null;
   provider?: string | null;
+};
+
+type PaymentAccountKind = "GCash" | "Maya" | "Bank" | "Other";
+
+type ConfiguredPaymentAccount = {
+  id: string;
+  kind: PaymentAccountKind;
+  label: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  qrCodeUrl?: string;
+  isActive: boolean;
+};
+
+// Maps OnlinePaymentAccountKind to PaymentMethod used by the billing API
+const KIND_TO_METHOD: Record<PaymentAccountKind, "GCash" | "QR" | "Card" | "BankTransfer"> = {
+  GCash: "GCash",
+  Maya: "QR",
+  Bank: "BankTransfer",
+  Other: "QR",
 };
 
 const POS_CATEGORIES = ["Procedure", "Lab", "Medicine", "Other"] as const;
@@ -106,6 +134,7 @@ export default function POSBillingPage() {
   const { accessToken, role, isLoading: authLoading } = useRole();
   const { appointments } = useAppointments();
   const [pricing, setPricing] = useState<PricingItem[]>([]);
+  const [paymentAccounts, setPaymentAccounts] = useState<ConfiguredPaymentAccount[]>([]);
   const [selectedApptId, setSelectedApptId] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);
@@ -113,11 +142,14 @@ export default function POSBillingPage() {
   const [discountKind, setDiscountKind] = useState<DiscountKind>("None");
   const [discountIdNumber, setDiscountIdNumber] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [selectedMethodId, setSelectedMethodId] = useState<string>("cash"); // "cash" or account.id
   const [tenderedInput, setTenderedInput] = useState("");
+  const [providerRef, setProviderRef] = useState("");
   const [issuedBillingId, setIssuedBillingId] = useState<string | null>(null);
   const [issuedBillingStatus, setIssuedBillingStatus] = useState<"Issued" | "Paid" | "Void" | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; tone: "success" | "error" } | null>(null);
   const [recentBillings, setRecentBillings] = useState<RecentBilling[]>([]);
+  const [billedAppointmentIds, setBilledAppointmentIds] = useState<Set<string>>(() => new Set());
   const [confirmingVoid, setConfirmingVoid] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [receiptBillingId, setReceiptBillingId] = useState<string | null>(null);
@@ -127,6 +159,11 @@ export default function POSBillingPage() {
   const [currentClock, setCurrentClock] = useState(() => formatClock(new Date()));
   const [isWorking, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement | null>(null);
+
+  // Derive current payment method info
+  const selectedAccount = paymentAccounts.find((a) => a.id === selectedMethodId) ?? null;
+  const isCash = selectedMethodId === "cash";
+  const activePaymentMethod = isCash ? "Cash" : KIND_TO_METHOD[selectedAccount?.kind ?? "Other"];
 
   const canUse = role === "SUPER_ADMIN" || role === "SECRETARY" || role === "DOCTOR";
   const canVoid = canUse;
@@ -149,6 +186,20 @@ export default function POSBillingPage() {
     })();
   }, [accessToken, authLoading]);
 
+  useEffect(() => {
+    if (authLoading || !accessToken) return;
+    (async () => {
+      const response = await fetch("/api/settings", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { data: { onlinePaymentAccounts?: ConfiguredPaymentAccount[] } };
+      const accounts = (payload.data?.onlinePaymentAccounts ?? []).filter((a) => a.isActive);
+      setPaymentAccounts(accounts);
+    })();
+  }, [accessToken, authLoading]);
+
   const refreshRecent = useCallback(async () => {
     if (!accessToken) return;
     const response = await fetch("/api/v2/billings?appointment_type=Clinic", {
@@ -158,6 +209,14 @@ export default function POSBillingPage() {
     if (!response.ok) return;
     const payload = (await response.json()) as { billings: RecentBilling[] };
     setRecentBillings(payload.billings.slice(0, 8));
+
+    const billedIds = new Set<string>();
+    for (const b of payload.billings) {
+      if (b.appointment_id && (b.status === "Paid" || b.status === "Issued")) {
+        billedIds.add(b.appointment_id);
+      }
+    }
+    setBilledAppointmentIds(billedIds);
   }, [accessToken]);
 
   useEffect(() => {
@@ -171,12 +230,26 @@ export default function POSBillingPage() {
   const billableAppointments = useMemo(
     () =>
       appointments
-        .filter((appointment) => appointment.type === "Clinic" && (appointment.status === "In Progress" || appointment.status === "Completed"))
-        .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)),
-    [appointments],
+        .filter(
+          (appointment) =>
+            appointment.type === "Clinic" &&
+            (appointment.status === "In Progress" || appointment.status === "Completed") &&
+            !billedAppointmentIds.has(appointment.id),
+        )
+        .sort((a, b) => {
+          const timeA = `${a.date} ${a.start}`;
+          const timeB = `${b.date} ${b.start}`;
+          const diff = timeB.localeCompare(timeA);
+          if (diff !== 0) return diff;
+          return Number(b.queueNumber || 0) - Number(a.queueNumber || 0);
+        }),
+    [appointments, billedAppointmentIds],
   );
 
-  const selectedAppt = billableAppointments.find((appointment) => appointment.id === selectedApptId) ?? null;
+  const selectedAppt = useMemo(
+    () => appointments.find((appointment) => appointment.id === selectedApptId) ?? null,
+    [appointments, selectedApptId],
+  );
   const selectedContext = selectedAppt ? parseAppointmentContext(selectedAppt.reason) : null;
   const selectedServiceLabel = selectedContext?.service || "Clinic Visit";
   const selectedIsProcedure = isProcedureServiceTitle(selectedContext?.service);
@@ -222,7 +295,14 @@ export default function POSBillingPage() {
   const total = Math.max(0, subtotal - effectiveDiscount + effectiveTax);
   const tenderedAmount = Number(tenderedInput || 0);
   const changeDue = Math.max(0, tenderedAmount - total);
-  const canAcceptPayment = canUse && !!selectedAppt && total > 0 && tenderedAmount >= total && discount <= subtotal && (!isStatutoryDiscount || !!discountIdNumber.trim()) && issuedBillingStatus !== "Paid";
+  const canAcceptPayment =
+    canUse &&
+    !!selectedAppt &&
+    total > 0 &&
+    discount <= subtotal &&
+    (!isStatutoryDiscount || !!discountIdNumber.trim()) &&
+    issuedBillingStatus !== "Paid" &&
+    (isCash ? tenderedAmount >= total : !!providerRef.trim());
   const shortcutAmounts = useMemo(() => cashShortcuts(total), [total]);
 
   function chooseAppointment(appointment: AppointmentRecord) {
@@ -234,6 +314,8 @@ export default function POSBillingPage() {
     setDiscountKind("None");
     setDiscountIdNumber("");
     setTenderedInput("");
+    setProviderRef("");
+    setSelectedMethodId("cash");
     setIssuedBillingStatus(null);
     setFeedback(null);
     setReservationCredit(0);
@@ -297,6 +379,8 @@ export default function POSBillingPage() {
     setDiscountKind("None");
     setDiscountIdNumber("");
     setTenderedInput("");
+    setProviderRef("");
+    setSelectedMethodId("cash");
     setIssuedBillingId(null);
     setIssuedBillingStatus(null);
     setFeedback(null);
@@ -316,8 +400,12 @@ export default function POSBillingPage() {
       setFeedback({ message: `${discountKind === "PWD" ? "PWD" : "Senior Citizen"} ID number is required.`, tone: "error" });
       return;
     }
-    if (tenderedAmount < total) {
+    if (isCash && tenderedAmount < total) {
       setFeedback({ message: `Cash received must be at least ${peso(total)}.`, tone: "error" });
+      return;
+    }
+    if (!isCash && !providerRef.trim()) {
+      setFeedback({ message: "Reference number is required for digital payments.", tone: "error" });
       return;
     }
 
@@ -351,12 +439,17 @@ export default function POSBillingPage() {
           billingId = body.billing.id;
           setIssuedBillingId(billingId);
           setIssuedBillingStatus("Issued");
+          setBilledAppointmentIds((prev) => new Set(prev).add(selectedAppt.id));
         }
 
         const payResponse = await fetch(`/api/v2/billings/${billingId}/pay`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ method: "Cash", provider_ref: null, tendered_amount: tenderedAmount }),
+          body: JSON.stringify({
+            method: activePaymentMethod,
+            provider_ref: isCash ? null : providerRef.trim(),
+            tendered_amount: isCash ? tenderedAmount : null,
+          }),
         });
         const payBody = (await payResponse.json().catch(() => ({}))) as { message?: string; payment?: PaymentSnapshot };
         if (!payResponse.ok) {
@@ -364,7 +457,10 @@ export default function POSBillingPage() {
         }
 
         setIssuedBillingStatus("Paid");
-        setFeedback({ message: `Sale completed.${changeDue > 0 ? ` Change due: ${peso(changeDue)}.` : ""}`, tone: "success" });
+        const successMsg = isCash && changeDue > 0
+          ? `Sale completed. Change due: ${peso(changeDue)}.`
+          : "Sale completed.";
+        setFeedback({ message: successMsg, tone: "success" });
         void refreshRecent();
         openReceiptModal(billingId, payBody.payment ?? null);
       } catch (error) {
@@ -394,6 +490,13 @@ export default function POSBillingPage() {
       setFeedback({ message: "Bill voided.", tone: "success" });
       setConfirmingVoid(false);
       setVoidReason("");
+      if (selectedApptId) {
+        setBilledAppointmentIds((prev) => {
+          const next = new Set(prev);
+          next.delete(selectedApptId);
+          return next;
+        });
+      }
       void refreshRecent();
     });
   }
@@ -714,53 +817,176 @@ export default function POSBillingPage() {
             <div className="space-y-3 px-4 py-4">
               {!issuedBillingId || issuedBillingStatus === "Issued" ? (
                 <>
-                  <label className="block">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Cash received</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      inputMode="decimal"
-                      value={tenderedInput}
-                      onChange={(event) => setTenderedInput(event.target.value)}
-                      placeholder={total.toFixed(2)}
-                      disabled={issuedBillingStatus === "Paid"}
-                      className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-3 text-right font-mono text-xl font-black outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
-                    />
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {shortcutAmounts.map((amount, index) => (
+                  {/* Payment Method Selector */}
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Payment Method
+                    </span>
+                    <div className="mt-1.5 grid grid-cols-2 gap-2">
                       <button
-                        key={`${amount}-${index}`}
                         type="button"
-                        onClick={() => setTenderedInput(amount.toFixed(2))}
+                        onClick={() => setSelectedMethodId("cash")}
                         disabled={issuedBillingStatus === "Paid"}
-                        className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 font-mono text-xs font-black text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                          isCash
+                            ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-sm"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
                       >
-                        {index === 0 ? "Exact" : amount.toLocaleString("en-PH")}
+                        <FaMoneyBillWave className={`h-3.5 w-3.5 ${isCash ? "text-emerald-700" : "text-slate-400"}`} />
+                        <span>Cash</span>
                       </button>
-                    ))}
+
+                      {paymentAccounts.map((account) => {
+                        const isSelected = selectedMethodId === account.id;
+                        return (
+                          <button
+                            key={account.id}
+                            type="button"
+                            onClick={() => setSelectedMethodId(account.id)}
+                            disabled={issuedBillingStatus === "Paid"}
+                            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                              isSelected
+                                ? "border-emerald-600 bg-emerald-50 text-emerald-950 shadow-sm"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            {account.kind === "Bank" ? (
+                              <FaBuildingColumns className={`h-3.5 w-3.5 ${isSelected ? "text-emerald-700" : "text-slate-400"}`} />
+                            ) : account.qrCodeUrl ? (
+                              <FaQrcode className={`h-3.5 w-3.5 ${isSelected ? "text-emerald-700" : "text-slate-400"}`} />
+                            ) : (
+                              <FaMobileScreen className={`h-3.5 w-3.5 ${isSelected ? "text-emerald-700" : "text-slate-400"}`} />
+                            )}
+                            <span className="truncate">{account.label || account.kind}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {paymentAccounts.length === 0 && (
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        Add GCash, Maya, or Bank accounts in Settings to show them here.
+                      </p>
+                    )}
                   </div>
-                  <div className={`rounded-2xl px-4 py-3 ${
-                    issuedBillingStatus === "Void"
-                      ? "bg-red-50 text-red-800"
-                      : issuedBillingStatus === "Paid" || tenderedAmount >= total
-                        ? "bg-emerald-50 text-emerald-800"
-                        : "bg-amber-50 text-amber-800"
-                  }`}>
-                    <p className="text-[10px] font-black uppercase tracking-wider">
-                      {issuedBillingStatus === "Void" ? "Voided" : issuedBillingStatus === "Paid" ? "Paid" : tenderedAmount >= total ? "Change" : "Short"}
-                    </p>
-                    <p className="mt-1 font-mono text-2xl font-black">
-                      {issuedBillingStatus === "Void"
-                        ? "Closed"
-                        : issuedBillingStatus === "Paid"
-                          ? peso(total)
-                          : peso(tenderedAmount >= total ? changeDue : total - tenderedAmount)}
-                    </p>
-                  </div>
-                  <button type="button" onClick={commitSale} disabled={!canAcceptPayment || isWorking} className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
-                    {isWorking ? "Processing..." : issuedBillingId ? "Retry Payment" : "Proceed to Payment"}
+
+                  {isCash ? (
+                    <>
+                      <label className="block">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Cash received</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          inputMode="decimal"
+                          value={tenderedInput}
+                          onChange={(event) => setTenderedInput(event.target.value)}
+                          placeholder={total.toFixed(2)}
+                          disabled={issuedBillingStatus === "Paid"}
+                          className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-3 text-right font-mono text-xl font-black outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {shortcutAmounts.map((amount, index) => (
+                          <button
+                            key={`${amount}-${index}`}
+                            type="button"
+                            onClick={() => setTenderedInput(amount.toFixed(2))}
+                            disabled={issuedBillingStatus === "Paid"}
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-2 font-mono text-xs font-black text-slate-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {index === 0 ? "Exact" : amount.toLocaleString("en-PH")}
+                          </button>
+                        ))}
+                      </div>
+                      <div className={`rounded-2xl px-4 py-3 ${
+                        issuedBillingStatus === "Void"
+                          ? "bg-red-50 text-red-800"
+                          : issuedBillingStatus === "Paid" || tenderedAmount >= total
+                            ? "bg-emerald-50 text-emerald-800"
+                            : "bg-amber-50 text-amber-800"
+                      }`}>
+                        <p className="text-[10px] font-black uppercase tracking-wider">
+                          {issuedBillingStatus === "Void" ? "Voided" : issuedBillingStatus === "Paid" ? "Paid" : tenderedAmount >= total ? "Change" : "Short"}
+                        </p>
+                        <p className="mt-1 font-mono text-2xl font-black">
+                          {issuedBillingStatus === "Void"
+                            ? "Closed"
+                            : issuedBillingStatus === "Paid"
+                              ? peso(total)
+                              : peso(tenderedAmount >= total ? changeDue : total - tenderedAmount)}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedAccount && (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-950">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                                {selectedAccount.label || selectedAccount.kind}
+                              </p>
+                              {selectedAccount.bankName && (
+                                <p className="mt-0.5 text-slate-600 font-medium">
+                                  Bank: <span className="font-semibold text-slate-800">{selectedAccount.bankName}</span>
+                                </p>
+                              )}
+                              <p className="mt-0.5 text-slate-600 font-medium">
+                                Name: <span className="font-semibold text-slate-800">{selectedAccount.accountName || "Clinic"}</span>
+                              </p>
+                              <p className="mt-1 font-mono text-base font-black text-slate-900 tracking-wide">
+                                {selectedAccount.accountNumber}
+                              </p>
+                            </div>
+                            {selectedAccount.qrCodeUrl ? (
+                              <a
+                                href={selectedAccount.qrCodeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Click to view QR code"
+                                className="shrink-0 overflow-hidden rounded-lg border border-emerald-300 bg-white p-1 hover:shadow-md transition"
+                              >
+                                <img
+                                  src={selectedAccount.qrCodeUrl}
+                                  alt="Payment QR"
+                                  className="h-16 w-16 object-contain"
+                                />
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+
+                      <label className="block">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          Reference / Transaction No. <span className="text-rose-500">*</span>
+                        </span>
+                        <input
+                          type="text"
+                          value={providerRef}
+                          onChange={(event) => setProviderRef(event.target.value)}
+                          placeholder="e.g. 10029384758"
+                          disabled={issuedBillingStatus === "Paid"}
+                          className="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-2.5 font-mono text-sm font-bold outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                      </label>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={commitSale}
+                    disabled={!canAcceptPayment || isWorking}
+                    className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+                  >
+                    {isWorking
+                      ? "Processing..."
+                      : issuedBillingId
+                        ? "Retry Payment"
+                        : isCash
+                          ? "Complete Cash Sale"
+                          : `Confirm ${selectedAccount?.label || selectedAccount?.kind || "Online"} Payment`}
                   </button>
                   <button type="button" onClick={resetSale} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Clear Sale</button>
                 </>
@@ -847,7 +1073,7 @@ function QueuePanel({
         </div>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 font-mono text-xs font-black text-slate-700">{appointments.length}</span>
       </div>
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 max-h-[calc(100vh-280px)] space-y-2 overflow-y-auto pr-1.5">
         {appointments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">
             No started or completed clinic visits yet.
@@ -952,23 +1178,29 @@ function RecentPanel({
         </p>
       ) : (
         <div className="mt-3 space-y-2">
-          {billings.slice(0, 8).map((bill) => (
-            <button
-              key={bill.id}
-              type="button"
-              onClick={() => onOpenReceipt(bill.id)}
-              className="block w-full rounded-2xl border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono font-black">#{bill.id.slice(0, 8).toUpperCase()}</span>
-                <span className="font-mono font-bold">{peso(bill.total)}</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                <span>{bill.status}</span>
-                <span>{new Date(bill.issued_at ?? bill.created_at).toLocaleDateString("en-PH")}</span>
-              </div>
-            </button>
-          ))}
+          {billings.slice(0, 8).map((bill) => {
+            const billTotal =
+              bill.total > 0
+                ? bill.total
+                : Math.max(0, (bill.subtotal ?? 0) - (bill.discount ?? 0) + (bill.tax ?? 0));
+            return (
+              <button
+                key={bill.id}
+                type="button"
+                onClick={() => onOpenReceipt(bill.id)}
+                className="block w-full rounded-2xl border border-slate-200 px-3 py-2 text-left text-xs hover:bg-slate-50"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono font-black">#{bill.id.slice(0, 8).toUpperCase()}</span>
+                  <span className="font-mono font-bold">{peso(billTotal)}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <span>{bill.status}</span>
+                  <span>{new Date(bill.issued_at ?? bill.created_at).toLocaleDateString("en-PH")}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </section>

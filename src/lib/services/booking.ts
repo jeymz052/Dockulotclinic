@@ -415,6 +415,16 @@ export async function completeConsultation(id: string, actor: Actor) {
     .select()
     .single<Appointment>();
   if (error) throw error;
+
+  await supabase
+    .from("appointment_reschedule_requests")
+    .update({
+      status: "Cancelled",
+      reviewed_at: new Date().toISOString(),
+      review_note: "Appointment completed",
+    })
+    .eq("appointment_id", id)
+    .eq("status", "Pending");
   await enqueueAppointmentTeamNotifications({
     appointment_id: id,
     appointment_type: appt.appointment_type,

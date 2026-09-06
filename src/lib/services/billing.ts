@@ -28,7 +28,7 @@ const ALLOWED_BILLING_STATUSES = new Set<BillingStatus>(["Draft", "Issued", "Pai
 const ALLOWED_DISCOUNT_KINDS = new Set<DiscountKind>(["None", "Manual", "SeniorCitizen", "PWD"]);
 
 const POS_ALLOWED_CATEGORIES = new Set(["Lab", "Medicine", "Procedure", "Other"]);
-const POS_ALLOWED_METHODS = new Set<PaymentMethod>(["Cash"]);
+const POS_ALLOWED_METHODS = new Set<PaymentMethod>(["Cash", "GCash", "QR", "Card", "BankTransfer"]);
 
 // RA 9994 / RA 10754: Senior Citizens and PWDs receive a 20% discount and
 // are exempt from VAT on the same transaction. We round to centavos.
@@ -370,6 +370,7 @@ export async function issueBilling(input: {
       subtotal,
       discount: resolvedDiscount,
       tax: resolvedTax,
+      total: round2(Math.max(0, subtotal - resolvedDiscount + resolvedTax)),
       status: "Issued",
       issued_at: new Date().toISOString(),
       discount_kind: discountKind,
@@ -414,7 +415,7 @@ export async function recordBillingPayment(
   if (!isStaff(actor.profile.role) && actor.profile.role !== "doctor")
     throw new HttpError(403, "Only clinic staff or doctors can record POS payments");
   if (!POS_ALLOWED_METHODS.has(method))
-    throw new HttpError(400, "POS only accepts cash payments");
+    throw new HttpError(400, `Payment method "${method}" is not accepted at this terminal.`);
 
   const supabase = getSupabaseAdmin();
   const { data: billing, error } = await supabase
@@ -434,7 +435,8 @@ export async function recordBillingPayment(
 
   const normalizedProviderRef = providerRef?.trim() || null;
 
-  // POS accepts cash only, so tendered_amount is what the cashier received.
+  // For cash payments tendered_amount is what the cashier received.
+  // For digital methods (GCash, QR, etc.) tendered_amount may be null.
   let normalizedTendered: number | null = null;
   if (tenderedAmount != null) {
     if (!Number.isFinite(tenderedAmount) || tenderedAmount < billing.total) {
