@@ -11,11 +11,12 @@ type Props = {
 };
 
 export function ConversationThread({ messages, myId, loading }: Props) {
+  const safeMessages = Array.isArray(messages) ? messages : [];
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [hasNewIncoming, setHasNewIncoming] = useState(false);
-  const prevCountRef = useRef(messages.length);
+  const prevCountRef = useRef(safeMessages.length);
   const isNearBottomRef = useRef(true);
 
   // Scroll to bottom helper
@@ -40,12 +41,12 @@ export function ConversationThread({ messages, myId, loading }: Props) {
 
   // Handle auto-scrolling on new messages
   useEffect(() => {
-    const isNew = messages.length > prevCountRef.current;
-    prevCountRef.current = messages.length;
+    const isNew = safeMessages.length > prevCountRef.current;
+    prevCountRef.current = safeMessages.length;
 
-    if (messages.length === 0) return;
+    if (safeMessages.length === 0) return;
 
-    const lastMsg = messages[messages.length - 1];
+    const lastMsg = safeMessages[safeMessages.length - 1];
     const sentByMe = lastMsg?.sender_id === myId;
 
     const frameId = requestAnimationFrame(() => {
@@ -57,7 +58,7 @@ export function ConversationThread({ messages, myId, loading }: Props) {
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [messages, myId]);
+  }, [safeMessages, myId]);
 
   if (loading) {
     return (
@@ -70,7 +71,7 @@ export function ConversationThread({ messages, myId, loading }: Props) {
     );
   }
 
-  if (messages.length === 0) {
+  if (safeMessages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center bg-white">
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-100 text-3xl shadow-sm">
@@ -88,7 +89,7 @@ export function ConversationThread({ messages, myId, loading }: Props) {
 
   // Group messages by date for date dividers
   const grouped: Array<{ date: string; msgs: Message[] }> = [];
-  for (const msg of messages) {
+  for (const msg of safeMessages) {
     const dateKey = new Date(msg.created_at).toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
@@ -112,7 +113,7 @@ export function ConversationThread({ messages, myId, loading }: Props) {
         className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 pr-5 sm:pr-7 space-y-4 [scrollbar-width:thin] [scrollbar-color:#d4d4d4_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-neutral-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-neutral-400"
       >
         {/* Backread helper at top if many messages */}
-        {messages.length >= 25 && (
+        {safeMessages.length >= 25 && (
           <div className="text-center py-2">
             <span className="text-[11px] text-neutral-400 font-medium">
               ↑ Beginning of recent conversation history

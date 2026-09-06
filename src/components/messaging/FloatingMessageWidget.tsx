@@ -53,13 +53,13 @@ export function FloatingMessageWidget({
     openConversation,
     sendMessage,
     startConversation,
-  } = useMessaging(myId, myRole, accessToken);
+  } = useMessaging(myId, myRole, accessToken, null, false);
 
   const isPatient = myRole === "PATIENT";
 
-  const activeConv: Conversation | undefined = conversations.find(
-    (c) => c.id === activeConvId
-  );
+  const activeConv: Conversation | undefined = Boolean(activeConvId)
+    ? conversations.find((c) => c.id === activeConvId)
+    : undefined;
 
   const other = activeConv
     ? isPatient
@@ -106,12 +106,12 @@ export function FloatingMessageWidget({
         <div className="fixed bottom-24 right-5 sm:right-7 z-50 flex h-[520px] max-h-[82vh] w-[340px] sm:w-[380px] flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-2xl transition-all duration-200">
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 py-3.5 shadow-sm">
-            {activeConvId && other ? (
+            {Boolean(activeConvId) && activeConv && other ? (
               /* Active Chat Header */
               <div className="flex items-center gap-2.5 min-w-0">
                 <button
                   type="button"
-                  onClick={() => openConversation("")}
+                  onClick={() => void openConversation("")}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-black transition"
                   title="Back to conversation list"
                 >
@@ -180,7 +180,7 @@ export function FloatingMessageWidget({
           </div>
 
           {/* Body Content */}
-          {activeConvId && other ? (
+          {Boolean(activeConvId) && activeConv && other ? (
             /* Active Thread View inside popup */
             <div className="flex flex-1 flex-col overflow-hidden bg-white">
               <ConversationThread

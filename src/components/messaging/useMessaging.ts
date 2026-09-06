@@ -75,7 +75,8 @@ export function useMessaging(
   myId: string,
   myRole: string,
   accessToken: string | null,
-  initialConvId?: string | null
+  initialConvId?: string | null,
+  autoSelectFirst = false
 ) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(initialConvId || null);
@@ -127,19 +128,20 @@ export function useMessaging(
         "/api/messages/conversations",
         accessToken
       );
-      setConversations(data.conversations);
-      // Auto select initial or first conversation if none selected
+      setConversations(data.conversations || []);
+      // Auto select initial or first conversation only if configured
       setActiveConvId((curr) => {
         if (curr) return curr;
         if (initialConvId) return initialConvId;
-        return data.conversations[0]?.id || null;
+        if (autoSelectFirst) return data.conversations[0]?.id || null;
+        return null;
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load conversations");
     } finally {
       setLoadingConvs(false);
     }
-  }, [accessToken]);
+  }, [accessToken, autoSelectFirst, initialConvId]);
 
   useEffect(() => {
     void loadConversations();
@@ -173,7 +175,14 @@ export function useMessaging(
 
   // ── Load messages for active conversation ──────────────────────────────────
   const openConversation = useCallback(
-    async (convId: string) => {
+    async (convId?: string | null) => {
+      // If empty or null, cleanly deselect active conversation (back to list)
+      if (!convId || !convId.trim()) {
+        setActiveConvId(null);
+        setMessages([]);
+        setLoadingMsgs(false);
+        return;
+      }
       if (!accessToken) return;
       setActiveConvId(convId);
       setLoadingMsgs(true);
@@ -182,7 +191,7 @@ export function useMessaging(
           `/api/messages/conversations/${convId}`,
           accessToken
         );
-        setMessages(data.messages);
+        setMessages(Array.isArray(data?.messages) ? data.messages : []);
 
         // Mark as read
         void fetch(`/api/messages/conversations/${convId}`, {
@@ -208,10 +217,10 @@ export function useMessaging(
 
   // Auto-open active conversation on initial load if activeConvId is set
   useEffect(() => {
-    if (activeConvId && messages.length === 0) {
+    if (activeConvId && Array.isArray(messages) && messages.length === 0) {
       void openConversation(activeConvId);
     }
-  }, [activeConvId, openConversation, messages.length]);
+  }, [activeConvId, openConversation, messages?.length]);
 
   // ── Realtime: new messages in active conversation (WebSocket) ──────────────
   useEffect(() => {
@@ -236,18 +245,21 @@ export function useMessaging(
             accessToken
           )
             .then((data) => {
-              const latest = data.messages[data.messages.length - 1];
+              const list = Array.isArray(data?.messages) ? data.messages : [];
+              const latest = list[list.length - 1];
               if (latest) {
                 setMessages((prev) => {
-                  if (prev.some((m) => m.id === latest.id)) return prev;
-                  return [...prev, latest];
+                  const arr = Array.isArray(prev) ? prev : [];
+                  if (arr.some((m) => m.id === latest.id)) return arr;
+                  return [...arr, latest];
                 });
               }
             })
             .catch(() => {
               setMessages((prev) => {
-                if (prev.some((m) => m.id === newMsg.id)) return prev;
-                return [...prev, newMsg];
+                const arr = Array.isArray(prev) ? prev : [];
+                if (arr.some((m) => m.id === newMsg.id)) return arr;
+                return [...arr, newMsg];
               });
             });
 
@@ -282,15 +294,17 @@ export function useMessaging(
           `/api/messages/conversations/${activeConvId}?limit=50`,
           accessToken
         );
+        const incomingMessages = Array.isArray(data?.messages) ? data.messages : [];
         setMessages((prev) => {
+          const current = Array.isArray(prev) ? prev : [];
           if (
-            prev.length !== data.messages.length ||
-            (data.messages.length > 0 &&
-              prev[prev.length - 1]?.id !== data.messages[data.messages.length - 1]?.id)
+            current.length !== incomingMessages.length ||
+            (incomingMessages.length > 0 &&
+              current[current.length - 1]?.id !== incomingMessages[incomingMessages.length - 1]?.id)
           ) {
-            return data.messages;
+            return incomingMessages;
           }
-          return prev;
+          return current;
         });
       } catch {
         // Background sync failed silently
