@@ -671,7 +671,41 @@ export default async function HomePage() {
             <InquiryForm />
           </div>
         </div>
+
+        {/* ── Clinic Location Map ── */}
+        <div className="mt-12 overflow-hidden rounded-2xl border border-black/10 shadow-md">
+          <div className="flex flex-col gap-3 border-b border-black/10 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a98c45]">📍 Find Us Here</p>
+              <p className="mt-1 text-lg font-bold text-black">Family First Primary Care Outpatient Clinic</p>
+              <p className="mt-0.5 text-sm text-slate-500">Zamboanga City, Zamboanga del Sur, Philippines</p>
+            </div>
+            <a
+              href="https://maps.app.goo.gl/JjXcnX77MH68JdT89"
+              target="_blank"
+              rel="noreferrer"
+              id="homepage-get-directions-link"
+              className="inline-flex items-center gap-2 self-start rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#a98c45] sm:self-auto"
+            >
+              Get Directions →
+            </a>
+          </div>
+          <div className="relative h-80 w-full sm:h-[440px]">
+            <iframe
+              id="homepage-clinic-location-map"
+              title="Family First Primary Care Outpatient Clinic location on Google Maps"
+              src="https://maps.google.com/maps?q=Family+First+Primary+Care+Outpatient+Clinic,+Zamboanga+City&hl=en&z=17&output=embed"
+              width="100%"
+              height="100%"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="absolute inset-0 h-full w-full border-0"
+              aria-label="Google Maps showing the location of Family First Primary Care Outpatient Clinic"
+            />
+          </div>
+        </div>
       </ScrollReveal>
+
 
       <footer className="relative overflow-hidden bg-white text-slate-800">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" />

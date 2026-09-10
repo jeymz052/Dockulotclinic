@@ -59,6 +59,9 @@ export default function PublicHeader() {
                 <Link href="/#contact" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-black hover:bg-neutral-50">
                   Contact
                 </Link>
+                <Link href="/#contact" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-black hover:bg-neutral-50">
+                  📍 Location
+                </Link>
               </div>
             </div>
           </div>

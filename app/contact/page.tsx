@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { FaEnvelope, FaTiktok } from "react-icons/fa6";
+import { FaEnvelope, FaLocationDot, FaTiktok } from "react-icons/fa6";
 import InquiryForm from "@/src/components/marketing/InquiryForm";
 import { DOCKULOT_EMAIL, DOCKULOT_TIKTOK_URL } from "@/src/lib/public-links";
 
@@ -64,6 +64,44 @@ export default function ContactPage() {
           </div>
         </section>
         <InquiryForm />
+      </div>
+
+      {/* ── Clinic Location Map ── */}
+      <div className="mx-auto mt-16 max-w-6xl">
+        <div className="overflow-hidden rounded-2xl border border-slate-100 shadow-sm">
+          {/* Map header */}
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-yellow-700">Our Location</p>
+              <p className="mt-0.5 text-lg font-bold text-black">Family First Primary Care Outpatient Clinic</p>
+              <p className="mt-0.5 text-sm text-slate-500">Zamboanga City, Philippines</p>
+            </div>
+            <a
+              href="https://maps.app.goo.gl/JjXcnX77MH68JdT89"
+              target="_blank"
+              rel="noreferrer"
+              id="get-directions-link"
+              className="inline-flex items-center gap-2 self-start rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-700 sm:self-auto"
+            >
+              <FaLocationDot className="h-3.5 w-3.5" aria-hidden="true" />
+              Get Directions
+            </a>
+          </div>
+          {/* Embedded map */}
+          <div className="relative h-80 w-full sm:h-[420px]">
+            <iframe
+              id="clinic-location-map"
+              title="Family First Primary Care Outpatient Clinic location on Google Maps"
+              src="https://maps.google.com/maps?q=6.9627128,122.1351858&hl=en&z=17&output=embed"
+              width="100%"
+              height="100%"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="absolute inset-0 h-full w-full border-0"
+              aria-label="Google Maps showing the location of Family First Primary Care Outpatient Clinic"
+            />
+          </div>
+        </div>
       </div>
     </main>
   );
