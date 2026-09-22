@@ -14,6 +14,7 @@ import {
   type OnlinePaymentAccountKind,
   type PatientRecordItem,
   type SystemSettings,
+  type UnavailabilityAffectedType,
 } from "@/src/lib/clinic";
 import { HttpError, type Actor } from "@/src/lib/http";
 import { buildClinicPlaceholderEmail, displayClinicEmail } from "@/src/lib/patient-email";
@@ -45,7 +46,7 @@ export async function readDoctorUnavailability(): Promise<DoctorUnavailability[]
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("doctor_unavailability")
-    .select("id, doctor_id, starts_at, ends_at, reason");
+    .select("id, doctor_id, starts_at, ends_at, reason, affected_type");
   if (error) throw error;
 
   const doctorIds = [...new Set((data ?? []).map((r) => r.doctor_id as string))];
@@ -62,10 +63,14 @@ export async function readDoctorUnavailability(): Promise<DoctorUnavailability[]
       starts_at: string;
       ends_at: string;
       reason: string | null;
+      affected_type: string | null;
     };
     const slug = slugs.get(r.doctor_id) ?? r.doctor_id;
     const reason = normalizeReason(r.reason);
     const note = r.reason ?? "";
+    const affectedType = (r.affected_type === "Clinic" || r.affected_type === "Online")
+      ? r.affected_type as UnavailabilityAffectedType
+      : null;
     for (const day of daysBetween(r.starts_at, r.ends_at)) {
       expanded.push({
         id: `${r.id}|${day}`,
@@ -73,6 +78,7 @@ export async function readDoctorUnavailability(): Promise<DoctorUnavailability[]
         date: day,
         reason,
         note,
+        affectedType,
       });
     }
   }
@@ -94,6 +100,7 @@ export async function addDoctorUnavailability(
     starts_at,
     ends_at,
     reason: payload.note || payload.reason,
+    affected_type: payload.affectedType ?? null,
   });
   if (error) throw error;
   return readDoctorUnavailability();
@@ -128,6 +135,7 @@ export async function updateDoctorUnavailability(
       starts_at,
       ends_at,
       reason: payload.note || payload.reason,
+      affected_type: payload.affectedType ?? null,
     })
     .eq("id", blockId);
   if (error) throw error;

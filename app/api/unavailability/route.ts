@@ -62,6 +62,7 @@ export async function PATCH(request: Request) {
       date: payload.date,
       reason: payload.reason,
       note: payload.note,
+      affectedType: payload.affectedType,
     }),
   });
 }

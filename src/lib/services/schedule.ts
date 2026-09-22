@@ -247,6 +247,7 @@ export async function getDoctorSchedulesForDate(
 export async function getUnavailabilityForDate(
   doctorId: string,
   date: string,
+  options: { type?: "Clinic" | "Online" } = {},
 ): Promise<DoctorUnavailability[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -256,7 +257,13 @@ export async function getUnavailabilityForDate(
     .lt("starts_at", `${date}T23:59:59Z`)
     .gt("ends_at", `${date}T00:00:00Z`);
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  if (!options.type) return rows;
+  // Keep blocks that apply to all types (affected_type IS NULL) or to this specific type.
+  return rows.filter(
+    (row) => !(row as { affected_type?: string | null }).affected_type
+      || (row as { affected_type?: string | null }).affected_type === options.type,
+  );
 }
 
 function overlapsUnavailable(
@@ -438,6 +445,7 @@ export async function addUnavailability(input: {
   starts_at: string;
   ends_at: string;
   reason?: string;
+  affected_type?: "Clinic" | "Online" | null;
 }) {
   if (input.starts_at >= input.ends_at)
     throw new HttpError(400, "starts_at must be before ends_at");
@@ -449,6 +457,7 @@ export async function addUnavailability(input: {
       starts_at: input.starts_at,
       ends_at: input.ends_at,
       reason: input.reason ?? null,
+      affected_type: input.affected_type ?? null,
     })
     .select()
     .single<DoctorUnavailability>();

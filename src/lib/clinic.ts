@@ -1,4 +1,7 @@
-export type AvailabilityReason = "Not Available" | "Leave";
+﻿export type AvailabilityReason = "Not Available" | "Leave";
+
+/** When affectedType is null/undefined the block applies to all appointment types. */
+export type UnavailabilityAffectedType = "Clinic" | "Online";
 
 export type DoctorUnavailability = {
   id: string;
@@ -6,6 +9,8 @@ export type DoctorUnavailability = {
   date: string;
   reason: AvailabilityReason;
   note: string;
+  /** If set, only this appointment type is blocked; the other type remains open. */
+  affectedType?: UnavailabilityAffectedType | null;
 };
 
 export type PatientRecordItem = {
@@ -108,7 +113,7 @@ export type SystemSettings = {
   clinicOpenTime: string;
   clinicCloseTime: string;
   // Permanent Google Meet (or other web-meeting) link the clinic uses for
-  // every virtual consult. Empty string means "not configured yet" — the
+  // every virtual consult. Empty string means "not configured yet" â€” the
   // UI surfaces a setup prompt and new bookings ship without a link.
   defaultMeetingLink: string;
   doctorSignatureDataUrl: string;

@@ -25,6 +25,7 @@ import { ActionCard, DashboardHero, MetricCard, SectionCard } from "@/src/compon
 import { getAppointmentPrimaryLabel, getAppointmentSecondaryReason } from "@/src/lib/appointment-context";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
+import ClinicUnavailabilityBanner from "@/src/components/marketing/ClinicUnavailabilityBanner";
 
 type Prescription = {
   id: string;
@@ -269,6 +270,8 @@ export default function PatientPortalPage() {
 
   return (
     <div className="space-y-6 pb-8">
+      <ClinicUnavailabilityBanner />
+
       <DashboardHero
         eyebrow="Patient Portal"
         title={`Welcome, ${name}`}

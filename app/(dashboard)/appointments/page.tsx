@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import BookAppointmentPage from "@/src/components/appointments/BookAppointmentPage";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import ClinicUnavailabilityBanner from "@/src/components/marketing/ClinicUnavailabilityBanner";
 
 type FinalizeState =
   | { kind: "idle" }
@@ -158,6 +159,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6 pb-8">
+      <ClinicUnavailabilityBanner />
       <section className="overflow-hidden rounded-[2.25rem] border border-neutral-100 bg-[radial-gradient(circle_at_top_left,rgba(17,17,17,0.16),transparent_34%),linear-gradient(135deg,#f8f8f7_0%,#ffffff_100%)] p-6 shadow-[0_24px_60px_rgba(17,17,17,0.10)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">

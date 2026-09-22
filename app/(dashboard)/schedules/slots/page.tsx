@@ -16,12 +16,14 @@ type BlockForm = {
   date: string;
   reason: AvailabilityReason;
   note: string;
+  affectedType: "Clinic" | "Online" | "";
 };
 
 const INITIAL_FORM: BlockForm = {
   date: "2026-04-15",
   reason: "Not Available",
   note: "",
+  affectedType: "",
 };
 
 type LiveSlotStatus = {
@@ -145,8 +147,8 @@ export default function TimeSlotsPage() {
         },
         body: JSON.stringify(
           editingBlockId
-            ? { id: editingBlockId, doctorId: doctor.id, ...form }
-            : { doctorId: doctor.id, ...form },
+            ? { id: editingBlockId, doctorId: doctor.id, ...form, affectedType: form.affectedType || null }
+            : { doctorId: doctor.id, ...form, affectedType: form.affectedType || null },
         ),
       });
 
@@ -173,6 +175,7 @@ export default function TimeSlotsPage() {
       date: record.date,
       reason: record.reason,
       note: record.note ?? "",
+      affectedType: record.affectedType ?? "",
     });
     setFeedback(null);
   }
@@ -249,8 +252,7 @@ export default function TimeSlotsPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr,1.1fr]">
-        <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Editor</p>
@@ -304,6 +306,22 @@ export default function TimeSlotsPage() {
               />
             </Field>
 
+            <Field label="Affects">
+              <select
+                value={form.affectedType}
+                onChange={(event) => updateField("affectedType", event.target.value as BlockForm["affectedType"])}
+                disabled={!canManage || isSaving}
+                className="mt-2 w-full rounded-[1.15rem] border border-neutral-100 bg-white px-4 py-3 outline-none transition focus:border-neutral-300 focus:ring-4 focus:ring-neutral-100 disabled:bg-slate-50"
+              >
+                <option value="">All Appointment Types</option>
+                <option value="Clinic">Clinic / Procedure Only</option>
+                <option value="Online">Virtual Consult Only</option>
+              </select>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Choose <strong>Clinic / Procedure Only</strong> to keep virtual consult open while blocking in-person visits.
+              </p>
+            </Field>
+
             <div className="rounded-[1.4rem] border border-neutral-100 bg-neutral-50/70 px-4 py-3 text-sm text-neutral-800">
               Tip: use <span className="font-semibold">Leave</span> for approved time off and{" "}
               <span className="font-semibold">Not Available</span> for holidays, closures, or ad hoc blocks.
@@ -334,7 +352,81 @@ export default function TimeSlotsPage() {
           </form>
         </div>
 
-        <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Saved Entries</p>
+            <h2 className="mt-2 text-xl font-bold text-slate-900">Blocked dates for {doctor.name}</h2>
+          </div>
+          {isLoading ? <p className="text-sm text-slate-500">Loading doctor availability...</p> : null}
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {doctorBlocks.length ? (
+            doctorBlocks.map((record) => (
+              <div
+                key={record.id}
+                className="flex flex-col gap-3 rounded-[1.4rem] border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-slate-900">{formatDisplayDate(record.date)}</p>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        record.reason === "Leave"
+                          ? "bg-neutral-100 text-neutral-700"
+                          : "bg-neutral-100 text-neutral-700"
+                      }`}
+                    >
+                      {record.reason}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        record.affectedType === 'Clinic'
+                          ? 'bg-amber-100 text-amber-800'
+                          : record.affectedType === 'Online'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {record.affectedType === 'Clinic'
+                        ? 'Clinic Only'
+                        : record.affectedType === 'Online'
+                        ? 'Virtual Consult Only'
+                        : 'All Types'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">{record.note || "No note provided."}</p>
+                </div>
+                {canManage ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(record)}
+                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeBlockedDay(record.id)}
+                      className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[1.4rem] border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-6 text-sm text-neutral-700">
+              No blocked dates saved for this doctor yet.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Operational Preview</p>
@@ -403,66 +495,6 @@ export default function TimeSlotsPage() {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="rounded-4xl border border-neutral-100 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Saved Entries</p>
-            <h2 className="mt-2 text-xl font-bold text-slate-900">Blocked dates for {doctor.name}</h2>
-          </div>
-          {isLoading ? <p className="text-sm text-slate-500">Loading doctor availability...</p> : null}
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {doctorBlocks.length ? (
-            doctorBlocks.map((record) => (
-              <div
-                key={record.id}
-                className="flex flex-col gap-3 rounded-[1.4rem] border border-neutral-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] px-4 py-4 md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-slate-900">{formatDisplayDate(record.date)}</p>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        record.reason === "Leave"
-                          ? "bg-neutral-100 text-neutral-700"
-                          : "bg-neutral-100 text-neutral-700"
-                      }`}
-                    >
-                      {record.reason}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-500">{record.note || "No note provided."}</p>
-                </div>
-                {canManage ? (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(record)}
-                      className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeBlockedDay(record.id)}
-                      className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ))
-          ) : (
-            <div className="rounded-[1.4rem] border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-6 text-sm text-neutral-700">
-              No blocked dates saved for this doctor yet.
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

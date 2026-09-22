@@ -1,4 +1,4 @@
-import type { ApptType } from "@/src/lib/db/types";
+﻿import type { ApptType } from "@/src/lib/db/types";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { normalizeClockTime, isPastInClinicTime } from "@/src/lib/timezone";
 import {
@@ -99,7 +99,7 @@ export async function buildSharedDayAvailability(
   }
 
   const [blocks, appointmentsResult, reservationsResult] = await Promise.all([
-    getUnavailabilityForDate(doctorId, date),
+    getUnavailabilityForDate(doctorId, date, { type }),
     appointmentsQuery,
     reservationsQuery,
   ]);
