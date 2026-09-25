@@ -435,12 +435,30 @@ export function createPrescriptionPdf(row: PrescriptionPdfRow) {
   text(ops, "Rx", 42, 478, { size: 28, font: "F2" });
   rule(ops, 78, 482, 570);
   let y = 446;
-  for (const item of medicines.slice(0, 6)) {
-    const details = [item.dosage, item.duration].filter(Boolean).join(" ");
-    const sig = [item.frequency, item.instructions].filter(Boolean).join(" ");
-    y = wrapped(ops, item.medicine_name, 58, y, { size: 16, font: "F2", max: 46, lines: 2, leading: 16 }) - 2;
-    if (details) y = wrapped(ops, details, 58, y, { size: 11.5, max: 72, lines: 2, leading: 13 }) - 2;
-    if (sig) y = wrapped(ops, `Sig. ${sig}`, 58, y, { size: 11.5, max: 68, lines: 2, leading: 13 }) - 8;
+  for (const item of medicines.slice(0, 8)) {
+    const rawName = item.medicine_name || "";
+    let genericName = rawName;
+    let brandName = "";
+    if (rawName.includes("\n")) {
+      const parts = rawName.split("\n");
+      genericName = parts[0]?.trim() || rawName;
+      brandName = parts.slice(1).join(" ").trim();
+    } else if (rawName.includes("(") && rawName.endsWith(")")) {
+      const openIdx = rawName.lastIndexOf("(");
+      genericName = rawName.substring(0, openIdx).trim();
+      brandName = rawName.substring(openIdx + 1, rawName.length - 1).trim();
+    }
+
+    y = wrapped(ops, genericName, 58, y, { size: 14, font: "F2", max: 48, lines: 2, leading: 14 }) - 2;
+    if (brandName) {
+      y = wrapped(ops, brandName, 58, y, { size: 10.5, font: "F1", max: 48, lines: 1, leading: 11 }) - 2;
+    }
+    const dosageParts = [item.dosage, item.duration ? `#${item.duration}` : null].filter(Boolean);
+    const details = dosageParts.join(" ");
+    if (details) y = wrapped(ops, details, 58, y, { size: 11, max: 72, lines: 2, leading: 12 }) - 2;
+    if (item.frequency) y = wrapped(ops, `Sig. ${item.frequency}`, 58, y, { size: 10.5, max: 68, lines: 2, leading: 12 }) - 2;
+    if (item.instructions) y = wrapped(ops, item.instructions, 58, y, { size: 10, max: 68, lines: 2, leading: 11 }) - 5;
+    y -= 3;
   }
   if (medicines.length === 0) {
     text(ops, "No medicine items added.", 58, y, { size: 11 });

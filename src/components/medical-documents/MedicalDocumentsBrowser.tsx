@@ -1209,12 +1209,10 @@ function PrescriptionPreview({ item }: { item: MedicalDocumentItem }) {
                     {medicine.medicine_name}
                   </p>
                   <p className="mt-1 text-sm font-semibold leading-6 text-neutral-800">
-                    {medicine.dosage || "No dosage recorded"}
-                    {medicine.frequency ? `, ${medicine.frequency}` : ""}
-                    {medicine.duration ? `, ${medicine.duration}` : ""}
+                    {[medicine.dosage, medicine.duration ? `#${medicine.duration}` : null].filter(Boolean).join(" ") || "No dosage recorded"}
                   </p>
-                  {medicine.instructions ? (
-                    <p className="mt-1 text-sm leading-6 text-neutral-700">{medicine.instructions}</p>
+                  {medicine.frequency ? (
+                    <p className="mt-0.5 text-sm leading-6 text-neutral-700">Sig.&#8194;{medicine.frequency}</p>
                   ) : null}
                 </div>
               ))

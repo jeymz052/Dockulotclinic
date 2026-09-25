@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, Fragment, useEffect, useMemo, useState, useTransition } from "react";
+import { type ReactNode, Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   FaAddressBook,
   FaArrowLeft,
@@ -51,6 +51,11 @@ import {
 } from "@/src/lib/appointments";
 import type { ConsultationNote, ConsultationProgress, PatientRecordItem } from "@/src/lib/clinic";
 import { calculatePatientAge } from "@/src/lib/patient-registration";
+import {
+  type PrescriptionItemDraft,
+  createEmptyPrescriptionItem,
+} from "@/src/lib/ppd-medicines";
+import { PpdPrescriptionBuilder } from "@/src/components/consultations/PpdPrescriptionBuilder";
 
 type DraftState = {
   diagnosis: string;
@@ -60,14 +65,6 @@ type DraftState = {
   prescription: string;
   status: ConsultationProgress;
   visibleToPatient: boolean;
-};
-
-type PrescriptionItemDraft = {
-  medicineName: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  instructions: string;
 };
 
 type CreatedPrescription = {
@@ -137,13 +134,7 @@ const emptyDraft: DraftState = {
   visibleToPatient: false,
 };
 
-const emptyPrescriptionItem: PrescriptionItemDraft = {
-  medicineName: "",
-  dosage: "",
-  frequency: "",
-  duration: "",
-  instructions: "",
-};
+const emptyPrescriptionItem: PrescriptionItemDraft = createEmptyPrescriptionItem();
 
 export default function OnlineConsultationPage() {
   const { accessToken, role } = useRole();
@@ -163,6 +154,8 @@ export default function OnlineConsultationPage() {
   const [releasePrescription, setReleasePrescription] = useState(true);
   const [prescriptionFeedback, setPrescriptionFeedback] = useState<string | null>(null);
   const [createdPrescription, setCreatedPrescription] = useState<CreatedPrescription | null>(null);
+  // Per-appointment prescription draft persistence (survives switching patients)
+  const prescriptionDraftMap = useRef<Map<string, { items: PrescriptionItemDraft[]; instructions: string; followUpDate: string }>>(new Map());
   const [medicalCertificateFeedback, setMedicalCertificateFeedback] = useState<string | null>(null);
   const [createdMedicalCertificate, setCreatedMedicalCertificate] = useState<CreatedMedicalCertificate | null>(null);
   const [selectedBloodChem, setSelectedBloodChem] = useState<string[]>([]);
@@ -279,6 +272,18 @@ export default function OnlineConsultationPage() {
 
     const parsedNote = parseSoapNote(existing?.note ?? "");
 
+    // Save current draft before switching appointments
+    if (activeAppointmentId && activeAppointmentId !== appointment.id) {
+      prescriptionDraftMap.current.set(activeAppointmentId, {
+        items: prescriptionItems,
+        instructions: prescriptionInstructions,
+        followUpDate: prescriptionFollowUpDate,
+      });
+    }
+
+    // Restore draft for the incoming appointment (if any)
+    const savedDraft = prescriptionDraftMap.current.get(appointment.id);
+
     setActiveAppointmentId(appointment.id);
     setActiveTab(tab);
     setDraft({
@@ -290,9 +295,9 @@ export default function OnlineConsultationPage() {
       status: inferredStatus,
       visibleToPatient: existing?.visibleToPatient ?? false,
     });
-    setPrescriptionItems([{ ...emptyPrescriptionItem }]);
-    setPrescriptionInstructions(existing?.prescription ?? "");
-    setPrescriptionFollowUpDate("");
+    setPrescriptionItems(savedDraft?.items ?? [{ ...emptyPrescriptionItem }]);
+    setPrescriptionInstructions(savedDraft?.instructions ?? existing?.prescription ?? "");
+    setPrescriptionFollowUpDate(savedDraft?.followUpDate ?? "");
     setReleasePrescription(true);
     setPrescriptionFeedback(null);
     setCreatedPrescription(null);
@@ -427,14 +432,32 @@ export default function OnlineConsultationPage() {
     }
 
     const cleanedItems = prescriptionItems
-      .map((item) => ({
-        medicine_name: item.medicineName.trim(),
-        dosage: item.dosage.trim(),
-        frequency: item.frequency.trim(),
-        duration: item.duration.trim(),
-        instructions: item.instructions.trim(),
-      }))
-      .filter((item) => item.medicine_name);
+      .filter((item) => (item.genericName?.trim() || item.medicineName?.trim()))
+      .map((item) => {
+        const generic = (item.genericName || item.medicineName || "").trim();
+        const brand = (item.brand || "").trim();
+        const medicine_name = brand ? `${generic}\n${brand}` : generic;
+        const dosage = (item.strengthForm || item.dosage || "").trim();
+        const qty = (item.quantity || item.duration || "").trim();
+        const dose = (item.dose || "1 Tablet").trim();
+        const freq = (item.frequency || "once a day").trim();
+        const dur = (item.duration || "5 days").trim();
+        const sigParts: string[] = [];
+        if (dose) sigParts.push(dose);
+        if (freq) sigParts.push(freq);
+        const sigBase = sigParts.join(", ");
+        const sig = dur && !sigBase.toLowerCase().includes(dur.toLowerCase())
+          ? `${sigBase} for ${dur}`
+          : sigBase;
+
+        return {
+          medicine_name,
+          dosage,
+          frequency: sig || item.frequency || "",
+          duration: qty,
+          instructions: (item.instructions || "").trim() || null,
+        };
+      });
 
     if (cleanedItems.length === 0) {
       setPrescriptionFeedback("Add at least one medicine item.");
@@ -479,6 +502,8 @@ export default function OnlineConsultationPage() {
       setPrescriptionItems([{ ...emptyPrescriptionItem }]);
       setPrescriptionInstructions("");
       setPrescriptionFollowUpDate("");
+      // Clear the saved draft for this appointment now that it's been submitted
+      if (activeAppointmentId) prescriptionDraftMap.current.delete(activeAppointmentId);
       setCreatedPrescription(
         payload.prescription?.prescription_no && payload.prescription?.id
           ? {
@@ -1312,7 +1337,7 @@ export default function OnlineConsultationPage() {
                     {activeAppointmentIsVirtual && chartStep === 2 && (
                       <div className="space-y-5">
                         {activeAppointmentIsVirtual ? (
-                          <PrescriptionBuilder
+                          <PpdPrescriptionBuilder
                             items={prescriptionItems}
                             instructions={prescriptionInstructions}
                             followUpDate={prescriptionFollowUpDate}
@@ -1321,9 +1346,11 @@ export default function OnlineConsultationPage() {
                             createdPrescription={createdPrescription}
                             disabled={isSaving}
                             patientMatched={Boolean(activePatientRecord)}
-                            onItemChange={updatePrescriptionItem}
-                            onAddItem={addPrescriptionItem}
-                            onRemoveItem={removePrescriptionItem}
+                            patientRecord={activePatientRecord}
+                            appointment={activeAppointment}
+                            doctorName={doctors.find((d) => d.slug === activeAppointment.doctorId || d.id === activeAppointment.doctorId)?.name ?? "Dr. Fatimah Al-Zahra T. Ditti"}
+                            doctorSpecialty={doctors.find((d) => d.slug === activeAppointment.doctorId || d.id === activeAppointment.doctorId)?.specialty ?? "Family Medicine"}
+                            onItemsChange={setPrescriptionItems}
                             onInstructionsChange={(value) => {
                               setPrescriptionInstructions(value);
                               setPrescriptionFeedback(null);
@@ -1337,6 +1364,12 @@ export default function OnlineConsultationPage() {
                               setPrescriptionFeedback(null);
                             }}
                             onSave={() => savePrescription(activeAppointment)}
+                            onDiscard={() => {
+                              setPrescriptionItems([createEmptyPrescriptionItem()]);
+                              setPrescriptionInstructions("");
+                              setPrescriptionFollowUpDate("");
+                              setPrescriptionFeedback(null);
+                            }}
                             onDownloadCreated={() =>
                               createdPrescription ? void downloadCreatedPrescription(createdPrescription) : undefined
                             }
@@ -1346,6 +1379,7 @@ export default function OnlineConsultationPage() {
                             onEmailCreated={() =>
                               createdPrescription ? void emailCreatedPrescription(createdPrescription) : undefined
                             }
+                            onProceedNextStep={() => setChartStep(3)}
                           />
                         ) : (
                           <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
@@ -2252,198 +2286,6 @@ function PatientRecordSnapshot({
         </div>
       )}
     </div>
-  );
-}
-
-function PrescriptionBuilder({
-  items,
-  instructions,
-  followUpDate,
-  releaseToPatient,
-  feedback,
-  createdPrescription,
-  disabled,
-  patientMatched,
-  onItemChange,
-  onAddItem,
-  onRemoveItem,
-  onInstructionsChange,
-  onFollowUpDateChange,
-  onReleaseChange,
-  onSave,
-  onDownloadCreated,
-  onPrintCreated,
-  onEmailCreated,
-}: {
-  items: PrescriptionItemDraft[];
-  instructions: string;
-  followUpDate: string;
-  releaseToPatient: boolean;
-  feedback: string | null;
-  createdPrescription: CreatedPrescription | null;
-  disabled: boolean;
-  patientMatched: boolean;
-  onItemChange: (index: number, field: keyof PrescriptionItemDraft, value: string) => void;
-  onAddItem: () => void;
-  onRemoveItem: (index: number) => void;
-  onInstructionsChange: (value: string) => void;
-  onFollowUpDateChange: (value: string) => void;
-  onReleaseChange: (value: boolean) => void;
-  onSave: () => void;
-  onDownloadCreated: () => void;
-  onPrintCreated: () => void;
-  onEmailCreated?: () => void;
-}) {
-  return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <SectionHeading
-          icon={<FaPrescriptionBottleMedical className="h-4 w-4" />}
-          title="Prescription"
-          description="Build the medicine list first, then add the note, follow-up, and release step."
-        />
-        <button
-          type="button"
-          onClick={onAddItem}
-          disabled={disabled}
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-xs font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <FaPlus className="h-3 w-3" aria-hidden="true" />
-          Add medicine
-        </button>
-      </div>
-
-      {!patientMatched ? (
-        <div className="mt-5 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
-          Match this visit to a patient record before saving a prescription.
-        </div>
-      ) : null}
-
-      <div className="mt-5 space-y-4">
-        {items.map((item, index) => (
-          <div key={`consult-rx-${index}`} className="rounded-lg border border-neutral-200 bg-neutral-50/80 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                Rx item {index + 1}
-              </p>
-              <button
-                type="button"
-                onClick={() => onRemoveItem(index)}
-                disabled={disabled || items.length === 1}
-                className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <FaTrash className="h-3 w-3" aria-hidden="true" />
-                Remove
-              </button>
-            </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              <InputField
-                label="Medicine"
-                value={item.medicineName}
-                placeholder="Tirzepatide"
-                onChange={(value) => onItemChange(index, "medicineName", value)}
-              />
-              <InputField
-                label="Dosage / formulation"
-                value={item.dosage}
-                placeholder="5 mg/0.6 mL solution for injection #1"
-                onChange={(value) => onItemChange(index, "dosage", value)}
-              />
-              <InputField
-                label="Sig / frequency"
-                value={item.frequency}
-                placeholder="0.6 mL, once a week"
-                onChange={(value) => onItemChange(index, "frequency", value)}
-              />
-              <InputField
-                label="Duration / quantity"
-                value={item.duration}
-                placeholder="Use as instructed"
-                onChange={(value) => onItemChange(index, "duration", value)}
-              />
-            </div>
-            <TextAreaField
-              label="Item instructions"
-              value={item.instructions}
-              minHeight="min-h-24"
-              placeholder="Additional medicine-specific reminders"
-              onChange={(value) => onItemChange(index, "instructions", value)}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem]">
-        <TextAreaField
-          label="Prescription note"
-          value={instructions}
-          minHeight="min-h-28"
-          placeholder="Insulin syringe x 4 mm - 4 pieces"
-          onChange={onInstructionsChange}
-        />
-        <InputField
-          label="Follow-up date"
-          value={followUpDate}
-          placeholder="YYYY-MM-DD"
-          onChange={onFollowUpDateChange}
-        />
-      </div>
-
-      <div className="mt-5 flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700">
-          <input
-            type="checkbox"
-            checked={releaseToPatient}
-            onChange={(event) => onReleaseChange(event.target.checked)}
-            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-400"
-          />
-          Send to patient portal
-        </label>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={disabled || !patientMatched}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-        >
-          <FaPrescriptionBottleMedical className="h-4 w-4" aria-hidden="true" />
-          {disabled ? "Saving..." : "Create prescription"}
-        </button>
-      </div>
-      {feedback ? <p className="mt-3 text-sm font-semibold text-neutral-700">{feedback}</p> : null}
-      {createdPrescription ? (
-        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-semibold text-emerald-900">
-            {createdPrescription.prescriptionNo} is ready.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {onEmailCreated ? (
-              <button
-                type="button"
-                onClick={onEmailCreated}
-                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-100/70 px-3 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-200"
-              >
-                <FaEnvelope className="h-3 w-3" />
-                Email to Patient
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onDownloadCreated}
-              className="rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50"
-            >
-              Download PDF
-            </button>
-            <button
-              type="button"
-              onClick={onPrintCreated}
-              className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
-            >
-              Print
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </section>
   );
 }
 
