@@ -247,7 +247,9 @@ export async function validateSharedSlotOrThrow(input: {
     throw new Error(`${exactSlot.mode} schedule only.`);
   }
 
-  const blocks = await getUnavailabilityForDate(input.doctorUuid, input.date);
+  const blocks = await getUnavailabilityForDate(input.doctorUuid, input.date, {
+    type: input.type,
+  });
   if (overlapsBlocks(input.date, input.start_time, input.end_time, blocks)) {
     const hint = await buildConflictHint(input.doctorUuid, input.date, input.type, slotMinutesBetween(input.start_time, input.end_time));
     throw new Error(`Doctor is unavailable during that time.${hint}`);

@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
-    root: path.resolve(__dirname),
+    root: process.cwd(),
   },
   images: {
     qualities: [100, 75],

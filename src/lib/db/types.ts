@@ -73,6 +73,7 @@ export type DoctorUnavailability = {
   starts_at: string;
   ends_at: string;
   reason: string | null;
+  affected_type: ApptType | null;
 };
 
 export type Appointment = {

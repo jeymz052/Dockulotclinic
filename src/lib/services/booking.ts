@@ -126,7 +126,9 @@ export async function reserveAppointment(input: BookingInput, actor: Actor) {
     throw new HttpError(409, `${exactSlot?.mode ?? "Clinic"} schedule only`);
   }
 
-  const blocks = await getUnavailabilityForDate(input.doctor_id, input.appointment_date);
+  const blocks = await getUnavailabilityForDate(input.doctor_id, input.appointment_date, {
+    type: input.appointment_type,
+  });
   if (overlapsBlocks(input.appointment_date, input.start_time, input.end_time, blocks))
     throw new HttpError(409, "Doctor is unavailable during that time");
 
