@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import BookAppointmentPage from "@/src/components/appointments/BookAppointmentPage";
+import { resolveProcedureServiceName } from "@/src/lib/appointment-context";
 
 const BOOKING_HASH = "#booking";
 
@@ -14,44 +15,87 @@ function isBookingLink(anchor: HTMLAnchorElement) {
 
   try {
     const url = new URL(href, window.location.origin);
-    return url.origin === window.location.origin && url.pathname === "/" && url.hash === BOOKING_HASH;
+    const hash = url.hash;
+    return (
+      url.origin === window.location.origin &&
+      (hash === BOOKING_HASH || hash.startsWith(`${BOOKING_HASH}?`) || hash.startsWith(`${BOOKING_HASH}/`))
+    );
   } catch {
-    return href === BOOKING_HASH || href === `/${BOOKING_HASH}`;
+    return (
+      href === BOOKING_HASH ||
+      href.startsWith(`${BOOKING_HASH}?`) ||
+      href === `/${BOOKING_HASH}` ||
+      href.startsWith(`/${BOOKING_HASH}?`)
+    );
   }
 }
 
 export default function LandingBookingModal() {
   const [open, setOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const openBooking = () => {
       setOpen(true);
 
-      if (window.location.hash !== BOOKING_HASH) {
+      if (!window.location.hash.startsWith(BOOKING_HASH)) {
         window.history.pushState(null, "", BOOKING_HASH);
       }
     };
 
     const handleClick = (event: MouseEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const anchor = target?.closest("a[href]");
+      const anchor = target?.closest("a[href], [data-booking-service]");
 
-      if (!(anchor instanceof HTMLAnchorElement) || !isBookingLink(anchor)) {
-        return;
+      if (!anchor) return;
+
+      if (anchor instanceof HTMLAnchorElement && isBookingLink(anchor)) {
+        event.preventDefault();
+        let service: string | undefined = anchor.dataset.bookingService;
+        try {
+          const url = new URL(anchor.href, window.location.origin);
+          service = url.searchParams.get("service") || service;
+          if (!service && url.hash.includes("?")) {
+            const hashParams = new URLSearchParams(url.hash.split("?")[1]);
+            service = hashParams.get("service") || undefined;
+          }
+        } catch {}
+
+        if (service) {
+          const resolved = resolveProcedureServiceName(service);
+          setSelectedService(resolved);
+          (window as any).__preselectedBookingService = resolved;
+          (window as any).__preselectedBookingVisitPath = "Procedure";
+          window.dispatchEvent(
+            new CustomEvent("select-booking-service", {
+              detail: { service: resolved, visitPath: "Procedure" },
+            }),
+          );
+        } else {
+          setSelectedService(undefined);
+        }
+
+        openBooking();
       }
-
-      event.preventDefault();
-      openBooking();
     };
 
     const handleHashChange = () => {
-      setOpen(window.location.hash === BOOKING_HASH);
+      setOpen(window.location.hash.startsWith(BOOKING_HASH));
     };
 
     document.addEventListener("click", handleClick);
     window.addEventListener("hashchange", handleHashChange);
 
-    if (window.location.hash === BOOKING_HASH) {
+    if (window.location.hash.startsWith(BOOKING_HASH)) {
+      if (window.location.hash.includes("?")) {
+        const hashParams = new URLSearchParams(window.location.hash.split("?")[1]);
+        const service = hashParams.get("service");
+        if (service) {
+          setSelectedService(service);
+          (window as any).__preselectedBookingService = service;
+          (window as any).__preselectedBookingVisitPath = "Procedure";
+        }
+      }
       queueMicrotask(() => setOpen(true));
     }
 
@@ -129,7 +173,11 @@ export default function LandingBookingModal() {
         </div>
 
         <div className="overflow-y-auto p-3 sm:p-5">
-          <BookAppointmentPage />
+          <BookAppointmentPage
+            key={selectedService || "default"}
+            initialService={selectedService}
+            initialVisitPath={selectedService ? "Procedure" : undefined}
+          />
         </div>
       </section>
     </div>

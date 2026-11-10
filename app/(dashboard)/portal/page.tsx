@@ -26,6 +26,7 @@ import { getAppointmentPrimaryLabel, getAppointmentSecondaryReason } from "@/src
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
 import ClinicUnavailabilityBanner from "@/src/components/marketing/ClinicUnavailabilityBanner";
+import SaleBanner from "@/src/components/marketing/SaleBanner";
 
 type Prescription = {
   id: string;
@@ -270,6 +271,7 @@ export default function PatientPortalPage() {
 
   return (
     <div className="space-y-6 pb-8">
+      <SaleBanner />
       <ClinicUnavailabilityBanner />
 
       <DashboardHero

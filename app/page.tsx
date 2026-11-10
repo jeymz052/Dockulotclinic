@@ -18,6 +18,8 @@ import OfferProgramsHero from "@/src/components/marketing/OfferProgramsHero";
 import RxHeroCarousel from "@/src/components/marketing/RxHeroCarousel";
 import ScrollReveal from "@/src/components/marketing/ScrollReveal";
 import PublicVideoGallery from "@/src/components/videos/PublicVideoGallery";
+import SaleSection from "@/src/components/marketing/SaleSection";
+import SaleBanner from "@/src/components/marketing/SaleBanner";
 import { BeforeAfterCarousel } from "@/src/components/marketing/BeforeAfterCarousel";
 import {
   beforeAfterResults,
@@ -202,6 +204,7 @@ export default async function HomePage() {
       />
       <PublicHeader />
       <LandingBookingModal />
+      <SaleBanner />
 
       <section id="hero" className="bg-white md:pt-16">
         <RxHeroCarousel
@@ -210,6 +213,8 @@ export default async function HomePage() {
           ctaLabel={landingContent.hero_cta_primary || "Book appointment"}
         />
       </section>
+
+      <SaleSection />
 
       <ScrollReveal as="section" id="programs" className="bg-white" delayMs={40}>
         <OfferProgramsHero

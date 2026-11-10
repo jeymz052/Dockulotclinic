@@ -22,6 +22,9 @@ export default function PublicHeader() {
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-black transition hover:text-neutral-700">
             Home
           </Link>
+          <Link href="/#sale" className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white transition hover:bg-red-700 animate-pulse">
+            🔥 11.11 Sale
+          </Link>
           <Link href="/#programs" className="inline-flex items-center gap-2 text-sm font-semibold text-black transition hover:text-neutral-700">
             Programs
           </Link>

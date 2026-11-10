@@ -30,6 +30,41 @@ export function isProcedureServiceTitle(service: string | null | undefined) {
   return clinicServices.some((item) => item.appointmentOnly && item.title === normalized);
 }
 
+export function resolveProcedureServiceName(input: string | null | undefined): string {
+  if (!input) return "";
+  const trimmed = input.trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1. Exact match (case insensitive)
+  const exact = clinicServices.find((s) => s.title.toLowerCase() === lower);
+  if (exact) return exact.title;
+
+  // 2. Specific matching for common user queries or aliases
+  if (lower.includes("jaw") || lower.includes("jow")) return "Botox - Jawtox";
+  if (lower.includes("whole face")) return "Botox - Whole Face (incl Jawtox)";
+  if (lower.includes("forehead")) return "Botox - Forehead";
+  if (lower.includes("alar")) return "Botox - Alartox";
+  if (lower.includes("nefertiti")) return "Botox - Nefertiti";
+  if (lower.includes("barbie")) return "Botox - Barbie Arm";
+  if (lower.includes("trap")) return "Botox - Traptox";
+  if (lower.includes("mesolift")) return "Botox - Mesolift";
+  if (lower.includes("chin") && lower.includes("filler")) return "Fillers - Chin";
+  if (lower.includes("lip") && lower.includes("filler")) return "Fillers - Lips";
+  if (lower.includes("chin") && (lower.includes("meso") || lower.includes("lipo"))) return "Mesolipo - Chin";
+  if (lower.includes("face") && (lower.includes("meso") || lower.includes("lipo"))) return "Mesolipo - Face";
+  if (lower.includes("arm") && (lower.includes("meso") || lower.includes("lipo"))) return "Mesolipo - Arms";
+  if (lower.includes("pink")) return "PinkGlow";
+  if (lower.includes("red")) return "RedGlow";
+  if (lower.includes("crystal")) return "CrystalGlow";
+  if (lower.includes("glowrx")) return "GlowRx Program";
+
+  // 3. Fallback partial matching
+  const partial = clinicServices.find((s) => s.title.toLowerCase().includes(lower));
+  if (partial) return partial.title;
+
+  return trimmed;
+}
+
 export function getDefaultServiceForType(type: AppointmentType) {
   if (type === "Online") {
     return getServiceOptionsForType(type)[0] ?? "Telemedicine Services";

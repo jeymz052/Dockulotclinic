@@ -30,6 +30,8 @@ import {
   encodeAppointmentContext,
   getDefaultServiceForType,
   getServiceOptionsForType,
+  isProcedureServiceTitle,
+  resolveProcedureServiceName,
   type ClinicConsultKind,
 } from "@/src/lib/appointment-context";
 import { clinicServices, consentGuide, resolveAftercareGuideForService } from "@/src/lib/healthcare-content";
@@ -53,6 +55,7 @@ import {
   getBookingPriceAmount,
   getClinicConsultationAmount,
   getProcedureDisplayPriceLabel,
+  getProcedureDiscountInfo,
   type PricingItem,
 } from "@/src/lib/booking-pricing";
 import {
@@ -298,13 +301,31 @@ function resolveAftercareGuide(serviceTitle: string) {
   return resolveAftercareGuideForService(serviceTitle);
 }
 
-export default function BookAppointmentPage() {
+export default function BookAppointmentPage({
+  initialService,
+  initialVisitPath,
+}: {
+  initialService?: string;
+  initialVisitPath?: BookingVisitPath;
+} = {}) {
   const pathname = usePathname();
   const authReturnPath = pathname === "/" ? "/#booking" : pathname;
   const { accessToken, role, user, profile, patient, isLoading: authLoading } = useRole();
   const { setAppointments, isLoading, error } = useAppointments();
   const { doctors } = useDoctors();
-  const [formData, setFormData] = useState<BookingForm>(INITIAL_FORM);
+  const [formData, setFormData] = useState<BookingForm>(() => {
+    if (initialService) {
+      const resolved = resolveProcedureServiceName(initialService);
+      const isProc = initialVisitPath === "Procedure" || PROCEDURE_SERVICE_TITLES.has(resolved) || isProcedureServiceTitle(resolved);
+      return {
+        ...INITIAL_FORM,
+        visitPath: isProc ? "Procedure" : (initialVisitPath ?? "Clinic"),
+        type: "Clinic",
+        service: resolved,
+      };
+    }
+    return INITIAL_FORM;
+  });
   const [uploadedConcernFiles, setUploadedConcernFiles] = useState<UploadedConcernFile[]>([]);
   const [procedureConsentAccepted, setProcedureConsentAccepted] = useState(false);
   const [procedureConsentSignature, setProcedureConsentSignature] = useState("");
@@ -315,6 +336,62 @@ export default function BookAppointmentPage() {
   const [bookingPricing, setBookingPricing] = useState<PricingItem[]>([]);
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [visibleWeekStart, setVisibleWeekStart] = useState(today);
+
+  useEffect(() => {
+    function applyServiceSelection(serviceName?: string, path?: BookingVisitPath) {
+      if (!serviceName) return;
+      const finalService = resolveProcedureServiceName(serviceName);
+      const isProcedure =
+        path === "Procedure" ||
+        PROCEDURE_SERVICE_TITLES.has(finalService) ||
+        isProcedureServiceTitle(finalService);
+
+      setFormData((prev) => ({
+        ...prev,
+        visitPath: isProcedure ? "Procedure" : (path ?? prev.visitPath),
+        type: isProcedure ? "Clinic" : (prev.type === "Online" && path !== "Clinic" ? "Online" : "Clinic"),
+        service: finalService,
+      }));
+    }
+
+    if (initialService) {
+      applyServiceSelection(initialService, initialVisitPath);
+    }
+
+    if (typeof window !== "undefined" && (window as any).__preselectedBookingService) {
+      applyServiceSelection((window as any).__preselectedBookingService, (window as any).__preselectedBookingVisitPath);
+      delete (window as any).__preselectedBookingService;
+      delete (window as any).__preselectedBookingVisitPath;
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        let s = url.searchParams.get("service");
+        let p = url.searchParams.get("path") as BookingVisitPath | null;
+        if (!s && window.location.hash.includes("?")) {
+          const hashParams = new URLSearchParams(window.location.hash.split("?")[1]);
+          s = hashParams.get("service");
+          p = hashParams.get("path") as BookingVisitPath | null;
+        }
+        if (s) {
+          applyServiceSelection(s, p ?? "Procedure");
+        }
+      } catch {}
+    }
+
+    const handleCustomEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ service?: string; visitPath?: BookingVisitPath }>;
+      if (customEvent.detail?.service) {
+        applyServiceSelection(customEvent.detail.service, customEvent.detail.visitPath ?? "Procedure");
+      }
+    };
+
+    window.addEventListener("select-booking-service", handleCustomEvent);
+    return () => {
+      window.removeEventListener("select-booking-service", handleCustomEvent);
+    };
+  }, [initialService, initialVisitPath]);
 
   const primaryDoctor = doctors[0] ?? null;
   const activeDoctorId = primaryDoctor?.slug ?? DEFAULT_DOCTOR_ID;
@@ -433,20 +510,28 @@ export default function BookAppointmentPage() {
               || Boolean(parsed.formData?.reason?.trim())
               || Boolean(parsed.formData?.start);
             const nextType = parsed.formData?.type ?? cur.type;
-            const restoredService = parsed.formData?.service ?? cur.service;
-            const restoredVisitPath = restoredHasPatientDetails
-              ? parsed.formData?.visitPath
-                ?? (PROCEDURE_SERVICE_TITLES.has(restoredService) ? "Procedure" : nextType)
-              : cur.visitPath;
+            const isServicePreselected = Boolean(
+              initialService ||
+              (typeof window !== "undefined" && (window.location.search.includes("service=") || window.location.hash.includes("service=")))
+            );
+            const restoredService = isServicePreselected ? cur.service : (parsed.formData?.service ?? cur.service);
+            const restoredVisitPath = isServicePreselected
+              ? cur.visitPath
+              : (restoredHasPatientDetails
+                ? parsed.formData?.visitPath
+                  ?? (PROCEDURE_SERVICE_TITLES.has(restoredService) ? "Procedure" : nextType)
+                : cur.visitPath);
             const restoredType: AppointmentType = restoredVisitPath === "Online" ? "Online" : "Clinic";
             return {
               ...cur,
               ...(restoredHasPatientDetails ? parsed.formData : {}),
               visitPath: restoredVisitPath,
               type: restoredHasPatientDetails ? restoredType : cur.type,
-              service: restoredHasPatientDetails
-                ? parsed.formData?.service ?? getDefaultServiceForType(restoredType)
-                : cur.service,
+              service: isServicePreselected
+                ? cur.service
+                : (restoredHasPatientDetails
+                  ? parsed.formData?.service ?? getDefaultServiceForType(restoredType)
+                  : cur.service),
               medicalCertificateRequested: restoredHasPatientDetails
                 ? Boolean(parsed.formData?.medicalCertificateRequested) && restoredType === "Online"
                 : cur.medicalCertificateRequested && cur.type === "Online",
@@ -1411,6 +1496,23 @@ export default function BookAppointmentPage() {
                     </span>
                   </div>
 
+                  {formData.visitPath === "Procedure" ? (
+                    <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#d8c58a]/40 bg-[#d8c58a]/10 p-3.5 sm:p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black text-sm text-[#d8c58a] shadow-sm">
+                          🔥
+                        </span>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wider text-black">11.11 Sale: 11% Discount Applied</p>
+                          <p className="text-[11px] text-neutral-600">All medical procedures reflect an 11% discount from Nov 11–14!</p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-black px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#d8c58a]">
+                        11% OFF SALE
+                      </span>
+                    </div>
+                  ) : null}
+
                   <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                     {serviceOptions.map((service) => {
                       const selected = formData.service === service;
@@ -1421,6 +1523,9 @@ export default function BookAppointmentPage() {
                         hasExistingPatientRecord ? "FirstConsult" : formData.clinicConsultKind,
                         bookingPricing,
                       );
+                      const discountInfo = formData.visitPath === "Procedure"
+                        ? getProcedureDiscountInfo(bookingPricing, service)
+                        : null;
                       const description = getServiceDescription(service);
                       return (
                         <button
@@ -1446,7 +1551,19 @@ export default function BookAppointmentPage() {
                           {description ? (
                             <p className="mt-1 text-xs leading-5 text-slate-600">{description}</p>
                           ) : null}
-                          {priceLabel ? (
+                          {discountInfo ? (
+                            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] text-neutral-400 line-through font-medium">
+                                Starts at {peso(discountInfo.original)}
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-900">
+                                Starts at {peso(discountInfo.discounted)}
+                                <span className="rounded bg-red-600 px-1 py-0.2 text-[8px] font-black text-white">
+                                  11% OFF
+                                </span>
+                              </span>
+                            </div>
+                          ) : priceLabel ? (
                             <p className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
                               selected ? bookingTone.priceBadge : "border-neutral-200 bg-white text-neutral-700"
                             }`}>
@@ -2036,8 +2153,27 @@ export default function BookAppointmentPage() {
                         ) : null}
                         {isProcedureBooking ? (
                           <>
-                            <SummaryRow label="Reservation Fee" value={peso(procedureReservationAmount)} done />
-                            <SummaryRow label="Billing Note" value="Deductible from final procedure bill; consultation charged separately" done />
+                            {(() => {
+                              const discountInfo = getProcedureDiscountInfo(bookingPricing, formData.service);
+                              if (!discountInfo) {
+                                return (
+                                  <>
+                                    <SummaryRow label="Reservation Fee" value={peso(procedureReservationAmount)} done />
+                                    <SummaryRow label="Billing Note" value="Deductible from final procedure bill; consultation charged separately" done />
+                                  </>
+                                );
+                              }
+                              return (
+                                <>
+                                  <SummaryRow label="Regular Starting Price" value={peso(discountInfo.original)} done />
+                                  <SummaryRow label="🔥 11.11 Discount (11% OFF)" value={`- ${peso(discountInfo.savings)}`} done />
+                                  <SummaryRow label="Discounted Starting Price" value={peso(discountInfo.discounted)} done />
+                                  <SummaryRow label="Reservation Fee (Pay Now)" value={`${peso(procedureReservationAmount)} (Deductible)`} done />
+                                  <SummaryRow label="Est. Balance on Visit" value={`Starts at ${peso(Math.max(0, discountInfo.discounted - procedureReservationAmount))}`} done />
+                                  <SummaryRow label="Billing Note" value="Your ₱1,000 reservation fee is deducted from the discounted procedure total at the clinic." done />
+                                </>
+                              );
+                            })()}
                           </>
                         ) : null}
                         {formData.type === "Online" ? (

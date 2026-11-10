@@ -46,6 +46,12 @@ export default function MobileNav() {
               </Link>
             </li>
             <li>
+              <Link href="/#sale" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl bg-red-50 px-3 py-3 text-red-700 font-bold hover:bg-red-100">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-red-600 text-white text-xs font-black">🔥</span>
+                11.11 Sale — 11% OFF
+              </Link>
+            </li>
+            <li>
               <Link href="/#programs" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-neutral-800 hover:bg-neutral-50">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-black"><FaStethoscope /></span>
                 Programs

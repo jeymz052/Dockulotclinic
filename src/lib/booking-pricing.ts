@@ -41,6 +41,24 @@ export const PROCEDURE_PRICING_CODES = {
   "Wart Removal / Skin Tag Removal": "PROC-WART-REMOVAL",
   "Mole Surgery": "PROC-MOLE-SURGERY",
   "GLP Initiation": "PROC-GLP-INITIATION",
+  "GlowRx Program": "PROC-GLOWRX",
+  "Botox - Whole Face": "PROC-BOTOX-WHOLE-FACE",
+  "Botox - Whole Face (incl Jawtox)": "PROC-BOTOX-WHOLE-FACE",
+  "Botox - Jawtox": "PROC-BOTOX-JAWTOX",
+  "Botox - Forehead": "PROC-BOTOX-FOREHEAD",
+  "Botox - Alartox": "PROC-BOTOX-ALARTOX",
+  "Botox - Nefertiti": "PROC-BOTOX-NEFERTITI",
+  "Botox - Barbie Arm": "PROC-BOTOX-BARBIE-ARM",
+  "Botox - Traptox": "PROC-BOTOX-TRAPTOX",
+  "Botox - Mesolift": "PROC-BOTOX-MESOLIFT",
+  "Mesolipo - Chin": "PROC-MESOLIPO-CHIN",
+  "Mesolipo - Face": "PROC-MESOLIPO-FACE",
+  "Mesolipo - Arms": "PROC-MESOLIPO-ARMS",
+  "Fillers - Lips": "PROC-FILLERS-LIPS",
+  "Fillers - Chin": "PROC-FILLERS-CHIN",
+  "PinkGlow": "PROC-PINKGLOW",
+  "RedGlow": "PROC-REDGLOW",
+  "CrystalGlow": "PROC-CRYSTALGLOW",
 } as const;
 
 export type ProcedurePricingCode = (typeof PROCEDURE_PRICING_CODES)[keyof typeof PROCEDURE_PRICING_CODES];
@@ -117,27 +135,27 @@ export const BOOKING_PRICING_DEFINITIONS: BookingPricingDefinition[] = [
     name: "Botox",
     category: "Procedure",
     group: "Medical Procedure",
-    defaultPrice: 200,
-    bookingUse: "Shown as starting/unit price on procedure service cards",
-    note: "Final procedure bill can still vary by treatment plan.",
+    defaultPrice: 6499,
+    bookingUse: "Shown as starting price on procedure service cards",
+    note: "Starts-at price. Specific area pricing varies (Whole Face, Jawtox, Forehead, etc.).",
   },
   {
     code: PROCEDURE_PRICING_CODES.Mesolipo,
     name: "Mesolipo",
     category: "Procedure",
     group: "Medical Procedure",
-    defaultPrice: 4900,
+    defaultPrice: 3999,
     bookingUse: "Shown as starting price on procedure service cards",
-    note: "Final procedure bill can still vary by treatment plan.",
+    note: "Starts-at price. Specific area pricing varies (Chin, Face, Arms).",
   },
   {
     code: PROCEDURE_PRICING_CODES.Fillers,
     name: "Fillers",
     category: "Procedure",
     group: "Medical Procedure",
-    defaultPrice: 4999,
+    defaultPrice: 8999,
     bookingUse: "Shown as starting price on procedure service cards",
-    note: "Final procedure bill can still vary by treatment plan.",
+    note: "Starts-at price. Specific area pricing varies (Lips, Chin).",
   },
   {
     code: PROCEDURE_PRICING_CODES.Sclerotherapy,
@@ -174,6 +192,159 @@ export const BOOKING_PRICING_DEFINITIONS: BookingPricingDefinition[] = [
     defaultPrice: 10000,
     bookingUse: "Shown as procedure service and standard package reference",
     note: "Base package price is ₱10,000. In POS billing, unit price can be adjusted or split into installments (e.g. ₱5,000 or ₱1,250 per visit).",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["GlowRx Program"],
+    name: "GlowRx Program",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 9999,
+    bookingUse: "Shown as program price on procedure service cards",
+    note: "5-week program. Final bill follows the structured program plan.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Whole Face"],
+    name: "Botox - Whole Face (incl Jawtox)",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 20999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Whole face Botox including Jawtox.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Jawtox"],
+    name: "Botox - Jawtox",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 10999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Jawtox-specific Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Forehead"],
+    name: "Botox - Forehead",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 6999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Forehead-specific Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Alartox"],
+    name: "Botox - Alartox",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 6499,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Alartox (nose) Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Nefertiti"],
+    name: "Botox - Nefertiti",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 11999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Nefertiti neck lift Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Barbie Arm"],
+    name: "Botox - Barbie Arm",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 14999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Barbie Arm Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Traptox"],
+    name: "Botox - Traptox",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 14999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Traptox (trapezius) Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Botox - Mesolift"],
+    name: "Botox - Mesolift",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 9999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Mesolift Botox procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Mesolipo - Chin"],
+    name: "Mesolipo - Chin",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 3999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Chin-specific Mesolipo procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Mesolipo - Face"],
+    name: "Mesolipo - Face",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 3999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Face-specific Mesolipo procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Mesolipo - Arms"],
+    name: "Mesolipo - Arms",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 5499,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Arms-specific Mesolipo procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Fillers - Lips"],
+    name: "Fillers - Lips",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 14499,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Lip filler procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES["Fillers - Chin"],
+    name: "Fillers - Chin",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 8999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "Chin filler procedure.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES.PinkGlow,
+    name: "PinkGlow (Microneedle + Exosomes + Botox)",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 7499,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "PinkGlow treatment — best for brightening dull skin.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES.RedGlow,
+    name: "RedGlow (Microneedle + Exosomes + Botox)",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 7999,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "RedGlow treatment — for acne treatment.",
+  },
+  {
+    code: PROCEDURE_PRICING_CODES.CrystalGlow,
+    name: "CrystalGlow (Microneedle + Exosomes + Botox)",
+    category: "Procedure",
+    group: "Medical Procedure",
+    defaultPrice: 7499,
+    bookingUse: "Shown as procedure price on service cards",
+    note: "CrystalGlow treatment — best for hydrating skin.",
   },
 ];
 
@@ -237,4 +408,25 @@ export function getProcedureDisplayPriceLabel(items: PricingItem[], serviceTitle
   if (!code) return null;
   const amount = getBookingPriceAmount(items, code);
   return amount > 0 ? `Starts at ${formatBookingPeso(amount)}` : "Consultation required";
+}
+
+export const SALE_DISCOUNT_PERCENT = 11;
+
+export function getDiscountedPrice(price: number): number {
+  return Math.round(price * (1 - SALE_DISCOUNT_PERCENT / 100));
+}
+
+export function getProcedureDiscountInfo(items: PricingItem[], serviceTitle: string) {
+  const code = getProcedurePricingCode(serviceTitle);
+  if (!code) return null;
+  const original = getBookingPriceAmount(items, code);
+  if (original <= 0) return null;
+  const discounted = getDiscountedPrice(original);
+  const savings = original - discounted;
+  return {
+    original,
+    discounted,
+    savings,
+    discountPercent: SALE_DISCOUNT_PERCENT,
+  };
 }
