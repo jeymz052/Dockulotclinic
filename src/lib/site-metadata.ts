@@ -20,7 +20,7 @@ export const SITE_KEYWORDS = [
   "Injector Queen",
 ];
 
-export const SITE_IMAGE = "/images/dockulotbgs.png";
+export const SITE_IMAGE = "/images/preview.png";
 
 export function absoluteUrl(path = "/") {
   return new URL(path, SITE_URL).toString();

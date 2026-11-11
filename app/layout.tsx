@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     locale: "en_PH",
     images: [
       {
-        url: SITE_IMAGE,
+        url: absoluteUrl(SITE_IMAGE),
         width: 1200,
         height: 630,
         alt: "Doc Kulot official clinic website",

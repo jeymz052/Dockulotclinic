@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useAuthBackground } from "@/src/lib/auth-background";
 
 type EmailActionLandingProps = {
   badge: string;
@@ -45,6 +46,7 @@ export function EmailActionLanding({
   fallbackLabel,
   autoProceed = false,
 }: EmailActionLandingProps) {
+  const bgUrl = useAuthBackground();
   const [actionUrl] = useState<string | null>(readActionUrl);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function EmailActionLanding({
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-100 px-4 py-8">
       <Image
-        src="/images/glowrxloginbg - Copy.png"
+        src={bgUrl}
         alt="Doc Kulot consultation background"
         fill
         priority

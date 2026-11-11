@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from "react";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { type PatientSignupFields, validatePatientSignupFields } from "@/src/lib/patient-registration";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
+import { useAuthBackground } from "@/src/lib/auth-background";
 
 type AuthForm = PatientSignupFields;
 type ConsentKey = "termsAccepted" | "cancellationAccepted";
@@ -112,26 +113,7 @@ export default function RegisterPage() {
     }
     return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
   });
-  const [bgUrl, setBgUrl] = useState("/images/glowrxloginbg - Copy.png");
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/v2/landing-content", { cache: "no-store" });
-        if (!res.ok) return;
-        const payload = (await res.json()) as { content?: { auth_background_url?: string | null } };
-        if (active && payload.content?.auth_background_url) {
-          setBgUrl(payload.content.auth_background_url);
-        }
-      } catch {
-        // Keep default background
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const bgUrl = useAuthBackground();
 
   useEffect(() => {
     try {

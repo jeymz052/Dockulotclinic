@@ -45,8 +45,10 @@ type Faq = {
   is_published: boolean;
 };
 
+import { DEFAULT_AUTH_BACKGROUND } from "@/src/lib/auth-background";
+
 const DEFAULT_HERO = "/images/dockulotbgs.png";
-const DEFAULT_AUTH_BG = "/images/glowrxloginbg - Copy.png";
+const DEFAULT_AUTH_BG = DEFAULT_AUTH_BACKGROUND;
 const DEFAULT_DOCTOR = "/images/SEF_0442.jpeg";
 const DEFAULT_PROGRAM_FEATURE_IMAGE = "/images/SEF_0450.jpeg";
 const DEFAULT_RESULTS_BOARD_TITLE = "GlowRx Results";

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
+import { useAuthBackground } from "@/src/lib/auth-background";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -17,6 +18,7 @@ function buildLoginRedirect(nextPath: string) {
 }
 
 export default function VerifyEmailPage() {
+  const bgUrl = useAuthBackground();
   const [email, setEmail] = useState(() => {
     if (typeof window === "undefined") {
       return "";
@@ -91,7 +93,7 @@ export default function VerifyEmailPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 py-8">
       <Image
-        src="/images/glowrxloginbg - Copy.png"
+        src={bgUrl}
         alt="Doc Kulot consultation background"
         fill
         priority

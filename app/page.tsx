@@ -57,12 +57,18 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
-        url: SITE_IMAGE,
+        url: absoluteUrl(SITE_IMAGE),
         width: 1200,
         height: 630,
         alt: "Doc Kulot official clinic website",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl(SITE_IMAGE)],
   },
 };
 

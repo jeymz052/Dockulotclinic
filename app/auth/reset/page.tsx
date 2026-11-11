@@ -4,11 +4,13 @@ import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
+import { useAuthBackground } from "@/src/lib/auth-background";
 
 type Step = "verifying" | "set-password" | "done" | "error";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const bgUrl = useAuthBackground();
   const [step, setStep] = useState<Step>("verifying");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -123,7 +125,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="relative min-h-screen flex items-center justify-end bg-black overflow-hidden pr-8 md:pr-20 lg:pr-32">
       <Image
-        src="/images/glowrxloginbg - Copy.png"
+        src={bgUrl}
         alt="Doc Kulot consultation background"
         fill
         priority

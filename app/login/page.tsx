@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { getSafeAuthRedirect } from "@/src/lib/auth/redirect";
 import { getSupabaseBrowserClient } from "@/src/lib/supabase/client";
+import { useAuthBackground } from "@/src/lib/auth-background";
 
 const MAX_SIGNIN_ATTEMPTS = 5;
 const LOCK_MINUTES = 5;
@@ -43,26 +44,7 @@ export default function LoginPage() {
     }
     return getSafeAuthRedirect(new URLSearchParams(window.location.search).get("next"));
   });
-  const [bgUrl, setBgUrl] = useState("/images/glowrxloginbg - Copy.png");
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/v2/landing-content", { cache: "no-store" });
-        if (!res.ok) return;
-        const payload = (await res.json()) as { content?: { auth_background_url?: string | null } };
-        if (active && payload.content?.auth_background_url) {
-          setBgUrl(payload.content.auth_background_url);
-        }
-      } catch {
-        // Keep default background
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const bgUrl = useAuthBackground();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -325,11 +307,10 @@ export default function LoginPage() {
 
             {feedback ? (
               <div
-                className={`rounded-xl px-4 py-3 text-sm ${
-                  isSuccessFeedback(feedback)
-                    ? "border border-gold-200 bg-gold-50 text-gold-800"
-                    : "border border-red-200 bg-red-50 text-red-700"
-                }`}
+                className={`rounded-xl px-4 py-3 text-sm ${isSuccessFeedback(feedback)
+                  ? "border border-gold-200 bg-gold-50 text-gold-800"
+                  : "border border-red-200 bg-red-50 text-red-700"
+                  }`}
               >
                 {feedback}
               </div>
@@ -403,11 +384,10 @@ export default function LoginPage() {
 
               {resetFeedback ? (
                 <div
-                  className={`rounded-xl px-4 py-3 text-xs ${
-                    isSuccessFeedback(resetFeedback)
-                      ? "border border-white/20 bg-white/10 text-white/90"
-                      : "border border-red-400/40 bg-red-500/10 text-red-200"
-                  }`}
+                  className={`rounded-xl px-4 py-3 text-xs ${isSuccessFeedback(resetFeedback)
+                    ? "border border-white/20 bg-white/10 text-white/90"
+                    : "border border-red-400/40 bg-red-500/10 text-red-200"
+                    }`}
                 >
                   {resetFeedback}
                 </div>
