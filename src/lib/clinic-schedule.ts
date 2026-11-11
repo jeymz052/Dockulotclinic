@@ -21,21 +21,11 @@ export const BOOKING_CLINIC_LOCATIONS: BookingClinicLocation[] = [
   {
     value: "fammed-family-clinic",
     label: "FamMed Family Clinic",
-    schedule: "Monday to Saturday, 9:00 AM - 4:00 PM",
+    schedule: "Monday to Friday, 9:00 AM - 4:00 PM",
     note: "Clinic visits and medical procedures follow this in-person schedule.",
     coordinates: {
       latitude: 6.962453,
       longitude: 122.12991,
-    },
-  },
-  {
-    value: "rt-lim-family-hospital",
-    label: "RT Lim Family Hospital",
-    schedule: "1st and 3rd Sundays, 9:00 AM - 4:00 PM",
-    note: "Sunday booking opens only on the 1st and 3rd Sunday of each month.",
-    coordinates: {
-      latitude: 7.6515375,
-      longitude: 122.466453125,
     },
   },
 ];
@@ -46,12 +36,9 @@ export const STANDARD_CLINIC_SCHEDULES = [
   { day_of_week: 3, label: "Wednesday", clinic: "FamMed Family Clinic" },
   { day_of_week: 4, label: "Thursday", clinic: "FamMed Family Clinic" },
   { day_of_week: 5, label: "Friday", clinic: "FamMed Family Clinic" },
-  { day_of_week: 6, label: "Saturday", clinic: "FamMed Family Clinic" },
-  { day_of_week: 0, label: "1st and 3rd Sunday", clinic: "RT Lim Family Hospital" },
 ] as const;
 
 export const STANDARD_VIRTUAL_SCHEDULES = [
-  { day_of_week: 0, label: "Sunday" },
   { day_of_week: 1, label: "Monday" },
   { day_of_week: 2, label: "Tuesday" },
   { day_of_week: 3, label: "Wednesday" },
@@ -75,21 +62,43 @@ export function isFirstOrThirdSunday(date: string) {
   return occurrence === 1 || occurrence === 3;
 }
 
-export function isClinicProcedureBookingDate(date: string) {
-  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (day >= 1 && day <= 6) return true;
-  return day === 0 && isFirstOrThirdSunday(date);
+export const SALE_BUY_START = "2026-11-11T00:00:00+08:00";
+export const SALE_BUY_END = "2026-11-14T23:59:59+08:00";
+export const SALE_SCHEDULE_MAX_DATE = "2026-11-30";
+export const SALE_PROCEDURE_START_TIME = "09:00";
+export const SALE_PROCEDURE_END_TIME = "15:00";
+
+export function is1111SalePeriod(time = Date.now()) {
+  const start = new Date(SALE_BUY_START).getTime();
+  const end = new Date(SALE_BUY_END).getTime();
+  return time >= start && time <= end;
 }
 
-export function isVirtualConsultBookingDate(date?: string) {
-  void date;
+export function isProcedureSaleSchedulableDate(date: string) {
+  if (date > SALE_SCHEDULE_MAX_DATE) return false;
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return day >= 1 && day <= 5;
+}
+
+export function isClinicProcedureBookingDate(date: string) {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  // Monday to Friday only
+  return day >= 1 && day <= 5;
+}
+
+export function isVirtualConsultBookingDate(date?: string, todayDate?: string) {
+  if (!date) return true;
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  // Monday to Saturday only (1 to 6) - no Sunday
+  if (day < 1 || day > 6) return false;
+  // No same-day booking for virtual consult! Must be at least tomorrow
+  if (todayDate && date <= todayDate) return false;
   return true;
 }
 
 export function resolveClinicLocationForDate(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (day >= 1 && day <= 6) return BOOKING_CLINIC_LOCATIONS[0];
-  if (day === 0 && isFirstOrThirdSunday(date)) return BOOKING_CLINIC_LOCATIONS[1];
+  if (day >= 1 && day <= 5) return BOOKING_CLINIC_LOCATIONS[0];
   return null;
 }
 
@@ -99,13 +108,13 @@ export function resolveAppointmentLocationLabel(
 ) {
   if (type === "Online") return "Virtual Consult";
   if (!date) return "Doc Kulot Clinic";
-  return resolveClinicLocationForDate(date)?.label ?? "Doc Kulot Clinic";
+  return resolveClinicLocationForDate(date)?.label ?? "FamMed Family Clinic";
 }
 
 export function standardBookingDateMessage(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  if (day === 0) {
-    return "RT Lim Family Hospital accepts bookings only on the 1st and 3rd Sunday, 9:00 AM - 4:00 PM.";
+  if (day === 0 || day === 6) {
+    return "FamMed Family Clinic accepts in-person bookings Monday to Friday, 9:00 AM - 4:00 PM.";
   }
-  return "FamMed Family Clinic accepts bookings Monday to Saturday, 9:00 AM - 4:00 PM.";
+  return "FamMed Family Clinic accepts bookings Monday to Friday, 9:00 AM - 4:00 PM.";
 }

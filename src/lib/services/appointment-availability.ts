@@ -1,6 +1,6 @@
-﻿import type { ApptType } from "@/src/lib/db/types";
+import type { ApptType } from "@/src/lib/db/types";
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
-import { normalizeClockTime, isPastInClinicTime } from "@/src/lib/timezone";
+import { normalizeClockTime, isPastInClinicTime, getClinicToday } from "@/src/lib/timezone";
 import {
   getSchedulableSlotsForDate,
   getUnavailabilityForDate,
@@ -73,6 +73,33 @@ export async function buildSharedDayAvailability(
   slots: SharedAvailabilitySlot[];
   blockedReason: string | null;
 }> {
+  const clinicToday = getClinicToday();
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+
+  if (type === "Online") {
+    if (date <= clinicToday) {
+      return { slots: [], blockedReason: "Virtual consults must be booked at least 1 day in advance (no same-day booking)." };
+    }
+    if (day === 0) {
+      return { slots: [], blockedReason: "Virtual consults are available Monday to Saturday only." };
+    }
+  }
+
+  if (type === "Clinic") {
+    if (day === 0 || day === 6) {
+      return { slots: [], blockedReason: "Clinic visits are available Monday to Friday only at FamMed Family Clinic." };
+    }
+  }
+
+  if (options.slotMinutes === 60) {
+    if (date > "2026-11-30") {
+      return { slots: [], blockedReason: "Medical procedure sale bookings can only be scheduled until November 30, 2026." };
+    }
+    if (day < 1 || day > 5) {
+      return { slots: [], blockedReason: "Medical procedures can only be scheduled Monday to Friday (9:00 AM – 3:00 PM)." };
+    }
+  }
+
   const schedulableSlots = await getSchedulableSlotsForDate(doctorId, date, {
     slotMinutes: options.slotMinutes,
     type,

@@ -1924,6 +1924,35 @@ export default function BookAppointmentPage({
                       ) : null}
                     </div>
 
+                    {formData.type === "Online" ? (
+                      <div className="mt-4 rounded-2xl border border-sky-300 bg-sky-50/90 p-4 text-xs text-sky-950 shadow-sm">
+                        <p className="font-bold uppercase tracking-wider text-sky-900 flex items-center gap-1.5">
+                          <span>💻</span> Virtual Consult Schedule Notice
+                        </p>
+                        <p className="mt-1 leading-5 text-sky-900/90">
+                          Virtual consults are available <strong>Monday to Saturday</strong> (no Sundays) and must be booked <strong>at least 1 day in advance</strong> (no same-day booking).
+                        </p>
+                      </div>
+                    ) : isProcedureBooking ? (
+                      <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-xs text-amber-950 shadow-sm">
+                        <p className="font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                          <span>📅</span> Medical Procedure Schedule Rules
+                        </p>
+                        <p className="mt-1 leading-5 text-amber-900/90">
+                          Procedure appointments are schedulable <strong>Monday to Friday, 9:00 AM – 3:00 PM</strong> (1-hour slots) at FamMed Family Clinic and only <strong>until November 30, 2026</strong>. Same-day booking is accepted.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-2xl border border-teal-300 bg-teal-50/90 p-4 text-xs text-teal-950 shadow-sm">
+                        <p className="font-bold uppercase tracking-wider text-teal-900 flex items-center gap-1.5">
+                          <span>🏥</span> Clinic Visit Schedule
+                        </p>
+                        <p className="mt-1 leading-5 text-teal-900/90">
+                          In-person clinic visits are available at <strong>FamMed Family Clinic Monday to Friday, 9:00 AM – 4:00 PM</strong>. Same-day booking is accepted.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="mt-6 rounded-[1.75rem] border border-neutral-100 bg-[linear-gradient(180deg,#fafafa_0%,#f5f5f5_100%)] p-5">
                       <div className="flex items-center justify-between mb-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-700">Calendar Selection</p>
@@ -1942,7 +1971,8 @@ export default function BookAppointmentPage({
                           <button
                             type="button"
                             onClick={() => setVisibleWeekStart(addDays(calendarWeekStart, 7))}
-                            className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50"
+                            disabled={isProcedureBooking && addDays(calendarWeekStart, 7) > "2026-11-30"}
+                            className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
                           >
                             Next →
                           </button>
@@ -1958,31 +1988,48 @@ export default function BookAppointmentPage({
                           const isSelected = formData.date === date;
                           const isToday = date === today;
                           const isPast = date < today;
+                          const dayOfWeek = localDate.getDay();
+
+                          // Constraints based on appointment type:
+                          // Online: Mon-Sat only (no Sun), NO same-day booking (date > today)
+                          // Clinic: Mon-Fri only (no Sat, no Sun), same-day allowed (date >= today)
+                          // Procedure: Mon-Fri only, until Nov 30, 2026 only
+                          let isBlocked = false;
+                          if (formData.type === "Online") {
+                            isBlocked = isPast || isToday || dayOfWeek === 0;
+                          } else {
+                            // Clinic or Procedure: Monday to Friday only
+                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                            const isBeyondMaxDate = isProcedureBooking && date > "2026-11-30";
+                            isBlocked = isPast || isWeekend || isBeyondMaxDate;
+                          }
+
+                          const disabled = isBlocked;
                           return (
                             <button
                               key={date}
                               type="button"
-                              disabled={isPast}
+                              disabled={disabled}
                               onClick={() => updateForm("date", date)}
                               aria-pressed={isSelected}
                               className={`relative rounded-xl border px-2.5 py-2.5 text-center transition ${
                                   isSelected
                                     ? `${bookingTone.cardSelected} text-slate-950`
-                                    : isPast
-                                    ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400"
+                                    : disabled
+                                    ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
                                     : `${bookingTone.cardIdle} text-slate-900`
                                 }`}
                             >
-                                {isToday && !isSelected ? (
+                                {isToday && !isSelected && formData.type === "Clinic" ? (
                                   <span className="absolute right-1.5 top-1.5 inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
                                 ) : null}
-                              <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-slate-700" : "text-slate-500"}`}>
+                              <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSelected ? "text-slate-700" : disabled ? "text-slate-300" : "text-slate-500"}`}>
                                 {dayLabel}
                               </p>
-                              <p className={`mt-1 text-xl font-black leading-none ${isSelected ? "text-slate-950" : isPast ? "text-slate-400" : "text-slate-900"}`}>
+                              <p className={`mt-1 text-xl font-black leading-none ${isSelected ? "text-slate-950" : disabled ? "text-slate-300" : "text-slate-900"}`}>
                                 {dayNum}
                               </p>
-                              <p className={`mt-1 text-[10px] font-medium ${isSelected ? "text-slate-700" : "text-slate-500"}`}>
+                              <p className={`mt-1 text-[10px] font-medium ${isSelected ? "text-slate-700" : disabled ? "text-slate-300" : "text-slate-500"}`}>
                                 {isToday ? "Today" : monthLabel}
                               </p>
                             </button>
@@ -1996,7 +2043,8 @@ export default function BookAppointmentPage({
                           id="datepicker"
                           type="date" 
                           value={formData.date}
-                          min={today}
+                          min={formData.type === "Online" ? addDays(today, 1) : today}
+                          max={isProcedureBooking ? "2026-11-30" : undefined}
                           onChange={(e) => updateForm("date", e.target.value)}
                           className="w-full cursor-pointer rounded-[1.1rem] border border-neutral-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-200 sm:w-auto"
                         />

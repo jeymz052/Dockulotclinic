@@ -53,18 +53,25 @@ function getTimeRemaining(target: number) {
 }
 
 function CountdownTimer({ target, label }: { target: number; label: string }) {
-  const [time, setTime] = useState(getTimeRemaining(target));
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState({ total: 1, days: 0, hours: 0, minutes: 0, seconds: 0 });
+
   useEffect(() => {
+    setMounted(true);
+    setTime(getTimeRemaining(target));
     const t = setInterval(() => setTime(getTimeRemaining(target)), 1000);
     return () => clearInterval(t);
   }, [target]);
-  if (time.total <= 0) return null;
+
+  if (mounted && time.total <= 0) return null;
+
   const blocks = [
-    { value: time.days, unit: "Days" },
-    { value: time.hours, unit: "Hrs" },
-    { value: time.minutes, unit: "Min" },
-    { value: time.seconds, unit: "Sec" },
+    { value: mounted ? time.days : 0, unit: "Days" },
+    { value: mounted ? time.hours : 0, unit: "Hrs" },
+    { value: mounted ? time.minutes : 0, unit: "Min" },
+    { value: mounted ? time.seconds : 0, unit: "Sec" },
   ];
+
   return (
     <div className="text-center">
       <p className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-[#d8c58a]/70">{label}</p>
@@ -73,7 +80,7 @@ function CountdownTimer({ target, label }: { target: number; label: string }) {
           <div key={b.unit} className="flex items-center gap-2 sm:gap-3">
             <div className="flex flex-col items-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8c58a]/20 bg-[#d8c58a]/5 sm:h-[4.5rem] sm:w-[4.5rem]">
-                <span className="text-2xl font-black text-white sm:text-3xl">
+                <span suppressHydrationWarning className="text-2xl font-black text-white sm:text-3xl">
                   {String(b.value).padStart(2, "0")}
                 </span>
               </div>
@@ -88,9 +95,13 @@ function CountdownTimer({ target, label }: { target: number; label: string }) {
 }
 
 export default function SaleSection() {
-  const [now, setNow] = useState(Date.now());
+  const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState(SALE_START);
   const [filter, setFilter] = useState("All");
+
   useEffect(() => {
+    setMounted(true);
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -100,7 +111,7 @@ export default function SaleSection() {
   const isAfter = now > SALE_END;
 
   // Hide entirely after sale
-  if (isAfter) return null;
+  if (mounted && isAfter) return null;
 
   const categories = ["All", ...Array.from(new Set(SALE_PROCEDURES.map((p) => p.category)))];
   const filtered = filter === "All" ? SALE_PROCEDURES : SALE_PROCEDURES.filter((p) => p.category === filter);

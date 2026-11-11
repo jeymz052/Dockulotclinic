@@ -416,7 +416,17 @@ export function getDiscountedPrice(price: number): number {
   return Math.round(price * (1 - SALE_DISCOUNT_PERCENT / 100));
 }
 
-export function getProcedureDiscountInfo(items: PricingItem[], serviceTitle: string) {
+export const SALE_BUY_START = "2026-11-11T00:00:00+08:00";
+export const SALE_BUY_END = "2026-11-14T23:59:59+08:00";
+
+export function is1111SalePeriod(time = Date.now()): boolean {
+  const start = new Date(SALE_BUY_START).getTime();
+  const end = new Date(SALE_BUY_END).getTime();
+  return time >= start && time <= end;
+}
+
+export function getProcedureDiscountInfo(items: PricingItem[], serviceTitle: string, time = Date.now()) {
+  if (!is1111SalePeriod(time)) return null;
   const code = getProcedurePricingCode(serviceTitle);
   if (!code) return null;
   const original = getBookingPriceAmount(items, code);

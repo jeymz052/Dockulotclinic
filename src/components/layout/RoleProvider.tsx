@@ -207,11 +207,17 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       const { data, error } = result;
       if (!active) return;
       if (error) {
+        void supabase.auth.signOut().catch(() => {});
         hasResolvedOnceRef.current = true;
         setIsLoading(false);
         return;
       }
       void applySession(data.session);
+    }).catch(() => {
+      if (!active) return;
+      void supabase.auth.signOut().catch(() => {});
+      hasResolvedOnceRef.current = true;
+      setIsLoading(false);
     });
 
     const {

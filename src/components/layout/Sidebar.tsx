@@ -39,7 +39,6 @@ import {
   STANDARD_BOOKING_START,
   VIRTUAL_CONSULT_END,
   VIRTUAL_CONSULT_START,
-  isFirstOrThirdSunday,
   isVirtualConsultBookingDate,
 } from "@/src/lib/clinic-schedule";
 import type { UserRole } from "@/src/lib/roles";
@@ -306,18 +305,16 @@ function getTodayClinicStatus(date: Date) {
   const clinicDateKey = formatClinicDateKey(date);
   const day = new Date(`${clinicDateKey}T00:00:00Z`).getUTCDay();
   const clinic =
-    day >= 1 && day <= 6
+    day >= 1 && day <= 5
       ? BOOKING_CLINIC_LOCATIONS[0]
-      : day === 0 && isFirstOrThirdSunday(clinicDateKey)
-        ? BOOKING_CLINIC_LOCATIONS[1]
-        : null;
+      : null;
   const nowMinutes = getClinicTimeMinutes(date);
 
   if (!clinic) {
     return {
       clinicId: null,
       clinicName: "No in-person clinic",
-      scheduleLabel: "Next clinic follows the saved Doc Kulot schedule",
+      scheduleLabel: "In-person clinic is Mon–Fri 9:00 AM – 4:00 PM at FamMed Family Clinic",
       statusLabel: getTimedStatus(nowMinutes, STANDARD_BOOKING_START, STANDARD_BOOKING_END, false),
     };
   }

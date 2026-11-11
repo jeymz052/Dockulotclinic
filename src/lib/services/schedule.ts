@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/src/lib/supabase/server";
-import { isPastInClinicTime } from "@/src/lib/timezone";
+import { isPastInClinicTime, getClinicToday } from "@/src/lib/timezone";
 import type {
   DoctorSchedule,
   DoctorUnavailability,
@@ -44,30 +44,30 @@ const WEEKDAY_NAMES = [
 
 const BOOKING_RULES = {
   Clinic: {
-    days: [0, 1, 2, 3, 4, 5, 6],
+    days: [1, 2, 3, 4, 5],
     start: STANDARD_BOOKING_START,
     end: STANDARD_BOOKING_END,
-    label: "Clinic visits are available at FamMed Monday to Saturday and RT Lim on 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
+    label: "Clinic visits are available at FamMed Family Clinic Monday to Friday from 9:00 AM to 4:00 PM.",
   },
   Online: {
     weekday: {
-      days: [1, 2, 3, 4, 5],
+      days: [1, 2, 3, 4, 5, 6],
       start: VIRTUAL_CONSULT_START,
       end: VIRTUAL_CONSULT_END,
-      label: "Virtual consults are available from 8:00 AM to 8:00 PM on their own schedule.",
+      label: "Virtual consults are available Monday to Saturday from 8:00 AM to 8:00 PM (booking at least 1 day in advance).",
     },
     weekend: {
-      days: [0, 6],
+      days: [1, 2, 3, 4, 5, 6],
       start: VIRTUAL_CONSULT_START,
       end: VIRTUAL_CONSULT_END,
-      label: "Virtual consults are available from 8:00 AM to 8:00 PM on their own schedule.",
+      label: "Virtual consults are available Monday to Saturday from 8:00 AM to 8:00 PM (booking at least 1 day in advance).",
     },
   },
   Both: {
-    days: [0, 1, 2, 3, 4, 5, 6],
+    days: [1, 2, 3, 4, 5],
     start: STANDARD_BOOKING_START,
     end: STANDARD_BOOKING_END,
-    label: "Combined clinic and virtual slots follow Doc Kulot hours: Monday to Saturday and 1st/3rd Sundays from 9:00 AM to 4:00 PM.",
+    label: "Combined clinic and virtual slots follow Doc Kulot hours: Monday to Friday from 9:00 AM to 4:00 PM.",
   },
 } as const;
 
@@ -160,6 +160,13 @@ export async function getSchedulableSlotsForDate(
   date: string,
   options: { slotMinutes?: number; type?: "Clinic" | "Online" } = {},
 ): Promise<SchedulableSlot[]> {
+  // Medical procedure sale rules: Monday to Friday only, 9am - 3pm start, only until Nov 30, 2026
+  if (options.slotMinutes === 60) {
+    if (date > "2026-11-30") return [];
+    const day = dayOfWeek(date);
+    if (day < 1 || day > 5) return [];
+  }
+
   const schedules = await getDoctorSchedulesForDate(doctorId, date, {
     type: options.type,
   });
@@ -173,6 +180,14 @@ export async function getSchedulableSlotsForDate(
         schedule.schedule_mode ?? "Both",
       );
       for (const slot of slots) {
+        // Enforce 9:00 AM - 3:00 PM starts for 60-min procedures
+        if (options.slotMinutes === 60) {
+          const slotClock = normalizeClock(slot.start);
+          if (slotClock < "09:00" || slotClock > "15:00") {
+            continue;
+          }
+        }
+
         const key = `${slot.start}-${slot.end}`;
         const existing = bySlot.get(key);
         bySlot.set(
@@ -214,11 +229,12 @@ export async function getDoctorSchedulesForDate(
   date: string,
   options: { type?: "Clinic" | "Online" } = {},
 ): Promise<DoctorSchedule[]> {
+  const clinicToday = getClinicToday();
   if (options.type === "Online") {
-    if (!isVirtualConsultBookingDate(date)) return [];
+    if (!isVirtualConsultBookingDate(date, clinicToday)) return [];
   } else if (options.type === "Clinic") {
     if (!isClinicProcedureBookingDate(date)) return [];
-  } else if (!isClinicProcedureBookingDate(date) && !isVirtualConsultBookingDate(date)) {
+  } else if (!isClinicProcedureBookingDate(date) && !isVirtualConsultBookingDate(date, clinicToday)) {
     return [];
   }
 
