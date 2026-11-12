@@ -1,6 +1,10 @@
 import {
   BOOKING_PRICING_CODES,
+  BOOKING_PRICING_DEFINITIONS,
   getBookingPriceAmount,
+  getDiscountedPrice,
+  getProcedurePricingCode,
+  is1111SalePeriod,
   resolveClinicConsultationPriceCode,
   type BookingPricingCode,
   type PricingItem,
@@ -47,6 +51,32 @@ export async function resolveMedicalCertificateAddonAmount() {
 
 export async function resolveProcedureReservationAmount() {
   return resolveBookingPricingAmount(BOOKING_PRICING_CODES.PROCEDURE_RESERVATION);
+}
+
+export async function resolveProcedureCheckoutAmount(serviceTitle: string | null | undefined, time = Date.now()) {
+  if (is1111SalePeriod(time)) {
+    const code = getProcedurePricingCode(serviceTitle);
+    if (code) {
+      const supabase = getSupabaseAdmin();
+      const { data } = await supabase
+        .from("pricing")
+        .select("price")
+        .eq("code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      const basePrice = data?.price
+        ? Number(data.price)
+        : BOOKING_PRICING_DEFINITIONS.find((item) => item.code === code)?.defaultPrice ?? 0;
+
+      if (basePrice > 0) {
+        return getDiscountedPrice(basePrice);
+      }
+    }
+  }
+
+  // Outside 11.11 sale (or fallback): normal ₱1,000 reservation fee
+  return resolveProcedureReservationAmount();
 }
 
 export async function resolveClinicVisitReservationAmount() {

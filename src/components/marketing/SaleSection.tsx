@@ -96,12 +96,11 @@ function CountdownTimer({ target, label }: { target: number; label: string }) {
 
 export default function SaleSection() {
   const [mounted, setMounted] = useState(false);
-  const [now, setNow] = useState(SALE_START);
+  const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState("All");
 
   useEffect(() => {
     setMounted(true);
-    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -111,7 +110,7 @@ export default function SaleSection() {
   const isAfter = now > SALE_END;
 
   // Hide entirely after sale
-  if (mounted && isAfter) return null;
+  if (isAfter) return null;
 
   const categories = ["All", ...Array.from(new Set(SALE_PROCEDURES.map((p) => p.category)))];
   const filtered = filter === "All" ? SALE_PROCEDURES : SALE_PROCEDURES.filter((p) => p.category === filter);

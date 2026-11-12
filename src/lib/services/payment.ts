@@ -21,10 +21,12 @@ import {
 } from "@/src/lib/services/procedure-consent";
 import {
   resolveProcedureReservationAmount,
+  resolveProcedureCheckoutAmount,
   resolveMedicalCertificateAddonAmount,
   resolveVirtualConsultAmount,
   resolveClinicVisitReservationAmount,
 } from "@/src/lib/server/booking-pricing-store";
+import { is1111SalePeriod } from "@/src/lib/booking-pricing";
 import { createPayMongoCheckoutSession, mapCheckoutMethods } from "@/src/lib/services/paymongo";
 import { finalizeInventorySaleForBilling } from "@/src/lib/services/billing";
 import { createStripeCheckoutSessionForReservation } from "@/src/lib/services/stripe";
@@ -102,7 +104,7 @@ async function resolveCheckoutAmount(input: OnlineCheckoutBookingInput & { servi
     return base + medicalCertificateAddon;
   }
   if (input.type === "Clinic" && isProcedureServiceTitle(input.service)) {
-    return resolveProcedureReservationAmount();
+    return resolveProcedureCheckoutAmount(input.service);
   }
   if (input.type === "Clinic") {
     // Regular clinic visit — collect a non-refundable reservation fee online
@@ -132,9 +134,15 @@ function describeCheckout(input: OnlineCheckoutBookingInput & { service?: string
   }
 
   const procedureName = input.service?.trim() || "Clinic procedure";
+  if (is1111SalePeriod()) {
+    return {
+      description: `${procedureName} (11.11 Sale - 11% OFF Full Payment) on ${input.date}`,
+      lineItemName: `${procedureName} (11.11 Sale Full Payment)`,
+    };
+  }
   return {
-    description: `${procedureName} downpayment on ${input.date}`,
-    lineItemName: `${procedureName} Downpayment`,
+    description: `${procedureName} reservation fee on ${input.date} (deducted from final bill)`,
+    lineItemName: `${procedureName} Reservation Fee`,
   };
 }
 

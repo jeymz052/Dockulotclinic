@@ -17,6 +17,7 @@ import {
   isClinicProcedureBookingDate,
   isVirtualConsultBookingDate,
 } from "@/src/lib/clinic-schedule";
+import { is1111SalePeriod } from "@/src/lib/booking-pricing";
 
 export type Slot = {
   start: string;
@@ -160,9 +161,9 @@ export async function getSchedulableSlotsForDate(
   date: string,
   options: { slotMinutes?: number; type?: "Clinic" | "Online" } = {},
 ): Promise<SchedulableSlot[]> {
-  // Medical procedure sale rules: Monday to Friday only, 9am - 3pm start, only until Nov 30, 2026
+  // Medical procedure sale rules: Monday to Friday only, 9am - 3pm start, only until Nov 30, 2026 during sale
   if (options.slotMinutes === 60) {
-    if (date > "2026-11-30") return [];
+    if (is1111SalePeriod() && date > "2026-11-30") return [];
     const day = dayOfWeek(date);
     if (day < 1 || day > 5) return [];
   }

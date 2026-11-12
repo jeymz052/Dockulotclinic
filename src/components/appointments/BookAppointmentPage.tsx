@@ -56,6 +56,7 @@ import {
   getClinicConsultationAmount,
   getProcedureDisplayPriceLabel,
   getProcedureDiscountInfo,
+  is1111SalePeriod,
   type PricingItem,
 } from "@/src/lib/booking-pricing";
 import {
@@ -447,7 +448,9 @@ export default function BookAppointmentPage({
   const visitPathPriceLabels = useMemo(
     () => ({
       Clinic: `${formatBookingPeso(clinicVisitReservationAmount)} non-refundable reservation (deducted at counter)`,
-      Procedure: `${formatBookingPeso(procedureReservationAmount)} reservation`,
+      Procedure: is1111SalePeriod()
+        ? "11% OFF Full Price (11.11 Sale)"
+        : `${formatBookingPeso(procedureReservationAmount)} reservation`,
       Online: `${formatBookingPeso(virtualConsultTotalAmount)}`,
     }),
     [clinicVisitReservationAmount, procedureReservationAmount, virtualConsultTotalAmount],
@@ -1576,7 +1579,11 @@ export default function BookAppointmentPage({
                   </div>
                   {isProcedureBooking ? (
                     <div className="mt-4 rounded-[1.25rem] border border-neutral-200 bg-neutral-50/70 px-4 py-3 text-sm leading-6 text-neutral-800">
-                      Procedure prices depend on the area of concern. A {peso(procedureReservationAmount)} reservation fee is required to confirm the schedule and will be deducted from the final bill. Consultation is charged separately.
+                      {is1111SalePeriod() ? (
+                        <>🔥 <strong>11.11 Promo:</strong> 11% OFF all procedures! Full payment is required online to lock in your discounted procedure slot (schedulable until Nov 30). Consultation is billed separately.</>
+                      ) : (
+                        <>Procedure prices depend on the area of concern. A {peso(procedureReservationAmount)} reservation fee is required to confirm the schedule and will be deducted from the final bill. Consultation is charged separately.</>
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -1936,10 +1943,14 @@ export default function BookAppointmentPage({
                     ) : isProcedureBooking ? (
                       <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 text-xs text-amber-950 shadow-sm">
                         <p className="font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                          <span>📅</span> Medical Procedure Schedule Rules
+                          <span>📅</span> {is1111SalePeriod() ? "11.11 Medical Procedure Sale Schedule Rules" : "Medical Procedure Schedule"}
                         </p>
                         <p className="mt-1 leading-5 text-amber-900/90">
-                          Procedure appointments are schedulable <strong>Monday to Friday, 9:00 AM – 3:00 PM</strong> (1-hour slots) at FamMed Family Clinic and only <strong>until November 30, 2026</strong>. Same-day booking is accepted.
+                          {is1111SalePeriod() ? (
+                            <>Procedure appointments are schedulable <strong>Monday to Friday, 9:00 AM – 3:00 PM</strong> (1-hour slots) at FamMed Family Clinic and <strong>only until November 30, 2026</strong> for the promotional rate. Same-day booking is accepted.</>
+                          ) : (
+                            <>Procedure appointments are available <strong>Monday to Friday, 9:00 AM – 3:00 PM</strong> at FamMed Family Clinic. A ₱1,000 reservation fee confirms your slot and is deducted from your final bill.</>
+                          )}
                         </p>
                       </div>
                     ) : (
@@ -1971,7 +1982,7 @@ export default function BookAppointmentPage({
                           <button
                             type="button"
                             onClick={() => setVisibleWeekStart(addDays(calendarWeekStart, 7))}
-                            disabled={isProcedureBooking && addDays(calendarWeekStart, 7) > "2026-11-30"}
+                            disabled={isProcedureBooking && is1111SalePeriod() && addDays(calendarWeekStart, 7) > "2026-11-30"}
                             className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100"
                           >
                             Next →
@@ -2000,7 +2011,7 @@ export default function BookAppointmentPage({
                           } else {
                             // Clinic or Procedure: Monday to Friday only
                             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                            const isBeyondMaxDate = isProcedureBooking && date > "2026-11-30";
+                            const isBeyondMaxDate = isProcedureBooking && is1111SalePeriod() && date > "2026-11-30";
                             isBlocked = isPast || isWeekend || isBeyondMaxDate;
                           }
 
@@ -2044,7 +2055,7 @@ export default function BookAppointmentPage({
                           type="date" 
                           value={formData.date}
                           min={formData.type === "Online" ? addDays(today, 1) : today}
-                          max={isProcedureBooking ? "2026-11-30" : undefined}
+                          max={isProcedureBooking && is1111SalePeriod() ? "2026-11-30" : undefined}
                           onChange={(e) => updateForm("date", e.target.value)}
                           className="w-full cursor-pointer rounded-[1.1rem] border border-neutral-100 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-neutral-400 focus:ring-4 focus:ring-neutral-200 sm:w-auto"
                         />
@@ -2094,7 +2105,9 @@ export default function BookAppointmentPage({
                       </p>
                       <p className="mt-1.5 text-neutral-700">
                         {isProcedureBooking
-                          ? `Medical procedures require a ${peso(procedureReservationAmount)} reservation fee to confirm the schedule. It is deducted from the final bill.`
+                          ? (is1111SalePeriod()
+                              ? `🔥 11.11 Promo: Pay full discounted price online (11% OFF) to secure your procedure slot for dates up to Nov 30. No remaining procedure balance on visit.`
+                              : `Medical procedures require a ${peso(procedureReservationAmount)} reservation fee to confirm the schedule. It is deducted from the final bill.`)
                           : "Virtual consults require payment first. You'll choose QR, card, or bank transfer on the review step."}
                       </p>
                     </div>
@@ -2206,8 +2219,9 @@ export default function BookAppointmentPage({
                               if (!discountInfo) {
                                 return (
                                   <>
-                                    <SummaryRow label="Reservation Fee" value={peso(procedureReservationAmount)} done />
-                                    <SummaryRow label="Billing Note" value="Deductible from final procedure bill; consultation charged separately" done />
+                                    <SummaryRow label="Reservation Fee (Pay Now)" value={`${peso(procedureReservationAmount)} (Deductible)`} done />
+                                    <SummaryRow label="Est. Balance on Visit" value="Deducted from final procedure bill" done />
+                                    <SummaryRow label="Billing Note" value="₱1,000 reservation fee confirms your schedule and is deducted from your final bill on visit; consultation is charged separately." done />
                                   </>
                                 );
                               }
@@ -2215,10 +2229,9 @@ export default function BookAppointmentPage({
                                 <>
                                   <SummaryRow label="Regular Starting Price" value={peso(discountInfo.original)} done />
                                   <SummaryRow label="🔥 11.11 Discount (11% OFF)" value={`- ${peso(discountInfo.savings)}`} done />
-                                  <SummaryRow label="Discounted Starting Price" value={peso(discountInfo.discounted)} done />
-                                  <SummaryRow label="Reservation Fee (Pay Now)" value={`${peso(procedureReservationAmount)} (Deductible)`} done />
-                                  <SummaryRow label="Est. Balance on Visit" value={`Starts at ${peso(Math.max(0, discountInfo.discounted - procedureReservationAmount))}`} done />
-                                  <SummaryRow label="Billing Note" value="Your ₱1,000 reservation fee is deducted from the discounted procedure total at the clinic." done />
+                                  <SummaryRow label="Total Amount (Pay Now)" value={`${peso(discountInfo.discounted)} (Full Payment)`} done />
+                                  <SummaryRow label="Est. Balance on Visit" value="₱0.00 (Fully Paid)" done />
+                                  <SummaryRow label="Billing Note" value="11.11 Sale: 11% OFF full price paid online. No remaining procedure balance to pay on your visit!" done />
                                 </>
                               );
                             })()}
@@ -2263,7 +2276,9 @@ export default function BookAppointmentPage({
                         {formData.type === "Online"
                           ? "Pay Now"
                           : isProcedureBooking
-                            ? "Pay Reservation"
+                            ? (is1111SalePeriod()
+                                ? `Pay ${peso(getProcedureDiscountInfo(bookingPricing, formData.service)?.discounted ?? procedureReservationAmount)}`
+                                : `Pay ${peso(procedureReservationAmount)} Reservation`)
                             : `Pay ${peso(clinicVisitReservationAmount)} Reservation`}
                       </p>
                       <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
@@ -2272,7 +2287,9 @@ export default function BookAppointmentPage({
                             ? "Complete payment through PayMongo QR Ph. The total includes the medical certificate add-on, so you will pay PHP 1,000 right away and we’ll confirm your booking after verification."
                             : "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
                           : isProcedureBooking
-                            ? `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`
+                            ? (is1111SalePeriod()
+                                ? "Complete full payment through PayMongo QR Ph to lock in your 11.11 discounted procedure slot. Fully paid online with no remaining procedure balance on visit."
+                                : `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`)
                             : `A non-refundable ${peso(clinicVisitReservationAmount)} reservation fee secures your clinic visit slot and is automatically deducted from your final payment in POS upon clinic arrival.`}
                       </p>
 

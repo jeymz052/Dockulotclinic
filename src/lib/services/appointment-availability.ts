@@ -6,6 +6,7 @@ import {
   getUnavailabilityForDate,
 } from "@/src/lib/services/schedule";
 import { MAX_BOOKINGS_PER_SLOT } from "@/src/lib/clinic-schedule";
+import { is1111SalePeriod } from "@/src/lib/booking-pricing";
 
 export type SharedAvailabilitySlot = {
   start: string;
@@ -92,7 +93,7 @@ export async function buildSharedDayAvailability(
   }
 
   if (options.slotMinutes === 60) {
-    if (date > "2026-11-30") {
+    if (is1111SalePeriod() && date > "2026-11-30") {
       return { slots: [], blockedReason: "Medical procedure sale bookings can only be scheduled until November 30, 2026." };
     }
     if (day < 1 || day > 5) {
