@@ -21,7 +21,7 @@ export function BeforeAfterCarousel({
   const duration = compact ? 24 : 34;
 
   return (
-    <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#f8f8f5] py-8">
+    <section className="relative w-full overflow-hidden bg-[#f8f8f5] py-8">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>

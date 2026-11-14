@@ -1,4 +1,4 @@
-﻿export type AvailabilityReason = "Not Available" | "Leave";
+export type AvailabilityReason = "Not Available" | "Leave";
 
 /** When affectedType is null/undefined the block applies to all appointment types. */
 export type UnavailabilityAffectedType = "Clinic" | "Online";
@@ -125,7 +125,7 @@ export type SystemSettings = {
 export const INITIAL_SYSTEM_SETTINGS: SystemSettings = {
   clinicName: "Doc Kulot",
   email: "info@dockulot.clinic",
-  phone: "+63 917 154 4754",
+  phone: "+63 977 311 0980",
   address: "Zamboanga City, Zamboanga del Sur",
   onlineConsultationFee: 800,
   maxPatientsPerHour: 1,

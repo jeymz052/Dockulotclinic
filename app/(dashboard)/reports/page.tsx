@@ -701,16 +701,16 @@ export default function ReportsPage() {
                     <EmptyState text="No appointment status data is available yet." />
                   ) : (
                     <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
-                      <div className="h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                      <div className="h-[260px] sm:h-[280px] w-full min-w-0 overflow-hidden">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <PieChart>
-                            <Pie data={clinicStatusData} dataKey="value" nameKey="label" innerRadius={64} outerRadius={104} paddingAngle={3}>
+                            <Pie data={clinicStatusData} dataKey="value" nameKey="label" innerRadius={52} outerRadius={90} paddingAngle={3}>
                               {clinicStatusData.map((row, index) => (
                                 <Cell key={row.label} fill={BAR_COLORS[index % BAR_COLORS.length]} />
                               ))}
                             </Pie>
                             <Tooltip formatter={(value) => `${numberFromChartValue(value)} appointments`} />
-                            <Legend />
+                            <Legend wrapperStyle={{ fontSize: "12px" }} />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
@@ -736,7 +736,7 @@ export default function ReportsPage() {
               <LoadingBlock className="h-[360px]" />
             ) : (
               <div className="space-y-5">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <InfoTile label="Daily sales" value={formatMoney(data?.sales_summary.daily ?? 0)} />
                   <InfoTile label="Monthly sales" value={formatMoney(data?.sales_summary.monthly ?? 0)} />
                   <InfoTile label="POS collections" value={formatMoney(data?.pos_summary.paid_total ?? 0)} />
@@ -747,9 +747,9 @@ export default function ReportsPage() {
                     {!salesTrendData.length ? (
                       <EmptyState text="No daily sales trend is available for this range." />
                     ) : (
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={salesTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+                      <div className="h-[260px] sm:h-[300px] w-full min-w-0 overflow-hidden">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                          <AreaChart data={salesTrendData} margin={{ top: 12, right: 12, left: -14, bottom: 0 }}>
                             <defs>
                               <linearGradient id="salesRevenueFill" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#111111" stopOpacity={0.24} />
@@ -757,8 +757,8 @@ export default function ReportsPage() {
                               </linearGradient>
                             </defs>
                             <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={12} />
-                            <YAxis stroke="#737373" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
+                            <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={11} />
+                            <YAxis stroke="#737373" fontSize={11} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
                             <Tooltip
                               labelFormatter={(label) => formatDateLabel(String(label))}
                               formatter={(value) => formatMoney(numberFromChartValue(value))}
@@ -770,12 +770,12 @@ export default function ReportsPage() {
                     )}
                   </ChartShell>
                   <ChartShell title="Sales snapshot" caption="Daily, monthly, and POS totals">
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={salesData} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 0 }}>
+                    <div className="h-[260px] sm:h-[300px] w-full min-w-0 overflow-hidden">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                        <BarChart data={salesData} layout="vertical" margin={{ top: 8, right: 12, left: -4, bottom: 0 }}>
                           <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
-                          <XAxis type="number" stroke="#737373" fontSize={12} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
-                          <YAxis dataKey="label" type="category" width={86} stroke="#737373" fontSize={11} />
+                          <XAxis type="number" stroke="#737373" fontSize={11} tickFormatter={(value) => formatMoneyCompact(Number(value))} />
+                          <YAxis dataKey="label" type="category" width={82} stroke="#737373" fontSize={10} />
                           <Tooltip formatter={(value) => formatMoney(numberFromChartValue(value))} />
                           <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                             {salesData.map((row, index) => (
@@ -806,9 +806,9 @@ export default function ReportsPage() {
             ) : !data?.visitor_traffic.length ? (
               <EmptyState text="No website visitor traffic has been tracked yet." />
             ) : (
-              <div className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.visitor_traffic} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+              <div className="h-[260px] sm:h-[320px] w-full min-w-0 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <AreaChart data={data.visitor_traffic} margin={{ top: 12, right: 12, left: -16, bottom: 0 }}>
                     <defs>
                       <linearGradient id="pageviewFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#111111" stopOpacity={0.18} />
@@ -820,13 +820,13 @@ export default function ReportsPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={12} />
-                    <YAxis allowDecimals={false} stroke="#737373" fontSize={12} />
+                    <XAxis dataKey="date" tickFormatter={formatDateLabel} stroke="#737373" fontSize={11} />
+                    <YAxis allowDecimals={false} stroke="#737373" fontSize={11} />
                     <Tooltip
                       labelFormatter={(label) => formatDateLabel(String(label))}
                       formatter={(value, name) => [`${numberFromChartValue(value)}`, String(name) === "visitors" ? "Visitors" : "Pageviews"]}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: "12px" }} />
                     <Area type="monotone" dataKey="pageviews" name="Pageviews" stroke="#111111" fill="url(#pageviewFill)" strokeWidth={3} />
                     <Area type="monotone" dataKey="visitors" name="Visitors" stroke="#737373" fill="url(#visitorFill)" strokeWidth={2} />
                   </AreaChart>
@@ -863,12 +863,12 @@ export default function ReportsPage() {
             ) : !blogChartData.length ? (
               <EmptyState text="No blog view analytics are available yet." />
             ) : (
-              <div className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={blogChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+              <div className="h-[280px] sm:h-[320px] w-full min-w-0 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <BarChart data={blogChartData} layout="vertical" margin={{ top: 8, right: 12, left: -6, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
-                    <YAxis dataKey="name" type="category" width={150} stroke="#737373" fontSize={11} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={11} />
+                    <YAxis dataKey="name" type="category" width={100} stroke="#737373" fontSize={10} tickFormatter={(val) => shorten(String(val), 15)} />
                     <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
                     <Bar dataKey="views" fill="#111111" radius={[0, 6, 6, 0]} maxBarSize={34} />
                   </BarChart>
@@ -883,12 +883,12 @@ export default function ReportsPage() {
             ) : !videoChartData.length ? (
               <EmptyState text="No video analytics are available yet." />
             ) : (
-              <div className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={videoChartData} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+              <div className="h-[280px] sm:h-[320px] w-full min-w-0 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <BarChart data={videoChartData} layout="vertical" margin={{ top: 8, right: 12, left: -6, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
-                    <YAxis dataKey="name" type="category" width={150} stroke="#737373" fontSize={11} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={11} />
+                    <YAxis dataKey="name" type="category" width={100} stroke="#737373" fontSize={10} tickFormatter={(val) => shorten(String(val), 15)} />
                     <Tooltip formatter={(value) => `${numberFromChartValue(value)} views`} />
                     <Bar dataKey="views" fill="#525252" radius={[0, 6, 6, 0]} maxBarSize={34} />
                   </BarChart>
@@ -921,12 +921,12 @@ export default function ReportsPage() {
                   </div>
                 ))}
               </div>
-              <div className="h-[340px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.requested_services} layout="vertical" margin={{ top: 8, right: 16, left: 12, bottom: 0 }}>
+              <div className="h-[280px] sm:h-[340px] w-full min-w-0 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <BarChart data={data.requested_services} layout="vertical" margin={{ top: 8, right: 12, left: -6, bottom: 0 }}>
                     <CartesianGrid stroke="#e5e5e5" strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={12} />
-                    <YAxis dataKey="service" type="category" width={130} stroke="#737373" fontSize={11} />
+                    <XAxis type="number" allowDecimals={false} stroke="#737373" fontSize={11} />
+                    <YAxis dataKey="service" type="category" width={100} stroke="#737373" fontSize={10} tickFormatter={(val) => shorten(String(val), 15)} />
                     <Tooltip formatter={(value) => `${numberFromChartValue(value)} requests`} />
                     <Bar dataKey="count" fill="#111111" radius={[0, 6, 6, 0]} />
                   </BarChart>
@@ -991,12 +991,14 @@ function ChartShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
       <div className="mb-4">
         <h3 className="text-sm font-black uppercase tracking-[0.14em] text-neutral-950">{title}</h3>
         <p className="mt-1 text-sm leading-6 text-neutral-600">{caption}</p>
       </div>
-      {children}
+      <div className="w-full min-w-0 overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }

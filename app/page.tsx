@@ -20,6 +20,7 @@ import ScrollReveal from "@/src/components/marketing/ScrollReveal";
 import PublicVideoGallery from "@/src/components/videos/PublicVideoGallery";
 import SaleSection from "@/src/components/marketing/SaleSection";
 import SaleBanner from "@/src/components/marketing/SaleBanner";
+import FloatingLocationSection from "@/src/components/marketing/FloatingLocationSection";
 import { BeforeAfterCarousel } from "@/src/components/marketing/BeforeAfterCarousel";
 import {
   beforeAfterResults,
@@ -244,19 +245,19 @@ export default async function HomePage() {
         className="relative isolate overflow-hidden bg-black"
         delayMs={120}
       >
-        <div className="grid min-h-[520px] lg:min-h-[760px] lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
-          <section className="relative flex h-full flex-col justify-center px-6 py-12 text-white sm:px-8 sm:py-14 lg:px-12 lg:py-16">
+        <div className="grid min-h-0 lg:min-h-[760px] lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
+          <section className="relative flex h-full flex-col justify-center px-5 py-10 text-white sm:px-8 sm:py-14 lg:px-12 lg:py-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-[11px] font-black uppercase tracking-[0.3em] text-white/80 backdrop-blur">
               {aboutProfile.eyebrow}
             </div>
 
-            <h2 className="mt-5 max-w-3xl text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
+            <h2 className="mt-5 max-w-3xl break-words text-3xl font-black tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
               {aboutProfile.title}
             </h2>
 
-            <p className="mt-4 max-w-xl text-lg font-semibold text-[#d8c58a]">{aboutProfile.titleLabel}</p>
+            <p className="mt-4 max-w-xl text-base sm:text-lg font-semibold text-[#d8c58a]">{aboutProfile.titleLabel}</p>
 
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/78 sm:text-lg sm:leading-9">
+            <p className="mt-5 sm:mt-6 max-w-2xl text-sm sm:text-base leading-7 sm:leading-8 text-white/78 sm:text-lg sm:leading-9">
               {aboutProfile.subtitle}
             </p>
 
@@ -264,9 +265,8 @@ export default async function HomePage() {
               {aboutProfile.highlights.map((feature, index) => (
                 <div
                   key={`${feature.title}-${feature.body}`}
-                  className={`rounded-[1.5rem] border p-5 backdrop-blur ${
-                    index === 0 ? "border-white/16 bg-white/8" : "border-white/10 bg-white/6"
-                  }`}
+                  className={`rounded-[1.5rem] border p-4 sm:p-5 backdrop-blur ${index === 0 ? "border-white/16 bg-white/8" : "border-white/10 bg-white/6"
+                    }`}
                 >
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#d8c58a]">
                     {feature.title}
@@ -278,7 +278,7 @@ export default async function HomePage() {
 
           </section>
 
-          <div className="relative min-h-[520px] lg:min-h-[760px]">
+          <div className="relative min-h-[18rem] sm:min-h-[26rem] lg:min-h-[760px]">
             <Image
               src={aboutProfile.photo}
               alt={aboutProfile.name}
@@ -295,12 +295,12 @@ export default async function HomePage() {
       <ScrollReveal as="section" id="results" className="bg-white py-16 md:py-24" delayMs={80}>
         <div>
           <div className="px-4 sm:px-6">
-          <SectionHeading
-            eyebrow={landingContent.results_eyebrow}
-            title={landingContent.results_title}
-            description={landingContent.results_subtitle}
-            eyebrowClassName="text-sm font-semibold uppercase tracking-[0.25em] text-[#a98c45]"
-          />
+            <SectionHeading
+              eyebrow={landingContent.results_eyebrow}
+              title={landingContent.results_title}
+              description={landingContent.results_subtitle}
+              eyebrowClassName="text-sm font-semibold uppercase tracking-[0.25em] text-[#a98c45]"
+            />
           </div>
           <BeforeAfterCarousel
             items={resultItems}
@@ -398,7 +398,7 @@ export default async function HomePage() {
                 <FaArrowRight />
               </Link>
             </div>
-            ) : null}
+          ) : null}
         </div>
       </ScrollReveal>
 
@@ -683,38 +683,8 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* ── Clinic Location Map ── */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-black/10 shadow-md">
-          <div className="flex flex-col gap-3 border-b border-black/10 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a98c45]">📍 Find Us Here</p>
-              <p className="mt-1 text-lg font-bold text-black">Family First Primary Care Outpatient Clinic</p>
-              <p className="mt-0.5 text-sm text-slate-500">Zamboanga City, Zamboanga del Sur, Philippines</p>
-            </div>
-            <a
-              href="https://maps.app.goo.gl/JjXcnX77MH68JdT89"
-              target="_blank"
-              rel="noreferrer"
-              id="homepage-get-directions-link"
-              className="inline-flex items-center gap-2 self-start rounded-full bg-black px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#a98c45] sm:self-auto"
-            >
-              Get Directions →
-            </a>
-          </div>
-          <div className="relative h-80 w-full sm:h-[440px]">
-            <iframe
-              id="homepage-clinic-location-map"
-              title="Family First Primary Care Outpatient Clinic location on Google Maps"
-              src="https://maps.google.com/maps?q=Family+First+Primary+Care+Outpatient+Clinic,+Zamboanga+City&hl=en&z=17&output=embed"
-              width="100%"
-              height="100%"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="absolute inset-0 h-full w-full border-0"
-              aria-label="Google Maps showing the location of Family First Primary Care Outpatient Clinic"
-            />
-          </div>
-        </div>
+        {/* ── Where Are We Located (Highlighted & Floating Location) ── */}
+        <FloatingLocationSection />
       </ScrollReveal>
 
 
@@ -724,7 +694,7 @@ export default async function HomePage() {
         <div className="absolute right-[-5rem] bottom-[-4rem] h-44 w-44 rounded-full bg-black/5 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6">
-          <div className="grid gap-8 border-b border-black/10 pb-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_0.9fr]">
+          <div className="grid gap-8 border-b border-black/10 pb-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_0.9fr_0.9fr]">
             <div className="max-w-lg">
               <div className="flex items-center gap-3">
                 <div className="flex h-36 w-36 items-center justify-center">

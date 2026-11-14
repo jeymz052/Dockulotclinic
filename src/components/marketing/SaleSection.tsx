@@ -75,18 +75,18 @@ function CountdownTimer({ target, label }: { target: number; label: string }) {
   return (
     <div className="text-center">
       <p className="mb-4 text-[11px] font-black uppercase tracking-[0.35em] text-[#d8c58a]/70">{label}</p>
-      <div className="inline-flex items-center gap-2 sm:gap-3">
+      <div className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 xs:gap-2 sm:gap-3">
         {blocks.map((b, i) => (
-          <div key={b.unit} className="flex items-center gap-2 sm:gap-3">
+          <div key={b.unit} className="flex items-center gap-1.5 xs:gap-2 sm:gap-3">
             <div className="flex flex-col items-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8c58a]/20 bg-[#d8c58a]/5 sm:h-[4.5rem] sm:w-[4.5rem]">
-                <span suppressHydrationWarning className="text-2xl font-black text-white sm:text-3xl">
+              <div className="flex h-12 w-12 xs:h-14 xs:w-14 sm:h-16 sm:w-16 md:h-[4.5rem] md:w-[4.5rem] items-center justify-center rounded-xl xs:rounded-2xl border border-[#d8c58a]/20 bg-[#d8c58a]/5">
+                <span suppressHydrationWarning className="text-xl font-black text-white sm:text-2xl md:text-3xl">
                   {String(b.value).padStart(2, "0")}
                 </span>
               </div>
-              <span className="mt-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">{b.unit}</span>
+              <span className="mt-1 text-[8px] xs:text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">{b.unit}</span>
             </div>
-            {i < blocks.length - 1 && <span className="mb-5 text-xl font-black text-[#d8c58a]/30">:</span>}
+            {i < blocks.length - 1 && <span className="mb-4 text-base xs:text-lg sm:text-xl font-black text-[#d8c58a]/30">:</span>}
           </div>
         ))}
       </div>
@@ -135,7 +135,7 @@ export default function SaleSection() {
           </div>
 
           {/* 11.11 */}
-          <h2 className="text-7xl font-black tracking-tighter sm:text-8xl lg:text-9xl">
+          <h2 className="text-5xl font-black tracking-tighter xs:text-6xl sm:text-8xl lg:text-9xl">
             <span className="text-white">11</span>
             <span className="mx-1 text-[#d8c58a] sm:mx-2">.</span>
             <span className="text-white">11</span>

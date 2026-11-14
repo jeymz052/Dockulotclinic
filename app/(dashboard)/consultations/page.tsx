@@ -192,6 +192,7 @@ export default function OnlineConsultationPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editPaymentTarget, setEditPaymentTarget] = useState<ExistingPaymentToEdit | null>(null);
   const [snapshotRefreshKey, setSnapshotRefreshKey] = useState(0);
+  const [mobileWorkspaceTab, setMobileWorkspaceTab] = useState<"queue" | "chart">("queue");
   const [isSaving, startTransition] = useTransition();
 
   const eligibleAppointments = useMemo(
@@ -338,6 +339,7 @@ export default function OnlineConsultationPage() {
     setReferralFeedback(null);
     setCreatedReferral(null);
     setFeedback(null);
+    setMobileWorkspaceTab("chart");
   }
 
   function saveConsultation(appointment: AppointmentRecord) {
@@ -1152,8 +1154,40 @@ export default function OnlineConsultationPage() {
       {error ? <Banner tone="error">{error}</Banner> : null}
       {isLoading ? <Banner tone="info">Loading consultation notes...</Banner> : null}
 
+      {/* Mobile / Tablet Queue vs Chart Switcher */}
+      {activeAppointment ? (
+        <div className="mt-4 flex rounded-xl border border-neutral-200 bg-neutral-100 p-1 shadow-xs xl:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileWorkspaceTab("queue")}
+            className={`flex-1 rounded-lg py-2.5 text-xs font-bold transition ${
+              mobileWorkspaceTab === "queue"
+                ? "bg-white text-neutral-950 shadow-sm"
+                : "text-neutral-600 hover:text-neutral-950"
+            }`}
+          >
+            Visit Queue ({filteredAppointments.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileWorkspaceTab("chart")}
+            className={`flex-1 truncate px-2 rounded-lg py-2.5 text-xs font-bold transition ${
+              mobileWorkspaceTab === "chart"
+                ? "bg-neutral-950 text-white shadow-sm"
+                : "text-neutral-600 hover:text-neutral-950"
+            }`}
+          >
+            Chart: {activeAppointment.patientName}
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-5 grid min-h-[42rem] gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
-        <aside className="min-h-0 rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <aside
+          className={`min-h-0 rounded-lg border border-neutral-200 bg-white shadow-sm ${
+            activeAppointment && mobileWorkspaceTab === "chart" ? "hidden xl:block" : "block"
+          }`}
+        >
           <div className="border-b border-neutral-200 p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1210,13 +1244,21 @@ export default function OnlineConsultationPage() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <section
+          className={`min-w-0 rounded-lg border border-neutral-200 bg-white shadow-sm ${
+            activeAppointment && mobileWorkspaceTab === "queue" ? "hidden xl:block" : "block"
+          }`}
+        >
           {activeAppointment ? (
             <div className="flex h-full min-h-0 flex-col">
               <VisitHeader
                 appointment={activeAppointment}
                 patientRecord={activePatientRecord}
-                onClose={() => setActiveAppointmentId(null)}
+                onClose={() => {
+                  setActiveAppointmentId(null);
+                  setMobileWorkspaceTab("queue");
+                }}
+                onBackToQueue={() => setMobileWorkspaceTab("queue")}
               />
 
               <div className="border-b border-neutral-200 px-4 sm:px-5">
@@ -2041,10 +2083,12 @@ function VisitHeader({
   appointment,
   patientRecord,
   onClose,
+  onBackToQueue,
 }: {
   appointment: AppointmentRecord;
   patientRecord: PatientRecordItem | null;
   onClose: () => void;
+  onBackToQueue?: () => void;
 }) {
   const meetingLink = appointment.meetingLink?.trim() ?? "";
   return (
@@ -2052,6 +2096,15 @@ function VisitHeader({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
+            {onBackToQueue ? (
+              <button
+                type="button"
+                onClick={onBackToQueue}
+                className="inline-flex xl:hidden items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-xs transition hover:bg-neutral-100"
+              >
+                ← Queue
+              </button>
+            ) : null}
             <Badge tone={appointment.type === "Online" ? "sky" : "emerald"}>
               {formatAppointmentType(appointment.type)}
             </Badge>
@@ -3597,21 +3650,21 @@ function ChartStepNav({
 }) {
   const steps = isVirtual
     ? [
-        { displayNum: 1, targetStep: 1, label: "Assessment", done: noteSaved },
-        { displayNum: 2, targetStep: 2, label: "Prescription", done: prescriptionCreated },
-        { displayNum: 3, targetStep: 3, label: "MD Referral", done: referralCreated },
-        { displayNum: 4, targetStep: 4, label: "Med Cert", done: medCertCreated, addon: hasMedCertAddon },
-        { displayNum: 5, targetStep: 5, label: "Lab Request", done: labCreated },
-        { displayNum: 6, targetStep: 6, label: "Finalize", done: false },
+        { displayNum: 1, targetStep: 1, label: "Assessment", shortLabel: "Note", done: noteSaved },
+        { displayNum: 2, targetStep: 2, label: "Prescription", shortLabel: "Rx", done: prescriptionCreated },
+        { displayNum: 3, targetStep: 3, label: "MD Referral", shortLabel: "Referral", done: referralCreated },
+        { displayNum: 4, targetStep: 4, label: "Med Cert", shortLabel: "Cert", done: medCertCreated, addon: hasMedCertAddon },
+        { displayNum: 5, targetStep: 5, label: "Lab Request", shortLabel: "Lab", done: labCreated },
+        { displayNum: 6, targetStep: 6, label: "Finalize", shortLabel: "Done", done: false },
       ]
     : [
-        { displayNum: 1, targetStep: 1, label: "Assessment & Notes", done: noteSaved },
-        { displayNum: 2, targetStep: 6, label: "Finalize & Save", done: false },
+        { displayNum: 1, targetStep: 1, label: "Assessment & Notes", shortLabel: "Note", done: noteSaved },
+        { displayNum: 2, targetStep: 6, label: "Finalize & Save", shortLabel: "Finalize", done: false },
       ];
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-1 overflow-x-auto">
+    <div className="rounded-lg border border-neutral-200 bg-white p-3 sm:p-4 shadow-sm">
+      <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
         {steps.map((s, index) => {
           const isActive = step === s.targetStep;
           const isDone = s.done;
@@ -3620,7 +3673,7 @@ function ChartStepNav({
               <button
                 type="button"
                 onClick={() => onStepClick(s.targetStep)}
-                className={`flex shrink-0 flex-col items-center gap-1.5 rounded-lg px-4 py-2 text-center transition ${
+                className={`flex shrink-0 items-center sm:flex-col gap-1.5 rounded-lg px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-center transition ${
                   isActive
                     ? "bg-neutral-950 text-white"
                     : isDone
@@ -3629,7 +3682,7 @@ function ChartStepNav({
                 }`}
               >
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${
+                  className={`flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-xs font-black shrink-0 ${
                     isActive
                       ? "bg-white text-neutral-950"
                       : isDone
@@ -3639,15 +3692,16 @@ function ChartStepNav({
                 >
                   {isDone ? "✓" : s.displayNum}
                 </span>
-                <span className="text-[11px] font-semibold leading-tight">
-                  {s.label}
+                <span className="text-[11px] font-semibold leading-tight whitespace-nowrap">
+                  <span className="sm:hidden">{s.shortLabel}</span>
+                  <span className="hidden sm:inline">{s.label}</span>
                   {s.addon === false ? (
                     <span className="ml-1 text-[10px] text-amber-600">(no add-on)</span>
                   ) : null}
                 </span>
               </button>
               {index < steps.length - 1 && (
-                <div key={`divider-${s.targetStep}`} className="h-px flex-1 bg-neutral-200" />
+                <div key={`divider-${s.targetStep}`} className="h-px w-2 sm:w-auto sm:flex-1 shrink-0 bg-neutral-200" />
               )}
             </Fragment>
           );
@@ -3667,11 +3721,11 @@ function StepNavButtons({
   nextLabel?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+    <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:px-5">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+        className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
       >
         ← Back
       </button>
@@ -3679,7 +3733,7 @@ function StepNavButtons({
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-neutral-800"
         >
           {nextLabel}
         </button>

@@ -93,10 +93,10 @@ export default function OfferProgramsHero({
   }, [programSlides.length]);
 
   return (
-    <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#111111] pt-0 text-white">
-      <div className="mx-auto min-h-[calc(100svh-4rem)] w-full max-w-[1800px]">
-        <div className="grid min-h-[calc(100svh-4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-          <div className="relative min-h-[38rem] overflow-hidden bg-black lg:min-h-[calc(100svh-4rem)]">
+    <section className="relative w-full overflow-hidden bg-[#111111] pt-0 text-white">
+      <div className="mx-auto min-h-0 lg:min-h-[calc(100svh-4rem)] w-full max-w-[1800px]">
+        <div className="grid min-h-0 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <div className="relative min-h-[18rem] sm:min-h-[26rem] overflow-hidden bg-black lg:min-h-[calc(100svh-4rem)]">
             <Image
               src={featureImageUrl || "/images/SEF_0450.jpeg"}
               alt="Doc Kulot portrait"
@@ -109,52 +109,48 @@ export default function OfferProgramsHero({
             />
           </div>
 
-          <div className="relative min-h-[calc(100svh-4rem)] overflow-hidden bg-[#1f1f1f]">
+          <div className="relative min-h-0 lg:min-h-[calc(100svh-4rem)] overflow-hidden bg-[#1f1f1f]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_26%),linear-gradient(180deg,#111111_0%,#050505_100%)]" />
 
-            <div className="relative flex min-h-[calc(100svh-4rem)] flex-col justify-start px-8 pb-14 pt-10 sm:px-12 sm:pb-16 sm:pt-12 lg:px-16 lg:pb-16 lg:pt-10">
+            <div className="relative flex min-h-0 lg:min-h-[calc(100svh-4rem)] flex-col justify-start px-5 py-8 sm:px-10 sm:py-12 lg:px-16 lg:pb-16 lg:pt-10">
               <div
-                className={`text-[1.8rem] font-black uppercase leading-none tracking-[0.18em] sm:text-[2.3rem] lg:text-[3.4rem] ${
-                  isMetabolic
-                    ? "min-h-[5.5rem] sm:min-h-[6.2rem] lg:min-h-[7.2rem]"
-                    : "min-h-[6rem] sm:min-h-[6.8rem] lg:min-h-[8rem]"
-                }`}
+                className="text-2xl font-black uppercase leading-tight tracking-[0.14em] sm:text-4xl lg:text-[3.2rem]"
               >
                 {renderProgramLabel(slide.name)}
               </div>
 
-              <div className={`${isMetabolic ? "mt-4" : "mt-6"} max-w-3xl`}>
-                <p className="max-w-2xl text-base leading-8 text-white/88 sm:text-[1.05rem] sm:leading-8 lg:text-[1.15rem] lg:leading-9">
+              <div className={`${isMetabolic ? "mt-3 sm:mt-4" : "mt-4 sm:mt-6"} max-w-3xl`}>
+                <p className="max-w-2xl text-sm leading-7 text-white/88 sm:text-base sm:leading-8 lg:text-[1.15rem] lg:leading-9">
                   {slide.description}
                 </p>
                 <div className="mt-5">
                   <Link
                     href="/#booking"
-                    className="inline-flex min-w-[240px] items-center justify-center rounded-full bg-white px-8 py-4 text-sm font-black uppercase tracking-[0.22em] text-black transition hover:bg-neutral-200"
+                    className="inline-flex w-full sm:w-auto sm:min-w-[240px] items-center justify-center rounded-full bg-white px-7 py-3.5 text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-black transition hover:bg-neutral-200"
                   >
                     {slide.ctaLabel}
                   </Link>
                 </div>
               </div>
 
-              <div className="mt-8 flex items-center gap-3">
+              <div className="mt-6 flex items-center gap-2.5 sm:mt-8 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setActiveIndex((current) => (current - 1 + programSlides.length) % programSlides.length)}
-                  className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/45 bg-transparent text-white transition hover:bg-white hover:text-black"
+                  className="inline-flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/45 bg-transparent text-white transition hover:bg-white hover:text-black"
                   aria-label="Previous offer"
                 >
-                  <FaChevronLeft className="h-5 w-5" />
+                  <FaChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   {programSlides.map((program, index) => (
                     <button
                       key={program.key}
                       type="button"
                       onClick={() => setActiveIndex(index)}
                       aria-label={`Show ${program.name}`}
-                      className={`h-3 rounded-full transition-all ${
-                        index === activeIndex ? "w-10 bg-white" : "w-3 bg-white/30 hover:bg-white/55"
+                      className={`h-2.5 sm:h-3 rounded-full transition-all ${
+                        index === activeIndex ? "w-8 sm:w-10 bg-white" : "w-2.5 sm:w-3 bg-white/30 hover:bg-white/55"
                       }`}
                     />
                   ))}
@@ -162,10 +158,10 @@ export default function OfferProgramsHero({
                 <button
                   type="button"
                   onClick={() => setActiveIndex((current) => (current + 1) % programSlides.length)}
-                  className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white hover:text-black"
+                  className="inline-flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white hover:text-black"
                   aria-label="Next offer"
                 >
-                  <FaChevronRight className="h-5 w-5" />
+                  <FaChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>

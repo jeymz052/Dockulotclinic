@@ -68,7 +68,7 @@ function ChartContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${className} min-w-0`}>
+    <div className={`${className} w-full min-w-0 overflow-hidden`}>
       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={minHeight}>
         {children}
       </ResponsiveContainer>
@@ -492,7 +492,7 @@ export default function AdminDashboard() {
             <span className="text-xs text-neutral-400">Last 7 days</span>
           </div>
           <ChartContainer className="h-56 w-full" minHeight={224}>
-              <AreaChart data={weeklyPatientData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
+              <AreaChart data={weeklyPatientData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="patientGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#111111" stopOpacity={0.25} />
@@ -500,9 +500,9 @@ export default function AdminDashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#78716c" }} />
-                <YAxis tick={{ fontSize: 12, fill: "#78716c" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "13px" }} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#78716c" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#78716c" }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "12px" }} />
                 <Area type="monotone" dataKey="patients" stroke="#111111" strokeWidth={2.5} fill="url(#patientGrad)" dot={{ r: 4, fill: "#111111", strokeWidth: 2, stroke: "#fff" }} />
               </AreaChart>
           </ChartContainer>
@@ -514,12 +514,12 @@ export default function AdminDashboard() {
             <span className="text-xs text-neutral-400">Last 7 days</span>
           </div>
           <ChartContainer className="h-56 w-full" minHeight={224}>
-              <BarChart data={appointmentTrendsData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
+              <BarChart data={appointmentTrendsData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#78716c" }} />
-                <YAxis tick={{ fontSize: 12, fill: "#78716c" }} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "13px" }} />
-                <Legend wrapperStyle={{ fontSize: "13px" }} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#78716c" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#78716c" }} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e7e5e4", fontSize: "12px" }} />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
                 <Bar dataKey="Clinic" fill="#111111" radius={[6, 6, 0, 0]} barSize={20} />
                 <Bar dataKey="Online" name="Virtual Consult" fill="#d9ad2f" radius={[6, 6, 0, 0]} barSize={20} />
               </BarChart>

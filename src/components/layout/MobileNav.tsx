@@ -94,6 +94,9 @@ export default function MobileNav() {
                   <Link href="/#contact" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-neutral-700 hover:bg-white">
                     Contact
                   </Link>
+                  <Link href="/#location" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm font-semibold text-[#9a7e32] hover:bg-[#d8c58a]/10">
+                    📍 Where Are We Located
+                  </Link>
                 </div>
               </div>
             </li>

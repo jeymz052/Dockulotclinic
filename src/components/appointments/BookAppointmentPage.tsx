@@ -1248,11 +1248,11 @@ export default function BookAppointmentPage({
 
               <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                 <a
-                  href="tel:+639171544754"
+                  href="tel:+639773110980"
                   className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-95"
                 >
                   <FaPhone className="h-3.5 w-3.5 text-emerald-400" />
-                  Call Secretary: 0917 154 4754
+                  Call Secretary: 0977 311 0980
                 </a>
                 <button
                   type="button"
@@ -1390,11 +1390,11 @@ export default function BookAppointmentPage({
                   </div>
                   <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                     <a
-                      href="tel:+639171544754"
+                      href="tel:+639773110980"
                       className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800"
                     >
                       <FaPhone className="h-3 w-3 text-emerald-400" />
-                      0917 154 4754
+                      0977 311 0980
                     </a>
                     <button
                       type="button"
@@ -2447,14 +2447,14 @@ export default function BookAppointmentPage({
                                 </p>
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                   <a
-                                    href="tel:+639171544754"
+                                    href="tel:+639773110980"
                                     className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-neutral-800"
                                   >
                                     <FaPhone className="h-3 w-3 text-emerald-400" />
-                                    Call Secretary: 0917 154 4754
+                                    Call Secretary: 0977 311 0980
                                   </a>
                                   <a
-                                    href="sms:+639171544754?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment."
+                                    href="sms:+639773110980?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment."
                                     className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 transition hover:bg-amber-100/60"
                                   >
                                     <FaMessage className="h-3 w-3 text-amber-700" />
@@ -2567,14 +2567,14 @@ export default function BookAppointmentPage({
             {/* Direct Contact Cards */}
             <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               <a
-                href="tel:+639171544754"
+                href="tel:+639773110980"
                 className="flex items-center justify-center gap-2 rounded-2xl bg-neutral-900 p-3.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-98"
               >
                 <FaPhone className="h-4 w-4 text-emerald-400" />
-                <span>Tawag: 0917 154 4754</span>
+                <span>Tawag: 0977 311 0980</span>
               </a>
               <a
-                href="sms:+639171544754?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment%20para%20kay%20[Pangalan]%20sa%20[Petsa]."
+                href="sms:+639773110980?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment%20para%20kay%20[Pangalan]%20sa%20[Petsa]."
                 className="flex items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-center text-sm font-bold text-amber-950 transition hover:bg-amber-100 active:scale-98"
               >
                 <FaMessage className="h-4 w-4 text-amber-800" />
