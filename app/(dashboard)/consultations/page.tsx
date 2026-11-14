@@ -13,14 +13,18 @@ import {
   FaEye,
   FaEyeSlash,
   FaFileMedical,
+  FaFilePdf,
   FaFileWaveform,
   FaFloppyDisk,
   FaLaptopMedical,
   FaListCheck,
+  FaMoneyBillWave,
   FaNotesMedical,
   FaPenToSquare,
   FaPhone,
   FaPlus,
+  FaCamera,
+  FaRotate,
   FaPrescriptionBottleMedical,
   FaStethoscope,
   FaTrash,
@@ -34,6 +38,9 @@ import {
   FaDownload,
   FaCommentDots,
 } from "react-icons/fa6";
+import { downloadConsultationNotePdf, openConsultationNotePrintWindow } from "@/src/lib/consultation-pdf";
+import { PatientPaymentModal, type ExistingPaymentToEdit } from "@/src/components/patients/PatientPaymentModal";
+import { PatientPhotoUploadModal, type ExistingPhotoToReplace } from "@/src/components/patients/PatientPhotoUploadModal";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
 import { useDoctors } from "@/src/components/appointments/useDoctors";
 import { useConsultationNotes, usePatients } from "@/src/components/clinic/useClinicData";
@@ -180,6 +187,11 @@ export default function OnlineConsultationPage() {
   const [medCertDiagnosis, setMedCertDiagnosis] = useState("");
   const [medCertRecommendation, setMedCertRecommendation] = useState("");
   const [releaseMedCert, setReleaseMedCert] = useState(true);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [replacePhotoTarget, setReplacePhotoTarget] = useState<ExistingPhotoToReplace | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [editPaymentTarget, setEditPaymentTarget] = useState<ExistingPaymentToEdit | null>(null);
+  const [snapshotRefreshKey, setSnapshotRefreshKey] = useState(0);
   const [isSaving, startTransition] = useTransition();
 
   const eligibleAppointments = useMemo(
@@ -1060,6 +1072,30 @@ export default function OnlineConsultationPage() {
     }
   }
 
+  async function handlePrintActiveConsultationNote() {
+    if (!activeAppointment) return;
+    const doctor = getDoctorById(activeAppointment.doctorId);
+    const age = activePatientRecord?.dateOfBirth ? calculatePatientAge(activePatientRecord.dateOfBirth) : null;
+    await downloadConsultationNotePdf({
+      patientName: activePatientRecord?.fullName || activeAppointment.patientName,
+      patientNumber: activePatientRecord?.patientNumber || "PENDING",
+      age,
+      gender: activePatientRecord?.gender || null,
+      consultDate: activeAppointment.date,
+      consultTime: formatRange(activeAppointment.start, activeAppointment.end),
+      doctorName: doctor?.name || "Dr. Fatimah Al-Zahra T. Ditti",
+      doctorSpecialty: doctor?.specialty || "Family Medicine",
+      doctorLicenseNo: "PRC #0145291",
+      type: activeAppointment.type,
+      reason: activeAppointment.reason,
+      diagnosis: draft.diagnosis || activeNote?.diagnosis || null,
+      soapSubjective: draft.subjective || null,
+      soapObjective: draft.objective || null,
+      soapNote: draft.note || activeNote?.note || null,
+      prescription: activeNote?.prescription || null,
+    }, accessToken);
+  }
+
   return (
     <div className="pb-8">
       <div className="mb-5 flex flex-col gap-4 border-b border-neutral-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
@@ -1205,6 +1241,27 @@ export default function OnlineConsultationPage() {
                   <PatientRecordSnapshot
                     appointment={activeAppointment}
                     patientRecord={activePatientRecord}
+                    allNotes={notes}
+                    allAppointments={appointments}
+                    accessToken={accessToken}
+                    refreshKey={snapshotRefreshKey}
+                    onAttachPhoto={() => {
+                      setReplacePhotoTarget(null);
+                      setIsPhotoModalOpen(true);
+                    }}
+                    onReplacePhoto={(target) => {
+                      setReplacePhotoTarget(target);
+                      setIsPhotoModalOpen(true);
+                    }}
+                    onAddPayment={() => {
+                      setEditPaymentTarget(null);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    onEditPayment={(target) => {
+                      setEditPaymentTarget(target);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    onRefresh={() => setSnapshotRefreshKey((k) => k + 1)}
                   />
                 ) : null}
 
@@ -1313,15 +1370,26 @@ export default function OnlineConsultationPage() {
                         </section>
 
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() => saveConsultation(activeAppointment)}
-                            disabled={isSaving}
-                            className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-                          >
-                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
-                            {isSaving ? "Saving..." : "Save note"}
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => saveConsultation(activeAppointment)}
+                              disabled={isSaving}
+                              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                            >
+                              <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                              {isSaving ? "Saving..." : "Save note"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handlePrintActiveConsultationNote}
+                              className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                              title="Print or export consultation note PDF summary"
+                            >
+                              <FaFilePdf className="h-4 w-4 text-rose-600" aria-hidden="true" />
+                              PDF Note
+                            </button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => setChartStep(activeAppointmentIsVirtual ? 2 : 6)}
@@ -1688,15 +1756,26 @@ export default function OnlineConsultationPage() {
                           >
                             ← Back
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => saveConsultation(activeAppointment)}
-                            disabled={isSaving}
-                            className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
-                          >
-                            <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
-                            {isSaving ? "Saving..." : "Save & finalize chart"}
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handlePrintActiveConsultationNote}
+                              className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                              title="Print or export consultation note PDF summary"
+                            >
+                              <FaFilePdf className="h-4 w-4 text-rose-600" aria-hidden="true" />
+                              PDF Note
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => saveConsultation(activeAppointment)}
+                              disabled={isSaving}
+                              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                            >
+                              <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
+                              {isSaving ? "Saving..." : "Save & finalize chart"}
+                            </button>
+                          </div>
                         </div>
 
                         {/* Virtual Consultation Messenger Shortcut */}
@@ -1738,6 +1817,43 @@ export default function OnlineConsultationPage() {
           )}
         </section>
       </div>
+
+      {isPhotoModalOpen && activePatientRecord && (
+        <PatientPhotoUploadModal
+          patientId={activePatientRecord.id}
+          patientName={activePatientRecord.fullName}
+          accessToken={accessToken}
+          initialReplacePhoto={replacePhotoTarget}
+          onClose={() => {
+            setIsPhotoModalOpen(false);
+            setReplacePhotoTarget(null);
+          }}
+          onSuccess={(msg) => {
+            setFeedback(msg);
+            setIsPhotoModalOpen(false);
+            setReplacePhotoTarget(null);
+            setSnapshotRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
+      {isPaymentModalOpen && activePatientRecord && (
+        <PatientPaymentModal
+          patientId={activePatientRecord.id}
+          patientName={activePatientRecord.fullName}
+          accessToken={accessToken}
+          initialPayment={editPaymentTarget}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setEditPaymentTarget(null);
+          }}
+          onSuccess={(msg) => {
+            setFeedback(msg);
+            setIsPaymentModalOpen(false);
+            setEditPaymentTarget(null);
+            setSnapshotRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2150,9 +2266,27 @@ function QueueVisitCard({
 function PatientRecordSnapshot({
   appointment,
   patientRecord,
+  allNotes = [],
+  allAppointments = [],
+  accessToken,
+  refreshKey = 0,
+  onAttachPhoto,
+  onReplacePhoto,
+  onAddPayment,
+  onEditPayment,
+  onRefresh,
 }: {
   appointment: AppointmentRecord;
   patientRecord: PatientRecordItem | null;
+  allNotes?: ConsultationNote[];
+  allAppointments?: AppointmentRecord[];
+  accessToken?: string | null;
+  refreshKey?: number;
+  onAttachPhoto?: () => void;
+  onReplacePhoto?: (target: ExistingPhotoToReplace) => void;
+  onAddPayment?: () => void;
+  onEditPayment?: (target: ExistingPaymentToEdit) => void;
+  onRefresh?: () => void;
 }) {
   const patientName = patientRecord?.fullName || appointment.patientName;
   const patientNumber = patientRecord?.patientNumber || "No patient number";
@@ -2160,6 +2294,251 @@ function PatientRecordSnapshot({
   const recordStatus = patientRecord?.status || "Not recorded";
   const patientType = patientRecord?.patientCategory || "Not recorded";
   const openHref = patientRecord ? `/patients/records/${patientRecord.id}` : "/patients/records";
+
+  const [patientFiles, setPatientFiles] = useState<any[]>([]);
+  const [billings, setBillings] = useState<any[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [isDeletingPhotoId, setIsDeletingPhotoId] = useState<string | null>(null);
+  const [isDeletingPaymentId, setIsDeletingPaymentId] = useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [selectedViewerMedia, setSelectedViewerMedia] = useState<{
+    id?: string;
+    stage?: "pre_procedure" | "post_procedure" | null;
+    url: string;
+    title: string;
+    type?: string;
+    date?: string;
+    notes?: string;
+    isPhoto?: boolean;
+  } | null>(null);
+
+  const handleDeletePhoto = async (photo: any, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm(`Are you sure you want to remove this photo (${photo.file_name || photo.fileName || "photo"})?`)) return;
+    if (!accessToken) return;
+    setIsDeletingPhotoId(photo.id);
+    try {
+      const res = await fetch(`/api/v2/patient-photos?id=${encodeURIComponent(photo.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to remove photo.");
+      onRefresh?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting photo");
+    } finally {
+      setIsDeletingPhotoId(null);
+    }
+  };
+
+  const handleDeletePayment = async (item: {
+    id: string;
+    billingId?: string | null;
+    fileId?: string | null;
+    amount: number;
+  }) => {
+    if (!confirm(`Are you sure you want to remove this payment of ₱${Number(item.amount).toLocaleString()}?`)) return;
+    if (!accessToken) return;
+    setIsDeletingPaymentId(item.id);
+    try {
+      const params = new URLSearchParams();
+      if (item.id) params.set("paymentId", item.id);
+      if (item.billingId) params.set("billingId", item.billingId);
+      if (item.fileId) params.set("fileId", item.fileId);
+
+      const res = await fetch(`/api/v2/patient-payments?${params.toString()}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || "Failed to remove payment.");
+      onRefresh?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting payment");
+    } finally {
+      setIsDeletingPaymentId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!accessToken || !patientRecord?.id) return;
+    const targetPatientId = patientRecord.id;
+    let active = true;
+
+    async function loadPatientMedia() {
+      setIsLoadingMedia(true);
+      try {
+        const headers = { Authorization: `Bearer ${accessToken}` };
+        const [filesRes, billingsRes] = await Promise.all([
+          fetch(`/api/v2/patient-files?patient_id=${encodeURIComponent(targetPatientId)}`, { cache: "no-store", headers }),
+          fetch(`/api/v2/billings?patient_id=${encodeURIComponent(targetPatientId)}`, { cache: "no-store", headers }),
+        ]);
+
+        if (filesRes.ok) {
+          const filesData = await filesRes.json().catch(() => null);
+          if (active && filesData?.files) {
+            setPatientFiles(filesData.files);
+          }
+        }
+        if (billingsRes.ok) {
+          const billData = await billingsRes.json().catch(() => null);
+          if (active && billData?.billings) {
+            setBillings(billData.billings);
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (active) setIsLoadingMedia(false);
+      }
+    }
+
+    void loadPatientMedia();
+    return () => {
+      active = false;
+    };
+  }, [accessToken, patientRecord?.id, refreshKey]);
+
+  const prePhotos = useMemo(
+    () =>
+      patientFiles.filter(
+        (f) =>
+          f.file_type === "Pre-Procedure Photo" ||
+          f.document_metadata?.photo_stage === "before" ||
+          f.document_metadata?.photo_stage === "pre_procedure",
+      ),
+    [patientFiles],
+  );
+
+  const postPhotos = useMemo(
+    () =>
+      patientFiles.filter(
+        (f) =>
+          f.file_type === "Post-Procedure Photo" ||
+          f.document_metadata?.photo_stage === "after" ||
+          f.document_metadata?.photo_stage === "post_procedure",
+      ),
+    [patientFiles],
+  );
+
+  const receiptFiles = useMemo(
+    () => patientFiles.filter((f) => f.file_type === "Payment Receipt"),
+    [patientFiles],
+  );
+
+  const paymentsList = useMemo(() => {
+    const list: Array<{
+      id: string;
+      billingId?: string | null;
+      fileId?: string | null;
+      date: string;
+      amount: number;
+      method: string;
+      status: string;
+      reference?: string | null;
+      description?: string;
+      receiptUrl?: string | null;
+    }> = [];
+
+    billings.forEach((b: any) => {
+      const itemsDesc = b.billing_items?.map((i: any) => i.description).join(", ") || "Clinical Service";
+      if (b.payments && b.payments.length > 0) {
+        b.payments.forEach((p: any) => {
+          const matchingReceipt = receiptFiles.find(
+            (rf) => rf.document_metadata?.payment_id === p.id || rf.document_metadata?.billing_id === b.id,
+          );
+          list.push({
+            id: p.id,
+            billingId: b.id,
+            fileId: matchingReceipt?.id || null,
+            date: p.paid_at || b.issued_at,
+            amount: p.amount ?? b.total,
+            method: p.method || "Cash",
+            status: p.status || "Paid",
+            reference: p.provider_ref,
+            description: itemsDesc,
+            receiptUrl: matchingReceipt?.file_url || null,
+          });
+        });
+      } else if (b.status === "Paid") {
+        const matchingReceipt = receiptFiles.find((rf) => rf.document_metadata?.billing_id === b.id);
+        list.push({
+          id: b.id,
+          billingId: b.id,
+          fileId: matchingReceipt?.id || null,
+          date: b.issued_at,
+          amount: b.total,
+          method: "Cash",
+          status: "Paid",
+          reference: null,
+          description: itemsDesc,
+          receiptUrl: matchingReceipt?.file_url || null,
+        });
+      }
+    });
+
+    receiptFiles.forEach((rf) => {
+      const alreadyLinked = list.some((item) => item.receiptUrl === rf.file_url);
+      if (!alreadyLinked) {
+        list.push({
+          id: rf.document_metadata?.payment_id || rf.id,
+          billingId: rf.document_metadata?.billing_id || null,
+          fileId: rf.id,
+          date: rf.created_at,
+          amount: rf.document_metadata?.amount || 0,
+          method: rf.document_metadata?.method || "Receipt",
+          status: "Paid",
+          reference: rf.document_metadata?.reference || null,
+          description: rf.document_metadata?.description || rf.file_name,
+          receiptUrl: rf.file_url,
+        });
+      }
+    });
+
+    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [billings, receiptFiles]);
+
+  const matchingNotes = useMemo(() => {
+    const targetName = (patientRecord?.fullName || appointment.patientName).trim().toLowerCase();
+    return allNotes
+      .filter((n) => {
+        if (patientRecord?.id && (n as any).patientId === patientRecord.id) return true;
+        const appt = allAppointments.find((a) => a.id === n.appointmentId);
+        if (appt && appt.patientName.trim().toLowerCase() === targetName) return true;
+        return false;
+      })
+      .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+  }, [allNotes, allAppointments, patientRecord, appointment.patientName]);
+
+  const handleDownloadCurrentPdfNote = async () => {
+    const doctor = getDoctorById(appointment.doctorId);
+    const age = patientRecord?.dateOfBirth ? calculatePatientAge(patientRecord.dateOfBirth) : null;
+    const latestNote = matchingNotes.find((n) => n.appointmentId === appointment.id) || matchingNotes[0];
+    setIsDownloadingPdf(true);
+    try {
+      await downloadConsultationNotePdf({
+        patientName: patientRecord?.fullName || appointment.patientName,
+        patientNumber: patientRecord?.patientNumber || "PENDING",
+        age,
+        gender: patientRecord?.gender || null,
+        consultDate: appointment.date,
+        consultTime: formatRange(appointment.start, appointment.end),
+        doctorName: doctor?.name || "Dr. Fatimah Al-Zahra T. Ditti",
+        doctorSpecialty: doctor?.specialty || "Family Medicine",
+        doctorLicenseNo: "PRC #0145291",
+        type: appointment.type,
+        reason: appointment.reason,
+        diagnosis: latestNote?.diagnosis || null,
+        soapNote: latestNote?.note || null,
+        prescription: latestNote?.prescription || null,
+      }, accessToken);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error downloading consultation note PDF");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
@@ -2183,8 +2562,38 @@ function PatientRecordSnapshot({
               <Badge tone="emerald">{patientType}</Badge>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Shortcut href={openHref} label={patientRecord ? "Open full record" : "Open patient records"} />
+            {patientRecord && onAttachPhoto && (
+              <button
+                type="button"
+                onClick={onAttachPhoto}
+                className="inline-flex items-center gap-1.5 rounded-md border border-teal-300 bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-800 shadow-sm transition hover:bg-teal-100"
+              >
+                <FaCamera className="h-3.5 w-3.5 text-teal-600" />
+                Attach Photo
+              </button>
+            )}
+            {patientRecord && onAddPayment && (
+              <button
+                type="button"
+                onClick={onAddPayment}
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                <FaMoneyBillWave className="h-3.5 w-3.5" />
+                Add Payment
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={isDownloadingPdf}
+              onClick={handleDownloadCurrentPdfNote}
+              className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 shadow-sm transition hover:bg-rose-100 disabled:opacity-50"
+              title="Download consultation note PDF (with Doc Kulot logo & doctor signature)"
+            >
+              <FaFilePdf className="h-3.5 w-3.5 text-rose-600" />
+              {isDownloadingPdf ? "Downloading..." : "PDF Note"}
+            </button>
           </div>
         </div>
       </section>
@@ -2194,7 +2603,8 @@ function PatientRecordSnapshot({
           No matching patient record was found for this appointment. Check the patient name, email, or phone in patient records.
         </Banner>
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+          {/* LEFT COLUMN: Identity, Contact, Medical History */}
           <div className="space-y-5">
             <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
               <SectionHeading
@@ -2215,27 +2625,6 @@ function PatientRecordSnapshot({
               </div>
             </section>
 
-            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
-              <SectionHeading
-                icon={<FaUserGroup className="h-4 w-4" />}
-                title="Contact and emergency"
-                description="Reference information for clinic coordination and aftercare."
-              />
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <ReadOnlyField label="Mobile number" value={patientRecord.phone || "Not recorded"} />
-                <ReadOnlyField label="Email address" value={patientRecord.email || "Not recorded"} />
-                <ReadOnlyField label="Emergency contact name" value={patientRecord.emergencyContactName || "Not recorded"} />
-                <ReadOnlyField label="Emergency contact phone" value={patientRecord.emergencyContactPhone || "Not recorded"} />
-                <ReadOnlyField label="Guardian" value={patientRecord.guardianName || "Not recorded"} />
-                <ReadOnlyField label="Occupation" value={patientRecord.occupation || "Not recorded"} />
-                <div className="md:col-span-2">
-                  <ReadOnlyField label="Religion" value={patientRecord.religion || "Not recorded"} />
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <div className="space-y-5">
             <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
               <SectionHeading
                 icon={<FaFileMedical className="h-4 w-4" />}
@@ -2264,6 +2653,28 @@ function PatientRecordSnapshot({
 
             <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
               <SectionHeading
+                icon={<FaUserGroup className="h-4 w-4" />}
+                title="Contact and emergency"
+                description="Reference information for clinic coordination and aftercare."
+              />
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <ReadOnlyField label="Mobile number" value={patientRecord.phone || "Not recorded"} />
+                <ReadOnlyField label="Email address" value={patientRecord.email || "Not recorded"} />
+                <ReadOnlyField label="Emergency contact name" value={patientRecord.emergencyContactName || "Not recorded"} />
+                <ReadOnlyField label="Emergency contact phone" value={patientRecord.emergencyContactPhone || "Not recorded"} />
+                <ReadOnlyField label="Guardian" value={patientRecord.guardianName || "Not recorded"} />
+                <ReadOnlyField label="Occupation" value={patientRecord.occupation || "Not recorded"} />
+                <div className="md:col-span-2">
+                  <ReadOnlyField label="Religion" value={patientRecord.religion || "Not recorded"} />
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* RIGHT COLUMN: Visit Context, Before & After Photos, Payments & Receipts, History */}
+          <div className="space-y-5">
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
                 icon={<FaFileWaveform className="h-4 w-4" />}
                 title="Visit context"
                 description="Pair the patient snapshot with the current appointment details."
@@ -2282,6 +2693,539 @@ function PatientRecordSnapshot({
                 </div>
               </div>
             </section>
+
+            {/* ── BEFORE & AFTER PROCEDURE PHOTOS ── */}
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <SectionHeading
+                  icon={<FaCamera className="h-4 w-4 text-teal-600" />}
+                  title="Before & After Procedure Photos"
+                  description="Pre- and post-procedure photos saved in the patient's record."
+                />
+                {onAttachPhoto && (
+                  <button
+                    type="button"
+                    onClick={onAttachPhoto}
+                    className="inline-flex items-center gap-1.5 self-start rounded-md border border-teal-300 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-teal-800 shadow-sm transition hover:bg-teal-100 sm:self-auto"
+                  >
+                    <FaCamera className="h-3 w-3 text-teal-600" />
+                    Attach Photo
+                  </button>
+                )}
+              </div>
+
+              {isLoadingMedia ? (
+                <p className="mt-4 text-xs text-neutral-500 italic">Loading procedure photos...</p>
+              ) : prePhotos.length === 0 && postPhotos.length === 0 ? (
+                <div className="mt-4 rounded-lg border border-dashed border-neutral-200 bg-neutral-50 p-6 text-center">
+                  <FaCamera className="mx-auto h-6 w-6 text-neutral-400" />
+                  <p className="mt-2 text-xs font-semibold text-neutral-700">No procedure photos uploaded yet</p>
+                  <p className="mt-1 text-[11px] text-neutral-500">
+                    Capture or upload pre-procedure and post-procedure clinical photos.
+                  </p>
+                  {onAttachPhoto && (
+                    <button
+                      type="button"
+                      onClick={onAttachPhoto}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-neutral-800"
+                    >
+                      <FaPlus className="h-3 w-3" />
+                      Upload First Photo
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* PRE-PROCEDURE / BEFORE */}
+                  <div className="rounded-lg border border-teal-200 bg-teal-50/30 p-3">
+                    <div className="flex items-center justify-between border-b border-teal-200/60 pb-2">
+                      <span className="text-xs font-black text-teal-900">Pre-Procedure (BEFORE)</span>
+                      <span className="rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-800">
+                        {prePhotos.length}
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      {prePhotos.length === 0 ? (
+                        <p className="py-4 text-center text-[11px] text-neutral-400 italic">No pre-procedure photos</p>
+                      ) : (
+                        prePhotos.map((photo) => (
+                          <div
+                            key={photo.id}
+                            onClick={() =>
+                              setSelectedViewerMedia({
+                                id: photo.id,
+                                stage: "pre_procedure",
+                                url: photo.file_url,
+                                title: photo.file_name,
+                                type: "Pre-Procedure (BEFORE)",
+                                date: photo.created_at,
+                                notes: photo.document_metadata?.notes,
+                                isPhoto: true,
+                              })
+                            }
+                            className="group cursor-pointer overflow-hidden rounded-md border border-neutral-200 bg-white transition hover:border-teal-500 hover:shadow-sm"
+                          >
+                            <div className="relative h-28 w-full bg-neutral-100">
+                              <img
+                                src={photo.file_url}
+                                alt={photo.file_name}
+                                className="h-full w-full object-cover transition group-hover:scale-105"
+                              />
+                              <span className="absolute top-1 left-1 rounded bg-teal-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
+                                Before
+                              </span>
+                              <div className="absolute top-1 right-1 flex items-center gap-1 opacity-90 hover:opacity-100 transition">
+                                <button
+                                  type="button"
+                                  title="Replace photo"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReplacePhoto?.({
+                                      id: photo.id,
+                                      stage: "pre_procedure",
+                                      fileName: photo.file_name,
+                                      fileUrl: photo.file_url,
+                                    });
+                                  }}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow hover:bg-white hover:text-teal-700"
+                                >
+                                  <FaRotate className="h-2.5 w-2.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Remove photo"
+                                  disabled={isDeletingPhotoId === photo.id}
+                                  onClick={(e) => handleDeletePhoto(photo, e)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-red-600 shadow hover:bg-white hover:text-red-700 disabled:opacity-50"
+                                >
+                                  <FaTrash className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <p className="truncate text-[11px] font-semibold text-neutral-800">{photo.file_name}</p>
+                                <p className="text-[10px] text-neutral-400">{formatDisplayDate(photo.created_at?.slice(0, 10))}</p>
+                              </div>
+                              {photo.document_metadata?.notes && (
+                                <p className="line-clamp-2 text-[10px] text-neutral-600 italic bg-neutral-50 p-1 rounded border border-neutral-100">
+                                  &ldquo;{photo.document_metadata.notes}&rdquo;
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1.5 pt-1 border-t border-neutral-100">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReplacePhoto?.({
+                                      id: photo.id,
+                                      stage: "pre_procedure",
+                                      fileName: photo.file_name,
+                                      fileUrl: photo.file_url,
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded border border-teal-300 bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-800 hover:bg-teal-100 transition"
+                                >
+                                  <FaRotate className="h-2 w-2 text-teal-600" /> Replace
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isDeletingPhotoId === photo.id}
+                                  onClick={(e) => handleDeletePhoto(photo, e)}
+                                  className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
+                                >
+                                  <FaTrash className="h-2 w-2 text-rose-600" /> Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* POST-PROCEDURE / AFTER */}
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3">
+                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                      <span className="text-xs font-black text-emerald-900">Post-Procedure (AFTER)</span>
+                      <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                        {postPhotos.length}
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      {postPhotos.length === 0 ? (
+                        <p className="py-4 text-center text-[11px] text-neutral-400 italic">No post-procedure photos</p>
+                      ) : (
+                        postPhotos.map((photo) => (
+                          <div
+                            key={photo.id}
+                            onClick={() =>
+                              setSelectedViewerMedia({
+                                id: photo.id,
+                                stage: "post_procedure",
+                                url: photo.file_url,
+                                title: photo.file_name,
+                                type: "Post-Procedure (AFTER)",
+                                date: photo.created_at,
+                                notes: photo.document_metadata?.notes,
+                                isPhoto: true,
+                              })
+                            }
+                            className="group cursor-pointer overflow-hidden rounded-md border border-neutral-200 bg-white transition hover:border-emerald-500 hover:shadow-sm"
+                          >
+                            <div className="relative h-28 w-full bg-neutral-100">
+                              <img
+                                src={photo.file_url}
+                                alt={photo.file_name}
+                                className="h-full w-full object-cover transition group-hover:scale-105"
+                              />
+                              <span className="absolute top-1 left-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
+                                After
+                              </span>
+                              <div className="absolute top-1 right-1 flex items-center gap-1 opacity-90 hover:opacity-100 transition">
+                                <button
+                                  type="button"
+                                  title="Replace photo"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReplacePhoto?.({
+                                      id: photo.id,
+                                      stage: "post_procedure",
+                                      fileName: photo.file_name,
+                                      fileUrl: photo.file_url,
+                                    });
+                                  }}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow hover:bg-white hover:text-emerald-700"
+                                >
+                                  <FaRotate className="h-2.5 w-2.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Remove photo"
+                                  disabled={isDeletingPhotoId === photo.id}
+                                  onClick={(e) => handleDeletePhoto(photo, e)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-red-600 shadow hover:bg-white hover:text-red-700 disabled:opacity-50"
+                                >
+                                  <FaTrash className="h-2.5 w-2.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-2 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <p className="truncate text-[11px] font-semibold text-neutral-800">{photo.file_name}</p>
+                                <p className="text-[10px] text-neutral-400">{formatDisplayDate(photo.created_at?.slice(0, 10))}</p>
+                              </div>
+                              {photo.document_metadata?.notes && (
+                                <p className="line-clamp-2 text-[10px] text-neutral-600 italic bg-neutral-50 p-1 rounded border border-neutral-100">
+                                  &ldquo;{photo.document_metadata.notes}&rdquo;
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1.5 pt-1 border-t border-neutral-100">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onReplacePhoto?.({
+                                      id: photo.id,
+                                      stage: "post_procedure",
+                                      fileName: photo.file_name,
+                                      fileUrl: photo.file_url,
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 transition"
+                                >
+                                  <FaRotate className="h-2 w-2 text-emerald-600" /> Replace
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isDeletingPhotoId === photo.id}
+                                  onClick={(e) => handleDeletePhoto(photo, e)}
+                                  className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
+                                >
+                                  <FaTrash className="h-2 w-2 text-rose-600" /> Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* ── RECORDED PAYMENTS & RECEIPTS ── */}
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <SectionHeading
+                  icon={<FaMoneyBillWave className="h-4 w-4 text-emerald-600" />}
+                  title="Payments & Billing Records"
+                  description="Payment records, transactions, and attached receipts for this patient."
+                />
+                {onAddPayment && (
+                  <button
+                    type="button"
+                    onClick={onAddPayment}
+                    className="inline-flex items-center gap-1.5 self-start rounded-md bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 sm:self-auto"
+                  >
+                    <FaMoneyBillWave className="h-3 w-3" />
+                    Add Payment
+                  </button>
+                )}
+              </div>
+
+              {isLoadingMedia ? (
+                <p className="mt-4 text-xs text-neutral-500 italic">Loading payment records...</p>
+              ) : paymentsList.length === 0 ? (
+                <div className="mt-4 rounded-lg border border-dashed border-neutral-200 bg-neutral-50 p-6 text-center">
+                  <FaMoneyBillWave className="mx-auto h-6 w-6 text-neutral-400" />
+                  <p className="mt-2 text-xs font-semibold text-neutral-700">No payment records yet</p>
+                  <p className="mt-1 text-[11px] text-neutral-500">Record a payment or attach a receipt image for this patient.</p>
+                  {onAddPayment && (
+                    <button
+                      type="button"
+                      onClick={onAddPayment}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                    >
+                      <FaPlus className="h-3 w-3" />
+                      Record First Payment
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-4 space-y-2.5">
+                  {paymentsList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black text-neutral-900">
+                            ₱{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                            {item.method}
+                          </span>
+                          <Badge tone={item.status === "Paid" ? "emerald" : "amber"}>{item.status}</Badge>
+                        </div>
+                        <p className="mt-1 truncate text-xs text-neutral-600">{item.description}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-neutral-400">
+                          <span>{formatDisplayDate(item.date?.slice(0, 10))}</span>
+                          {item.reference && (
+                            <>
+                              <span>•</span>
+                              <span>Ref: {item.reference}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                        {onEditPayment && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onEditPayment({
+                                paymentId: item.id,
+                                billingId: item.billingId,
+                                fileId: item.fileId,
+                                amount: item.amount,
+                                method: item.method,
+                                description: item.description,
+                                reference: item.reference,
+                                receiptUrl: item.receiptUrl,
+                              })
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                          >
+                            <FaPenToSquare className="h-3 w-3 text-neutral-600" />
+                            Edit Payment
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={isDeletingPaymentId === item.id}
+                          onClick={() => handleDeletePayment(item)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 hover:text-rose-800 disabled:opacity-50"
+                          title="Remove this payment record"
+                        >
+                          <FaTrash className="h-3 w-3 text-rose-600" />
+                          Remove
+                        </button>
+                        {item.receiptUrl && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedViewerMedia({
+                                url: item.receiptUrl!,
+                                title: `Payment Receipt - ₱${Number(item.amount).toLocaleString()}`,
+                                type: `Receipt (${item.method})`,
+                                date: item.date,
+                                notes: item.reference ? `Reference: ${item.reference}` : undefined,
+                              })
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                          >
+                            <FaEye className="h-3.5 w-3.5 text-neutral-600" />
+                            View Receipt
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* ── CONSULTATION HISTORY & PDF NOTES ── */}
+            <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+              <SectionHeading
+                icon={<FaNotesMedical className="h-4 w-4" />}
+                title="Consultation History & PDF Summaries"
+                description="Past visit records for this patient with instant printable/PDF summary."
+              />
+              {matchingNotes.length === 0 ? (
+                <p className="mt-4 text-xs text-neutral-500 italic">No previous consultation notes recorded for this patient.</p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {matchingNotes.map((note) => {
+                    const appt = allAppointments.find((a) => a.id === note.appointmentId);
+                    const noteDate = formatDisplayDate(appt?.date || note.updatedAt);
+                    const doctor = appt ? getDoctorById(appt.doctorId) : null;
+                    const age = patientRecord?.dateOfBirth ? calculatePatientAge(patientRecord.dateOfBirth) : null;
+                    return (
+                      <div
+                        key={note.id}
+                        className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-bold text-neutral-900">{noteDate}</span>
+                            <Badge tone={note.status === "Completed" ? "emerald" : "amber"}>{note.status}</Badge>
+                            {appt?.type && <Badge tone="sky">{appt.type}</Badge>}
+                          </div>
+                          <p className="mt-1 truncate text-xs text-neutral-700">
+                            <span className="font-semibold">Assessment:</span> {note.diagnosis || "No diagnosis recorded"}
+                          </p>
+                          {doctor && (
+                            <p className="text-[11px] text-neutral-500">{doctor.name}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            downloadConsultationNotePdf({
+                              patientName: patientRecord?.fullName || appointment.patientName,
+                              patientNumber: patientRecord?.patientNumber || "PENDING",
+                              age,
+                              gender: patientRecord?.gender || null,
+                              consultDate: appt?.date || note.updatedAt,
+                              consultTime: appt ? formatRange(appt.start, appt.end) : null,
+                              doctorName: doctor?.name || "Dr. Fatimah Al-Zahra T. Ditti",
+                              doctorSpecialty: doctor?.specialty || "Family Medicine",
+                              doctorLicenseNo: "PRC #0145291",
+                              type: appt?.type || "Consultation",
+                              reason: appt?.reason || null,
+                              diagnosis: note.diagnosis || null,
+                              soapNote: note.note || null,
+                              prescription: note.prescription || null,
+                            }, accessToken)
+                          }
+                          className="inline-flex items-center gap-1.5 self-start rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100 sm:self-auto"
+                        >
+                          <FaFilePdf className="h-3.5 w-3.5 text-rose-600" />
+                          PDF Note
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Media Viewer for Photos and Receipts */}
+      {selectedViewerMedia && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedViewerMedia(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-3xl w-full overflow-hidden rounded-2xl bg-white p-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                {selectedViewerMedia.type && (
+                  <p className="text-xs font-bold text-neutral-500">{selectedViewerMedia.type}</p>
+                )}
+                <h3 className="font-black text-neutral-900">{selectedViewerMedia.title}</h3>
+                {selectedViewerMedia.date && (
+                  <p className="text-[11px] text-neutral-400">
+                    {formatDisplayDate(selectedViewerMedia.date.slice(0, 10))}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedViewerMedia.isPhoto && selectedViewerMedia.id && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = {
+                          id: selectedViewerMedia.id!,
+                          stage: selectedViewerMedia.stage || "pre_procedure",
+                          fileName: selectedViewerMedia.title,
+                          fileUrl: selectedViewerMedia.url,
+                        };
+                        setSelectedViewerMedia(null);
+                        onReplacePhoto?.(target);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-800 shadow-sm hover:bg-neutral-100"
+                    >
+                      <FaRotate className="h-3 w-3 text-teal-600" />
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        const photoToDelete = { id: selectedViewerMedia.id, file_name: selectedViewerMedia.title };
+                        setSelectedViewerMedia(null);
+                        await handleDeletePhoto(photoToDelete, e);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-100"
+                    >
+                      <FaTrash className="h-3 w-3" />
+                      Remove
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedViewerMedia(null)}
+                  className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 text-sm font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="relative mt-3 h-[60vh] w-full bg-neutral-900/5 rounded-lg overflow-hidden flex items-center justify-center">
+              <img
+                src={selectedViewerMedia.url}
+                alt={selectedViewerMedia.title}
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+            {selectedViewerMedia.notes && (
+              <div className="mt-3 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-700">
+                <strong>Notes / Reference: </strong>
+                {selectedViewerMedia.notes}
+              </div>
+            )}
           </div>
         </div>
       )}

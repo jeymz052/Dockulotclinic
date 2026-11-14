@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FaArrowLeft, FaCalendarDays, FaCheck, FaClockRotateLeft, FaFloppyDisk, FaNotesMedical } from "react-icons/fa6";
+import { FaArrowLeft, FaCalendarDays, FaCamera, FaCheck, FaClockRotateLeft, FaFilePdf, FaFloppyDisk, FaMoneyBillWave, FaNotesMedical, FaRotate, FaTrash } from "react-icons/fa6";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
 import type { PatientRecordItem, PatientVisitRecord } from "@/src/lib/clinic";
 import { calculatePatientAge, formatPatientFullName } from "@/src/lib/patient-registration";
 import { resolveAftercareGuideForService } from "@/src/lib/healthcare-content";
 import { useRole } from "@/src/components/layout/RoleProvider";
+import { PatientPhotoUploadModal, type ExistingPhotoToReplace } from "@/src/components/patients/PatientPhotoUploadModal";
+import { PatientPaymentModal } from "@/src/components/patients/PatientPaymentModal";
+import { openConsultationNotePrintWindow } from "@/src/lib/consultation-pdf";
 import {
   MedicalDocumentsBrowser,
   type MedicalDocumentItem,
@@ -84,10 +87,10 @@ type Prescription = {
     profiles?: { full_name?: string | null; email?: string | null } | null;
   } | null;
 };
-type Tab = "Personal" | "Contact" | "Other" | "Medical Records";
+type Tab = "Personal" | "Contact" | "Other" | "Medical Records" | "Before & After Photos";
 type Notice = { tone: "success" | "error"; text: string };
 
-const TABS: Tab[] = ["Personal", "Contact", "Other", "Medical Records"];
+const TABS: Tab[] = ["Personal", "Contact", "Other", "Medical Records", "Before & After Photos"];
 const fieldClass = "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 outline-none focus:border-neutral-800 focus:ring-2 focus:ring-neutral-200";
 
 function readSnapshotText(snapshot: Record<string, unknown> | null | undefined, key: string) {
@@ -140,6 +143,23 @@ export default function PatientProfilePage() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, startSave] = useTransition();
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [replacePhotoTarget, setReplacePhotoTarget] = useState<ExistingPhotoToReplace | null>(null);
+
+  const reloadFiles = async () => {
+    if (!accessToken || !id) return;
+    try {
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      const filesResponse = await fetch(`/api/v2/patient-files?patient_id=${encodeURIComponent(id)}`, { cache: "no-store", headers });
+      const fileData = (await filesResponse.json().catch(() => null)) as { files?: PatientFile[] } | null;
+      if (filesResponse.ok && fileData?.files) {
+        setFiles(fileData.files);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     if (authLoading || !accessToken || !id) return;
@@ -364,7 +384,26 @@ export default function PatientProfilePage() {
       const isMedCert = file.file_type === "Medical Certificate";
       const isLabRequest = file.file_type === "Laboratory Request" || file.file_type === "Lab Request";
       const isReferral = file.file_type === "MD Referral" || file.file_type === "Doctor Referral";
-      const category = isMedCert ? "Certificates" : isLabRequest ? "Lab Requests" : isReferral ? "Referrals" : "Files";
+      const isPhoto = file.file_type?.includes("Photo") || isImageUrl(file.file_url);
+      const isPreProcedure = file.file_type?.toLowerCase().includes("pre-procedure") || (file.document_metadata as Record<string, unknown> | null)?.photo_stage === "pre_procedure";
+      const isPostProcedure = file.file_type?.toLowerCase().includes("post-procedure") || (file.document_metadata as Record<string, unknown> | null)?.photo_stage === "post_procedure";
+
+      const isReceipt = file.file_type === "Payment Receipt";
+      const category = isMedCert
+        ? "Certificates"
+        : isLabRequest
+          ? "Lab Requests"
+          : isReferral
+            ? "Referrals"
+            : isReceipt
+              ? "Payment Receipts"
+              : isPreProcedure
+                ? "Pre-Procedure Photos"
+                : isPostProcedure
+                  ? "Post-Procedure Photos"
+                  : isPhoto
+                    ? "Procedure Photos"
+                    : "Files";
       const previewUrl = isMedCert
         ? `/api/v2/medical-certificates/${file.id}/pdf`
         : isLabRequest
@@ -535,9 +574,25 @@ export default function PatientProfilePage() {
             <Badge tone={latestConsent ? "success" : "warning"}>{latestConsent ? "Procedure consent signed" : "No procedure consent"}</Badge>
             <button
               type="button"
+              onClick={() => setIsPhotoModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-teal-600 bg-teal-50 px-3.5 py-2 text-sm font-bold text-teal-800 shadow-sm hover:bg-teal-100 transition"
+            >
+              <FaCamera className="h-4 w-4 text-teal-600" />
+              Attach Photo
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-emerald-600 bg-emerald-50 px-3.5 py-2 text-sm font-bold text-emerald-800 shadow-sm hover:bg-emerald-100 transition"
+            >
+              <FaMoneyBillWave className="h-4 w-4 text-emerald-600" />
+              Add Payment
+            </button>
+            <button
+              type="button"
               onClick={save}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2 text-sm font-bold text-white shadow-sm disabled:opacity-60"
             >
               <FaFloppyDisk className="h-4 w-4" />
               {saving ? "Saving..." : "Save changes"}
@@ -567,6 +622,22 @@ export default function PatientProfilePage() {
           >
             <FaNotesMedical className="h-4 w-4" />
             Open consultations
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPhotoModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-teal-600 bg-teal-50 px-3 py-2 text-sm font-bold text-teal-800 hover:bg-teal-100"
+          >
+            <FaCamera className="h-4 w-4 text-teal-600" />
+            Attach Photo (Pre / Post Procedure)
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md border border-emerald-600 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100"
+          >
+            <FaMoneyBillWave className="h-4 w-4 text-emerald-600" />
+            Add Payment
           </button>
         </div>
 
@@ -599,8 +670,55 @@ export default function PatientProfilePage() {
             emptyTitle="No medical documents yet"
             emptyDescription="This patient has not been issued any released documents yet."
           />
-          <Timeline visits={history} />
+          <Timeline visits={history} patient={patient} />
         </div>
+      ) : null}
+      {tab === "Before & After Photos" ? (
+        <BeforeAndAfterGallery
+          files={files}
+          accessToken={accessToken}
+          onOpenUpload={() => {
+            setReplacePhotoTarget(null);
+            setIsPhotoModalOpen(true);
+          }}
+          onReplacePhoto={(target) => {
+            setReplacePhotoTarget(target);
+            setIsPhotoModalOpen(true);
+          }}
+          onPhotoDeleted={(msg) => {
+            setNotice({ tone: "success", text: msg });
+            void reloadFiles();
+          }}
+        />
+      ) : null}
+
+      {isPhotoModalOpen && patient ? (
+        <PatientPhotoUploadModal
+          patientId={patient.id}
+          patientName={patient.fullName}
+          accessToken={accessToken}
+          initialReplacePhoto={replacePhotoTarget}
+          onClose={() => {
+            setIsPhotoModalOpen(false);
+            setReplacePhotoTarget(null);
+          }}
+          onSuccess={(msg) => {
+            setNotice({ tone: "success", text: msg });
+            void reloadFiles();
+          }}
+        />
+      ) : null}
+
+      {isPaymentModalOpen && patient ? (
+        <PatientPaymentModal
+          patientId={patient.id}
+          patientName={patient.fullName}
+          accessToken={accessToken}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onSuccess={(msg) => {
+            setNotice({ tone: "success", text: msg });
+          }}
+        />
       ) : null}
 
       {notice ? <Toast notice={notice} onClose={() => setNotice(null)} /> : null}
@@ -662,30 +780,66 @@ function Other({ draft, onChange }: DraftProps) {
   );
 }
 
-function Timeline({ visits }: { visits: PatientVisitRecord[] }) {
+function Timeline({ visits, patient }: { visits: PatientVisitRecord[]; patient?: PatientRecordItem | null }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-2">
         <FaClockRotateLeft className="h-4 w-4 text-neutral-500" />
         <div>
           <h2 className="font-black text-neutral-950">Medical record timeline</h2>
-          <p className="mt-1 text-sm text-neutral-500">Appointment-linked SOAP notes, diagnoses, and prescriptions.</p>
+          <p className="mt-1 text-sm text-neutral-500">Appointment-linked SOAP notes, diagnoses, prescriptions, and PDF export.</p>
         </div>
       </div>
       <div className="mt-6 space-y-5">
-        {visits.length ? visits.map((visit) => <Visit key={visit.appointmentId} visit={visit} />) : <div className="border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">No consultation records yet.</div>}
+        {visits.length ? (
+          visits.map((visit) => <Visit key={visit.appointmentId} visit={visit} patient={patient} />)
+        ) : (
+          <div className="border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-500">
+            No consultation records yet.
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function Visit({ visit }: { visit: PatientVisitRecord }) {
+function Visit({ visit, patient }: { visit: PatientVisitRecord; patient?: PatientRecordItem | null }) {
   const doctor = getDoctorById(visit.doctorId);
+
+  function downloadNotePdf() {
+    const age = calculatePatientAge(patient?.dateOfBirth ?? "");
+    openConsultationNotePrintWindow({
+      patientName: patient?.fullName || visit.patientName,
+      patientNumber: patient?.patientNumber || "N/A",
+      age,
+      gender: patient?.gender || null,
+      consultDate: visit.date,
+      consultTime: formatRange(visit.start, visit.end),
+      doctorName: doctor?.name || "Dr. Fatimah Al-Zahra T. Ditti",
+      doctorSpecialty: doctor?.specialty || "Family Medicine / Aesthetic",
+      doctorLicenseNo: "PRC #0145291",
+      type: visit.type,
+      reason: visit.reason,
+      diagnosis: visit.consultation?.diagnosis,
+      soapNote: visit.consultation?.note,
+      prescription: visit.consultation?.prescription,
+      vitals: visit.vitals,
+    });
+  }
+
   return (
-    <article className="grid gap-3 border-b border-neutral-100 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[9rem_minmax(0,1fr)]">
+    <article className="grid gap-3 border-b border-neutral-100 pb-5 last:border-b-0 last:pb-0 md:grid-cols-[10rem_minmax(0,1fr)]">
       <div>
         <p className="font-bold text-neutral-950">{formatDisplayDate(visit.date)}</p>
         <p className="mt-1 text-xs text-neutral-500">{formatRange(visit.start, visit.end)}</p>
+        <button
+          type="button"
+          onClick={downloadNotePdf}
+          className="mt-3 inline-flex items-center gap-1.5 rounded border border-neutral-200 bg-neutral-50 px-2 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-100"
+        >
+          <FaFilePdf className="text-red-500" />
+          PDF Note
+        </button>
       </div>
       <div>
         <div className="flex flex-wrap items-center gap-2">
@@ -793,5 +947,333 @@ function Loading() {
       <div className="h-52 rounded-lg border border-neutral-200 bg-white" />
       <div className="h-80 rounded-lg border border-neutral-200 bg-white" />
     </div>
+  );
+}
+
+function BeforeAndAfterGallery({
+  files,
+  accessToken,
+  onOpenUpload,
+  onReplacePhoto,
+  onPhotoDeleted,
+}: {
+  files: PatientFile[];
+  accessToken: string | null;
+  onOpenUpload: () => void;
+  onReplacePhoto: (target: ExistingPhotoToReplace) => void;
+  onPhotoDeleted: (message: string) => void;
+}) {
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  async function handleDelete(photo: PatientFile, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to remove this photo (${photo.file_name})?`)) return;
+    if (!accessToken) return;
+
+    setIsDeleting(photo.id);
+    try {
+      const res = await fetch(`/api/v2/patient-photos?id=${encodeURIComponent(photo.id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Failed to remove photo.");
+      }
+      onPhotoDeleted("Photo removed successfully.");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error deleting photo.");
+    } finally {
+      setIsDeleting(null);
+    }
+  }
+
+  const prePhotos = files.filter(
+    (f) =>
+      f.file_type === "Pre-Procedure Photo" ||
+      (f.document_metadata as Record<string, unknown> | null)?.photo_stage === "pre_procedure" ||
+      f.file_name.toLowerCase().includes("pre-procedure")
+  );
+
+  const postPhotos = files.filter(
+    (f) =>
+      f.file_type === "Post-Procedure Photo" ||
+      (f.document_metadata as Record<string, unknown> | null)?.photo_stage === "post_procedure" ||
+      f.file_name.toLowerCase().includes("post-procedure")
+  );
+
+  const otherPhotos = files.filter(
+    (f) =>
+      (f.file_type?.includes("Photo") || isImageUrl(f.file_url)) &&
+      !prePhotos.includes(f) &&
+      !postPhotos.includes(f)
+  );
+
+  const [selectedPhoto, setSelectedPhoto] = useState<PatientFile | null>(null);
+
+  return (
+    <section className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <div>
+          <h2 className="text-lg font-black text-neutral-900">Patient Procedure Photos (Before & After)</h2>
+          <p className="mt-1 text-xs text-neutral-500">
+            Compare pre-procedure baseline condition with post-procedure treatment outcomes. You can remove or replace any photo anytime.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenUpload}
+          className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-teal-700 transition"
+        >
+          <FaCamera className="h-4 w-4" />
+          Upload New Photos
+        </button>
+      </div>
+
+      {prePhotos.length === 0 && postPhotos.length === 0 && otherPhotos.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+            <FaCamera className="h-6 w-6" />
+          </div>
+          <h3 className="mt-3 text-sm font-bold text-neutral-900">No procedure photos attached yet</h3>
+          <p className="mt-1 text-xs text-neutral-500">
+            Upload pre-procedure (before) and post-procedure (after) photos to document treatment progression.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenUpload}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-neutral-950 px-4 py-2 text-xs font-bold text-white hover:bg-neutral-800"
+          >
+            Upload Photo Now
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* PRE-PROCEDURE / BEFORE COLUMN */}
+          <div className="rounded-xl border border-teal-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-teal-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-100 text-xs font-black text-teal-800">
+                  1
+                </span>
+                <h3 className="font-black text-teal-950">Pre-Procedure (BEFORE)</h3>
+              </div>
+              <span className="rounded bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-700">
+                {prePhotos.length} photo{prePhotos.length === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              {prePhotos.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-neutral-200 p-8 text-center text-xs text-neutral-400">
+                  No pre-procedure photos uploaded.
+                </div>
+              ) : (
+                prePhotos.map((photo) => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    badge="Pre-Procedure"
+                    badgeColor="bg-teal-100 text-teal-800"
+                    isDeleting={isDeleting === photo.id}
+                    onView={() => setSelectedPhoto(photo)}
+                    onReplace={() =>
+                      onReplacePhoto({
+                        id: photo.id,
+                        stage: "pre_procedure",
+                        fileName: photo.file_name,
+                        fileUrl: photo.file_url,
+                      })
+                    }
+                    onDelete={(e) => handleDelete(photo, e)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* POST-PROCEDURE / AFTER COLUMN */}
+          <div className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-emerald-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-800">
+                  2
+                </span>
+                <h3 className="font-black text-emerald-950">Post-Procedure (AFTER)</h3>
+              </div>
+              <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                {postPhotos.length} photo{postPhotos.length === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              {postPhotos.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-neutral-200 p-8 text-center text-xs text-neutral-400">
+                  No post-procedure photos uploaded.
+                </div>
+              ) : (
+                postPhotos.map((photo) => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    badge="Post-Procedure"
+                    badgeColor="bg-emerald-100 text-emerald-800"
+                    isDeleting={isDeleting === photo.id}
+                    onView={() => setSelectedPhoto(photo)}
+                    onReplace={() =>
+                      onReplacePhoto({
+                        id: photo.id,
+                        stage: "post_procedure",
+                        fileName: photo.file_name,
+                        fileUrl: photo.file_url,
+                      })
+                    }
+                    onDelete={(e) => handleDelete(photo, e)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Full Photo Viewer */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-4xl w-full overflow-hidden rounded-2xl bg-white p-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <p className="text-xs font-bold text-neutral-500">{selectedPhoto.file_type || "Clinical Photo"}</p>
+                <h3 className="font-black text-neutral-900">{selectedPhoto.file_name}</h3>
+                <p className="text-[11px] text-neutral-400">Uploaded {formatDisplayDate(selectedPhoto.created_at.slice(0, 10))}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPhoto(null)}
+                className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="relative mt-3 h-[60vh] w-full bg-neutral-900/5 rounded-lg overflow-hidden">
+              <img
+                src={selectedPhoto.file_url}
+                alt={selectedPhoto.file_name}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            {(selectedPhoto.document_metadata as Record<string, unknown> | null)?.notes ? (
+              <div className="mt-3 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-700">
+                <strong>Clinical Notes: </strong>
+                {String((selectedPhoto.document_metadata as Record<string, unknown>).notes)}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PhotoCard({
+  photo,
+  badge,
+  badgeColor,
+  isDeleting,
+  onView,
+  onReplace,
+  onDelete,
+}: {
+  photo: PatientFile;
+  badge: string;
+  badgeColor: string;
+  isDeleting?: boolean;
+  onView: () => void;
+  onReplace: () => void;
+  onDelete: (e: React.MouseEvent) => void;
+}) {
+  const meta = photo.document_metadata as Record<string, unknown> | null;
+  const notes = meta?.notes ? String(meta.notes) : null;
+
+  return (
+    <article
+      onClick={onView}
+      className="group cursor-pointer overflow-hidden rounded-lg border border-neutral-200 bg-white transition hover:border-neutral-400 hover:shadow-md"
+    >
+      <div className="relative h-52 w-full bg-neutral-900/10">
+        <img
+          src={photo.file_url}
+          alt={photo.file_name}
+          className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+        />
+        <div className="absolute top-2 left-2">
+          <span className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${badgeColor}`}>
+            {badge}
+          </span>
+        </div>
+        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+          <button
+            type="button"
+            title="Replace photo"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReplace();
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-neutral-700 shadow hover:bg-white hover:text-teal-700"
+          >
+            <FaRotate className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            title="Remove photo"
+            disabled={isDeleting}
+            onClick={onDelete}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow hover:bg-white hover:text-red-700 disabled:opacity-50"
+          >
+            <FaTrash className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      <div className="p-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-bold text-neutral-400">
+            {formatDisplayDate(photo.created_at.slice(0, 10))}
+          </p>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReplace();
+              }}
+              className="text-teal-700 font-bold hover:underline inline-flex items-center gap-1"
+            >
+              <FaRotate className="h-2.5 w-2.5" /> Replace
+            </button>
+            <span className="text-neutral-300">|</span>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={onDelete}
+              className="text-red-600 font-bold hover:underline inline-flex items-center gap-1"
+            >
+              <FaTrash className="h-2.5 w-2.5" /> Remove
+            </button>
+          </div>
+        </div>
+        <p className="font-semibold text-xs text-neutral-800 truncate mt-1">{photo.file_name}</p>
+        {notes ? (
+          <p className="mt-1.5 text-xs text-neutral-600 line-clamp-2 italic bg-neutral-50 p-2 rounded border border-neutral-100">
+            &ldquo;{notes}&rdquo;
+          </p>
+        ) : null}
+      </div>
+    </article>
   );
 }

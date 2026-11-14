@@ -18,6 +18,10 @@ import {
   FaArrowRotateLeft,
   FaArrowLeft,
   FaArrowRight,
+  FaPhone,
+  FaMessage,
+  FaHeadset,
+  FaXmark,
 } from "react-icons/fa6";
 import { createAppointmentAction } from "@/app/(dashboard)/appointments/actions";
 import { SharedSlotPicker } from "@/src/components/appointments/SharedSlotPicker";
@@ -426,7 +430,8 @@ export default function BookAppointmentPage({
   const serviceOptions = formData.visitPath === "Procedure" ? procedureServiceOptions : consultationServiceOptions;
   const appointmentClinicConsultKind =
     formData.visitPath === "Clinic" && !isProcedureBooking ? formData.clinicConsultKind : undefined;
-  const requiresOnlinePayment = true;
+  const isStaff = role === "SECRETARY" || role === "SUPER_ADMIN" || role === "DOCTOR";
+  const requiresOnlinePayment = !isStaff;
   const selectedSlotDuration = selectedSlot
     ? formatDurationLabel(selectedSlot.start, selectedSlot.end)
     : isProcedureBooking ? "1 hr" : "30 min";
@@ -473,6 +478,7 @@ export default function BookAppointmentPage({
   }, [formData.date, visibleWeekStart]);
   const weekDates = useMemo(() => getWeekDates(calendarWeekStart), [calendarWeekStart]);
   const [activeStep, setActiveStep] = useState(1);
+  const [showManualBookingModal, setShowManualBookingModal] = useState(false);
 
   // Restore any saved draft / reservation after auth or page reload.
   // We mark the very first restore so the write-side effect below doesn't
@@ -1216,6 +1222,69 @@ export default function BookAppointmentPage({
       ) : null}
 
       <form onSubmit={handleSubmit}>
+        {/* ── Manual Booking / Call Secretary Option (Shown to Patients) or Staff Mode Banner ── */}
+        {!isStaff ? (
+          <div className="mb-4 rounded-3xl border border-amber-200/90 bg-[linear-gradient(135deg,#fffdf7_0%,#fef7e6_100%)] p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-900 shadow-xs">
+                  <FaPhone className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">
+                      Manual Booking Option
+                    </span>
+                    <span className="text-xs font-semibold text-amber-800">· Hindi sanay mag-book online?</span>
+                  </div>
+                  <p className="mt-1 text-sm font-bold text-neutral-900 sm:text-base">
+                    Pwede kang tumawag sa secretary ni Doc Kulot para kami na ang mag-book sa &apos;yo!
+                  </p>
+                  <p className="mt-0.5 text-xs text-neutral-600">
+                    FamMed Family Clinic, Pasobolong · Mon–Fri 9:00 AM – 4:00 PM (In-person) · Mon–Sat 8:00 AM – 8:00 PM (Virtual)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                <a
+                  href="tel:+639171544754"
+                  className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-95"
+                >
+                  <FaPhone className="h-3.5 w-3.5 text-emerald-400" />
+                  Call Secretary: 0917 154 4754
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowManualBookingModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-xs font-bold text-amber-900 shadow-2xs transition hover:bg-amber-50 active:scale-95"
+                >
+                  Paano Mag-book?
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-3xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm sm:p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-900 shadow-xs">
+                <FaHeadset className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-200/70 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-950">
+                  Staff / Secretary Manual Booking Mode
+                </span>
+                <p className="mt-0.5 text-sm font-bold text-emerald-950">
+                  I-encode ang manual booking para sa pasyenteng tumawag o nag-walk in.
+                </p>
+                <p className="mt-0.5 text-xs text-emerald-800">
+                  Direktang maiko-confirm at maidadagdag sa calendar ni Doc Kulot nang walang kailangang online QR payment checkout.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-4xl border border-neutral-100 bg-white/95 p-4 shadow-[0_18px_45px_rgba(17,17,17,0.06)] backdrop-blur sm:p-5">
           <HorizontalBookingStepper
             labels={BOOKING_STEP_LABELS}
@@ -1310,6 +1379,32 @@ export default function BookAppointmentPage({
                     We found an existing patient record, so we will use your saved details and keep the follow-up-only booking path locked.
                   </div>
                 ) : null}
+
+                {/* Manual Booking Helper for patients in Step 1 */}
+                <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border border-dashed border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-900 sm:flex-row sm:items-center sm:text-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-900">
+                      <FaHeadset className="h-4 w-4" />
+                    </div>
+                    <span>Nahihirapan mag-book online? Pwede kang tumawag diretso sa secretary ni Doc Kulot para kami ang mag-book para sa &apos;yo.</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <a
+                      href="tel:+639171544754"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-neutral-800"
+                    >
+                      <FaPhone className="h-3 w-3 text-emerald-400" />
+                      0917 154 4754
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualBookingModal(true)}
+                      className="rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100/60"
+                    >
+                      Paano?
+                    </button>
+                  </div>
+                </div>
 
               </section>
 
@@ -2268,55 +2363,116 @@ export default function BookAppointmentPage({
                     </div>
 
                     <div className="rounded-[1.75rem] border-2 border-neutral-300 bg-[linear-gradient(180deg,#ffffff_0%,#f5f5f5_100%)] p-5 shadow-md h-fit sm:p-6 lg:sticky lg:top-24">
-                      <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
-                        <FaCreditCard className="h-3 w-3" aria-hidden="true" />
-                        Ready for Payment
-                      </p>
-                      <p className="mt-4 text-3xl font-black text-neutral-800">
-                        {formData.type === "Online"
-                          ? "Pay Now"
-                          : isProcedureBooking
-                            ? (is1111SalePeriod()
-                                ? `Pay ${peso(getProcedureDiscountInfo(bookingPricing, formData.service)?.discounted ?? procedureReservationAmount)}`
-                                : `Pay ${peso(procedureReservationAmount)} Reservation`)
-                            : `Pay ${peso(clinicVisitReservationAmount)} Reservation`}
-                      </p>
-                      <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
-                        {formData.type === "Online"
-                          ? medicalCertificateAddonRequested
-                            ? "Complete payment through PayMongo QR Ph. The total includes the medical certificate add-on, so you will pay PHP 1,000 right away and we’ll confirm your booking after verification."
-                            : "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
-                          : isProcedureBooking
-                            ? (is1111SalePeriod()
-                                ? "Complete full payment through PayMongo QR Ph to lock in your 11.11 discounted procedure slot. Fully paid online with no remaining procedure balance on visit."
-                                : `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`)
-                            : `A non-refundable ${peso(clinicVisitReservationAmount)} reservation fee secures your clinic visit slot and is automatically deducted from your final payment in POS upon clinic arrival.`}
-                      </p>
-
-                      {requiresOnlinePayment ? (
-                        <div className="mt-4 rounded-[1.4rem] border border-sky-200 bg-sky-50 px-4 py-4">
-                          <div className="flex items-center justify-between gap-2 text-sm">
-                            <span className="font-semibold text-sky-900">PayMongo QR Ph</span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-700 shadow-sm border border-sky-200">
-                              <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
-                              QR checkout
-                            </span>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-sky-900">
-                            You will be redirected to PayMongo to complete the payment through QR Ph. It works with GCash, Maya, and bank apps, and the booking is confirmed after payment verification.
+                      {isStaff ? (
+                        <div>
+                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-800">
+                            <FaCircleCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                            Staff Manual Booking
                           </p>
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-sky-800">
-                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Virtual consults</span>
-                            {medicalCertificateAddonRequested ? (
-                              <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">
-                                Medical certificate add-on
-                              </span>
-                            ) : null}
-                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Clinic reservation fee (₱200)</span>
-                            <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Procedure reservation fee</span>
+                          <p className="mt-3 text-2xl font-black text-neutral-900">
+                            Ready to Confirm
+                          </p>
+                          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                            Naka-login ka bilang Clinic Secretary / Staff. Ang appointment na ito ay direktang iko-confirm at maidadagdag sa calendar at queue ni Doc Kulot nang walang PayMongo checkout.
+                          </p>
+                          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-950">
+                            <strong className="block font-bold mb-1 text-emerald-900">POS Payment Settlement:</strong>
+                            Ang anumang consultation fee o procedure bill ay sisingilin over-the-counter sa clinic POS o manual collection.
                           </div>
                         </div>
-                      ) : null}
+                      ) : (
+                        <>
+                          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-700">
+                            <FaCreditCard className="h-3 w-3" aria-hidden="true" />
+                            Ready for Payment
+                          </p>
+                          <p className="mt-4 text-3xl font-black text-neutral-800">
+                            {formData.type === "Online"
+                              ? "Pay Now"
+                              : isProcedureBooking
+                                ? (is1111SalePeriod()
+                                    ? `Pay ${peso(getProcedureDiscountInfo(bookingPricing, formData.service)?.discounted ?? procedureReservationAmount)}`
+                                    : `Pay ${peso(procedureReservationAmount)} Reservation`)
+                                : `Pay ${peso(clinicVisitReservationAmount)} Reservation`}
+                          </p>
+                          <p className="mt-2.5 text-sm text-slate-600 leading-relaxed">
+                            {formData.type === "Online"
+                              ? medicalCertificateAddonRequested
+                                ? "Complete payment through PayMongo QR Ph. The total includes the medical certificate add-on, so you will pay PHP 1,000 right away and we’ll confirm your booking after verification."
+                                : "Complete payment through PayMongo QR Ph. It accepts GCash, Maya, and bank apps, then we’ll confirm your booking after verification."
+                              : isProcedureBooking
+                                ? (is1111SalePeriod()
+                                    ? "Complete full payment through PayMongo QR Ph to lock in your 11.11 discounted procedure slot. Fully paid online with no remaining procedure balance on visit."
+                                    : `A ${peso(procedureReservationAmount)} reservation fee confirms your procedure schedule and is deducted from the final procedure bill. Consultation is billed separately.`)
+                                : `A non-refundable ${peso(clinicVisitReservationAmount)} reservation fee secures your clinic visit slot and is automatically deducted from your final payment in POS upon clinic arrival.`}
+                          </p>
+
+                          {requiresOnlinePayment ? (
+                            <div className="mt-4 rounded-[1.4rem] border border-sky-200 bg-sky-50 px-4 py-4">
+                              <div className="flex items-center justify-between gap-2 text-sm">
+                                <span className="font-semibold text-sky-900">PayMongo QR Ph</span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-700 shadow-sm border border-sky-200">
+                                  <FaLock className="h-2.5 w-2.5" aria-hidden="true" />
+                                  QR checkout
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-sky-900">
+                                You will be redirected to PayMongo to complete the payment through QR Ph. It works with GCash, Maya, and bank apps, and the booking is confirmed after payment verification.
+                              </p>
+                              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-sky-800">
+                                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Virtual consults</span>
+                                {medicalCertificateAddonRequested ? (
+                                  <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">
+                                    Medical certificate add-on
+                                  </span>
+                                ) : null}
+                                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Clinic reservation fee (₱200)</span>
+                                <span className="rounded-full bg-white px-3 py-1 shadow-sm ring-1 ring-sky-200">Procedure reservation fee</span>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {/* Manual Booking Fallback for Patients without Online Payment */}
+                          <div className="mt-4 rounded-[1.4rem] border border-amber-200 bg-amber-50/80 p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-200/60 text-amber-900">
+                                <FaPhone className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                                  Walang GCash, Maya, o Online Banking?
+                                </p>
+                                <p className="mt-1 text-xs text-amber-800 leading-relaxed">
+                                  Walang problema! Tumawag o mag-text sa secretary ni Doc Kulot para sa direct manual booking at over-the-counter o clinic assistance.
+                                </p>
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  <a
+                                    href="tel:+639171544754"
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-neutral-800"
+                                  >
+                                    <FaPhone className="h-3 w-3 text-emerald-400" />
+                                    Call Secretary: 0917 154 4754
+                                  </a>
+                                  <a
+                                    href="sms:+639171544754?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment."
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 transition hover:bg-amber-100/60"
+                                  >
+                                    <FaMessage className="h-3 w-3 text-amber-700" />
+                                    Send SMS
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowManualBookingModal(true)}
+                                    className="text-xs font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950"
+                                  >
+                                    Paano ang proseso?
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -2376,6 +2532,114 @@ export default function BookAppointmentPage({
             setIsProcedureConsentModalOpen(false);
           }}
         />
+      ) : null}
+
+      {showManualBookingModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl border border-neutral-100 bg-white p-6 shadow-2xl sm:p-7 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setShowManualBookingModal(false)}
+              className="absolute right-5 top-5 rounded-full p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+              aria-label="Close manual booking guide"
+            >
+              <FaXmark className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-900">
+                <FaPhone className="h-6 w-6" />
+              </div>
+              <div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-950">
+                  Manual Booking Assistance
+                </span>
+                <h3 className="text-lg font-black text-neutral-900 sm:text-xl">
+                  Tawagan si Secretary para Mag-Book
+                </h3>
+              </div>
+            </div>
+
+            <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+              Kung hindi ka sanay mag-book online o nahihirapan sa form, handang tumulong ang clinic secretary ni Doc Kulot para manual na i-reserve ang iyong schedule.
+            </p>
+
+            {/* Direct Contact Cards */}
+            <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <a
+                href="tel:+639171544754"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-neutral-900 p-3.5 text-center text-sm font-bold text-white shadow-sm transition hover:bg-neutral-800 active:scale-98"
+              >
+                <FaPhone className="h-4 w-4 text-emerald-400" />
+                <span>Tawag: 0917 154 4754</span>
+              </a>
+              <a
+                href="sms:+639171544754?body=Hello%20Doc%20Kulot%20Clinic,%20gusto%20ko%20po%20magpa-book%20ng%20manual%20appointment%20para%20kay%20[Pangalan]%20sa%20[Petsa]."
+                className="flex items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3.5 text-center text-sm font-bold text-amber-950 transition hover:bg-amber-100 active:scale-98"
+              >
+                <FaMessage className="h-4 w-4 text-amber-800" />
+                <span>Text / SMS Secretary</span>
+              </a>
+            </div>
+
+            {/* Steps */}
+            <div className="mt-6 space-y-3.5 border-t border-neutral-100 pt-5">
+              <p className="text-xs font-black uppercase tracking-wider text-neutral-700">
+                Paano ang Manual Booking? (3 Hakbang)
+              </p>
+
+              <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white">
+                  1
+                </span>
+                <div className="text-xs text-neutral-700">
+                  <strong className="block text-neutral-900 font-bold mb-0.5">Tawagan o I-text ang Secretary</strong>
+                  Ihanda ang iyong buong pangalan, contact number, at sabihin kung anong uri ng appointment: Clinic Consult, Virtual Consult, o Procedure.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white">
+                  2
+                </span>
+                <div className="text-xs text-neutral-700">
+                  <strong className="block text-neutral-900 font-bold mb-0.5">Piliin ang Araw at Oras</strong>
+                  Titingnan ng secretary ang calendar ni Doc Kulot para sa available slots at pipili kayo ng pinaka-swak sa oras mo.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-2xl bg-neutral-50 p-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white">
+                  3
+                </span>
+                <div className="text-xs text-neutral-700">
+                  <strong className="block text-neutral-900 font-bold mb-0.5">Kumpirmasyon at Paalala</strong>
+                  Diretsong ipapasok ng secretary ang schedule mo sa clinic system at makakatanggap ka ng SMS confirmation bago ang araw ng iyong appointment.
+                </div>
+              </div>
+            </div>
+
+            {/* Clinic Info */}
+            <div className="mt-5 rounded-2xl bg-amber-50/70 p-3.5 text-xs text-amber-900">
+              <p className="font-bold">Clinic Schedule & Location:</p>
+              <p className="mt-1">
+                📍 FamMed Family Clinic, Arquiza Building, Pasobolong, Zamboanga City<br />
+                ⏰ Face-to-Face Clinic: Mon–Fri 9:00 AM – 4:00 PM<br />
+                💻 Virtual Consultations: Mon–Sat 8:00 AM – 8:00 PM
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowManualBookingModal(false)}
+                className="w-full sm:w-auto rounded-full bg-neutral-900 px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-neutral-800 transition"
+              >
+                Naiintindihan Ko (Close)
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

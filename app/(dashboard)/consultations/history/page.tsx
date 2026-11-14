@@ -5,33 +5,72 @@ import {
   FaCalendarDay,
   FaClockRotateLeft,
   FaFileLines,
+  FaFilePdf,
   FaFilter,
   FaMagnifyingGlass,
   FaPills,
   FaUserDoctor,
 } from "react-icons/fa6";
 import { useAppointments } from "@/src/components/appointments/useAppointments";
-import { useConsultationNotes } from "@/src/components/clinic/useClinicData";
+import { useConsultationNotes, usePatients } from "@/src/components/clinic/useClinicData";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { formatDisplayDate, formatRange, getDoctorById } from "@/src/lib/appointments";
+import { openConsultationNotePrintWindow } from "@/src/lib/consultation-pdf";
+import { calculatePatientAge } from "@/src/lib/patient-registration";
 
 export default function ConsultationHistoryPage() {
   const { role } = useRole();
   const { appointments } = useAppointments();
   const { data: notes, isLoading, error } = useConsultationNotes();
+  const { data: patients } = usePatients();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Completed" | "In Progress" | "Ready">("All");
 
   const entries = useMemo(
     () =>
       notes
-        .map((note) => ({
-          note,
-          appointment: appointments.find((appointment) => appointment.id === note.appointmentId) ?? null,
-        }))
+        .map((note) => {
+          const appointment = appointments.find((a) => a.id === note.appointmentId) ?? null;
+          const patient =
+            patients.find((p) =>
+              p.fullName.toLowerCase() === note.patientName.toLowerCase() ||
+              (appointment && p.fullName.toLowerCase() === appointment.patientName.toLowerCase())
+            ) ?? null;
+
+          return {
+            note,
+            appointment,
+            patient,
+          };
+        })
         .sort((left, right) => right.note.updatedAt.localeCompare(left.note.updatedAt)),
-    [notes, appointments],
+    [notes, appointments, patients],
   );
+
+  function handleDownloadPdf(entry: {
+    note: (typeof notes)[number];
+    appointment: (typeof appointments)[number] | null;
+    patient: (typeof patients)[number] | null;
+  }) {
+    const docInfo = getDoctorById(entry.note.doctorId);
+    const age = calculatePatientAge(entry.patient?.dateOfBirth ?? "");
+    openConsultationNotePrintWindow({
+      patientName: entry.patient?.fullName || entry.note.patientName,
+      patientNumber: entry.patient?.patientNumber || "N/A",
+      age,
+      gender: entry.patient?.gender || null,
+      consultDate: entry.appointment?.date || entry.note.updatedAt.slice(0, 10),
+      consultTime: entry.appointment ? formatRange(entry.appointment.start, entry.appointment.end) : null,
+      doctorName: docInfo?.name || "Dr. Fatimah Al-Zahra T. Ditti",
+      doctorSpecialty: docInfo?.specialty || "Family Medicine / Aesthetic",
+      doctorLicenseNo: "PRC #0145291",
+      type: entry.appointment?.type || "Online",
+      reason: entry.appointment?.reason || "Consultation",
+      diagnosis: entry.note.diagnosis,
+      soapNote: entry.note.note,
+      prescription: entry.note.prescription,
+    });
+  }
 
   const filteredEntries = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -144,7 +183,8 @@ export default function ConsultationHistoryPage() {
 
       <div className="space-y-4">
         {filteredEntries.length ? (
-          filteredEntries.map(({ note, appointment }) => {
+          filteredEntries.map((entry) => {
+            const { note, appointment } = entry;
             const doctor = getDoctorById(note.doctorId);
             const statusTone =
               note.status === "Completed"
@@ -177,9 +217,20 @@ export default function ConsultationHistoryPage() {
                       ) : null}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone}`}>
-                    {note.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(entry)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                      title="Download consultation note PDF"
+                    >
+                      <FaFilePdf className="text-red-500" />
+                      PDF Note
+                    </button>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone}`}>
+                      {note.status}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">

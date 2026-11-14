@@ -12,6 +12,8 @@ import {
   FaUsers,
   FaXmark,
   FaCalendarPlus,
+  FaMoneyBillWave,
+  FaCamera,
 } from "react-icons/fa6";
 import { formatDisplayDate } from "@/src/lib/appointments";
 import type { PatientRecordItem, PatientVisitRecord } from "@/src/lib/clinic";
@@ -24,6 +26,8 @@ import {
 } from "@/src/lib/patient-registration";
 import { useRole } from "@/src/components/layout/RoleProvider";
 import { ConvertToAppointmentModal } from "@/src/components/patients/ConvertToAppointmentModal";
+import { PatientPaymentModal } from "@/src/components/patients/PatientPaymentModal";
+import { PatientPhotoUploadModal } from "@/src/components/patients/PatientPhotoUploadModal";
 
 type Payload = { patients: PatientRecordItem[]; visits: PatientVisitRecord[] };
 type ImportPayload = {
@@ -101,6 +105,8 @@ export default function PatientRecordsPage() {
   const [isPreviewingImport, setIsPreviewingImport] = useState(false);
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [convertingPatient, setConvertingPatient] = useState<PatientRecordItem | null>(null);
+  const [paymentPatient, setPaymentPatient] = useState<PatientRecordItem | null>(null);
+  const [photoPatient, setPhotoPatient] = useState<PatientRecordItem | null>(null);
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<{
     rows: ImportPreviewRecord[];
@@ -387,15 +393,33 @@ export default function PatientRecordsPage() {
                     </TableCell>
                     <TableCell>
                       {isStaff ? (
-                        <button
-                          type="button"
-                          id={`convert-appointment-${patient.id}`}
-                          title="Convert to Appointment"
-                          onClick={(e) => { e.stopPropagation(); setConvertingPatient(patient); }}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-200 bg-teal-50 text-teal-700 transition hover:border-teal-400 hover:bg-teal-100"
-                        >
-                          <FaCalendarPlus className="h-3.5 w-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            title="Attach Before & After Photo"
+                            onClick={(e) => { e.stopPropagation(); setPhotoPatient(patient); }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-teal-200 bg-teal-50 text-teal-700 transition hover:border-teal-400 hover:bg-teal-100"
+                          >
+                            <FaCamera className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Record Payment"
+                            onClick={(e) => { e.stopPropagation(); setPaymentPatient(patient); }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100"
+                          >
+                            <FaMoneyBillWave className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            id={`convert-appointment-${patient.id}`}
+                            title="Convert to Appointment"
+                            onClick={(e) => { e.stopPropagation(); setConvertingPatient(patient); }}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-700 transition hover:border-sky-400 hover:bg-sky-100"
+                          >
+                            <FaCalendarPlus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       ) : null}
                     </TableCell>
                   </tr>
@@ -462,6 +486,32 @@ export default function PatientRecordsPage() {
           onClose={() => setConvertingPatient(null)}
           onSuccess={(message) => {
             setConvertingPatient(null);
+            setNotice({ tone: "success", text: message });
+          }}
+        />
+      ) : null}
+
+      {paymentPatient ? (
+        <PatientPaymentModal
+          patientId={paymentPatient.id}
+          patientName={paymentPatient.fullName}
+          accessToken={accessToken}
+          onClose={() => setPaymentPatient(null)}
+          onSuccess={(message) => {
+            setPaymentPatient(null);
+            setNotice({ tone: "success", text: message });
+          }}
+        />
+      ) : null}
+
+      {photoPatient ? (
+        <PatientPhotoUploadModal
+          patientId={photoPatient.id}
+          patientName={photoPatient.fullName}
+          accessToken={accessToken}
+          onClose={() => setPhotoPatient(null)}
+          onSuccess={(message) => {
+            setPhotoPatient(null);
             setNotice({ tone: "success", text: message });
           }}
         />
