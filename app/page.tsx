@@ -682,10 +682,14 @@ export default async function HomePage() {
             <InquiryForm />
           </div>
         </div>
-
-        {/* ── Where Are We Located (Highlighted & Floating Location) ── */}
-        <FloatingLocationSection />
       </ScrollReveal>
+
+      {/* ── Where Are We Located (Highlighted In-Page & Floating Location) ── */}
+      <div className="bg-white pb-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <FloatingLocationSection />
+        </div>
+      </div>
 
 
       <footer className="relative overflow-hidden bg-white text-slate-800">

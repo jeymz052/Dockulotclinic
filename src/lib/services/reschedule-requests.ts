@@ -16,7 +16,7 @@ import {
 import { recalculateQueueNumbersForSlot } from "@/src/lib/services/maintenance";
 import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
 import { isProcedureServiceTitle, parseAppointmentContext } from "@/src/lib/appointment-context";
-import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 export type RescheduleRequestView = {
   id: string;
@@ -269,7 +269,9 @@ export async function createRescheduleRequest(
     {
       slotMinutes: appt.appointment_type === "Clinic" && isProcedureServiceTitle(parseAppointmentContext(appt.reason).service)
         ? PROCEDURE_SLOT_MINUTES
-        : CONSULTATION_SLOT_MINUTES,
+        : appt.appointment_type === "Online"
+          ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+          : CONSULTATION_SLOT_MINUTES,
     },
   );
   const requestedEnd = slot.end;

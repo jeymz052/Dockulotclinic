@@ -17,7 +17,7 @@ export function useAppointmentAvailability(
   doctorId: string,
   date: string,
   type: AppointmentType,
-  slotMinutes = 20,
+  slotMinutes?: number,
 ) {
   const { accessToken } = useRole();
   const [data, setData] = useState<AvailabilityResponse | null>(null);
@@ -37,12 +37,13 @@ export function useAppointmentAvailability(
 
     async function load() {
       try {
+        const resolvedMinutes = slotMinutes ?? (type === "Online" ? 30 : 20);
         const params = new URLSearchParams({
           doctor_id: doctorId,
           date,
           type,
           scan_days: "14",
-          slot_minutes: String(slotMinutes),
+          slot_minutes: String(resolvedMinutes),
         });
         const response = await fetch(`/api/v2/appointments/availability?${params.toString()}`, {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,

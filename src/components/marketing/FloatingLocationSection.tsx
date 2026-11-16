@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FaDiamondTurnRight, FaLocationDot, FaMapLocationDot, FaXmark } from "react-icons/fa6";
+import { createPortal } from "react-dom";
+import {
+  FaDiamondTurnRight,
+  FaLocationDot,
+  FaMapLocationDot,
+  FaMinus,
+  FaPlus,
+  FaArrowUpRightFromSquare,
+} from "react-icons/fa6";
 
 const GOOGLE_MAPS_DIRECTIONS_URL = "https://maps.app.goo.gl/JjXcnX77MH68JdT89";
 const GOOGLE_MAPS_EMBED_URL =
@@ -9,14 +17,17 @@ const GOOGLE_MAPS_EMBED_URL =
 
 export default function FloatingLocationSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [isSectionInView, setIsSectionInView] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     const handleScroll = () => {
-      if (window.scrollY > 280) {
+      // Show floating location card as soon as the user starts scrolling down (> 60px)
+      if (window.scrollY > 60) {
         setHasScrolled(true);
       } else {
         setHasScrolled(false);
@@ -35,9 +46,10 @@ export default function FloatingLocationSection() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsSectionInView(entry.isIntersecting);
+        // Only consider the section in view if it is prominently visible
+        setIsSectionInView(entry.isIntersecting && entry.intersectionRatio >= 0.3);
       },
-      { threshold: 0.25 }
+      { threshold: [0, 0.15, 0.3, 0.5, 0.8] }
     );
 
     observer.observe(el);
@@ -50,14 +62,17 @@ export default function FloatingLocationSection() {
     }
   };
 
-  const showFloatingWidget = hasScrolled && !isSectionInView && !isDismissed;
+  // The floating location card stays pinned on screen when scrolling,
+  // and smoothly hides only when the user is looking directly at the large in-page section.
+  const showFloatingLocation = mounted && hasScrolled && !isSectionInView;
 
   return (
     <>
-      {/* ── Main Highlighted Location Section ── */}
-      <div
+      {/* ── Main Highlighted In-Page Section: "Where Are We Located" ── */}
+      <section
         id="location"
         ref={sectionRef}
+        aria-label="Where Are We Located"
         className="scroll-mt-24 mt-12 overflow-hidden rounded-3xl border-2 border-[#d8c58a] bg-gradient-to-b from-[#fdfbf7] via-white to-[#fbf8f1] shadow-[0_24px_70px_-20px_rgba(216,197,138,0.45)] ring-4 ring-[#d8c58a]/20 transition-all duration-300"
       >
         {/* Highlighted Banner / Header */}
@@ -107,89 +122,132 @@ export default function FloatingLocationSection() {
             aria-label="Google Maps showing the location of Family First Primary Care Outpatient Clinic"
           />
         </div>
-      </div>
+      </section>
 
-      {/* ── Highlighted Floating Location Widget (Active When Scrolling) ── */}
-      {showFloatingWidget && (
-        <aside
-          aria-label="Floating clinic location notification"
-          className="fixed bottom-4 left-3 right-3 sm:right-auto sm:left-6 z-40 max-w-sm sm:max-w-md animate-fade-in-up"
-        >
-          <div className="overflow-hidden rounded-2xl border-2 border-[#d8c58a] bg-black/92 p-4 text-white shadow-[0_16px_50px_rgba(0,0,0,0.5)] backdrop-blur-md ring-4 ring-[#d8c58a]/20">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d8c58a] opacity-80" />
-                  <span className="relative inline-flex h-3 w-3 rounded-full bg-[#d8c58a]" />
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[#d8c58a]">
-                  Where Are We Located
-                </span>
+      {/* ── Persistent Floating Location Section: Portaled to document.body ──
+          Mounts directly to document.body to prevent parent CSS transform/overflow
+          from breaking viewport-fixed positioning.
+      */}
+      {showFloatingLocation &&
+        createPortal(
+          <aside
+            aria-label="Floating clinic location card"
+            className="fixed bottom-4 right-3 left-3 sm:left-auto sm:right-6 z-[9999] w-auto sm:w-[360px] md:w-[400px] transition-all duration-300 drop-shadow-2xl"
+          >
+            <div className="overflow-hidden rounded-2xl border-2 border-[#d8c58a] bg-white text-slate-900 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] ring-4 ring-[#d8c58a]/30">
+              {/* Header: Highlighted Golden Location Bar */}
+              <div className="flex items-center justify-between border-b border-[#d8c58a]/30 bg-gradient-to-r from-[#fcf9f2] via-[#fffbf3] to-[#f8f3e5] px-4 py-3">
+                <button
+                  type="button"
+                  onClick={scrollToLocation}
+                  className="group flex items-center gap-2 text-left"
+                  title="Click to jump to location section on the page"
+                >
+                  <span className="relative flex h-3 w-3 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d8c58a] opacity-80" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-[#a98c45]" />
+                  </span>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-[#9a7e32] group-hover:underline">
+                    Where Are We Located
+                  </span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsMinimized((prev) => !prev)}
+                    className="rounded-lg p-1.5 text-slate-600 transition hover:bg-[#d8c58a]/20 hover:text-black"
+                    aria-label={isMinimized ? "Expand location map" : "Minimize location map"}
+                    title={isMinimized ? "Expand map" : "Minimize map"}
+                  >
+                    {isMinimized ? <FaPlus className="h-3 w-3" /> : <FaMinus className="h-3 w-3" />}
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsDismissed(true)}
-                className="rounded-full p-1 text-white/50 transition hover:bg-white/10 hover:text-white"
-                aria-label="Dismiss floating location"
-              >
-                <FaXmark className="h-3.5 w-3.5" />
-              </button>
-            </div>
 
-            <div className="mt-2.5">
-              <p className="text-sm font-black text-white leading-tight">
-                Family First Primary Care Outpatient Clinic
-              </p>
-              <p className="mt-1 text-xs text-white/70 flex items-center gap-1.5">
-                <FaLocationDot className="text-[#d8c58a] shrink-0" />
-                Zamboanga City, Zamboanga del Sur
-              </p>
-            </div>
+              {/* Minimized View: Compact Floating Pill Bar */}
+              {isMinimized ? (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-bold text-black">
+                      Family First Primary Care Clinic
+                    </p>
+                    <p className="truncate text-[11px] text-slate-500">Zamboanga City</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsMinimized(false)}
+                      className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-black hover:bg-slate-200"
+                    >
+                      Open Map
+                    </button>
+                    <a
+                      href={GOOGLE_MAPS_DIRECTIONS_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full bg-black px-3 py-1 text-[11px] font-bold text-white transition hover:bg-[#a98c45]"
+                    >
+                      <FaDiamondTurnRight className="text-[9px] text-[#d8c58a]" />
+                      Directions
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                /* Expanded View: Full Floating Card With Map */
+                <div className="bg-white">
+                  {/* Clinic Info */}
+                  <div className="px-4 pt-3 pb-2.5">
+                    <p className="text-sm font-black text-black leading-tight">
+                      Family First Primary Care Outpatient Clinic
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-slate-600 flex items-center gap-1">
+                      <FaLocationDot className="text-[#a98c45] shrink-0 text-[11px]" />
+                      Zamboanga City, Zamboanga del Sur
+                    </p>
+                  </div>
 
-            {/* Expandable mini map preview inside floating bar */}
-            {isExpanded && (
-              <div className="mt-3 h-48 w-full overflow-hidden rounded-xl border border-white/15">
-                <iframe
-                  title="Mini floating map preview"
-                  src={GOOGLE_MAPS_EMBED_URL}
-                  width="100%"
-                  height="100%"
-                  loading="lazy"
-                  className="h-full w-full border-0"
-                />
-              </div>
-            )}
+                  {/* The Embedded Interactive Map in the Floating Card */}
+                  <div className="relative h-44 sm:h-48 w-full border-y border-slate-200 bg-slate-100">
+                    <iframe
+                      title="Floating Google Maps preview of clinic"
+                      src={GOOGLE_MAPS_EMBED_URL}
+                      width="100%"
+                      height="100%"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="h-full w-full border-0"
+                    />
+                  </div>
 
-            <div className="mt-3.5 flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-              <button
-                type="button"
-                onClick={scrollToLocation}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"
-              >
-                <FaMapLocationDot className="text-xs text-[#d8c58a]" />
-                View on page
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsExpanded((prev) => !prev)}
-                className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:bg-white/20 hover:text-white"
-              >
-                {isExpanded ? "Hide map" : "Quick preview"}
-              </button>
-              <a
-                href={GOOGLE_MAPS_DIRECTIONS_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#d8c58a] px-3.5 py-1.5 text-xs font-black text-black transition hover:bg-white"
-              >
-                <FaDiamondTurnRight className="text-[10px]" />
-                Directions →
-              </a>
+                  {/* Footer Controls: Jump to page section & Get Directions */}
+                  <div className="flex items-center justify-between gap-2 px-4 py-3 bg-slate-50/80">
+                    <button
+                      type="button"
+                      onClick={scrollToLocation}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 transition hover:text-black"
+                    >
+                      <FaMapLocationDot className="text-xs text-[#a98c45]" />
+                      View on page
+                    </button>
+
+                    <a
+                      href={GOOGLE_MAPS_DIRECTIONS_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-black px-3.5 py-1.5 text-xs font-bold text-white shadow transition hover:bg-[#a98c45]"
+                    >
+                      <FaDiamondTurnRight className="text-[10px] text-[#d8c58a]" />
+                      Get Directions
+                      <FaArrowUpRightFromSquare className="text-[9px] text-[#d8c58a]" />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </aside>
-      )}
+          </aside>,
+          document.body
+        )}
     </>
   );
 }
-

@@ -64,7 +64,7 @@ import {
   type AppointmentType,
 } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
-import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 const today = getClinicToday();
 const DEFAULT_DOCTOR_ID = "doctora-kulot-md";
@@ -241,7 +241,9 @@ export default function AppointmentListPage() {
   const activeDraftSlotMinutes =
     activeDraftType === "Clinic" && isProcedureServiceTitle(draft?.service)
       ? PROCEDURE_SLOT_MINUTES
-      : CONSULTATION_SLOT_MINUTES;
+      : activeDraftType === "Online"
+        ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+        : CONSULTATION_SLOT_MINUTES;
   const {
     slotStatuses,
     blockedReason,

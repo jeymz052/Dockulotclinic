@@ -5,7 +5,7 @@ import {
   getSchedulableSlotsForDate,
   getUnavailabilityForDate,
 } from "@/src/lib/services/schedule";
-import { MAX_BOOKINGS_PER_SLOT } from "@/src/lib/clinic-schedule";
+import { MAX_BOOKINGS_PER_SLOT, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 import { is1111SalePeriod } from "@/src/lib/booking-pricing";
 
 export type SharedAvailabilitySlot = {
@@ -81,8 +81,8 @@ export async function buildSharedDayAvailability(
     if (date <= clinicToday) {
       return { slots: [], blockedReason: "Virtual consults must be booked at least 1 day in advance (no same-day booking)." };
     }
-    if (day === 0) {
-      return { slots: [], blockedReason: "Virtual consults are available Monday to Saturday only." };
+    if (day === 0 || day === 6) {
+      return { slots: [], blockedReason: "Virtual consults are available Monday to Friday only." };
     }
   }
 
@@ -101,8 +101,12 @@ export async function buildSharedDayAvailability(
     }
   }
 
+  const effectiveSlotMinutes = type === "Online"
+    ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+    : options.slotMinutes;
+
   const schedulableSlots = await getSchedulableSlotsForDate(doctorId, date, {
-    slotMinutes: options.slotMinutes,
+    slotMinutes: effectiveSlotMinutes,
     type,
   });
   if (schedulableSlots.length === 0) {

@@ -40,7 +40,7 @@ import {
 } from "@/src/lib/server/appointments-store";
 import { normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
 import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
-import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 const DEFAULT_MANUAL_TRANSFER_INSTRUCTIONS =
   "Send the transfer to the clinic's bank account, then wait for staff verification. Your appointment stays unconfirmed until payment is marked as paid.";
@@ -451,7 +451,9 @@ export async function createOnlineCheckoutSession(
   const slot = await resolveSchedulableSlotForStart(doctorId, input.date, input.start, input.type, {
     slotMinutes: input.type === "Clinic" && isProcedureServiceTitle(input.service)
       ? PROCEDURE_SLOT_MINUTES
-      : CONSULTATION_SLOT_MINUTES,
+      : input.type === "Online"
+        ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+        : CONSULTATION_SLOT_MINUTES,
   });
   const start_time = normalizeSqlTime(slot.start);
   const end_time = slot.end;

@@ -22,7 +22,7 @@ import {
 } from "@/src/lib/services/schedule";
 import { findNextAvailableSharedSlot } from "@/src/lib/services/appointment-availability";
 import { isProcedureServiceTitle, parseAppointmentContext } from "@/src/lib/appointment-context";
-import { CONSULTATION_SLOT_MINUTES, MAX_BOOKINGS_PER_SLOT, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, MAX_BOOKINGS_PER_SLOT, PROCEDURE_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 import {
   enqueueAppointmentTeamNotifications,
   enqueueNotification,
@@ -187,7 +187,7 @@ function supportsType(mode: "Clinic" | "Online" | "Both", type: AppointmentType)
 }
 
 function resolveSlotMinutesForPayload(payload: Pick<AppointmentCreatePayload, "reason" | "type">) {
-  if (payload.type === "Online") return CONSULTATION_SLOT_MINUTES;
+  if (payload.type === "Online") return VIRTUAL_CONSULTATION_SLOT_MINUTES;
   return isProcedureServiceTitle(parseAppointmentContext(payload.reason).service)
     ? PROCEDURE_SLOT_MINUTES
     : CONSULTATION_SLOT_MINUTES;

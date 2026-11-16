@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { resolveBookingPatientId, validateSharedSlotOrThrow, resolveAssignedDoctorUuid } from "@/src/lib/server/appointments-store";
 import { normalizeSqlTime } from "@/src/lib/server/legacy-bridge";
 import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
-import { CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 import { parseAppointmentContext } from "@/src/lib/appointment-context";
 import { resolveClinicConsultationAmount, resolveVirtualConsultAmount } from "@/src/lib/server/booking-pricing-store";
 import { enqueueNotification } from "@/src/lib/services/notification";
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     const doctorUuid = await resolveAssignedDoctorUuid(doctorId);
     const slot = await resolveSchedulableSlotForStart(doctorUuid, date, start, type, {
-      slotMinutes: CONSULTATION_SLOT_MINUTES,
+      slotMinutes: type === "Online" ? VIRTUAL_CONSULTATION_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES,
     });
     const start_time = normalizeSqlTime(slot.start);
     const end_time = slot.end;

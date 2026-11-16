@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/src/lib/supabase/server";
 import { resolveBookingPatientId, validateSharedSlotOrThrow } from "@/src/lib/server/appointments-store";
 import { enqueueAppointmentTeamNotifications, enqueueNotification } from "@/src/lib/services/notification";
 import { resolveSchedulableSlotForStart } from "@/src/lib/services/schedule";
-import { CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 type ConvertPayload = {
   doctorId?: string;
@@ -77,7 +77,7 @@ export async function POST(req: Request, ctx: Ctx) {
       body.date,
       body.startTime,
       body.appointmentType,
-      { slotMinutes: CONSULTATION_SLOT_MINUTES },
+      { slotMinutes: body.appointmentType === "Online" ? VIRTUAL_CONSULTATION_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES },
     );
     const start_time = normalizeTime(slot.start);
     const end_time = slot.end;

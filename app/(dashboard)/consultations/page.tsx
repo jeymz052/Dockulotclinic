@@ -1119,7 +1119,7 @@ export default function OnlineConsultationPage() {
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <Metric
           label="Ready"
           value={readyCount.toString()}
@@ -1156,7 +1156,7 @@ export default function OnlineConsultationPage() {
 
       {/* Mobile / Tablet Queue vs Chart Switcher */}
       {activeAppointment ? (
-        <div className="mt-4 flex rounded-xl border border-neutral-200 bg-neutral-100 p-1 shadow-xs xl:hidden">
+        <div className="mt-4 flex rounded-xl border border-neutral-200 bg-neutral-100 p-1 shadow-xs lg:hidden">
           <button
             type="button"
             onClick={() => setMobileWorkspaceTab("queue")}
@@ -1182,10 +1182,10 @@ export default function OnlineConsultationPage() {
         </div>
       ) : null}
 
-      <div className="mt-5 grid min-h-[42rem] gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <div className="mt-5 grid min-h-0 lg:min-h-[42rem] gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] xl:grid-cols-[22rem_minmax(0,1fr)]">
         <aside
           className={`min-h-0 rounded-lg border border-neutral-200 bg-white shadow-sm ${
-            activeAppointment && mobileWorkspaceTab === "chart" ? "hidden xl:block" : "block"
+            activeAppointment && mobileWorkspaceTab === "chart" ? "hidden lg:block" : "block"
           }`}
         >
           <div className="border-b border-neutral-200 p-4">
@@ -1222,7 +1222,7 @@ export default function OnlineConsultationPage() {
             </div>
           </div>
 
-          <div className="max-h-[40rem] space-y-2 overflow-y-auto p-3">
+          <div className="max-h-[30rem] lg:max-h-[40rem] space-y-2 overflow-y-auto p-3">
             {filteredAppointments.length === 0 ? (
               <EmptyQueue message="No consultations match this view." />
             ) : (
@@ -1246,7 +1246,7 @@ export default function OnlineConsultationPage() {
 
         <section
           className={`min-w-0 rounded-lg border border-neutral-200 bg-white shadow-sm ${
-            activeAppointment && mobileWorkspaceTab === "queue" ? "hidden xl:block" : "block"
+            activeAppointment && mobileWorkspaceTab === "queue" ? "hidden lg:block" : "block"
           }`}
         >
           {activeAppointment ? (
@@ -1411,13 +1411,13 @@ export default function OnlineConsultationPage() {
                           </div>
                         </section>
 
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
-                          <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:px-5">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                             <button
                               type="button"
                               onClick={() => saveConsultation(activeAppointment)}
                               disabled={isSaving}
-                              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                              className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
                             >
                               <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
                               {isSaving ? "Saving..." : "Save note"}
@@ -1425,7 +1425,7 @@ export default function OnlineConsultationPage() {
                             <button
                               type="button"
                               onClick={handlePrintActiveConsultationNote}
-                              className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                              className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
                               title="Print or export consultation note PDF summary"
                             >
                               <FaFilePdf className="h-4 w-4 text-rose-600" aria-hidden="true" />
@@ -1435,7 +1435,7 @@ export default function OnlineConsultationPage() {
                           <button
                             type="button"
                             onClick={() => setChartStep(activeAppointmentIsVirtual ? 2 : 6)}
-                            className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                           >
                             {activeAppointmentIsVirtual ? "Next: Prescription →" : "Next: Finalize →"}
                           </button>
@@ -1790,19 +1790,19 @@ export default function OnlineConsultationPage() {
                         </section>
 
                         {/* Final save */}
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-5 py-4">
+                        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 sm:px-5">
                           <button
                             type="button"
                             onClick={() => setChartStep(activeAppointmentIsVirtual ? 5 : 1)}
-                            className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
                           >
                             ← Back
                           </button>
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                             <button
                               type="button"
                               onClick={handlePrintActiveConsultationNote}
-                              className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
+                              className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-100"
                               title="Print or export consultation note PDF summary"
                             >
                               <FaFilePdf className="h-4 w-4 text-rose-600" aria-hidden="true" />
@@ -1812,7 +1812,7 @@ export default function OnlineConsultationPage() {
                               type="button"
                               onClick={() => saveConsultation(activeAppointment)}
                               disabled={isSaving}
-                              className="inline-flex items-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                              className="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-400"
                             >
                               <FaFloppyDisk className="h-4 w-4" aria-hidden="true" />
                               {isSaving ? "Saving..." : "Save & finalize chart"}
@@ -1912,6 +1912,7 @@ function PatientConsultationLobby({
   error: string | null;
 }) {
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
+  const [patientTab, setPatientTab] = useState<"list" | "detail">("list");
 
   const eligible = useMemo(
     () =>
@@ -1956,7 +1957,7 @@ function PatientConsultationLobby({
       {error ? <Banner tone="error">{error}</Banner> : null}
       {isLoading ? <Banner tone="info">Loading consultation notes...</Banner> : null}
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
         <Metric
           label="Upcoming"
           value={upcomingCount.toString()}
@@ -1980,8 +1981,40 @@ function PatientConsultationLobby({
         />
       </div>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]">
-        <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+      {/* Mobile view switcher */}
+      {activeAppointment ? (
+        <div className="mb-4 flex rounded-xl border border-neutral-200 bg-neutral-100 p-1 shadow-xs lg:hidden">
+          <button
+            type="button"
+            onClick={() => setPatientTab("list")}
+            className={`flex-1 rounded-lg py-2.5 text-xs font-bold transition ${
+              patientTab === "list"
+                ? "bg-white text-neutral-950 shadow-sm"
+                : "text-neutral-600 hover:text-neutral-950"
+            }`}
+          >
+            Sessions ({eligible.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setPatientTab("detail")}
+            className={`flex-1 rounded-lg py-2.5 text-xs font-bold transition ${
+              patientTab === "detail"
+                ? "bg-neutral-950 text-white shadow-sm"
+                : "text-neutral-600 hover:text-neutral-950"
+            }`}
+          >
+            Visit Details
+          </button>
+        </div>
+      ) : null}
+
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <section
+          className={`rounded-lg border border-neutral-200 bg-white shadow-sm ${
+            activeAppointment && patientTab === "detail" ? "hidden lg:block" : "block"
+          }`}
+        >
           <div className="border-b border-neutral-200 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
               Sessions
@@ -2002,7 +2035,10 @@ function PatientConsultationLobby({
                     note={note}
                     isActive={isActive}
                     label={appointment.status}
-                    onSelect={() => setActiveAppointmentId(appointment.id)}
+                    onSelect={() => {
+                      setActiveAppointmentId(appointment.id);
+                      setPatientTab("detail");
+                    }}
                     patientView
                   />
                 );
@@ -2011,12 +2047,23 @@ function PatientConsultationLobby({
           </div>
         </section>
 
-        <section className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <section
+          className={`rounded-lg border border-neutral-200 bg-white shadow-sm ${
+            activeAppointment && patientTab === "list" ? "hidden lg:block" : "block"
+          }`}
+        >
           {activeAppointment ? (
             <div>
               <div className="flex flex-col gap-4 border-b border-neutral-200 bg-neutral-50 p-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPatientTab("list")}
+                      className="inline-flex lg:hidden items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-xs transition hover:bg-neutral-100"
+                    >
+                      ← Sessions
+                    </button>
                     <Badge tone="sky">Virtual</Badge>
                     <Badge tone={statusTone(activeNote?.status ?? activeAppointment.status)}>
                       {activeNote?.status ?? activeAppointment.status}
@@ -2035,7 +2082,10 @@ function PatientConsultationLobby({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveAppointmentId("none")}
+                  onClick={() => {
+                    setActiveAppointmentId("none");
+                    setPatientTab("list");
+                  }}
                   className="inline-flex items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50"
                 >
                   <FaXmark className="h-4 w-4" aria-hidden="true" />
@@ -2093,14 +2143,14 @@ function VisitHeader({
   const meetingLink = appointment.meetingLink?.trim() ?? "";
   return (
     <div className="border-b border-neutral-200 bg-neutral-50 p-4 sm:p-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {onBackToQueue ? (
               <button
                 type="button"
                 onClick={onBackToQueue}
-                className="inline-flex xl:hidden items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-xs transition hover:bg-neutral-100"
+                className="inline-flex lg:hidden items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold text-neutral-800 shadow-xs transition hover:bg-neutral-100"
               >
                 ← Queue
               </button>

@@ -34,7 +34,7 @@ import {
   type AppointmentType,
 } from "@/src/lib/appointments";
 import { getClinicToday } from "@/src/lib/timezone";
-import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
+import { CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES } from "@/src/lib/clinic-schedule";
 
 type MyAppointmentsPageProps = {
   title?: string;
@@ -650,7 +650,9 @@ function RescheduleRequestModal({
     appointment.type,
     appointment.type === "Clinic" && isProcedureServiceTitle(parseAppointmentContext(appointment.reason).service)
       ? PROCEDURE_SLOT_MINUTES
-      : CONSULTATION_SLOT_MINUTES,
+      : appointment.type === "Online"
+        ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+        : CONSULTATION_SLOT_MINUTES,
   );
   const selectedSlot = slotStatuses.find((slot) => slot.start === requestedStart) ?? null;
   const isSameSchedule = requestedDate === appointment.date && requestedStart === appointment.start;

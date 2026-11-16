@@ -14,6 +14,7 @@ import {
   STANDARD_BOOKING_START,
   VIRTUAL_CONSULT_END,
   VIRTUAL_CONSULT_START,
+  VIRTUAL_CONSULTATION_SLOT_MINUTES,
   isClinicProcedureBookingDate,
   isVirtualConsultBookingDate,
 } from "@/src/lib/clinic-schedule";
@@ -52,16 +53,16 @@ const BOOKING_RULES = {
   },
   Online: {
     weekday: {
-      days: [1, 2, 3, 4, 5, 6],
+      days: [1, 2, 3, 4, 5],
       start: VIRTUAL_CONSULT_START,
       end: VIRTUAL_CONSULT_END,
-      label: "Virtual consults are available Monday to Saturday from 8:00 AM to 8:00 PM (booking at least 1 day in advance).",
+      label: "Virtual consults are available Monday to Friday from 9:00 AM to 5:00 PM (booking at least 1 day in advance).",
     },
     weekend: {
-      days: [1, 2, 3, 4, 5, 6],
+      days: [1, 2, 3, 4, 5],
       start: VIRTUAL_CONSULT_START,
       end: VIRTUAL_CONSULT_END,
-      label: "Virtual consults are available Monday to Saturday from 8:00 AM to 8:00 PM (booking at least 1 day in advance).",
+      label: "Virtual consults are available Monday to Friday from 9:00 AM to 5:00 PM (booking at least 1 day in advance).",
     },
   },
   Both: {
@@ -174,10 +175,16 @@ export async function getSchedulableSlotsForDate(
   if (schedules.length) {
     const bySlot = new Map<string, SchedulableSlot>();
     for (const schedule of schedules) {
+      const slotDuration = options.type === "Online"
+        ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+        : (options.slotMinutes
+          ?? (schedule.schedule_mode === "Online"
+            ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+            : schedule.slot_minutes ?? CONSULTATION_SLOT_MINUTES));
       const slots = expandSlots(
         schedule.start_time,
         schedule.end_time,
-        options.slotMinutes ?? schedule.slot_minutes,
+        slotDuration,
         schedule.schedule_mode ?? "Both",
       );
       for (const slot of slots) {
@@ -185,6 +192,15 @@ export async function getSchedulableSlotsForDate(
         if (options.slotMinutes === 60) {
           const slotClock = normalizeClock(slot.start);
           if (slotClock < "09:00" || slotClock > "15:00") {
+            continue;
+          }
+        }
+
+        // Enforce 9:00 AM - 5:00 PM for Online virtual consults
+        if (options.type === "Online" || slot.mode === "Online") {
+          const slotStartClock = normalizeClock(slot.start);
+          const slotEndClock = normalizeClock(slot.end);
+          if (slotStartClock < VIRTUAL_CONSULT_START || slotEndClock > VIRTUAL_CONSULT_END) {
             continue;
           }
         }
@@ -351,11 +367,12 @@ export async function upsertSchedule(input: {
     throw new HttpError(400, "day_of_week must be 0..6");
   if (input.start_time >= input.end_time)
     throw new HttpError(400, "start_time must be before end_time");
-  if (![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes ?? CONSULTATION_SLOT_MINUTES)) {
-    throw new HttpError(400, "Slot minutes must be 20 for consultations or 60 for procedures.");
+  const defaultSlotMinutes = input.schedule_mode === "Online" ? VIRTUAL_CONSULTATION_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES;
+  if (![CONSULTATION_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes ?? defaultSlotMinutes)) {
+    throw new HttpError(400, "Slot minutes must be 20 for clinic consultations, 30 for virtual consultations, or 60 for procedures.");
   }
   if (input.schedule_mode !== "Online" && !(BOOKING_RULES.Both.days as readonly number[]).includes(input.day_of_week)) {
-    throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Saturday and Sunday.");
+    throw new HttpError(400, "Clinic/procedure schedules are only allowed Monday to Friday.");
   }
   assertScheduleWithinPolicy(
     input.day_of_week,
@@ -380,7 +397,7 @@ export async function upsertSchedule(input: {
       .update({
         start_time: input.start_time,
         end_time: input.end_time,
-        slot_minutes: input.slot_minutes ?? CONSULTATION_SLOT_MINUTES,
+        slot_minutes: input.slot_minutes ?? defaultSlotMinutes,
         schedule_mode: input.schedule_mode ?? "Both",
         is_active: input.is_active ?? true,
       })
@@ -398,7 +415,7 @@ export async function upsertSchedule(input: {
       day_of_week: input.day_of_week,
       start_time: input.start_time,
       end_time: input.end_time,
-      slot_minutes: input.slot_minutes ?? CONSULTATION_SLOT_MINUTES,
+      slot_minutes: input.slot_minutes ?? defaultSlotMinutes,
       schedule_mode: input.schedule_mode ?? "Both",
       is_active: input.is_active ?? true,
     })
@@ -440,8 +457,8 @@ export async function updateSchedule(
   if (nextStart && nextEnd && nextStart >= nextEnd) {
     throw new HttpError(400, "start_time must be before end_time");
   }
-  if (input.slot_minutes && ![CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes)) {
-    throw new HttpError(400, "Slot minutes must be 20 for consultations or 60 for procedures.");
+  if (input.slot_minutes && ![CONSULTATION_SLOT_MINUTES, VIRTUAL_CONSULTATION_SLOT_MINUTES, PROCEDURE_SLOT_MINUTES].includes(input.slot_minutes)) {
+    throw new HttpError(400, "Slot minutes must be 20 for clinic consultations, 30 for virtual consultations, or 60 for procedures.");
   }
   if (nextStart && nextEnd) {
     assertScheduleWithinPolicy(effectiveDay, effectiveMode, nextStart, nextEnd);

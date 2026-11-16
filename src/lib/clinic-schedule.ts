@@ -1,10 +1,11 @@
+export const VIRTUAL_CONSULTATION_SLOT_MINUTES = 30;
 export const CONSULTATION_SLOT_MINUTES = 20;
 export const PROCEDURE_SLOT_MINUTES = 60;
 export const MAX_BOOKINGS_PER_SLOT = 1;
 export const STANDARD_BOOKING_START = "09:00";
 export const STANDARD_BOOKING_END = "16:00";
-export const VIRTUAL_CONSULT_START = "08:00";
-export const VIRTUAL_CONSULT_END = "20:00";
+export const VIRTUAL_CONSULT_START = "09:00";
+export const VIRTUAL_CONSULT_END = "17:00";
 
 export type BookingClinicLocation = {
   value: string;
@@ -44,7 +45,6 @@ export const STANDARD_VIRTUAL_SCHEDULES = [
   { day_of_week: 3, label: "Wednesday" },
   { day_of_week: 4, label: "Thursday" },
   { day_of_week: 5, label: "Friday" },
-  { day_of_week: 6, label: "Saturday" },
 ] as const;
 
 export function normalizeScheduleTime(value: string) {
@@ -89,8 +89,8 @@ export function isClinicProcedureBookingDate(date: string) {
 export function isVirtualConsultBookingDate(date?: string, todayDate?: string) {
   if (!date) return true;
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  // Monday to Saturday only (1 to 6) - no Sunday
-  if (day < 1 || day > 6) return false;
+  // Monday to Friday only (1 to 5) - no Saturday, no Sunday
+  if (day < 1 || day > 5) return false;
   // No same-day booking for virtual consult! Must be at least tomorrow
   if (todayDate && date <= todayDate) return false;
   return true;

@@ -67,6 +67,7 @@ import {
   BOOKING_CLINIC_LOCATIONS,
   CONSULTATION_SLOT_MINUTES,
   PROCEDURE_SLOT_MINUTES,
+  VIRTUAL_CONSULTATION_SLOT_MINUTES,
 } from "@/src/lib/clinic-schedule";
 import {
   CIVIL_STATUS_OPTIONS,
@@ -413,7 +414,11 @@ export default function BookAppointmentPage({
     activeDoctorId,
     formData.date,
     formData.type,
-    isProcedureBooking ? PROCEDURE_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES,
+    isProcedureBooking
+      ? PROCEDURE_SLOT_MINUTES
+      : formData.type === "Online"
+        ? VIRTUAL_CONSULTATION_SLOT_MINUTES
+        : CONSULTATION_SLOT_MINUTES,
   );
   const selectedSlot = slotStatuses.find((slot) => slot.start === formData.start) ?? null;
   const procedureServiceOptions = useMemo(
@@ -1241,7 +1246,7 @@ export default function BookAppointmentPage({
                     Pwede kang tumawag sa secretary ni Doc Kulot para kami na ang mag-book sa &apos;yo!
                   </p>
                   <p className="mt-0.5 text-xs text-neutral-600">
-                    FamMed Family Clinic, Pasobolong · Mon–Fri 9:00 AM – 4:00 PM (In-person) · Mon–Sat 8:00 AM – 8:00 PM (Virtual)
+                    FamMed Family Clinic, Pasobolong · Mon–Fri 9:00 AM – 4:00 PM (In-person) · Mon–Fri 9:00 AM – 5:00 PM (Virtual)
                   </p>
                 </div>
               </div>
@@ -2032,7 +2037,7 @@ export default function BookAppointmentPage({
                           <span>💻</span> Virtual Consult Schedule Notice
                         </p>
                         <p className="mt-1 leading-5 text-sky-900/90">
-                          Virtual consults are available <strong>Monday to Saturday</strong> (no Sundays) and must be booked <strong>at least 1 day in advance</strong> (no same-day booking).
+                          Virtual consults are available <strong>Monday to Friday from 9:00 AM to 5:00 PM</strong> and must be booked <strong>at least 1 day in advance</strong> (no same-day booking).
                         </p>
                       </div>
                     ) : isProcedureBooking ? (
@@ -2625,7 +2630,7 @@ export default function BookAppointmentPage({
               <p className="mt-1">
                 📍 FamMed Family Clinic, Arquiza Building, Pasobolong, Zamboanga City<br />
                 ⏰ Face-to-Face Clinic: Mon–Fri 9:00 AM – 4:00 PM<br />
-                💻 Virtual Consultations: Mon–Sat 8:00 AM – 8:00 PM
+                💻 Virtual Consultations: Mon–Fri 9:00 AM – 5:00 PM
               </p>
             </div>
 

@@ -6,12 +6,14 @@ import { FaBan, FaCalendarCheck, FaClock, FaPlus, FaRotateRight, FaTrash } from 
 import { useRole } from "@/src/components/layout/RoleProvider";
 import {
   CONSULTATION_SLOT_MINUTES,
+  PROCEDURE_SLOT_MINUTES,
   STANDARD_BOOKING_END,
   STANDARD_BOOKING_START,
   STANDARD_CLINIC_SCHEDULES,
   STANDARD_VIRTUAL_SCHEDULES,
   VIRTUAL_CONSULT_END,
   VIRTUAL_CONSULT_START,
+  VIRTUAL_CONSULTATION_SLOT_MINUTES,
 } from "@/src/lib/clinic-schedule";
 
 type DoctorOption = {
@@ -313,7 +315,7 @@ export default function SchedulesPage() {
           day_of_week: form.day_of_week,
           start_time: startTime,
           end_time: endTime,
-          slot_minutes: CONSULTATION_SLOT_MINUTES,
+          slot_minutes: form.schedule_mode === "Online" ? VIRTUAL_CONSULTATION_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES,
           schedule_mode: form.schedule_mode,
           is_active: form.is_active,
         }),
@@ -389,7 +391,7 @@ export default function SchedulesPage() {
             day_of_week: rule.day_of_week,
             start_time: rule.start_time,
             end_time: rule.end_time,
-            slot_minutes: CONSULTATION_SLOT_MINUTES,
+            slot_minutes: rule.schedule_mode === "Online" ? VIRTUAL_CONSULTATION_SLOT_MINUTES : CONSULTATION_SLOT_MINUTES,
             schedule_mode: rule.schedule_mode,
             is_active: true,
           }),

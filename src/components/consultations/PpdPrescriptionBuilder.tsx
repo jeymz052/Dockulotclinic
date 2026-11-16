@@ -1068,20 +1068,20 @@ export function PpdPrescriptionBuilder({
             />
 
             {/* Document Content */}
-            <div className="relative z-1 mx-auto max-w-4xl bg-white px-6 py-8 text-neutral-900 sm:px-10 lg:px-12">
+            <div className="relative z-1 mx-auto max-w-4xl bg-white px-4 py-6 text-neutral-900 sm:px-10 sm:py-8 lg:px-12">
               {/* Top Section: Doc Kulot Logo & Prescription ID */}
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                 <Image
                   src="/images/dockulotslogonobg.png"
                   alt="Doc Kulot logo"
                   width={300}
                   height={168}
-                  className="h-auto w-52 max-w-full object-contain sm:w-60"
+                  className="h-auto w-40 max-w-full object-contain sm:w-60"
                   priority
                 />
-                <div className="min-w-44 text-right">
+                <div className="text-left sm:min-w-44 sm:text-right">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-neutral-500">Prescription ID</p>
-                  <p className="mt-2 text-2xl font-black tracking-tight text-black">{displayedPrescriptionNo}</p>
+                  <p className="mt-1 text-xl font-black tracking-tight text-black sm:mt-2 sm:text-2xl">{displayedPrescriptionNo}</p>
                 </div>
               </div>
 
@@ -1187,8 +1187,8 @@ export function PpdPrescriptionBuilder({
               </div>
 
               {/* Doctor Signature Block */}
-              <div className="mt-16 flex justify-end">
-                <div className="w-72 text-center">
+              <div className="mt-16 flex justify-start sm:justify-end">
+                <div className="w-full max-w-[16rem] text-left sm:w-72 sm:text-center">
                   {resolvedDoctorSignature ? (
                     <div className="mb-0 flex h-24 items-end justify-center border-b border-black pb-1">
                       <img
