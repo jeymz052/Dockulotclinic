@@ -110,7 +110,10 @@ export function formatRange(start: string, end: string) {
 export function addDays(date: string, amount: number) {
   const nextDate = new Date(`${date}T00:00:00`);
   nextDate.setDate(nextDate.getDate() + amount);
-  return nextDate.toISOString().slice(0, 10);
+  const y = nextDate.getFullYear();
+  const m = String(nextDate.getMonth() + 1).padStart(2, "0");
+  const d = String(nextDate.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function getAppointmentsForSlot(

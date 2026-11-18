@@ -205,13 +205,21 @@ export function classifyAppointment(appt: AppointmentRecord): {
   return { category: "clinic_consult", primaryLabel, secondaryLabel };
 }
 
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function getCurrentWeekStart() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dayOfWeek = today.getDay();
   const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-  const monday = new Date(today.setDate(diff));
-  return monday.toISOString().slice(0, 10);
+  const monday = new Date(today);
+  monday.setDate(diff);
+  return formatLocalDate(monday);
 }
 
 function shiftDate(date: string, days: number) {
